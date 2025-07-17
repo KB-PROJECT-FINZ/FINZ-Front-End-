@@ -1,4 +1,4 @@
-# FINZ Frontend \U0001F4BB
+# FINZ Frontend 
 
 이 레포지토리는 **AI 기반 금융 학습 및 모의투자 플랫폼 'FINZIE'의 프론트엔드 애플리케이션**입니다. Vue.js 3와 Vite를 기반으로 SPA 구조로 구성되며, 백엔드(Spring)와 REST API 통신을 통해 사용자 맞춤형 콘텐츠, 모의투자, 챗봇 기능을 제공합니다.
 
