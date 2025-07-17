@@ -10,7 +10,7 @@
 - **Pinia** : 글로벌 상태 관리 (로그인, 크레딧, 학습 진도 등)
 - **Axios** : REST API 호출 모듈
 - **Vue Router** : SPA 라우팅 구성
-- **Tailwind CSS / Bootstrap** : 반응형 UI 스타일링
+- **Tailwind CS**  : 반응형 UI 스타일링
 - **Chart.js** : 포트폴리오 도넛차트, 수익률 추이 그래프 시각화
 
 ---
