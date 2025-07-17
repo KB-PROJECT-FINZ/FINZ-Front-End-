@@ -47,18 +47,6 @@ npm run build
 
 ---
 
-## ⚙️ 환경변수 설정
-
-`.env` 파일을 프로젝트 루트에 추가하고 다음 항목을 정의합니다:
-
-```
-VITE_API_BASE_URL=http://localhost:8080/api/v1
-VITE_OPENAI_KEY=your_openai_key_here
-```
-
-> `.env`는 `.gitignore`에 포함되어야 하며 Git에 업로드하지 않습니다.
-
----
 
 ## 🌿 브랜치 규칙
 
