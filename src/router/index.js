@@ -1,17 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import LoginView from '@/pages/LoginPage.vue'
+import LoginFormPage from '@/pages/LoginFormPage.vue'
+
+const routes = [
+  {
+    path: '/',
+    name: 'Login',
+    component: LoginView,
+  },
+  {
+    path: '/login-form',
+    name: 'LoginFormPage',
+    component: LoginFormPage,
+  },
+  // 나중에 /home, /mypage 등 추가 가능
+]
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      // path: '/about',
-      // name: 'about',
-      // // route level code-splitting
-      // // this generates a separate chunk (About.[hash].js) for this route
-      // // which is lazy-loaded when the route is visited.
-      // component: () => import('../pages/HomePage.vue'),
-    },
-  ],
+  history: createWebHistory(),
+  routes,
 })
 
 export default router
