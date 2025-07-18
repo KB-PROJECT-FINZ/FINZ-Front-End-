@@ -1,14 +1,27 @@
 <template>
-  <nav class="bottom-nav">
+  <nav
+    class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-200 flex py-2 z-50"
+  >
     <button
       v-for="item in navItems"
       :key="item.name"
-      class="nav-item"
-      :class="{ active: currentRoute === item.route }"
+      class="flex-1 bg-transparent border-none py-2 px-1 flex flex-col items-center gap-1"
+      :class="{
+        'text-blue-500': currentRoute === item.route,
+        'text-gray-500': currentRoute !== item.route,
+      }"
       @click="handleNavClick(item.route)"
     >
-      <span class="nav-icon">{{ item.icon }}</span>
-      <span class="nav-text">{{ item.name }}</span>
+      <span class="text-xl">{{ item.icon }}</span>
+      <span
+        class="text-xs"
+        :class="{
+          'font-semibold text-blue-500': currentRoute === item.route,
+          'text-gray-500': currentRoute !== item.route,
+        }"
+      >
+        {{ item.name }}
+      </span>
     </button>
   </nav>
 </template>
@@ -38,60 +51,3 @@ const handleNavClick = (routeName) => {
   }
 }
 </script>
-
-<style scoped>
-/* 하단 네비게이션 */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 430px;
-  background: white;
-  border-top: 1px solid #e9ecef;
-  display: flex;
-  padding: 8px 0;
-  z-index: 100;
-}
-
-.nav-item {
-  flex: 1;
-  background: none;
-  border: none;
-  padding: 8px 4px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  transition: color 0.2s;
-}
-
-.nav-icon {
-  font-size: 20px;
-}
-
-.nav-text {
-  font-size: 10px;
-  color: #6c757d;
-}
-
-.nav-item.active .nav-text {
-  color: #667eea;
-  font-weight: 600;
-}
-
-.nav-item.active .nav-icon {
-  transform: scale(1.1);
-}
-
-/* 모바일 환경에서 하단 네비게이션 조정 */
-@media (max-width: 430px) {
-  .bottom-nav {
-    left: 0;
-    transform: none;
-    max-width: none;
-  }
-}
-</style>
