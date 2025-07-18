@@ -117,6 +117,7 @@
         <!-- 시작하기 버튼 -->
         <button
           :disabled="!canSubmit"
+          @click="handleSignup"
           class="w-full py-2.5 rounded-full font-bold transition text-white"
           :class="
             canSubmit ? 'bg-purple-500 hover:bg-purple-600' : 'bg-gray-300 cursor-not-allowed'
@@ -131,6 +132,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const name = ref('')
 const email = ref('')
@@ -154,6 +158,11 @@ const canSubmit = computed(() => {
     agree.value
   )
 })
+
+const handleSignup = () => {
+  // 추후 여기에 회원가입 API 연동도 추가 예정
+  router.push('/login-form')
+}
 </script>
 
 <style scoped>

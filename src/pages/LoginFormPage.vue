@@ -45,8 +45,8 @@
 
       <!-- 로그인 버튼 -->
       <button
-        class="w-full bg-gray-200 text-white py-2.5 rounded-lg font-semibold cursor-not-allowed"
-        disabled
+        @click="handleLogin"
+        class="w-full py-3 rounded-full bg-gradient-to-r from-purple-400 to-blue-400 text-white font-semibold shadow-md hover:shadow-lg hover:scale-105 active:translate-y-[-1px] active:shadow-2xl transition duration-200 transform"
       >
         로그인
       </button>
