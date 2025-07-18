@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '@/pages/LoginPage.vue'
 import LoginFormPage from '@/pages/LoginFormPage.vue'
+import SignupFormPage from '@/pages/SignupFormPage.vue'
 
 const routes = [
   {
@@ -12,6 +13,11 @@ const routes = [
     path: '/login-form',
     name: 'LoginFormPage',
     component: LoginFormPage,
+  },
+  {
+    path: '/signup',
+    name: 'SignupFormPage',
+    component: SignupFormPage,
   },
   // 나중에 /home, /mypage 등 추가 가능
 ]
