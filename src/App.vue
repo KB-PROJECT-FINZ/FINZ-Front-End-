@@ -8,11 +8,9 @@
       투자 입문자를 위한 맞춤형 금융 플랫폼<br />
       <span class="text-xs text-gray-500">당신만의 투자 여정을 시작하세요</span>
     </p>
-    <p class="text-red-500 font-bold text-2xl">Tailwind 작동 테스트</p>
 
     <!-- 로그인 / 회원가입 버튼 -->
     <div class="w-full max-w-xs mt-8 space-y-4">
-      <p class="text-red-500 font-bold text-2xl">Tailwind 작동 테스트</p>
       <button
         class="w-full py-3 rounded-xl bg-gradient-to-r from-purple-400 to-blue-400 text-white font-semibold shadow-md hover:shadow-lg transition"
       >
@@ -39,7 +37,6 @@
       />
       <img src="https://img.icons8.com/win10/512/google-logo.png" alt="google" class="w-8 h-8" />
     </div>
-    <p class="text-red-500 font-bold text-2xl">Tailwind 작동 테스트</p>
   </div>
 </template>
 
