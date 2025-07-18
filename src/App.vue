@@ -18,7 +18,7 @@
 }
 
 .mobile-container {
-  max-width: 390px;
+  max-width: 430px;
   width: 100vw;
   height: 100vh;
   height: 100dvh; /* Mobile */
@@ -30,7 +30,7 @@
 }
 
 /* 모바일 환경에서는 전체 화면 사용 */
-@media (max-width: 390px) {
+@media (max-width: 430px) {
   #app {
     background-color: white;
   }

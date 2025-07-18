@@ -372,4 +372,57 @@ import BottomNavigation from '../components/BottomNavigation.vue'
   font-size: 12px;
   color: #6c757d;
 }
+
+/* 큰 모바일 기기 대응 (390px ~ 430px) */
+@media (min-width: 391px) and (max-width: 430px) {
+  .main-content {
+    padding: 20px 20px 100px;
+  }
+
+  .quick-actions {
+    gap: 20px;
+  }
+
+  .action-btn {
+    padding: 24px 16px;
+  }
+
+  .stock-item,
+  .trade-item {
+    padding: 18px;
+  }
+
+  .balance-card {
+    padding: 28px;
+  }
+}
+
+/* 더 큰 화면에서의 최적화 */
+@media (min-width: 431px) {
+  .main-content {
+    padding: 24px 24px 100px;
+  }
+
+  .quick-actions {
+    gap: 24px;
+    max-width: 400px;
+    margin: 0 auto 32px;
+  }
+
+  .balance-card {
+    max-width: 400px;
+    margin: 0 auto 24px;
+  }
+
+  .popular-stocks,
+  .recent-trades {
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .recent-trades {
+    margin-bottom: 32px;
+  }
+}
 </style>

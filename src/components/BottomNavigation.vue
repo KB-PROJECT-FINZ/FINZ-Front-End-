@@ -47,7 +47,7 @@ const handleNavClick = (routeName) => {
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 390px;
+  max-width: 430px;
   background: white;
   border-top: 1px solid #e9ecef;
   display: flex;
@@ -87,7 +87,7 @@ const handleNavClick = (routeName) => {
 }
 
 /* 모바일 환경에서 하단 네비게이션 조정 */
-@media (max-width: 390px) {
+@media (max-width: 430px) {
   .bottom-nav {
     left: 0;
     transform: none;
