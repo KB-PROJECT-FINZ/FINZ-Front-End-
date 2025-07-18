@@ -1,16 +1,7 @@
 <template>
   <div class="home-page">
     <!-- 헤더 -->
-    <header class="header">
-      <div class="header-content">
-        <h1 class="app-title">FINZ</h1>
-        <div class="header-icons">
-          <button class="icon-btn">🔔</button>
-          <button class="icon-btn">👤</button>
-        </div>
-      </div>
-    </header>
-
+    <Header />
     <!-- 메인 컨텐츠 -->
     <main class="main-content">
       <!-- 잔액 카드 -->
@@ -111,8 +102,8 @@
 </template>
 
 <script setup>
+import Header from '@/components/Header.vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
-
 // 여기에 나중에 로직 추가 가능
 </script>
 
@@ -122,51 +113,6 @@ import BottomNavigation from '../components/BottomNavigation.vue'
   display: flex;
   flex-direction: column;
   background-color: #f8f9fa;
-}
-
-/* 헤더 */
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 20px 16px 16px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.app-title {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 0;
-}
-
-.header-icons {
-  display: flex;
-  gap: 12px;
-}
-
-.icon-btn {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.icon-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
 }
 
 /* 메인 컨텐츠 */
