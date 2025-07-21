@@ -35,8 +35,10 @@
 
 // export default router
 
+// 챗봇 기능 테스트용
+//---------------------------------------------------------------------------//
 import { createRouter, createWebHistory } from 'vue-router'
-import ChatBotView from '@/pages/ChatBotView.vue'
+import ChatBotPage from '@/pages/ChatBotPage.vue'
 // import LoginView from '@/views/LoginView.vue' // ← 로그인 뷰는 주석 처리하거나 제외
 
 const routes = [
@@ -47,7 +49,7 @@ const routes = [
   {
     path: '/chatbot',
     name: 'ChatBot',
-    component: ChatBotView,
+    component: ChatBotPage,
   },
   // 로그인 뷰 제거 or 보류
 ]
