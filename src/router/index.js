@@ -3,6 +3,7 @@ import LoginView from '@/pages/LoginPage.vue'
 import LoginFormPage from '@/pages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/SignupFormPage.vue'
 import FindAccountPage from '@/pages/FindAccountPage.vue'
+import HomePage from '@/pages/HomePage.vue'
 
 const routes = [
   {
@@ -24,6 +25,11 @@ const routes = [
     path: '/find-account',
     name: 'FindAccountPage',
     component: FindAccountPage,
+  },
+  {
+    path: '/home',
+    name: 'HomePage',
+    component: HomePage,
   },
   // 나중에 /home, /mypage 등 추가 가능
 ]
