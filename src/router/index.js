@@ -4,6 +4,7 @@ import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/LoginPages/SignupFormPage.vue'
 import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
 import HomePage from '@/pages/HomePage.vue'
+import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
 
 const routes = [
   {
@@ -30,6 +31,11 @@ const routes = [
     path: '/home',
     name: 'HomePage',
     component: HomePage,
+  },
+  {
+    path: '/investment-test',
+    name: 'InvestmentTestPage',
+    component: InvestmentTestPage,
   },
   // 나중에 /home, /mypage 등 추가 가능
 ]
