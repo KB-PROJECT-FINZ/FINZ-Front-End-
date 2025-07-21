@@ -45,7 +45,7 @@
 
 <script setup>
 import Header from '@/components/Header.vue'
-import BottomNavigation from '@/components/BottomNavigation.vue'
+import BottomNavigation from '@/components/FooterNavigation.vue'
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'

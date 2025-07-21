@@ -5,49 +5,67 @@ import ProfilePage from '@/pages/ProfilePage.vue'
 import JournalPage from '@/pages/JournalPage.vue'
 import JournalWritePage from '@/pages/JournalWritePage.vue'
 import FeedbackPage from '@/pages/FeedbackPage.vue'
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: HomePage,
-    },
-    {
-      path: '/test',
-      name: 'test',
-      component: TestPage,
-    },
-    {
-      path: '/profile',
-      name: 'profile',
-      component: ProfilePage,
-    },
-    {
-      path: '/journal',
-      name: 'journal',
-      component: JournalPage,
-    },
-    {
-      path: '/journalwrite',
-      name: 'journalwrite',
-      component: JournalWritePage,
-    },
-    {
-      path: '/feedback',
-      name: 'feedback',
-      component: FeedbackPage,
-    },
+import LoginView from '@/pages/LoginPages/LoginPage.vue'
+import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
+import SignupFormPage from '@/pages/LoginPages/SignupFormPage.vue'
+import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
 
-    {
-      // path: '/about',
-      // name: 'about',
-      // // route level code-splitting
-      // // this generates a separate chunk (About.[hash].js) for this route
-      // // which is lazy-loaded when the route is visited.
-      // component: () => import('../pages/HomePage.vue'),
-    },
-  ],
+const routes = [
+  {
+    path: '/',
+    name: 'Login',
+    component: LoginView,
+  },
+  {
+    path: '/login-form',
+    name: 'LoginFormPage',
+    component: LoginFormPage,
+  },
+  {
+    path: '/signup',
+    name: 'SignupFormPage',
+    component: SignupFormPage,
+  },
+  {
+    path: '/find-account',
+    name: 'FindAccountPage',
+    component: FindAccountPage,
+  },
+  {
+    path: '/home',
+    name: 'HomePage',
+    component: HomePage,
+  },
+  {
+    path: '/test',
+    name: 'test',
+    component: TestPage,
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: ProfilePage,
+  },
+  {
+    path: '/journal',
+    name: 'journal',
+    component: JournalPage,
+  },
+  {
+    path: '/journalwrite',
+    name: 'journalwrite',
+    component: JournalWritePage,
+  },
+  {
+    path: '/feedback',
+    name: 'feedback',
+    component: FeedbackPage,
+  },
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
 })
 
 export default router

@@ -8,7 +8,7 @@
 
 <script setup>
 import Header from '@/components/Header.vue'
-import BottomNavigation from '@/components/BottomNavigation.vue'
+import BottomNavigation from '@/components/FooterNavigation.vue'
 </script>
 
 <style scoped>
