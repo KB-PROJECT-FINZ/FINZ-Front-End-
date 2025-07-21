@@ -6,7 +6,7 @@
       <!-- 배경 wave -->
       <img :src="waveImage" alt="wave" class="absolute inset-0 w-full h-60 object-contain z-0" />
       <!-- 로고 -->
-      <img src="@/assets/fina.png" alt="finz" class="relative z-10 w-32 mx-auto mt-24" />
+      <img src="@/assets/finz.png" alt="finz" class="relative z-10 w-32 mx-auto mt-24" />
     </div>
 
     <!-- 텍스트 설명 -->
