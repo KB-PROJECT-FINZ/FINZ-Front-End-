@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '@/pages/LoginPage.vue'
-import LoginFormPage from '@/pages/LoginFormPage.vue'
-import SignupFormPage from '@/pages/SignupFormPage.vue'
-import FindAccountPage from '@/pages/FindAccountPage.vue'
+import LoginView from '@/pages/LoginPages/LoginPage.vue'
+import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
+import SignupFormPage from '@/pages/LoginPages/SignupFormPage.vue'
+import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
+import HomePage from '@/pages/HomePage.vue'
 
 const routes = [
   {
@@ -24,6 +25,11 @@ const routes = [
     path: '/find-account',
     name: 'FindAccountPage',
     component: FindAccountPage,
+  },
+  {
+    path: '/home',
+    name: 'HomePage',
+    component: HomePage,
   },
   // 나중에 /home, /mypage 등 추가 가능
 ]
