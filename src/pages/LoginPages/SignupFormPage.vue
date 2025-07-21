@@ -161,7 +161,7 @@ const canSubmit = computed(() => {
 
 const handleSignup = () => {
   // 추후 여기에 회원가입 API 연동도 추가 예정
-  router.push('/login-form')
+  router.push('/investment-test')
 }
 </script>
 

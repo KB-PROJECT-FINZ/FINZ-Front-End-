@@ -4,6 +4,9 @@ import LoginFormPage from '@/pages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/SignupFormPage.vue'
 import FindAccountPage from '@/pages/FindAccountPage.vue'
 import ChatBotPage from '@/pages/ChatBotPage.vue'
+import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
+import HomePage from '@/pages/HomePage.vue'
+import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
 
 const routes = [
   {
@@ -30,6 +33,15 @@ const routes = [
     path: '/chatbot',
     name: 'ChatBot',
     component: ChatBotPage,
+
+    path: '/home',
+    name: 'HomePage',
+    component: HomePage,
+  },
+  {
+    path: '/investment-test',
+    name: 'InvestmentTestPage',
+    component: InvestmentTestPage,
   },
   // 나중에 /home, /mypage 등 추가 가능
 ]
