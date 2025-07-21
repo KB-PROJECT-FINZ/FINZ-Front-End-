@@ -3,7 +3,7 @@ import LoginView from '@/pages/LoginPage.vue'
 import LoginFormPage from '@/pages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/SignupFormPage.vue'
 import FindAccountPage from '@/pages/FindAccountPage.vue'
-import ChatBotView from '@/pages/ChatBotPage.vue'
+import ChatBotPage from '@/pages/ChatBotPage.vue'
 
 const routes = [
   {
@@ -29,7 +29,7 @@ const routes = [
   {
     path: '/chatbot',
     name: 'ChatBot',
-    component: ChatBotView,
+    component: ChatBotPage,
   },
   // 나중에 /home, /mypage 등 추가 가능
 ]
