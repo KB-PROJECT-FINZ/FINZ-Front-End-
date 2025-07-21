@@ -53,7 +53,9 @@
     </div>
 
     <!-- 비밀번호 찾기 -->
-    <div class="text-sm text-gray-400 mt-2 underline cursor-pointer">아이디/비밀번호 찾기</div>
+    <button @click="handleFindAccount" class="text-sm text-gray-400 mt-2 underline cursor-pointer">
+      아이디/비밀번호 찾기
+    </button>
 
     <!-- 소셜 로그인 버튼 -->
     <div class="w-full max-w-md mt-6 space-y-3">
@@ -77,11 +79,18 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
 import { ref } from 'vue'
+const router = useRouter()
 
 const showPassword = ref(false)
 const togglePassword = () => {
   showPassword.value = !showPassword.value
+}
+
+const handleFindAccount = () => {
+  console.log('아이디/비밀번호 찾기 클릭')
+  router.push('/find-account')
 }
 </script>
 
