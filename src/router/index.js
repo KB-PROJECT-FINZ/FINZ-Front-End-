@@ -3,7 +3,7 @@ import LoginView from '@/pages/LoginPage.vue'
 import LoginFormPage from '@/pages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/SignupFormPage.vue'
 import FindAccountPage from '@/pages/FindAccountPage.vue'
-import ChatBotView from '@/pages/ChatBotView.vue'
+import ChatBotView from '@/pages/ChatBotPage.vue'
 
 const routes = [
   {
