@@ -1,4 +1,5 @@
 <template>
+  <Header />
   <div class="test-page">
     <h1>Test Page</h1>
   </div>

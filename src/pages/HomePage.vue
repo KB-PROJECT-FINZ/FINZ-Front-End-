@@ -1,7 +1,7 @@
 <template>
+  <Header />
   <div class="home-page">
     <!-- 헤더 -->
-    <Header />
     <!-- 메인 컨텐츠 -->
     <main class="main-content">
       <!-- 잔액 카드 -->
