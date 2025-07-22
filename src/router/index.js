@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../pages/HomePage.vue'
 import TestPage from '../pages/TestPage.vue'
+import LearningDetailPage from '../pages/Learning/LearningDetailPage.vue';
+import LearningQuizPage from '../pages/Learning/LearningQuizPage.vue';
+import LearningPage from '../pages/Learning/LearningPage.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,6 +17,21 @@ const router = createRouter({
       path: '/test',
       name: 'test',
       component: TestPage,
+    },
+    {
+      path: '/learning',
+      name: 'learning',
+      component: LearningPage,
+    },
+    {
+      path: '/learning/:id',
+      name: 'learning-detail',
+      component: LearningDetailPage,
+    },
+    {
+      path: '/learning/:id/quiz',
+      name: 'learning-quiz',
+      component: LearningQuizPage,
     },
     {
       // path: '/about',
