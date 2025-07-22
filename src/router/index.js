@@ -1,8 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '@/pages/LoginPage.vue'
-import LoginFormPage from '@/pages/LoginFormPage.vue'
+import LoginView from '@/pages/LoginPages/LoginView.vue'
+import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/SignupFormPage.vue'
-import FindAccountPage from '@/pages/FindAccountPage.vue'
 import ChatBotPage from '@/pages/ChatBotPage.vue'
 import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
 import HomePage from '@/pages/HomePage.vue'
@@ -33,7 +32,8 @@ const routes = [
     path: '/chatbot',
     name: 'ChatBot',
     component: ChatBotPage,
-
+  },
+  {
     path: '/home',
     name: 'HomePage',
     component: HomePage,
