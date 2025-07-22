@@ -6,6 +6,9 @@ import ChatBotPage from '@/pages/ChatBotPage.vue'
 import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
 import HomePage from '@/pages/HomePage.vue'
 import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
+import LearningDetailPage from '@/pages/Learning/LearningDetailPage.vue';
+import LearningQuizPage from '@/pages/Learning/LearningQuizPage.vue';
+import LearningPage from '@/pages/Learning/LearningPage.vue';
 
 const routes = [
   {
@@ -44,6 +47,21 @@ const routes = [
     component: InvestmentTestPage,
   },
   // 나중에 /home, /mypage 등 추가 가능
+     {
+      path: '/learning',
+      name: 'learning',
+      component: LearningPage,
+    },
+    {
+      path: '/learning/:id',
+      name: 'learning-detail',
+      component: LearningDetailPage,
+    },
+    {
+      path: '/learning/:id/quiz',
+      name: 'learning-quiz',
+      component: LearningQuizPage,
+    },
 ]
 
 const router = createRouter({
