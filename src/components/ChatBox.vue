@@ -48,26 +48,17 @@
 import { ref } from 'vue'
 import { useChatStore } from '@/stores/counter.js'
 
+// ✅ props로 intent 받기
+const props = defineProps({ fixedIntent: String })
+
 const input = ref('')
 const chatStore = useChatStore()
 
-//  intent 목록 및 선택값 상태
-const intents = [
-  { label: '종목 추천', value: 'RECOMMEND_PROFILE' },
-  { label: '종목 분석', value: 'STOCK_ANALYZE' },
-  { label: '용어 설명', value: 'FIN_TERM_EXPLAIN' },
-  { label: '투자 피드백', value: 'PORTFOLIO_ANALYZE' },
-]
-const currentIntent = ref('RECOMMEND_PROFILE')
-
-function setIntent(intent) {
-  currentIntent.value = intent
-}
-
-//  메시지 전송 함수
+// ✅ 메시지 전송 함수
 async function handleSubmit() {
   if (!input.value.trim()) return
-  await chatStore.sendMessage(input.value, currentIntent.value)
+
+  await chatStore.sendMessage(input.value, props.fixedIntent || 'MESSAGE')
   input.value = ''
 }
 </script>
