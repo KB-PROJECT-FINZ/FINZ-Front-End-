@@ -42,7 +42,16 @@
         </div>
 
         <!-- 오른쪽 여백 (대칭을 위한) -->
-        <div class="w-10"></div>
+        <div class="w-10">
+          <!-- API 테스트 버튼 -->
+          <button
+            @click="testApiCall"
+            class="p-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+            :disabled="isLoading"
+          >
+            {{ isLoading ? '로딩...' : 'API' }}
+          </button>
+        </div>
       </div>
     </header>
 
@@ -232,7 +241,10 @@
             <div class="px-3 py-2 bg-gray-50 border-b border-gray-200">
               <div class="text-xs text-gray-500 font-medium flex justify-between">
                 <span>체결가</span>
-                <span>체결수량</span>
+                <div class="flex gap-4">
+                  <span>체결량</span>
+                  <span>시간</span>
+                </div>
               </div>
             </div>
             <!-- 체결 내역 목록 -->
@@ -242,12 +254,25 @@
                 :key="index"
                 class="flex justify-between text-xs py-1 hover:bg-gray-50"
               >
-                <span class="text-gray-600">
+                <span
+                  :class="
+                    trade.type === 'buy' ? 'text-red-600 font-medium' : 'text-blue-600 font-medium'
+                  "
+                >
                   {{ formatPrice(trade.price) }}
                 </span>
-                <span :class="trade.type === 'buy' ? 'text-red-600' : 'text-blue-600'">
-                  {{ formatVolume(trade.volume) }}
-                </span>
+                <div class="flex gap-4 items-center">
+                  <span :class="trade.type === 'buy' ? 'text-red-600' : 'text-blue-600'">
+                    {{ formatVolume(trade.volume) }}
+                  </span>
+                  <span class="text-gray-400 text-[10px] w-12 text-right">
+                    {{ trade.time }}
+                  </span>
+                </div>
+              </div>
+              <!-- 체결 내역이 없을 때 -->
+              <div v-if="recentTrades.length === 0" class="text-center py-4 text-gray-400 text-xs">
+                실시간 체결 데이터를 기다리는 중...
               </div>
             </div>
           </div>
@@ -613,38 +638,73 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { getStockInfo } from '@/services/stockApi.js'
 
-// 호가 단위 (삼성전자 기준)
+// 종목 코드
+const STOCK_CODE = '051500' // 삼성전자 종목코드 (6자리 숫자)
+// CJ프레시웨이
+
+// 로딩 상태
+const isLoading = ref(false)
+const error = ref(null)
+
+// 웹소켓 연결
+const socket = ref(null)
+
+// API로부터 종목 정보 로드
+const loadStockInfo = async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+
+    const response = await getStockInfo(STOCK_CODE)
+    console.log('API 응답 데이터:', response)
+
+    // API 응답에서 실제 데이터 추출
+    if (response && response.output) {
+      const data = response.output
+
+      // 실제 API 데이터로 stockInfo 업데이트
+      stockInfo.value = {
+        name: '종목명',
+        currentPrice: parseInt(data.stck_prpr), // 현재가
+        basePrice: parseInt(data.stck_prpr) - parseInt(data.prdy_vrss), // 전일 종가 (현재가 - 전일대비)
+        dayHigh: parseInt(data.stck_hgpr), // 당일 고가
+        dayLow: parseInt(data.stck_lwpr), // 당일 저가
+        upperLimit: parseInt(data.stck_mxpr), // 상한가
+        lowerLimit: parseInt(data.stck_llam), // 하한가
+      }
+
+      // 주문 가격도 현재가로 초기화
+      orderPrice.value = stockInfo.value.currentPrice
+
+      // 호가 데이터 생성
+      generateOrderBookData(stockInfo.value.currentPrice)
+
+      console.log('종목 정보 업데이트 완료:', stockInfo.value)
+      console.log(
+        `현재가: ${stockInfo.value.currentPrice}원, 전일대비: ${data.prdy_vrss_sign === '2' ? '+' : data.prdy_vrss_sign === '4' ? '-' : ''}${data.prdy_vrss}원 (${data.prdy_ctrt}%)`,
+      )
+    }
+  } catch (err) {
+    console.error('Failed to load stock info:', err)
+    error.value = '종목 정보를 불러오는데 실패했습니다: ' + err.message
+  } finally {
+    isLoading.value = false
+  }
+}
 const tickSize = 100
 
-// 상한가/하한가 계산 함수 (호가 단위에 맞춤)
-const calculatePriceLimits = (basePrice, tickSize) => {
-  // 30% 증가/감소의 정확한 계산
-  const upperLimit30 = basePrice * 1.3
-  const lowerLimit30 = basePrice * 0.7
-
-  // 호가 단위에 맞춰 조정 (30% 제한을 넘지 않도록)
-  // 상한가: 30% 이하가 되도록 아래로 조정
-  const upperLimit = Math.floor(upperLimit30 / tickSize) * tickSize
-  // 하한가: -30% 이상이 되도록 위로 조정 (더 높은 가격으로)
-  const lowerLimit = Math.ceil(lowerLimit30 / tickSize) * tickSize
-
-  return { upperLimit, lowerLimit }
-}
-
-// 종목 정보
-const basePrice = 66700 // 시작가 (전일 종가)
-const { upperLimit, lowerLimit } = calculatePriceLimits(basePrice, tickSize)
-
+// 종목 정보 (API로부터 동적으로 로드됨)
 const stockInfo = ref({
   name: '삼성전자',
-  currentPrice: 67000,
-  basePrice,
-  dayHigh: 67700, // 당일 고가
-  dayLow: 66300, // 당일 저가
-  upperLimit, // 상한가 (기준가 + 30% 이하, 호가단위 맞춤)
-  lowerLimit, // 하한가 (기준가 - 30% 이상, 호가단위 맞춤)
+  currentPrice: 0, // API에서 로드
+  basePrice: 0, // API에서 로드
+  dayHigh: 0, // API에서 로드
+  dayLow: 0, // API에서 로드
+  upperLimit: 0, // API에서 로드
+  lowerLimit: 0, // API에서 로드
 })
 
 // 사용자 정보
@@ -657,7 +717,7 @@ const userInfo = ref({
 // 거래 상태
 const activeTab = ref('buy') // 'buy', 'sell', 'waiting'
 const orderType = ref('limit') // 'limit', 'market'
-const orderPrice = ref(stockInfo.value.currentPrice)
+const orderPrice = ref(0) // API 로드 후 현재가로 설정됨
 const orderQuantity = ref(0)
 const showTradeHistory = ref(false)
 
@@ -668,45 +728,158 @@ const tradeTabs = [
   { key: 'waiting', label: '대기' },
 ]
 
-// 매도호가 (현재가보다 비싼 10개) - 더미 데이터
-const askPrices = ref([
-  { price: 68000, volume: 242760 },
-  { price: 67900, volume: 199270 },
-  { price: 67800, volume: 170487 },
-  { price: 67700, volume: 622248 },
-  { price: 67600, volume: 346514 },
-  { price: 67500, volume: 175643 },
-  { price: 67400, volume: 183935 },
-  { price: 67300, volume: 166973 },
-  { price: 67200, volume: 126619 },
-  { price: 67100, volume: 106374 },
-])
+// 매도호가 (현재가보다 비싼 10개) - 실제 API 데이터 기반으로 생성
+const askPrices = ref([])
 
-// 매수호가 (현재가보다 싼 10개) - 더미 데이터
-const bidPrices = ref([
-  { price: 67000, volume: 198542 },
-  { price: 66900, volume: 234567 },
-  { price: 66800, volume: 345678 },
-  { price: 66700, volume: 456789 },
-  { price: 66600, volume: 123456 },
-  { price: 66500, volume: 234567 },
-  { price: 66400, volume: 345678 },
-  { price: 66300, volume: 456789 },
-  { price: 66200, volume: 567890 },
-  { price: 66100, volume: 678901 },
-])
+// 매수호가 (현재가보다 싼 10개) - 실제 API 데이터 기반으로 생성
+const bidPrices = ref([])
+
+// 호가 데이터 생성 함수
+const generateOrderBookData = (currentPrice) => {
+  if (currentPrice === 0) return // API 로드 전에는 생성하지 않음
+
+  // 매도호가 생성 (현재가 + 100원부터 1000원까지)
+  askPrices.value = []
+  for (let i = 1; i <= 10; i++) {
+    askPrices.value.push({
+      price: currentPrice + i * 100,
+      volume: Math.floor(Math.random() * 500000) + 50000, // 5만~55만 랜덤
+    })
+  }
+
+  // 매수호가 생성 (현재가부터 -900원까지)
+  bidPrices.value = []
+  for (let i = 0; i < 10; i++) {
+    bidPrices.value.push({
+      price: currentPrice - i * 100,
+      volume: Math.floor(Math.random() * 600000) + 100000, // 10만~70만 랜덤
+    })
+  }
+}
 
 // 체결 강도
 const volumePower = ref(125.4)
 
-// 실시간 거래 내역 - 더미 데이터
-const recentTrades = ref([
-  { price: 66700, volume: 150, type: 'buy', time: '15:29:45' },
-  { price: 66600, volume: 200, type: 'sell', time: '15:29:44' },
-  { price: 66700, volume: 100, type: 'buy', time: '15:29:43' },
-  { price: 66600, volume: 300, type: 'sell', time: '15:29:42' },
-  { price: 66700, volume: 250, type: 'buy', time: '15:29:41' },
-])
+// 실시간 거래 내역
+const recentTrades = ref([])
+
+// 웹소켓 연결 초기화
+const initWebSocket = () => {
+  try {
+    socket.value = new WebSocket('ws://localhost:8080/ws/stock')
+
+    socket.value.onopen = () => {
+      console.log('📡 웹소켓 연결 성공')
+    }
+
+    socket.value.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        console.log('📈 실시간 데이터 수신:', data)
+
+        // 실시간 데이터 처리
+        if (data.currentPrice && data.contractVolume) {
+          // 체결 내역 추가
+          const newTrade = {
+            price: parseInt(data.currentPrice),
+            volume: parseInt(data.contractVolume),
+            type: data.contractType === '1' ? 'buy' : 'sell', // 1: 매수, 2: 매도
+            time: data.contractTime
+              ? `${data.contractTime.slice(0, 2)}:${data.contractTime.slice(2, 4)}:${data.contractTime.slice(4, 6)}`
+              : new Date().toLocaleTimeString('ko-KR', {
+                  hour12: false,
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                }),
+          }
+
+          // 새로운 데이터를 맨 앞에 추가하고 최대 20개까지만 유지
+          recentTrades.value.unshift(newTrade)
+          if (recentTrades.value.length > 20) {
+            recentTrades.value = recentTrades.value.slice(0, 20)
+          }
+        }
+
+        // 체결 강도 업데이트
+        if (data.contractIntensity) {
+          volumePower.value = parseFloat(data.contractIntensity)
+        }
+
+        // 현재가 및 기타 주식 정보 업데이트
+        if (data.currentPrice) {
+          stockInfo.value.currentPrice = parseInt(data.currentPrice)
+
+          // 주문 가격도 현재가로 업데이트 (옵션)
+          if (orderPrice.value === 0) {
+            orderPrice.value = stockInfo.value.currentPrice
+          }
+        }
+
+        // 고가, 저가 업데이트
+        if (data.highPrice) {
+          stockInfo.value.dayHigh = parseInt(data.highPrice)
+        }
+        if (data.lowPrice) {
+          stockInfo.value.dayLow = parseInt(data.lowPrice)
+        }
+
+        // 호가 정보 업데이트 (1호가만 업데이트)
+        if (data.askPrice1 && data.askRemainQty1) {
+          // 매도 1호가 업데이트
+          if (askPrices.value.length > 0) {
+            askPrices.value[askPrices.value.length - 1] = {
+              price: parseInt(data.askPrice1),
+              volume: parseInt(data.askRemainQty1),
+            }
+          }
+        }
+
+        if (data.bidPrice1 && data.bidRemainQty1) {
+          // 매수 1호가 업데이트
+          if (bidPrices.value.length > 0) {
+            bidPrices.value[0] = {
+              price: parseInt(data.bidPrice1),
+              volume: parseInt(data.bidRemainQty1),
+            }
+          }
+        }
+
+        // 전일 대비 정보 업데이트
+        if (data.prevDayDiff && data.prevDayRate && data.prevDaySign) {
+          // 전일 종가 계산 (현재가 - 전일대비)
+          const prevDayDiff = parseInt(data.prevDayDiff)
+          stockInfo.value.basePrice = stockInfo.value.currentPrice - prevDayDiff
+        }
+      } catch (err) {
+        console.error('웹소켓 데이터 파싱 오류:', err)
+      }
+    }
+
+    socket.value.onclose = () => {
+      console.log('❌ 웹소켓 연결 종료')
+      // 연결이 끊어지면 3초 후 재연결 시도
+      setTimeout(() => {
+        console.log('🔄 웹소켓 재연결 시도...')
+        initWebSocket()
+      }, 3000)
+    }
+
+    socket.value.onerror = (error) => {
+      console.error('웹소켓 오류:', error)
+    }
+  } catch (err) {
+    console.error('웹소켓 초기화 오류:', err)
+  }
+}
+
+// 웹소켓 연결 해제
+const closeWebSocket = () => {
+  if (socket.value) {
+    socket.value.close()
+    socket.value = null
+  }
+}
 
 // 대기 정보
 const waitingInfo = ref({
@@ -786,15 +959,15 @@ const maxOrderQuantity = computed(() => {
   return 0
 })
 
-const expectedAvgPrice = computed(() => {
-  if (orderQuantity.value === 0) return userInfo.value.avgPrice
+// const expectedAvgPrice = computed(() => {
+//   if (orderQuantity.value === 0) return userInfo.value.avgPrice
 
-  const totalValue =
-    userInfo.value.avgPrice * userInfo.value.holdings + orderPrice.value * orderQuantity.value
-  const totalShares = userInfo.value.holdings + orderQuantity.value
+//   const totalValue =
+//     userInfo.value.avgPrice * userInfo.value.holdings + orderPrice.value * orderQuantity.value
+//   const totalShares = userInfo.value.holdings + orderQuantity.value
 
-  return Math.round(totalValue / totalShares)
-})
+//   return Math.round(totalValue / totalShares)
+// })
 
 // 비율에 따른 수량 설정 함수
 const setQuantityByRatio = (ratio) => {
@@ -923,13 +1096,13 @@ const orderButtonText = computed(() => {
   }
 })
 
-const canOrder = computed(() => {
-  if (orderQuantity.value <= 0) return false
-  if (activeTab.value === 'buy' && totalOrderAmount.value > userInfo.value.availableAmount)
-    return false
-  if (activeTab.value === 'sell' && orderQuantity.value > userInfo.value.holdings) return false
-  return true
-})
+// const canOrder = computed(() => {
+//   if (orderQuantity.value <= 0) return false
+//   if (activeTab.value === 'buy' && totalOrderAmount.value > userInfo.value.availableAmount)
+//     return false
+//   if (activeTab.value === 'sell' && orderQuantity.value > userInfo.value.holdings) return false
+//   return true
+// })
 
 // 호가창 잔량 시각화를 위한 최대값 계산
 const maxVolume = computed(() => {
@@ -1069,4 +1242,21 @@ const submitOrder = () => {
   // 주문 완료 후 초기화
   orderQuantity.value = 0
 }
+
+// API 테스트 함수
+const testApiCall = async () => {
+  await loadStockInfo()
+}
+
+// 컴포넌트 마운트 시 API 호출 및 웹소켓 연결
+onMounted(() => {
+  console.log('컴포넌트 마운트됨, API 테스트 시작')
+  testApiCall()
+  initWebSocket()
+})
+
+// 컴포넌트 언마운트 시 웹소켓 연결 해제
+onUnmounted(() => {
+  closeWebSocket()
+})
 </script>
