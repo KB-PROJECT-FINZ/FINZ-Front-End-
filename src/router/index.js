@@ -37,6 +37,11 @@ const routes = [
     name: 'InvestmentTestPage',
     component: InvestmentTestPage,
   },
+  {
+    path: '/investment-result',
+    name: 'InvestmentResult',
+    component: () => import('@/pages/InvestmentTestPage/InvestmentResult.vue'),
+  },
   // 나중에 /home, /mypage 등 추가 가능
 ]
 
