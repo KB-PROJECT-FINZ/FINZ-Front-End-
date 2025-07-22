@@ -4,6 +4,7 @@ import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/LoginPages/SignupFormPage.vue'
 import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
 import HomePage from '@/pages/HomePage.vue'
+import RankingPage from '@/pages/RankingPages/RankingPage.vue'
 
 const routes = [
   {
@@ -31,7 +32,11 @@ const routes = [
     name: 'HomePage',
     component: HomePage,
   },
-  // 나중에 /home, /mypage 등 추가 가능
+  {
+    path: '/ranking',
+    name: 'rankingPage',
+    component: RankingPage,
+  },
 ]
 
 const router = createRouter({
