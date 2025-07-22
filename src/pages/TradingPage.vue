@@ -36,7 +36,7 @@
               {{ formatPrice(stockInfo.currentPrice) }}원
             </span>
             <span class="text-sm" :class="priceChangeClass">
-              {{ changeRateText }}
+              {{ realTimeChangeRateText }}
             </span>
           </div>
         </div>
@@ -99,6 +99,11 @@
 
             <!-- 매도호가 (현재가보다 비싼 10개) -->
             <div>
+              <!-- 실시간 호가 데이터가 없을 때 -->
+              <div v-if="askPrices.length === 0" class="text-center py-8 text-gray-400 text-xs">
+                실시간 호가 데이터를 기다리는 중...
+              </div>
+
               <div
                 v-for="(ask, index) in askPrices"
                 :key="'ask-' + index"
@@ -142,6 +147,11 @@
 
             <!-- 매수호가 (현재가보다 싼 10개) -->
             <div>
+              <!-- 실시간 호가 데이터가 없을 때 -->
+              <div v-if="bidPrices.length === 0" class="text-center py-8 text-gray-400 text-xs">
+                실시간 호가 데이터를 기다리는 중...
+              </div>
+
               <div
                 v-for="(bid, index) in bidPrices"
                 :key="'bid-' + index"
@@ -642,8 +652,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getStockInfo } from '@/services/stockApi.js'
 
 // 종목 코드
-const STOCK_CODE = '051500' // 삼성전자 종목코드 (6자리 숫자)
-// CJ프레시웨이
+const STOCK_CODE = '005930' // 삼성전자 종목코드 (6자리 숫자)
 
 // 로딩 상태
 const isLoading = ref(false)
@@ -664,16 +673,75 @@ const loadStockInfo = async () => {
     // API 응답에서 실제 데이터 추출
     if (response && response.output) {
       const data = response.output
+      console.log('📊 받아온 모든 데이터:', data)
 
       // 실제 API 데이터로 stockInfo 업데이트
       stockInfo.value = {
-        name: '종목명',
-        currentPrice: parseInt(data.stck_prpr), // 현재가
-        basePrice: parseInt(data.stck_prpr) - parseInt(data.prdy_vrss), // 전일 종가 (현재가 - 전일대비)
-        dayHigh: parseInt(data.stck_hgpr), // 당일 고가
-        dayLow: parseInt(data.stck_lwpr), // 당일 저가
-        upperLimit: parseInt(data.stck_mxpr), // 상한가
-        lowerLimit: parseInt(data.stck_llam), // 하한가
+        // 여기는 나중에 실제 데이터로 업데이트(다른 API 연동이 필요함)
+        name: '삼성전자', // 종목명 (005950)
+        // 기본 가격 정보
+        currentPrice: parseInt(data.stck_prpr) || 0, // 주식 현재가
+        basePrice: (parseInt(data.stck_prpr) || 0) - (parseInt(data.prdy_vrss) || 0), // 전일 종가 (현재가 - 전일대비)
+        openPrice: parseInt(data.stck_oprc) || 0, // 주식 시가
+        dayHigh: parseInt(data.stck_hgpr) || 0, // 주식 최고가 (당일)
+        dayLow: parseInt(data.stck_lwpr) || 0, // 주식 최저가 (당일)
+        upperLimit: parseInt(data.stck_mxpr) || 0, // 주식 상한가
+        lowerLimit: parseInt(data.stck_llam) || 0, // 주식 하한가
+
+        // 거래 정보
+        volume: parseInt(data.acml_vol) || 0, // 누적 거래량
+        tradingValue: parseInt(data.acml_tr_pbmn) || 0, // 누적 거래대금
+        changeAmount: parseInt(data.prdy_vrss) || 0, // 전일 대비
+        changeRate: parseFloat(data.prdy_ctrt) || 0, // 전일 대비율
+        changeSign: data.prdy_vrss_sign || '3', // 전일 대비 부호
+        volumeRate: parseFloat(data.prdy_vrss_vol_rate) || 0, // 전일 대비 거래량 비율
+
+        // 투자지표
+        marketCap: data.hts_avls || '', // HTS 시가총액
+        per: parseFloat(data.per) || 0, // PER
+        eps: parseFloat(data.eps) || 0, // EPS
+        pbr: parseFloat(data.pbr) || 0, // PBR
+        bps: parseFloat(data.bps) || 0, // BPS
+
+        // 52주 최고/최저가
+        week52High: parseInt(data.w52_hgpr) || 0, // 52주일 최고가
+        week52Low: parseInt(data.w52_lwpr) || 0, // 52주일 최저가
+        week52HighDate: data.w52_hgpr_date || '', // 52주일 최고가 일자
+        week52LowDate: data.w52_lwpr_date || '', // 52주일 최저가 일자
+        week52HighRate: parseFloat(data.w52_hgpr_vrss_prpr_ctrt) || 0, // 52주일 최고가 대비 현재가 대비
+        week52LowRate: parseFloat(data.w52_lwpr_vrss_prpr_ctrt) || 0, // 52주일 최저가 대비 현재가 대비
+
+        // 연중 최고/최저가
+        yearHigh: parseInt(data.stck_dryy_hgpr) || 0, // 주식 연중 최고가
+        yearLow: parseInt(data.stck_dryy_lwpr) || 0, // 주식 연중 최저가
+        yearHighDate: data.dryy_hgpr_date || '', // 연중 최고가 일자
+        yearLowDate: data.dryy_lwpr_date || '', // 연중 최저가 일자
+
+        // 외국인 관련
+        foreignHoldingQty: parseInt(data.frgn_hldn_qty) || 0, // 외국인 보유 수량
+        foreignNetBuyQty: parseInt(data.frgn_ntby_qty) || 0, // 외국인 순매수 수량
+        foreignExhaustionRate: parseFloat(data.hts_frgn_ehrt) || 0, // HTS 외국인 소진율
+
+        // 종목 상태
+        statusCode: data.iscd_stat_cls_code || '', // 종목 상태 구분 코드
+        marketName: data.rprs_mrkt_kor_name || '', // 대표 시장 한글명
+        sectorName: data.bstp_kor_isnm || '', // 업종 한글 종목명
+        tempStopYn: data.temp_stop_yn === 'Y', // 임시 정지 여부
+        creditableYn: data.crdt_able_yn === 'Y', // 신용 가능 여부
+        shortSellingYn: data.ssts_yn === 'Y', // 공매도 가능 여부
+
+        // 추가 정보
+        listedShares: parseInt(data.lstn_stcn) || 0, // 상장 주수
+        faceValue: parseInt(data.stck_fcam) || 0, // 주식 액면가
+        capital: parseInt(data.cpfn) || 0, // 자본금
+        tickUnit: parseInt(data.aspr_unit) || 0, // 호가단위
+        tradingUnit: parseInt(data.hts_deal_qty_unit_val) || 0, // HTS 매매 수량 단위값
+
+        // 투자 주의사항
+        investmentCautionYn: data.invt_caful_yn === 'Y', // 투자유의여부
+        marketWarnCode: data.mrkt_warn_cls_code || '', // 시장경고코드
+        shortOverheatingYn: data.short_over_yn === 'Y', // 단기과열여부
+        managementIssueYn: data.mang_issu_cls_code === '1', // 관리종목여부
       }
 
       // 주문 가격도 현재가로 초기화
@@ -683,9 +751,23 @@ const loadStockInfo = async () => {
       generateOrderBookData(stockInfo.value.currentPrice)
 
       console.log('종목 정보 업데이트 완료:', stockInfo.value)
-      console.log(
-        `현재가: ${stockInfo.value.currentPrice}원, 전일대비: ${data.prdy_vrss_sign === '2' ? '+' : data.prdy_vrss_sign === '4' ? '-' : ''}${data.prdy_vrss}원 (${data.prdy_ctrt}%)`,
-      )
+      console.log(`
+📈 주식 정보 상세:
+🏷️  종목명: ${stockInfo.value.name} (${stockInfo.value.sectorName})
+💰 현재가: ${stockInfo.value.currentPrice.toLocaleString()}원
+📊 전일종가: ${stockInfo.value.basePrice.toLocaleString()}원
+🌅 시가: ${stockInfo.value.openPrice.toLocaleString()}원
+📈 고가: ${stockInfo.value.dayHigh.toLocaleString()}원 | 📉 저가: ${stockInfo.value.dayLow.toLocaleString()}원
+📊 변동: ${data.prdy_vrss_sign === '2' ? '+' : data.prdy_vrss_sign === '4' ? '-' : ''}${stockInfo.value.changeAmount.toLocaleString()}원 (${stockInfo.value.changeRate}%)
+📦 거래량: ${stockInfo.value.volume.toLocaleString()}주 (전일대비 ${stockInfo.value.volumeRate}%)
+💸 거래대금: ${(stockInfo.value.tradingValue / 100000000).toFixed(1)}억원
+🏢 시가총액: ${stockInfo.value.marketCap}
+📋 투자지표: PER ${stockInfo.value.per}, PBR ${stockInfo.value.pbr}, EPS ${stockInfo.value.eps}원
+🌍 외국인: 보유 ${stockInfo.value.foreignHoldingQty.toLocaleString()}주, 순매수 ${stockInfo.value.foreignNetBuyQty.toLocaleString()}주
+📅 52주 고점: ${stockInfo.value.week52High.toLocaleString()}원 (${stockInfo.value.week52HighDate})
+📅 52주 저점: ${stockInfo.value.week52Low.toLocaleString()}원 (${stockInfo.value.week52LowDate})
+⚠️  종목상태: ${getStockStatusDescription(stockInfo.value.statusCode)} ${stockInfo.value.managementIssueYn ? '(관리종목)' : ''}
+      `)
     }
   } catch (err) {
     console.error('Failed to load stock info:', err)
@@ -694,17 +776,89 @@ const loadStockInfo = async () => {
     isLoading.value = false
   }
 }
+
+// 종목 상태 코드를 한글로 변환하는 함수
+const getStockStatusDescription = (statusCode) => {
+  const statusMap = {
+    51: '관리종목',
+    52: '투자위험',
+    53: '투자경고',
+    54: '투자주의',
+    55: '신용가능',
+    57: '증거금100%',
+    58: '거래정지',
+    59: '단기과열종목',
+  }
+  return statusMap[statusCode] || '정상'
+}
 const tickSize = 100
 
 // 종목 정보 (API로부터 동적으로 로드됨)
 const stockInfo = ref({
   name: '삼성전자',
-  currentPrice: 0, // API에서 로드
-  basePrice: 0, // API에서 로드
-  dayHigh: 0, // API에서 로드
-  dayLow: 0, // API에서 로드
-  upperLimit: 0, // API에서 로드
-  lowerLimit: 0, // API에서 로드
+  // 기본 가격 정보
+  currentPrice: 0, // 주식 현재가
+  basePrice: 0, // 주식 기준가 (전일 종가)
+  openPrice: 0, // 주식 시가
+  dayHigh: 0, // 주식 최고가 (당일)
+  dayLow: 0, // 주식 최저가 (당일)
+  upperLimit: 0, // 주식 상한가
+  lowerLimit: 0, // 주식 하한가
+
+  // 거래 정보
+  volume: 0, // 누적 거래량
+  tradingValue: 0, // 누적 거래대금
+  changeAmount: 0, // 전일 대비
+  changeRate: 0, // 전일 대비율
+  changeSign: '3', // 전일 대비 부호
+  volumeRate: 0, // 전일 대비 거래량 비율
+
+  // 투자지표
+  marketCap: '', // HTS 시가총액
+  per: 0, // PER
+  eps: 0, // EPS
+  pbr: 0, // PBR
+  bps: 0, // BPS
+
+  // 52주 최고/최저가
+  week52High: 0, // 52주일 최고가
+  week52Low: 0, // 52주일 최저가
+  week52HighDate: '', // 52주일 최고가 일자
+  week52LowDate: '', // 52주일 최저가 일자
+  week52HighRate: 0, // 52주일 최고가 대비 현재가 대비
+  week52LowRate: 0, // 52주일 최저가 대비 현재가 대비
+
+  // 연중 최고/최저가
+  yearHigh: 0, // 주식 연중 최고가
+  yearLow: 0, // 주식 연중 최저가
+  yearHighDate: '', // 연중 최고가 일자
+  yearLowDate: '', // 연중 최저가 일자
+
+  // 외국인 관련
+  foreignHoldingQty: 0, // 외국인 보유 수량
+  foreignNetBuyQty: 0, // 외국인 순매수 수량
+  foreignExhaustionRate: 0, // HTS 외국인 소진율
+
+  // 종목 상태
+  statusCode: '', // 종목 상태 구분 코드
+  marketName: '', // 대표 시장 한글명
+  sectorName: '', // 업종 한글 종목명
+  tempStopYn: false, // 임시 정지 여부
+  creditableYn: false, // 신용 가능 여부
+  shortSellingYn: false, // 공매도 가능 여부
+
+  // 추가 정보
+  listedShares: 0, // 상장 주수
+  faceValue: 0, // 주식 액면가
+  capital: 0, // 자본금
+  tickUnit: 0, // 호가단위
+  tradingUnit: 0, // HTS 매매 수량 단위값
+
+  // 투자 주의사항
+  investmentCautionYn: false, // 투자유의여부
+  marketWarnCode: '', // 시장경고코드
+  shortOverheatingYn: false, // 단기과열여부
+  managementIssueYn: false, // 관리종목여부
 })
 
 // 사용자 정보
@@ -734,9 +888,14 @@ const askPrices = ref([])
 // 매수호가 (현재가보다 싼 10개) - 실제 API 데이터 기반으로 생성
 const bidPrices = ref([])
 
-// 호가 데이터 생성 함수
+// 호가 데이터 생성 함수 (더미 데이터, 실시간 데이터가 없을 때만 사용)
 const generateOrderBookData = (currentPrice) => {
   if (currentPrice === 0) return // API 로드 전에는 생성하지 않음
+
+  // 실시간 데이터가 이미 있으면 더미 데이터를 생성하지 않음
+  // if (askPrices.value.length > 0 && bidPrices.value.length > 0) return
+
+  console.log('📝 더미 호가 데이터 생성, 현재가:', currentPrice)
 
   // 매도호가 생성 (현재가 + 100원부터 1000원까지)
   askPrices.value = []
@@ -774,10 +933,21 @@ const initWebSocket = () => {
 
     socket.value.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data)
-        console.log('📈 실시간 데이터 수신:', data)
+        const rawData = JSON.parse(event.data)
+        // console.log('📈 실시간 데이터 수신:', rawData)
 
-        // 실시간 데이터 처리
+        // 데이터 구조 확인 및 추출
+        let data = rawData
+        if (rawData.type === 'bidsAndAsks' && rawData.data) {
+          data = rawData.data
+          // console.log('🎯 호가 데이터 타입 감지, data 객체 추출:', data)
+        }
+
+        // 호가 데이터 확인
+        const hasAskData = data.askPrice1 !== undefined && data.askQty1 !== undefined
+        const hasBidData = data.bidPrice1 !== undefined && data.bidQty1 !== undefined
+
+        // 체결 내역 데이터 처리 (다른 타입의 웹소켓 메시지에서)
         if (data.currentPrice && data.contractVolume) {
           // 체결 내역 추가
           const newTrade = {
@@ -799,6 +969,8 @@ const initWebSocket = () => {
           if (recentTrades.value.length > 20) {
             recentTrades.value = recentTrades.value.slice(0, 20)
           }
+
+          console.log('💰 체결 내역 추가:', newTrade)
         }
 
         // 체결 강도 업데이트
@@ -808,12 +980,39 @@ const initWebSocket = () => {
 
         // 현재가 및 기타 주식 정보 업데이트
         if (data.currentPrice) {
-          stockInfo.value.currentPrice = parseInt(data.currentPrice)
+          const newCurrentPrice = parseInt(data.currentPrice)
+          stockInfo.value.currentPrice = newCurrentPrice
+
+          // 전일 종가가 있으면 변동 금액과 변동률 계산 (증권사 표준 방식)
+          if (stockInfo.value.basePrice > 0) {
+            const changeAmount = newCurrentPrice - stockInfo.value.basePrice
+            const rate = (changeAmount / stockInfo.value.basePrice) * 100
+
+            // 소수점 3자리에서 버림 (증권사 표준 방식)
+            const truncatedRate =
+              rate >= 0 ? Math.floor(rate * 100) / 100 : Math.ceil(rate * 100) / 100
+
+            stockInfo.value.changeAmount = changeAmount
+            stockInfo.value.changeRate = truncatedRate
+          }
 
           // 주문 가격도 현재가로 업데이트 (옵션)
           if (orderPrice.value === 0) {
-            orderPrice.value = stockInfo.value.currentPrice
+            orderPrice.value = newCurrentPrice
           }
+
+          console.log('💰 실시간 현재가 업데이트:', {
+            currentPrice: newCurrentPrice,
+            basePrice: stockInfo.value.basePrice,
+            changeAmount: stockInfo.value.changeAmount,
+            changeRate: stockInfo.value.changeRate.toFixed(2) + '%',
+            truncatedRate: '증권사 표준 방식 적용됨',
+          })
+        }
+
+        // 시가 업데이트 (웹소켓에서 시가 정보가 올 경우)
+        if (data.openPrice) {
+          stockInfo.value.openPrice = parseInt(data.openPrice)
         }
 
         // 고가, 저가 업데이트
@@ -824,24 +1023,61 @@ const initWebSocket = () => {
           stockInfo.value.dayLow = parseInt(data.lowPrice)
         }
 
-        // 호가 정보 업데이트 (1호가만 업데이트)
-        if (data.askPrice1 && data.askRemainQty1) {
-          // 매도 1호가 업데이트
-          if (askPrices.value.length > 0) {
-            askPrices.value[askPrices.value.length - 1] = {
-              price: parseInt(data.askPrice1),
-              volume: parseInt(data.askRemainQty1),
+        // 거래량 업데이트
+        if (data.volume) {
+          stockInfo.value.volume = parseInt(data.volume)
+        }
+
+        // 호가 정보 전체 업데이트 (10호가까지)
+        // 매도호가 처리
+        if (hasAskData) {
+          // console.log('🔄 매도호가 데이터 처리 시작')
+
+          // 매도호가 전체 업데이트 (10호가부터 1호가 순서로)
+          const newAskPrices = []
+          for (let i = 10; i >= 1; i--) {
+            const priceKey = `askPrice${i}`
+            const qtyKey = `askQty${i}`
+            const price = parseInt(data[priceKey])
+            const volume = parseInt(data[qtyKey])
+
+            if (!isNaN(price) && !isNaN(volume) && price > 0) {
+              newAskPrices.push({
+                price: price,
+                volume: volume,
+              })
             }
+          }
+
+          if (newAskPrices.length > 0) {
+            askPrices.value = newAskPrices
+            // console.log('📊 매도호가 업데이트 완료:', newAskPrices.length, '개')
           }
         }
 
-        if (data.bidPrice1 && data.bidRemainQty1) {
-          // 매수 1호가 업데이트
-          if (bidPrices.value.length > 0) {
-            bidPrices.value[0] = {
-              price: parseInt(data.bidPrice1),
-              volume: parseInt(data.bidRemainQty1),
+        // 매수호가 처리
+        if (hasBidData) {
+          // console.log('🔄 매수호가 데이터 처리 시작')
+
+          // 매수호가 전체 업데이트 (1호가부터 10호가 순서로)
+          const newBidPrices = []
+          for (let i = 1; i <= 10; i++) {
+            const priceKey = `bidPrice${i}`
+            const qtyKey = `bidQty${i}`
+            const price = parseInt(data[priceKey])
+            const volume = parseInt(data[qtyKey])
+
+            if (!isNaN(price) && !isNaN(volume) && price > 0) {
+              newBidPrices.push({
+                price: price,
+                volume: volume,
+              })
             }
+          }
+
+          if (newBidPrices.length > 0) {
+            bidPrices.value = newBidPrices
+            // console.log('📊 매수호가 업데이트 완료:', newBidPrices.length, '개')
           }
         }
 
@@ -924,16 +1160,12 @@ const priceChangeClass = computed(() => {
   return changeAmount > 0 ? 'text-red-600' : changeAmount < 0 ? 'text-blue-600' : 'text-gray-600'
 })
 
-// 변동률 계산 (시작가 대비 현재가)
-const changeRate = computed(() => {
-  const changeAmount = stockInfo.value.currentPrice - stockInfo.value.basePrice
-  if (stockInfo.value.basePrice === 0) return 0
-  return (changeAmount / stockInfo.value.basePrice) * 100
-})
+// 실시간 변동률 텍스트 (WebSocket 데이터 기반)
+const realTimeChangeRateText = computed(() => {
+  if (stockInfo.value.basePrice === 0) return '0.00%'
 
-// 변동률 텍스트 (+ 기호 포함)
-const changeRateText = computed(() => {
-  const rate = changeRate.value
+  const rate = stockInfo.value.changeRate
+
   if (rate > 0) {
     return `+${rate.toFixed(2)}%`
   } else if (rate < 0) {
@@ -1133,21 +1365,26 @@ const getPriceColorClass = (price) => {
   return 'text-gray-600'
 }
 
-// 현재가 대비 상승률/하락률 계산 함수
+// 전일 종가(basePrice) 대비 상승률/하락률 계산 함수 (증권사 방식: 소수점 3자리에서 버림)
 const getPriceChangeRate = (price) => {
-  const changeRate = ((price - stockInfo.value.currentPrice) / stockInfo.value.currentPrice) * 100
-  if (changeRate > 0) {
-    return `+${changeRate.toFixed(2)}%`
-  } else if (changeRate < 0) {
-    return `${changeRate.toFixed(2)}%`
+  if (stockInfo.value.basePrice === 0) return '0.00%'
+  const changeRate = ((price - stockInfo.value.basePrice) / stockInfo.value.basePrice) * 100
+
+  // 소수점 3자리에서 버림 (증권사 표준 방식)
+  // 양수는 Math.floor, 음수는 Math.ceil 사용
+  const truncated =
+    changeRate >= 0 ? Math.floor(changeRate * 100) / 100 : Math.ceil(changeRate * 100) / 100
+
+  if (truncated > 0) {
+    return `+${truncated.toFixed(2)}%`
+  } else if (truncated < 0) {
+    return `${truncated.toFixed(2)}%`
   } else {
     return '0.00%'
   }
-}
-
-// 가격 뱃지 정보 반환 함수
+} // 가격 뱃지 정보 반환 함수
 const getPriceBadge = (price) => {
-  if (price === stockInfo.value.basePrice) {
+  if (price === stockInfo.value.openPrice) {
     return { text: '시', class: 'bg-gray-400 text-white' }
   } else if (price === stockInfo.value.dayHigh) {
     return { text: '고', class: 'bg-red-500 text-white' }
