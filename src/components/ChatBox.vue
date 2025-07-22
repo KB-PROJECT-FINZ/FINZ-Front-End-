@@ -1,5 +1,22 @@
-<!-- src/components/ChatBox.vue -->
 <template>
+  <!--  intent 선택 버튼 UI -->
+  <div class="flex justify-center gap-2 mb-4">
+    <button
+      v-for="intent in intents"
+      :key="intent.value"
+      @click="setIntent(intent.value)"
+      :class="[
+        'px-3 py-2 rounded-full text-sm',
+        currentIntent === intent.value
+          ? 'bg-blue-500 text-white'
+          : 'bg-gray-100 text-gray-800 hover:bg-gray-200',
+      ]"
+    >
+      {{ intent.label }}
+    </button>
+  </div>
+
+  <!--  메시지 영역 + 입력창 -->
   <div class="p-4 border rounded">
     <div class="h-64 overflow-y-auto mb-2">
       <div
@@ -16,6 +33,7 @@
       </div>
     </div>
 
+    <!--  메시지 입력창 -->
     <form @submit.prevent="handleSubmit">
       <input
         v-model="input"
@@ -33,12 +51,23 @@ import { useChatStore } from '@/stores/counter.js'
 const input = ref('')
 const chatStore = useChatStore()
 
+//  intent 목록 및 선택값 상태
+const intents = [
+  { label: '종목 추천', value: 'RECOMMEND_PROFILE' },
+  { label: '종목 분석', value: 'STOCK_ANALYZE' },
+  { label: '용어 설명', value: 'FIN_TERM_EXPLAIN' },
+  { label: '투자 피드백', value: 'PORTFOLIO_ANALYZE' },
+]
+const currentIntent = ref('RECOMMEND_PROFILE')
+
+function setIntent(intent) {
+  currentIntent.value = intent
+}
+
+//  메시지 전송 함수
 async function handleSubmit() {
   if (!input.value.trim()) return
-
-  console.log('보내는 메시지:', input.value) //디버깅
-
-  await chatStore.sendMessage(input.value)
+  await chatStore.sendMessage(input.value, currentIntent.value)
   input.value = ''
 }
 </script>
