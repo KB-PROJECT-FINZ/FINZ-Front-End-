@@ -12,7 +12,7 @@
     </div>
 
     <!-- 기본 대화(ChatBot) -->
-    <ChatBox :defaultIntent="'MESSAGE'" />
+    <ChatBox :fixedIntent="'MESSAGE'" />
   </div>
 </template>
 
@@ -35,6 +35,14 @@ function goTo(type) {
 
 <style scoped>
 .btn-intent {
-  @apply py-3 px-4 bg-blue-100 text-blue-700 rounded font-semibold hover:bg-blue-200 transition;
+  padding: 12px 16px;
+  background-color: #ebf8ff;
+  color: #1c3d5a;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+.btn-intent:hover {
+  background-color: #bee3f8;
 }
 </style>

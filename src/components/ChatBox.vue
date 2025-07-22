@@ -49,8 +49,9 @@ import { ref } from 'vue'
 import { useChatStore } from '@/stores/counter.js'
 
 // ✅ props로 intent 받기
-const props = defineProps({ fixedIntent: String })
-
+const props = defineProps({
+  fixedIntent: String,
+})
 const input = ref('')
 const chatStore = useChatStore()
 
