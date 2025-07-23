@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-3">
-    <!-- 메시지 출력 영역 -->
-    <div class="bg-gray-100 rounded-xl p-4 h-[400px] overflow-y-auto space-y-3">
+    <!-- 대화 내용 -->
+    <div class="bg-gray-100 rounded-xl p-4 h-[400px] overflow-y-auto space-y-3" ref="chatContainer">
       <div
         v-for="(msg, i) in messages"
         :key="i"
@@ -16,8 +16,7 @@
           {{ msg.text }}
         </div>
       </div>
-
-      <!-- 로딩 중 -->
+      <!-- 로딩 상태 -->
       <div v-if="loading" class="text-left text-sm text-gray-500 animate-pulse">
         GPT 응답 생성 중...
       </div>
@@ -42,38 +41,66 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, defineExpose, onUpdated } from 'vue'
+import axios from 'axios'
+
+// Props: 외부에서 intent, sessionId, userId 전달
+const props = defineProps({
+  fixedIntent: { type: String, default: 'MESSAGE' },
+  sessionId: { type: Number, default: null },
+  userId: { type: Number, default: 1 },
+})
 
 // 상태
 const input = ref('')
 const messages = ref([])
 const loading = ref(false)
+const chatContainer = ref(null)
 
-// GPT 호출 함수 (모의 구현)
+// GPT 호출
 async function fetchGPT(prompt) {
   loading.value = true
-  // GPT 호출 → 실제 API 연동 부분으로 교체하세요
-  const mockReply = `📊 [AI 응답 예시]\n"${prompt}"에 대해 분석 중입니다...`
-  await new Promise((r) => setTimeout(r, 1000)) // mock 지연
-  messages.value.push({ role: 'assistant', text: mockReply })
-  loading.value = false
+  try {
+    // 사용자 메시지 출력
+    messages.value.push({ role: 'user', text: prompt })
+
+    const res = await axios.post('/api/chatbot/message', {
+      userId: props.userId,
+      sessionId: props.sessionId,
+      message: prompt,
+      intentType: props.fixedIntent,
+    })
+
+    const reply = res.data.content || '(응답 없음)'
+    messages.value.push({ role: 'assistant', text: reply })
+  } catch (err) {
+    console.error(err)
+    messages.value.push({ role: 'assistant', text: '❗ 서버 오류가 발생했습니다.' })
+  } finally {
+    loading.value = false
+  }
 }
 
-// 메시지 전송
+// 전송
 function submit() {
   if (!input.value.trim()) return
-  const userText = input.value
-  messages.value.push({ role: 'user', text: userText })
+  const msg = input.value
   input.value = ''
-  fetchGPT(userText)
+  fetchGPT(msg)
 }
 
-// 외부에서 호출 가능한 함수 등록
+// 외부에서 호출 가능한 메서드 등록
 function sendPrompt(text) {
-  input.value = ''
-  messages.value.push({ role: 'user', text })
+  if (!text) return
   fetchGPT(text)
 }
 
 defineExpose({ sendPrompt })
+
+// 스크롤 자동 내리기
+onUpdated(() => {
+  if (chatContainer.value) {
+    chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+  }
+})
 </script>
