@@ -7,6 +7,7 @@
             v-model="searchQuery"
             type="text"
             class="search-input"
+            placeholder="종목명 또는 종목코드 입력"
             @input="handleSearch"
             @focus="showResults = true"
             @blur="hideResults"
@@ -44,6 +45,7 @@ import MarketIndexTicker from './MarketIndexTicker.vue'
 const searchQuery = ref('')
 const showResults = ref(false)
 
+// ✅ 간단한 로컬 필터링 (API 호출 제거)
 const filteredStocks = computed(() => {
   if (!searchQuery.value.trim()) return []
 
@@ -61,7 +63,11 @@ const handleSearch = () => {
 const selectStock = (stock) => {
   searchQuery.value = `${stock.name} (${stock.code})`
   showResults.value = false
+
+  // ✅ 선택된 종목 이벤트 emit (필요시 부모 컴포넌트에서 처리)
   console.log('선택된 종목:', stock)
+
+  // TODO: 추후 종목 상세 페이지로 라우팅 또는 부모 컴포넌트로 이벤트 전달
 }
 
 const hideResults = () => {
