@@ -4,7 +4,7 @@
     <header class="bg-white px-4 py-3 border-b border-gray-200 sticky top-0 z-50">
       <div class="flex items-center justify-between">
         <!-- 뒤로가기 버튼 -->
-        <button class="p-2 hover:bg-gray-100 rounded-lg">
+        <button @click="goBack" class="p-2 hover:bg-gray-100 rounded-lg">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -649,7 +649,12 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { getStockInfo } from '@/services/stockApi.js'
+
+// Vue Router
+const route = useRoute()
+const router = useRouter()
 
 // 종목 코드
 const STOCK_CODE = '005930' // 삼성전자 종목코드 (6자리 숫자)
@@ -673,7 +678,7 @@ const loadStockInfo = async () => {
     // API 응답에서 실제 데이터 추출
     if (response && response.output) {
       const data = response.output
-      console.log('📊 받아온 모든 데이터:', data)
+      console.log('[API] 받아온 모든 데이터:', data)
 
       // 실제 API 데이터로 stockInfo 업데이트
       stockInfo.value = {
@@ -869,7 +874,16 @@ const userInfo = ref({
 })
 
 // 거래 상태
-const activeTab = ref('buy') // 'buy', 'sell', 'waiting'
+// 쿼리 파라미터에서 초기 탭 설정 (ChartPage에서 전달받은 값)
+const getInitialTab = () => {
+  const tabFromQuery = route.query.tab
+  if (tabFromQuery === 'buy' || tabFromQuery === 'sell' || tabFromQuery === 'waiting') {
+    return tabFromQuery
+  }
+  return 'buy' // 기본값
+}
+
+const activeTab = ref(getInitialTab()) // 'buy', 'sell', 'waiting'
 const orderType = ref('limit') // 'limit', 'market'
 const orderPrice = ref(0) // API 로드 후 현재가로 설정됨
 const orderQuantity = ref(0)
@@ -895,7 +909,7 @@ const generateOrderBookData = (currentPrice) => {
   // 실시간 데이터가 이미 있으면 더미 데이터를 생성하지 않음
   // if (askPrices.value.length > 0 && bidPrices.value.length > 0) return
 
-  console.log('📝 더미 호가 데이터 생성, 현재가:', currentPrice)
+  // console.log('📝 더미 호가 데이터 생성, 현재가:', currentPrice)
 
   // 매도호가 생성 (현재가 + 100원부터 1000원까지)
   askPrices.value = []
@@ -922,32 +936,99 @@ const volumePower = ref(125.4)
 // 실시간 거래 내역
 const recentTrades = ref([])
 
+// 15시 30분 ~ 20시 사이 NXT 시간 확인 함수
+const isNxtTime = () => {
+  const now = new Date()
+  const currentHour = now.getHours()
+  const currentMinute = now.getMinutes()
+
+  // 15시 30분 이후이고 20시 이전인지 확인
+  const isAfter1530 = currentHour > 15 || (currentHour === 15 && currentMinute >= 30)
+  const isBefore2000 = currentHour < 20
+
+  return isAfter1530 && isBefore2000
+}
+
+// 통합 호가 데이터 처리 함수 (KRX와 NXT 형식 모두 지원)
+const processOrderBookData = (data) => {
+  // 매도호가 처리 (KRX와 NXT 형식 모두 확인)
+  const newAskPrices = []
+  for (let i = 10; i >= 1; i--) {
+    // KRX 형식과 NXT 형식을 모두 확인 (KRX 우선)
+    const price = parseInt(data[`askPrice${i}`] || data[`ASKP${i}`])
+    const volume = parseInt(data[`askQty${i}`] || data[`ASKP_RSQN${i}`])
+
+    if (!isNaN(price) && !isNaN(volume) && price > 0) {
+      newAskPrices.push({
+        price: price,
+        volume: volume,
+      })
+    }
+  }
+
+  // 매수호가 처리 (KRX와 NXT 형식 모두 확인)
+  const newBidPrices = []
+  for (let i = 1; i <= 10; i++) {
+    // KRX 형식과 NXT 형식을 모두 확인 (KRX 우선)
+    const price = parseInt(data[`bidPrice${i}`] || data[`BIDP${i}`])
+    const volume = parseInt(data[`bidQty${i}`] || data[`BIDP_RSQN${i}`])
+
+    if (!isNaN(price) && !isNaN(volume) && price > 0) {
+      newBidPrices.push({
+        price: price,
+        volume: volume,
+      })
+    }
+  }
+
+  // 호가 데이터 업데이트
+  if (newAskPrices.length > 0) {
+    askPrices.value = newAskPrices
+  }
+
+  if (newBidPrices.length > 0) {
+    bidPrices.value = newBidPrices
+  }
+
+  // 총 매도/매수 호가 잔량 처리 (NXT API 데이터)
+  // totalAskQty와 totalBidQty를 우선으로 확인하고, 없으면 기존 필드명 확인
+  if (data.totalAskQty) {
+    waitingInfo.value.sellOrders = parseInt(data.totalAskQty)
+  } else if (data.TOTAL_ASKP_RSQN) {
+    waitingInfo.value.sellOrders = parseInt(data.TOTAL_ASKP_RSQN)
+  }
+
+  if (data.totalBidQty) {
+    waitingInfo.value.buyOrders = parseInt(data.totalBidQty)
+  } else if (data.TOTAL_BIDP_RSQN) {
+    waitingInfo.value.buyOrders = parseInt(data.TOTAL_BIDP_RSQN)
+  }
+}
+
 // 웹소켓 연결 초기화
 const initWebSocket = () => {
   try {
+    console.log('[WebSocket] 연결 시도: ws://localhost:8080/ws/stock')
     socket.value = new WebSocket('ws://localhost:8080/ws/stock')
 
     socket.value.onopen = () => {
-      console.log('📡 웹소켓 연결 성공')
+      console.log('[WebSocket] 연결 성공')
     }
 
     socket.value.onmessage = (event) => {
       try {
         const rawData = JSON.parse(event.data)
-        // console.log('📈 실시간 데이터 수신:', rawData)
 
         // 데이터 구조 확인 및 추출
         let data = rawData
         if (rawData.type === 'bidsAndAsks' && rawData.data) {
           data = rawData.data
-          // console.log('🎯 호가 데이터 타입 감지, data 객체 추출:', data)
         }
 
-        // 호가 데이터 확인
-        const hasAskData = data.askPrice1 !== undefined && data.askQty1 !== undefined
-        const hasBidData = data.bidPrice1 !== undefined && data.bidQty1 !== undefined
+        // 호가 데이터 처리 (KRX와 NXT 형식 모두 지원)
+        processOrderBookData(data)
 
-        // 체결 내역 데이터 처리 (다른 타입의 웹소켓 메시지에서)
+        // 체결 내역 데이터 처리
         if (data.currentPrice && data.contractVolume) {
           // 체결 내역 추가
           const newTrade = {
@@ -970,7 +1051,7 @@ const initWebSocket = () => {
             recentTrades.value = recentTrades.value.slice(0, 20)
           }
 
-          console.log('💰 체결 내역 추가:', newTrade)
+          console.log('[체결] 내역 추가:', newTrade)
         }
 
         // 체결 강도 업데이트
@@ -1001,12 +1082,10 @@ const initWebSocket = () => {
             orderPrice.value = newCurrentPrice
           }
 
-          console.log('💰 실시간 현재가 업데이트:', {
-            currentPrice: newCurrentPrice,
-            basePrice: stockInfo.value.basePrice,
-            changeAmount: stockInfo.value.changeAmount,
-            changeRate: stockInfo.value.changeRate.toFixed(2) + '%',
-            truncatedRate: '증권사 표준 방식 적용됨',
+          console.log('[현재가] 업데이트:', {
+            price: newCurrentPrice,
+            change: stockInfo.value.changeAmount,
+            rate: stockInfo.value.changeRate.toFixed(2) + '%',
           })
         }
 
@@ -1028,57 +1107,9 @@ const initWebSocket = () => {
           stockInfo.value.volume = parseInt(data.volume)
         }
 
-        // 호가 정보 전체 업데이트 (10호가까지)
-        // 매도호가 처리
-        if (hasAskData) {
-          // console.log('🔄 매도호가 데이터 처리 시작')
-
-          // 매도호가 전체 업데이트 (10호가부터 1호가 순서로)
-          const newAskPrices = []
-          for (let i = 10; i >= 1; i--) {
-            const priceKey = `askPrice${i}`
-            const qtyKey = `askQty${i}`
-            const price = parseInt(data[priceKey])
-            const volume = parseInt(data[qtyKey])
-
-            if (!isNaN(price) && !isNaN(volume) && price > 0) {
-              newAskPrices.push({
-                price: price,
-                volume: volume,
-              })
-            }
-          }
-
-          if (newAskPrices.length > 0) {
-            askPrices.value = newAskPrices
-            // console.log('📊 매도호가 업데이트 완료:', newAskPrices.length, '개')
-          }
-        }
-
-        // 매수호가 처리
-        if (hasBidData) {
-          // console.log('🔄 매수호가 데이터 처리 시작')
-
-          // 매수호가 전체 업데이트 (1호가부터 10호가 순서로)
-          const newBidPrices = []
-          for (let i = 1; i <= 10; i++) {
-            const priceKey = `bidPrice${i}`
-            const qtyKey = `bidQty${i}`
-            const price = parseInt(data[priceKey])
-            const volume = parseInt(data[qtyKey])
-
-            if (!isNaN(price) && !isNaN(volume) && price > 0) {
-              newBidPrices.push({
-                price: price,
-                volume: volume,
-              })
-            }
-          }
-
-          if (newBidPrices.length > 0) {
-            bidPrices.value = newBidPrices
-            // console.log('📊 매수호가 업데이트 완료:', newBidPrices.length, '개')
-          }
+        // 누적 거래량 업데이트 (새로 추가)
+        if (data.accumulatedVolume) {
+          stockInfo.value.volume = parseInt(data.accumulatedVolume)
         }
 
         // 전일 대비 정보 업데이트
@@ -1093,10 +1124,10 @@ const initWebSocket = () => {
     }
 
     socket.value.onclose = () => {
-      console.log('❌ 웹소켓 연결 종료')
+      console.log('[WebSocket] 연결 종료')
       // 연결이 끊어지면 3초 후 재연결 시도
       setTimeout(() => {
-        console.log('🔄 웹소켓 재연결 시도...')
+        console.log('[WebSocket] 재연결 시도...')
         initWebSocket()
       }, 3000)
     }
@@ -1117,10 +1148,10 @@ const closeWebSocket = () => {
   }
 }
 
-// 대기 정보
+// 대기 정보 (웹소켓에서 실시간 업데이트)
 const waitingInfo = ref({
-  sellOrders: 3872704,
-  buyOrders: 1271493,
+  sellOrders: 0,
+  buyOrders: 0,
 })
 
 // 대기중인 거래 목록
@@ -1151,8 +1182,16 @@ const pendingOrders = ref([
 // 새로고침 시점 (분 단위)
 const lastRefreshMinutes = ref(2)
 
-// 장 상태
-const marketStatus = ref('정규장')
+// 장 상태 (시간에 따라 동적 변경)
+const marketStatus = computed(() => {
+  // currentTime을 참조하여 reactive하게 만듦
+  currentTime.value
+  const isNxt = isNxtTime()
+  return isNxt ? 'NXT' : '정규장'
+})
+
+// 현재 시간 (reactive)
+const currentTime = ref(new Date())
 
 // 계산된 속성들
 const priceChangeClass = computed(() => {
@@ -1351,6 +1390,10 @@ const getVolumeRatio = (volume) => {
 }
 
 // 메서드들
+const goBack = () => {
+  router.push('/chart')
+}
+
 const formatPrice = (price) => {
   return price.toLocaleString()
 }
@@ -1485,15 +1528,29 @@ const testApiCall = async () => {
   await loadStockInfo()
 }
 
+// 시간 업데이트를 위한 타이머
+const timeUpdateTimer = ref(null)
+
 // 컴포넌트 마운트 시 API 호출 및 웹소켓 연결
 onMounted(() => {
-  console.log('컴포넌트 마운트됨, API 테스트 시작')
+  console.log('[초기화] 컴포넌트 마운트 시작')
   testApiCall()
   initWebSocket()
+
+  // 1초마다 시간 업데이트를 위한 타이머
+  timeUpdateTimer.value = setInterval(() => {
+    currentTime.value = new Date()
+  }, 1000)
 })
 
 // 컴포넌트 언마운트 시 웹소켓 연결 해제
 onUnmounted(() => {
   closeWebSocket()
+
+  // 타이머 정리
+  if (timeUpdateTimer.value) {
+    clearInterval(timeUpdateTimer.value)
+    timeUpdateTimer.value = null
+  }
 })
 </script>
