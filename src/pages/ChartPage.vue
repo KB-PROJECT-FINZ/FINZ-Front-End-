@@ -477,62 +477,62 @@ export default {
     //     })
     //     .sort((a, b) => a.x - b.x) // 시간순 정렬
     // }    // 한국투자증권 API 원본 응답을 Chart.js 형식으로 변환
-    const convertApiDataToChartData = (kisApiResponse) => {
-      // 한국투자증권 API 원본 응답 형식:
-      // {
-      //   "output1": { "prdy_vrss": "400", "stck_prpr": "66400", ... },
-      //   "output2": [
-      //     { "stck_bsop_date": "20250723", "stck_cntg_hour": "145800",
-      //       "stck_oprc": "66400", "stck_hgpr": "66400", "stck_lwpr": "66300", "stck_prpr": "66400" },
-      //     ...
-      //   ]
-      // }
+    // const convertApiDataToChartData = (kisApiResponse) => {
+    //   // 한국투자증권 API 원본 응답 형식:
+    //   // {
+    //   //   "output1": { "prdy_vrss": "400", "stck_prpr": "66400", ... },
+    //   //   "output2": [
+    //   //     { "stck_bsop_date": "20250723", "stck_cntg_hour": "145800",
+    //   //       "stck_oprc": "66400", "stck_hgpr": "66400", "stck_lwpr": "66300", "stck_prpr": "66400" },
+    //   //     ...
+    //   //   ]
+    //   // }
 
-      if (!kisApiResponse.output2 || !Array.isArray(kisApiResponse.output2)) {
-        console.warn('한국투자증권 API 응답에 차트 데이터가 없습니다.')
-        return []
-      }
+    //   if (!kisApiResponse.output2 || !Array.isArray(kisApiResponse.output2)) {
+    //     console.warn('한국투자증권 API 응답에 차트 데이터가 없습니다.')
+    //     return []
+    //   }
 
-      // output1에서 주식 기본 정보 업데이트
-      if (kisApiResponse.output1) {
-        const output1 = kisApiResponse.output1
-        stockInfo.name = output1.hts_kor_isnm || stockInfo.name
-        stockInfo.currentPrice = parseInt(output1.stck_prpr) || stockInfo.currentPrice
-        stockInfo.changeAmount = parseInt(output1.prdy_vrss) || 0
-        stockInfo.changeRate = parseFloat(output1.prdy_ctrt) || 0
+    //   // output1에서 주식 기본 정보 업데이트
+    //   if (kisApiResponse.output1) {
+    //     const output1 = kisApiResponse.output1
+    //     stockInfo.name = output1.hts_kor_isnm || stockInfo.name
+    //     stockInfo.currentPrice = parseInt(output1.stck_prpr) || stockInfo.currentPrice
+    //     stockInfo.changeAmount = parseInt(output1.prdy_vrss) || 0
+    //     stockInfo.changeRate = parseFloat(output1.prdy_ctrt) || 0
 
-        // 부호 처리 (2: 상승, 5: 하락, 3: 보합)
-        if (output1.prdy_vrss_sign === '5') {
-          stockInfo.changeAmount = -Math.abs(stockInfo.changeAmount)
-          stockInfo.changeRate = -Math.abs(stockInfo.changeRate)
-        }
-      }
+    //     // 부호 처리 (2: 상승, 5: 하락, 3: 보합)
+    //     if (output1.prdy_vrss_sign === '5') {
+    //       stockInfo.changeAmount = -Math.abs(stockInfo.changeAmount)
+    //       stockInfo.changeRate = -Math.abs(stockInfo.changeRate)
+    //     }
+    //   }
 
-      return kisApiResponse.output2
-        .map((item) => {
-          // 날짜/시간 파싱 (한국투자증권 형식)
-          const dateStr = item.stck_bsop_date // YYYYMMDD
-          const timeStr = item.stck_cntg_hour ? item.stck_cntg_hour.padStart(6, '0') : '000000' // HHMMSS
+    //   return kisApiResponse.output2
+    //     .map((item) => {
+    //       // 날짜/시간 파싱 (한국투자증권 형식)
+    //       const dateStr = item.stck_bsop_date // YYYYMMDD
+    //       const timeStr = item.stck_cntg_hour ? item.stck_cntg_hour.padStart(6, '0') : '000000' // HHMMSS
 
-          const dateTime = new Date(
-            parseInt(dateStr.substr(0, 4)), // 년
-            parseInt(dateStr.substr(4, 2)) - 1, // 월 (0부터 시작)
-            parseInt(dateStr.substr(6, 2)), // 일
-            parseInt(timeStr.substr(0, 2)), // 시
-            parseInt(timeStr.substr(2, 2)), // 분
-            parseInt(timeStr.substr(4, 2)), // 초
-          )
+    //       const dateTime = new Date(
+    //         parseInt(dateStr.substr(0, 4)), // 년
+    //         parseInt(dateStr.substr(4, 2)) - 1, // 월 (0부터 시작)
+    //         parseInt(dateStr.substr(6, 2)), // 일
+    //         parseInt(timeStr.substr(0, 2)), // 시
+    //         parseInt(timeStr.substr(2, 2)), // 분
+    //         parseInt(timeStr.substr(4, 2)), // 초
+    //       )
 
-          return {
-            x: dateTime.getTime(),
-            o: parseInt(item.stck_oprc), // 시가
-            h: parseInt(item.stck_hgpr), // 고가
-            l: parseInt(item.stck_lwpr), // 저가
-            c: parseInt(item.stck_prpr), // 종가 (현재가)
-          }
-        })
-        .sort((a, b) => a.x - b.x) // 시간순 정렬
-    }
+    //       return {
+    //         x: dateTime.getTime(),
+    //         o: parseInt(item.stck_oprc), // 시가
+    //         h: parseInt(item.stck_hgpr), // 고가
+    //         l: parseInt(item.stck_lwpr), // 저가
+    //         c: parseInt(item.stck_prpr), // 종가 (현재가)
+    //       }
+    //     })
+    //     .sort((a, b) => a.x - b.x) // 시간순 정렬
+    // }
 
     // 차트 데이터를 가져오는 함수 (30개 고정)
     const generateCandlestickData = async (endTime = null) => {
