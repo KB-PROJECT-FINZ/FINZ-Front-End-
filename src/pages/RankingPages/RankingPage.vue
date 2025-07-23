@@ -1,3 +1,4 @@
+<!-- src/pages/RankingPage.vue -->
 <template>
   <div class="w-full max-w-[480px] mx-auto pb-24 px-4">
     <!-- 1. 헤더 -->
@@ -24,79 +25,78 @@
 
     <!-- 2. 상단 탭 -->
     <TabSwitcher
-      :tabs="['투자 랭킹 보기', '종목 분석']"
-      :currentTab="currentMainTab"
-      @updateTab="updateMainTab"
+      :tabs="[
+        { label: '투자 랭킹 보기', route: '/ranking' },
+        { label: '종목 분석', route: '/ranking/analysis' },
+      ]"
     />
 
-    <!-- 3. 투자 랭킹 보기 탭 -->
-    <div v-if="currentMainTab === '투자 랭킹 보기'">
-      <MyRankingCard :rank="15" :gainRate="12.45" :topPercent="25" trait="균형형" />
-      <Top5StockList class="my-8" :stocks="popularStocks" />
+    <!-- 간격 -->
+    <div class="h-[3px]"></div>
 
-      <!-- 4. 주간/성향별 버튼 -->
-      <div class="flex gap-3 max-w-md mx-auto mt-6 mb-4">
-        <button
-          v-for="tab in mainRankingTabs"
-          :key="tab"
-          @click="selectMainRankingTab(tab)"
-          :class="[
-            'flex-1 py-2 rounded-md text-sm font-semibold transition',
-            currentRankingType === tab
-              ? 'bg-blue-600 text-white shadow'
-              : 'bg-white text-gray-800 border border-gray-300 hover:bg-blue-100',
-          ]"
-        >
-          {{ tab }}
-        </button>
-      </div>
+    <!-- 3. 나의 랭킹 카드 -->
+    <MyRankingCard :rank="15" :gainRate="12.45" :topPercent="25" trait="균형형" />
 
-      <!-- 5. 성향별 버튼 (성향별 선택 시만 표시) -->
-      <div v-if="currentRankingType === '성향별'" class="flex gap-2 max-w-md mx-auto mb-4">
-        <button
-          v-for="trait in traitTypes"
-          :key="trait"
-          @click="selectTraitType(trait)"
-          :class="[
-            'flex-1 py-1.5 rounded-full text-xs font-medium transition',
-            currentTraitType === trait
-              ? 'bg-blue-600 text-white shadow'
-              : userTraitType === trait
-                ? 'border border-blue-500 text-blue-500 bg-white'
-                : 'bg-gray-100 text-gray-800 hover:bg-blue-100',
-          ]"
-        >
-          {{ trait }}
-        </button>
-      </div>
+    <!-- 4. 인기 종목 Top5 -->
+    <Top5StockList class="my-8" :stocks="popularStocks" />
 
-      <!-- 6. 투자자 랭킹 리스트 -->
-      <div class="space-y-3">
-        <UserRankingCard
-          v-for="(user, index) in limitedUsers"
-          :key="user.id"
-          :nickname="user.nickname"
-          :gainRate="user.gainRate"
-          :trait="user.trait"
-          :originalTrait="user.originalTrait"
-          :image="user.image"
-        />
-      </div>
-
-      <!-- 7. 더보기 버튼 -->
+    <!-- 5. 주간/성향별 탭 -->
+    <div class="flex gap-3 max-w-md mx-auto mt-6 mb-4">
       <button
-        v-if="visibleCount < 100 && visibleCount < filteredUsers.length"
-        @click="visibleCount += 10"
-        class="mt-4 w-full text-sm text-blue-600 hover:underline"
+        v-for="tab in mainRankingTabs"
+        :key="tab"
+        @click="selectMainRankingTab(tab)"
+        :class="[
+          'flex-1 py-2 rounded-md text-sm font-semibold transition',
+          currentRankingType === tab
+            ? 'bg-blue-600 text-white shadow'
+            : 'bg-white text-gray-800 border border-gray-300 hover:bg-blue-100',
+        ]"
       >
-        더보기
+        {{ tab }}
       </button>
     </div>
 
-    <!-- 8. 종목 분석 탭 -->
-    <div v-else-if="currentMainTab === '종목 분석'">
-      <p class="mt-6 text-center text-gray-600">종목 분석 화면 준비 중입니다.</p>
+    <!-- 6. 성향 버튼 (성향별일 때만) -->
+    <div v-if="currentRankingType === '성향별'" class="flex gap-2 max-w-md mx-auto mb-4">
+      <button
+        v-for="trait in traitTypes"
+        :key="trait"
+        @click="selectTraitType(trait)"
+        :class="[
+          'flex-1 py-1.5 rounded-full text-xs font-medium transition',
+          currentTraitType === trait
+            ? 'bg-blue-600 text-white shadow'
+            : userTraitType === trait
+              ? 'border border-blue-500 text-blue-500 bg-white'
+              : 'bg-gray-100 text-gray-800 hover:bg-blue-100',
+        ]"
+      >
+        {{ trait }}
+      </button>
     </div>
+
+    <!-- 7. 투자자 랭킹 리스트 -->
+    <div class="space-y-3">
+      <UserRankingCard
+        v-for="user in limitedUsers"
+        :key="user.id"
+        :nickname="user.nickname"
+        :gainRate="user.gainRate"
+        :trait="user.trait"
+        :originalTrait="user.originalTrait"
+        :image="user.image"
+      />
+    </div>
+
+    <!-- 8. 더보기 버튼 -->
+    <button
+      v-if="visibleCount < 100 && visibleCount < filteredUsers.length"
+      @click="visibleCount += 10"
+      class="mt-4 w-full text-sm text-blue-600 hover:underline"
+    >
+      더보기
+    </button>
 
     <!-- 9. 하단 내비게이션 -->
     <FooterNavigation />
@@ -115,16 +115,11 @@ const goBack = () => {
   history.back()
 }
 
-const currentMainTab = ref('투자 랭킹 보기')
-const updateMainTab = (tab) => {
-  currentMainTab.value = tab
-}
-
 const mainRankingTabs = ['주간', '성향별']
 const currentRankingType = ref('주간')
 const traitTypes = ['보수형', '균형형', '공격형', '특수형']
 const currentTraitType = ref(traitTypes[0])
-const userTraitType = ref('보수형')
+const userTraitType = '보수형' // ✅ 사용되는 곳은 템플릿 안에서 문자열로 비교됨
 
 function selectMainRankingTab(tab) {
   currentRankingType.value = tab

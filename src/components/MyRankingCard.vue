@@ -1,36 +1,38 @@
 <template>
-  <div class="w-full bg-white rounded-2xl p-4 shadow-md text-black">
-    <div class="flex justify-between items-center mb-3">
-      <p class="text-sm font-semibold">내 투자 현황</p>
-      <span class="text-xs font-bold px-2 py-1 bg-blue-100 text-blue-700 rounded-md">
+  <div
+    class="w-full overflow-hidden bg-gradient-to-r from-blue-400 to-blue-600 text-white rounded-2xl p-4 shadow-md"
+  >
+    <!-- 상단: 타이틀과 성향 -->
+    <div class="flex justify-between items-start">
+      <p class="text-sm">내 투자 현황</p>
+      <span class="bg-white text-blue-600 text-xs px-2 py-1 rounded-md font-semibold">
         {{ trait }}
       </span>
     </div>
 
-    <div class="flex justify-around text-center">
+    <!-- 본문 -->
+    <div class="mt-4 flex justify-around text-center">
       <div>
-        <p class="text-2xl font-bold text-blue-600">{{ rank }}위</p>
-        <p class="text-sm text-gray-500">전체 순위</p>
+        <div class="text-2xl font-bold">{{ rank }}위</div>
+        <div class="text-sm">전체 순위</div>
       </div>
       <div>
-        <p class="text-2xl font-bold text-green-600">+{{ gainRate }}%</p>
-        <p class="text-sm text-gray-500">총 수익률</p>
+        <div class="text-green-200 text-lg font-semibold">+{{ gainRate }}%</div>
+        <div class="text-sm">총 수익률</div>
       </div>
       <div>
-        <p class="text-2xl font-bold text-blue-600">상위 {{ topPercent }}%</p>
-        <p class="text-sm text-gray-500">백분위</p>
+        <div class="text-sm">상위 {{ topPercent }}%</div>
+        <div class="text-sm">백분위</div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  props: {
-    rank: Number,
-    gainRate: Number,
-    topPercent: Number,
-    trait: String,
-  },
-}
+<script setup>
+defineProps({
+  rank: Number,
+  gainRate: Number,
+  topPercent: Number,
+  trait: String,
+})
 </script>
