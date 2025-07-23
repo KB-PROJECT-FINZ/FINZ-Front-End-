@@ -1,18 +1,47 @@
 <template>
-  <div class="p-6 max-w-2xl mx-auto">
-    <h1 class="text-xl font-bold mb-4">맞춤형 AI 투자 챗봇</h1>
-    <p class="text-sm text-gray-600 mb-6">원하는 기능을 선택하면 챗봇이 맞춤형 대화를 시작해요.</p>
-
-    <!-- intent별 버튼 -->
-    <div class="grid grid-cols-2 gap-3 mb-6">
-      <button @click="goTo('recommend')" class="btn-intent">종목 추천</button>
-      <button @click="goTo('analyze')" class="btn-intent">종목 분석</button>
-      <button @click="goTo('terms')" class="btn-intent">용어 설명</button>
-      <button @click="goTo('portfolio')" class="btn-intent">투자 피드백</button>
+  <div class="min-h-screen bg-gray-50 pb-20 px-5 pt-6 max-w-[430px] mx-auto">
+    <!-- 상단 안내 -->
+    <div class="mb-6">
+      <img src="@/assets/finz.png" alt="finz" class="w-16 mb-2" />
+      <p class="text-lg font-bold">
+        나에게 꼭 맞는 <span class="text-purple-600">AI 투자 챗봇</span>
+      </p>
+      <p class="text-sm text-gray-500">궁금한 걸 클릭해서 바로 시작해보세요</p>
     </div>
 
-    <!-- 기본 대화(ChatBot) -->
-    <ChatBox :fixedIntent="'MESSAGE'" />
+    <!-- intent 버튼 카드 -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div
+        @click="goTo('recommend')"
+        class="flex items-center justify-center rounded-xl p-5 border font-semibold text-center cursor-pointer transition hover:scale-[1.03] hover:shadow bg-purple-50 border-purple-200 text-purple-700"
+      >
+        <p class="text-sm font-semibold">📈 종목 추천</p>
+      </div>
+      <div
+        @click="goTo('analyze')"
+        class="flex items-center justify-center rounded-xl p-5 border font-semibold text-center cursor-pointer transition hover:scale-[1.03] hover:shadow bg-blue-50 border-blue-200 text-blue-700"
+      >
+        <p class="text-sm font-semibold">📊 종목 분석</p>
+      </div>
+      <div
+        @click="goTo('terms')"
+        class="flex items-center justify-center rounded-xl p-5 border font-semibold text-center cursor-pointer transition hover:scale-[1.03] hover:shadow bg-yellow-50 border-yellow-200 text-yellow-700"
+      >
+        <p class="text-sm font-semibold">💡 용어 설명</p>
+      </div>
+      <div
+        @click="goTo('portfolio')"
+        class="flex items-center justify-center rounded-xl p-5 border font-semibold text-center cursor-pointer transition hover:scale-[1.03] hover:shadow bg-green-50 border-green-200 text-green-700"
+      >
+        <p class="text-sm font-semibold">🧠 투자 피드백</p>
+      </div>
+    </div>
+
+    <!-- 자유 대화 챗봇 -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+      <p class="text-sm text-gray-500 mb-2">자유 대화도 가능해요</p>
+      <ChatBox :fixedIntent="'MESSAGE'" />
+    </div>
   </div>
 </template>
 
@@ -32,17 +61,3 @@ function goTo(type) {
   router.push({ name: map[type] })
 }
 </script>
-
-<style scoped>
-.btn-intent {
-  padding: 12px 16px;
-  background-color: #ebf8ff;
-  color: #1c3d5a;
-  border-radius: 6px;
-  font-weight: 600;
-  transition: background-color 0.2s;
-}
-.btn-intent:hover {
-  background-color: #bee3f8;
-}
-</style>
