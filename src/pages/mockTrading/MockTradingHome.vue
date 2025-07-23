@@ -4,7 +4,6 @@
 
     <main class="main-content">
       <SearchBar />
-
       <TradingVolumeRanking />
 
       <div v-if="isLoading" class="loading-overlay">
@@ -27,47 +26,59 @@ import { getMarketIndices, checkApiHealth } from '@/services/mockTradingApi'
 const isLoading = ref(false)
 let marketUpdateInterval = null
 
+/**
+ * 시장 데이터 업데이트
+ */
 const updateMarketData = async () => {
   try {
-    console.log('MockTradingHome에서 시장 데이터 업데이트')
-
+    // API 서버 상태 확인
     const apiHealthy = await checkApiHealth()
     if (!apiHealthy) {
-      console.warn('API 서버 연결 불안정')
+      console.warn('⚠️ API 서버 연결 불안정')
+      return
     }
 
+    // 시장 지수 데이터 업데이트
     const response = await getMarketIndices()
     if (response.success) {
-      console.log('홈페이지 시장 데이터 업데이트 성공')
+      console.log('✅ 시장 데이터 업데이트 성공')
     } else {
-      console.warn('시장 데이터 업데이트 실패:', response.message)
+      console.warn('⚠️ 시장 데이터 업데이트 실패:', response.message)
     }
   } catch (error) {
-    console.error('시장 데이터 업데이트 오류:', error)
+    console.error('❌ 시장 데이터 업데이트 오류:', error.message)
   }
 }
 
+/**
+ * 컴포넌트 마운트 시 초기화
+ */
 onMounted(async () => {
-  console.log('FINZ 모의투자 홈페이지 로드됨')
+  console.log('🚀 FINZ 모의투자 홈페이지 초기화')
 
   isLoading.value = true
 
   try {
     await updateMarketData()
   } catch (error) {
-    console.error('초기 데이터 로드 실패:', error)
+    console.error('❌ 초기 데이터 로드 실패:', error.message)
   } finally {
     isLoading.value = false
   }
 
+  // 1분마다 시장 데이터 업데이트
   marketUpdateInterval = setInterval(updateMarketData, 60000)
 })
 
+/**
+ * 컴포넌트 언마운트 시 정리
+ */
 onUnmounted(() => {
   if (marketUpdateInterval) {
     clearInterval(marketUpdateInterval)
+    marketUpdateInterval = null
   }
-  console.log('FINZ 모의투자 홈페이지 언마운트됨')
+  console.log('🔚 FINZ 모의투자 홈페이지 정리 완료')
 })
 </script>
 

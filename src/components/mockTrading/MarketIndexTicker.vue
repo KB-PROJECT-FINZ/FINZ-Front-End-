@@ -42,9 +42,13 @@ import { getMarketIndices } from '@/services/mockTradingApi'
 const currentIndex = ref(0)
 const marketIndices = ref([])
 const isLoading = ref(true)
+
 let intervalId = null
 let dataUpdateInterval = null
 
+/**
+ * 현재 표시할 시장 지수 계산
+ */
 const currentMarketIndex = computed(() => {
   if (marketIndices.value.length === 0) {
     return {
@@ -57,6 +61,9 @@ const currentMarketIndex = computed(() => {
   return marketIndices.value[currentIndex.value]
 })
 
+/**
+ * 숫자 포맷팅 (한국 로케일)
+ */
 const formatNumber = (number) => {
   return new Intl.NumberFormat('ko-KR', {
     minimumFractionDigits: 2,
@@ -64,55 +71,73 @@ const formatNumber = (number) => {
   }).format(number)
 }
 
+/**
+ * 다음 지수로 전환
+ */
 const nextIndex = () => {
   if (marketIndices.value.length > 0) {
     currentIndex.value = (currentIndex.value + 1) % marketIndices.value.length
   }
 }
 
-// 실제 API에서 시장 지수 데이터 가져오기
+/**
+ * 시장 지수 데이터 가져오기
+ */
 const fetchMarketIndices = async () => {
   try {
-    console.log('시장 지수 티커에서 API 호출')
     const response = await getMarketIndices()
 
     if (response.success && response.data) {
       marketIndices.value = response.data
-      console.log('시장 지수 티커 데이터 업데이트:', response.data)
+      console.log('📊 시장 지수 티커 데이터 업데이트:', response.data.length, '건')
     } else {
-      console.warn('시장 지수 API 호출 실패:', response)
+      console.warn('⚠️ 시장 지수 API 호출 실패:', response.message)
       // 기본값 설정
-      marketIndices.value = [
-        { name: 'KOSPI', value: 0, changePercent: 0, isPositive: true },
-        { name: 'KOSDAQ', value: 0, changePercent: 0, isPositive: true },
-      ]
+      setFallbackData()
     }
   } catch (error) {
-    console.error('시장 지수 조회 실패:', error)
+    console.error('❌ 시장 지수 조회 실패:', error.message)
     // 에러 시 기본값
-    marketIndices.value = [
-      { name: 'KOSPI', value: 0, changePercent: 0, isPositive: true },
-      { name: 'KOSDAQ', value: 0, changePercent: 0, isPositive: true },
-    ]
+    setFallbackData()
   } finally {
     isLoading.value = false
   }
 }
 
+/**
+ * 기본 데이터 설정 (API 실패 시)
+ */
+const setFallbackData = () => {
+  marketIndices.value = [
+    { name: 'KOSPI', value: 2634.15, changePercent: 0.58, isPositive: true },
+    { name: 'KOSDAQ', value: 851.47, changePercent: -0.97, isPositive: false },
+  ]
+}
+
+/**
+ * 컴포넌트 마운트 시 초기화
+ */
 onMounted(async () => {
   await fetchMarketIndices()
+
   // 5초마다 다음 지수로 전환
   intervalId = setInterval(nextIndex, 5000)
+
   // 30초마다 데이터 업데이트
   dataUpdateInterval = setInterval(fetchMarketIndices, 30000)
 })
 
+/**
+ * 컴포넌트 언마운트 시 정리
+ */
 onUnmounted(() => {
   if (intervalId) {
     clearInterval(intervalId)
+    intervalId = null
   }
   if (dataUpdateInterval) {
     clearInterval(dataUpdateInterval)
+    dataUpdateInterval = null
   }
 })
 </script>
