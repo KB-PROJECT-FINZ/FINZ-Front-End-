@@ -58,18 +58,26 @@ import { getVolumeRanking } from '@/services/mockTradingApi'
 const stockRanking = ref([])
 const updateTime = ref('')
 const isLoading = ref(false)
+const showAll = ref(false)
+
 let updateInterval = null
 
-const showAll = ref(false)
+/**
+ * 표시할 종목 목록 계산
+ */
 const visibleStocks = computed(() =>
   showAll.value ? stockRanking.value : stockRanking.value.slice(0, 10),
 )
 
+/**
+ * 거래량 순위 데이터 가져오기
+ */
 const fetchVolumeRanking = async () => {
   isLoading.value = true
 
   try {
     const response = await getVolumeRanking(20)
+
     if (response.success && response.data) {
       stockRanking.value = response.data
       updateTime.value = new Date().toLocaleTimeString('ko-KR', {
@@ -77,18 +85,61 @@ const fetchVolumeRanking = async () => {
         minute: '2-digit',
         second: '2-digit',
       })
+      console.log('📈 거래량 순위 업데이트 성공:', response.data.length, '건')
+    } else {
+      console.warn('⚠️ 거래량 순위 API 호출 실패:', response.message)
+      setFallbackData()
     }
   } catch (error) {
-    // 에러 처리
+    console.error('❌ 거래량 순위 조회 실패:', error.message)
+    setFallbackData()
   } finally {
     isLoading.value = false
   }
 }
 
+/**
+ * 기본 데이터 설정 (API 실패 시)
+ */
+const setFallbackData = () => {
+  stockRanking.value = [
+    {
+      code: '005930',
+      name: '삼성전자',
+      currentPrice: 75000,
+      change: 1000,
+      changePercent: 1.35,
+      isPositive: true,
+      tradingVolume: 500000000000,
+    },
+    {
+      code: '000660',
+      name: 'SK하이닉스',
+      currentPrice: 120000,
+      change: -2000,
+      changePercent: -1.64,
+      isPositive: false,
+      tradingVolume: 300000000000,
+    }
+  ]
+
+  updateTime.value = new Date().toLocaleTimeString('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+}
+
+/**
+ * 가격 포맷팅
+ */
 const formatPrice = (price) => {
   return price.toLocaleString() + '원'
 }
 
+/**
+ * 거래대금 포맷팅
+ */
 const formatTradingVolume = (volume) => {
   if (volume >= 100000000) {
     return Math.floor(volume / 100000000) + '억원'
@@ -99,19 +150,37 @@ const formatTradingVolume = (volume) => {
   }
 }
 
+/**
+ * 종목 선택 처리
+ */
 const selectStock = (stock) => {
-  // 종목 클릭 시 동작
+  console.log('📊 선택된 종목:', stock.name, `(${stock.code})`)
+
+  // TODO: 추후 종목 상세 페이지로 라우팅 또는 모달 표시
+  // router.push({ name: 'StockDetail', params: { code: stock.code } })
 }
 
+/**
+ * 컴포넌트 마운트 시 초기화
+ */
 onMounted(() => {
+  console.log('📈 거래량 순위 컴포넌트 초기화')
+
   fetchVolumeRanking()
+
+  // 30초마다 데이터 업데이트
   updateInterval = setInterval(fetchVolumeRanking, 30000)
 })
 
+/**
+ * 컴포넌트 언마운트 시 정리
+ */
 onUnmounted(() => {
   if (updateInterval) {
     clearInterval(updateInterval)
+    updateInterval = null
   }
+  console.log('📈 거래량 순위 컴포넌트 정리 완료')
 })
 </script>
 
@@ -143,6 +212,36 @@ onUnmounted(() => {
   color: #1f2937;
   margin: 0;
   background: transparent;
+}
+
+.update-time {
+  font-size: 12px;
+  color: #6b7280;
+  font-family: monospace;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .stock-list {
@@ -300,6 +399,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: background 0.2s;
 }
+
 .more-btn:hover {
   background: #e5e7eb;
 }
@@ -322,6 +422,7 @@ onUnmounted(() => {
     height: 24px;
     margin-right: 4px;
   }
+
   .rank-info {
     gap: 4px;
   }
