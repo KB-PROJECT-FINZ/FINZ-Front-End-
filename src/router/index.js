@@ -1,12 +1,19 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
+import ChatBotHomePage from '@/pages/ChatBotPage/ChatBotHomePage.vue'
+import RecommendPage from '@/pages/ChatBotPage/RecommendPage.vue'
+import AnalyzePage from '@/pages/ChatBotPage/AnalyzePage.vue'
+import TermExplainPage from '@/pages/ChatBotPage/TermExplainPage.vue'
+import PortfolioPage from '@/pages/ChatBotPage/PortfolioPage.vue'
+
 import LoginPage from '@/pages/LoginPages/LoginPage.vue'
 import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/LoginPages/SignupFormPage.vue'
-import ChatBotPage from '@/pages/ChatBotPage.vue'
 import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
+
 import HomePage from '@/pages/HomePage.vue'
 import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
-import InvestmentResult from '@/pages/InvestmentTestPage/InvestmentResult.vue'
+
 import TradingPage from '@/pages/TradingPage.vue'
 import ChartPage from '@/pages/ChartPage.vue'
 
@@ -17,24 +24,19 @@ const routes = [
     component: LoginPage,
   },
   {
-    path: '/login-form',
-    name: 'LoginFormPage',
+    path: '/login',
+    name: 'LoginForm',
     component: LoginFormPage,
   },
   {
     path: '/signup',
-    name: 'SignupFormPage',
+    name: 'SignupForm',
     component: SignupFormPage,
   },
   {
     path: '/find-account',
-    name: 'FindAccountPage',
+    name: 'FindAccount',
     component: FindAccountPage,
-  },
-  {
-    path: '/chatbot',
-    name: 'ChatBot',
-    component: ChatBotPage,
   },
   {
     path: '/home',
@@ -42,26 +44,45 @@ const routes = [
     component: HomePage,
   },
   {
+    path: '/chatbot',
+    name: 'ChatBotHomePage',
+    component: ChatBotHomePage,
+  },
+  {
+    path: '/chatbot/recommend',
+    name: 'ChatBotRecommendPage',
+    component: RecommendPage,
+  },
+  {
+    path: '/chatbot/analyze',
+    name: 'ChatBotAnalyzePage',
+    component: AnalyzePage,
+  },
+  {
+    path: '/chatbot/terms',
+    name: 'ChatBotTermExplainPage',
+    component: TermExplainPage,
+  },
+  {
+    path: '/chatbot/portfolio',
+    name: 'ChatBotPortfolioPage',
+    component: PortfolioPage,
+  },
+  {
     path: '/investment-test',
-    name: 'InvestmentTestPage',
+    name: 'InvestmentTest',
     component: InvestmentTestPage,
   },
   {
-    path: '/investment-result',
-    name: 'InvestmentResult',
-    component: InvestmentResult,
-  },
-  {
     path: '/trading',
-    name: 'trading',
+    name: 'Trading',
     component: TradingPage,
   },
   {
     path: '/chart',
-    name: 'chart',
+    name: 'Chart',
     component: ChartPage,
   },
-  // 나중에 /home, /mypage 등 추가 가능
 ]
 
 const router = createRouter({
