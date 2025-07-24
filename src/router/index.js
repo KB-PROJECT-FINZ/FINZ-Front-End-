@@ -1,18 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '@/pages/LoginPages/LoginView.vue'
+// import LoginView from '@/pages/LoginPages/LoginView.vue'
 import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
-import SignupFormPage from '@/pages/SignupFormPage.vue'
+import SignupFormPage from '@/pages/LoginPages/SignupFormPage.vue'
 import ChatBotPage from '@/pages/ChatBotPage.vue'
 import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
 import HomePage from '@/pages/HomePage.vue'
 import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
+import TradingPage from '@/pages/TradingPage.vue'
+import ChartPage from '@/pages/ChartPage.vue'
 
 const routes = [
-  {
-    path: '/',
-    name: 'Login',
-    component: LoginView,
-  },
+  // {
+  //   path: '/',
+  //   name: 'Login',
+  //   component: LoginView,
+  // },
   {
     path: '/login-form',
     name: 'LoginFormPage',
@@ -42,6 +44,16 @@ const routes = [
     path: '/investment-test',
     name: 'InvestmentTestPage',
     component: InvestmentTestPage,
+  },
+  {
+    path: '/trading',
+    name: 'trading',
+    component: TradingPage,
+  },
+  {
+    path: '/chart',
+    name: 'chart',
+    component: ChartPage,
   },
   // 나중에 /home, /mypage 등 추가 가능
 ]
