@@ -9,6 +9,7 @@ import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vu
 import InvestmentResult from '@/pages/InvestmentTestPage/InvestmentResult.vue'
 import TradingPage from '@/pages/TradingPage.vue'
 import ChartPage from '@/pages/ChartPage.vue'
+import { useUserStore } from '@/stores/user'
 
 const routes = [
   {
@@ -67,6 +68,18 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
+  const isLoggedIn = !!userStore.user
+
+  if (to.meta.requiresAuth && !isLoggedIn) {
+    alert('로그인이 필요합니다.')
+    next('/login')
+  } else {
+    next()
+  }
 })
 
 export default router

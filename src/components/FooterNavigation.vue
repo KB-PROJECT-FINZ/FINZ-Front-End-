@@ -31,8 +31,8 @@ const route = useRoute()
 
 const navItems = [
   { name: 'home', label: 'Home', to: '/home', icon: HomeIcon },
-  { name: 'mock', label: 'Trading', to: '/mock-trading', icon: TradingIcon },
-  { name: 'study', label: 'Study', to: '/study', icon: StudyIcon },
+  { name: 'mock', label: 'Trading', to: '/trading', icon: TradingIcon },
+  { name: 'study', label: 'learn', to: '/learn', icon: StudyIcon },
   { name: 'ranking', label: 'Ranking', to: '/ranking', icon: RankingIcon },
   { name: 'mypage', label: 'My Page', to: '/mypage', icon: MypageIcon },
 ]
