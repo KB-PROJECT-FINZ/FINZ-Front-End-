@@ -6,6 +6,7 @@ import ChatBotPage from '@/pages/ChatBotPage.vue'
 import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
 import HomePage from '@/pages/HomePage.vue'
 import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
+import InvestmentResult from '@/pages/InvestmentTestPage/InvestmentResult.vue'
 import TradingPage from '@/pages/TradingPage.vue'
 import ChartPage from '@/pages/ChartPage.vue'
 
@@ -44,6 +45,11 @@ const routes = [
     path: '/investment-test',
     name: 'InvestmentTestPage',
     component: InvestmentTestPage,
+  },
+  {
+    path: '/investment-result',
+    name: 'InvestmentResult',
+    component: InvestmentResult,
   },
   {
     path: '/trading',

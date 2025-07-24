@@ -16,6 +16,6 @@ app.mount('#app')
 // main.js 또는 src/axios.js
 import axios from 'axios'
 
-axios.defaults.baseURL = 'http://localhost:8080'   // Spring 서버 주소
+axios.defaults.baseURL = '/api'
 axios.defaults.headers.post['Content-Type'] = 'application/json'
 axios.defaults.withCredentials = true
