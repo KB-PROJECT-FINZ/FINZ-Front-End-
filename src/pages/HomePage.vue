@@ -34,7 +34,10 @@
       <div class="bg-gradient-to-r from-purple-400 to-blue-400 text-white rounded-xl p-4 mb-4">
         <div class="flex justify-between items-center mb-1">
           <p class="font-semibold">오늘의 학습 목표</p>
-          <button class="text-sm bg-white text-purple-600 px-3 py-1 rounded-full font-bold">
+          <button
+            class="text-sm bg-white text-purple-600 px-3 py-1 rounded-full font-bold"
+            @click="goToStudy"
+          >
             시작하기
           </button>
         </div>
@@ -60,7 +63,7 @@
     <div class="px-5 mt-6">
       <div class="flex justify-between items-center mb-2">
         <h2 class="text-md font-bold">적극투자형에게 추천하는 콘텐츠</h2>
-        <button class="text-xs text-gray-400 underline">전체보기</button>
+        <button class="text-xs text-gray-400 underline" @click="goToContents">전체보기</button>
       </div>
 
       <div class="flex gap-3 overflow-x-auto pb-1">
@@ -80,11 +83,14 @@
     <div class="px-5 mt-6">
       <h2 class="text-md font-bold mb-2">빠른 실행</h2>
       <div class="grid grid-cols-2 gap-3">
-        <div class="bg-white p-4 rounded-xl shadow-sm text-center">
+        <div class="bg-white p-4 rounded-xl shadow-sm text-center cursor-pointer" @click="goToQuiz">
           <p class="font-bold">오늘의 퀴즈</p>
           <p class="text-sm text-gray-400">5문제 남음</p>
         </div>
-        <div class="bg-white p-4 rounded-xl shadow-sm text-center">
+        <div
+          class="bg-white p-4 rounded-xl shadow-sm text-center cursor-pointer"
+          @click="goToPortfolio"
+        >
           <p class="font-bold">포트폴리오</p>
           <p class="text-sm text-gray-400">수익률 확인</p>
         </div>
@@ -103,4 +109,20 @@
 <script setup>
 // 추후 데이터 바인딩 가능
 import BottomNav from '@/components/FooterNavigation.vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const goToStudy = () => {
+  router.push('/study')
+}
+const goToContents = () => {
+  router.push('/contents')
+}
+const goToQuiz = () => {
+  router.push('/quiz')
+}
+const goToPortfolio = () => {
+  router.push('/portfolio')
+}
 </script>
