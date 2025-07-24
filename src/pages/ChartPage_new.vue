@@ -70,7 +70,7 @@
       <!-- 자동 새로고침 상태 표시 -->
       <div class="flex items-center space-x-2">
         <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-        <span class="text-sm text-gray-600">자동 새로고침</span>
+        <span class="text-sm text-gray-600">1분 자동 새로고침</span>
       </div>
     </div>
 

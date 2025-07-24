@@ -10,6 +10,11 @@ import TradingPage from '@/pages/TradingPage.vue'
 import ChartPage from '@/pages/ChartPage.vue'
 
 const routes = [
+  {
+    path: '/',
+    name: 'home',
+    component: HomePage,
+  },
   // {
   //   path: '/',
   //   name: 'Login',
