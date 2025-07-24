@@ -6,12 +6,12 @@ import AnalyzePage from '@/pages/ChatBotPage/AnalyzePage.vue'
 import TermExplainPage from '@/pages/ChatBotPage/TermExplainPage.vue'
 import PortfolioPage from '@/pages/ChatBotPage/PortfolioPage.vue'
 
-import LoginPage from '@/pages/LoginPages/LoginPage.vue'
+import LoginView from '@/pages/LoginPages/LoginPage.vue'
 import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/LoginPages/SignupFormPage.vue'
 import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
-
 import HomePage from '@/pages/HomePage.vue'
+
 import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
 
 import TradingPage from '@/pages/TradingPage.vue'
@@ -21,11 +21,11 @@ const routes = [
   {
     path: '/',
     name: 'Login',
-    component: LoginPage,
+    component: LoginView,
   },
   {
-    path: '/login',
-    name: 'LoginForm',
+    path: '/login-form',
+    name: 'LoginFormPage',
     component: LoginFormPage,
   },
   {
