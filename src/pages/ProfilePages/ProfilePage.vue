@@ -42,7 +42,7 @@
         </div>
         <span class="menu-arrow">&#8250;</span>
       </router-link>
-      <router-link to="/testPage" class="menu-card">
+      <router-link to="/investment-test" class="menu-card">
         <span class="menu-icon">📝</span>
         <div class="menu-info">
           <div class="menu-title">나의 투자 성향 알아보기</div>

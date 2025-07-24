@@ -1,16 +1,36 @@
 <template>
   <div id="app">
     <div class="mobile-container">
-      <router-view />
+      <transition name="fade" mode="out-in">
+        <router-view />
+      </transition>
     </div>
   </div>
 </template>
 
+<script>
+import { onMounted } from 'vue'
+import { useUserStore } from './stores/user'
+
+export default {
+  setup() {
+    const userStore = useUserStore()
+
+    onMounted(() => {
+      const savedUsername = localStorage.getItem('username')
+      if (savedUsername) {
+        userStore.setUser(savedUsername)
+      }
+    })
+  },
+}
+</script>
+
 <style scoped>
-/*  페이드 전환 효과 */
+/* 페이드 전환 효과 */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 2s ease;
+  transition: opacity 1s ease;
 }
 .fade-enter-from,
 .fade-leave-to {
