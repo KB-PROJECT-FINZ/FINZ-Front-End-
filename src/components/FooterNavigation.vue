@@ -32,9 +32,9 @@ const route = useRoute()
 const navItems = [
   { name: 'home', label: 'Home', to: '/home', icon: HomeIcon },
   { name: 'mock', label: 'Trading', to: '/mock-trading', icon: TradingIcon },
-  { name: 'study', label: 'Study', to: '/study', icon: StudyIcon },
+  { name: 'study', label: 'Study', to: '/learning', icon: StudyIcon },
   { name: 'ranking', label: 'Ranking', to: '/ranking', icon: RankingIcon },
-  { name: 'mypage', label: 'My Page', to: '/mypage', icon: MypageIcon },
+  { name: 'mypage', label: 'My Page', to: '/profile', icon: MypageIcon },
 ]
 
 const isActive = (path) => route.path.startsWith(path)

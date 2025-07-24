@@ -23,6 +23,10 @@ export default defineConfig({
     },
   },
   build: {
+
+    outDir: '../FINZ-Back-End-/src/main/webapp/resources',
+
     outDir: '../FinzBack/src/main/webapp/resources',
+
   },
 })
