@@ -102,17 +102,20 @@ const password = ref('')
 const handleLogin = async () => {
   try {
     const res = await axios.post('/auth/login', {
-      username: email.value,
+      username: email.value, // 수정: email을 username으로 보냄
       password: password.value,
     })
 
     if (res.data) {
       userStore.setUser(res.data) // Pinia에 저장
       alert('로그인 성공!')
-      router.push('/') // 메인페이지 이동
+      localStorage.setItem('userId', res.data.userId)
+      router.push('/home') // 메인페이지 이동
     }
   } catch (err) {
     alert('로그인 실패: 아이디 또는 비밀번호 확인')
+    console.log('email:', email.value)
+    console.log('password:', password.value)
     console.error(err)
   }
 }
