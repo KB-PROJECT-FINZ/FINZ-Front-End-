@@ -6,6 +6,9 @@ import ChatBotPage from '@/pages/ChatBotPage.vue'
 import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
 import HomePage from '@/pages/HomePage.vue'
 import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
+import InvestmentResult from '@/pages/InvestmentTestPage/InvestmentResult.vue'
+import TradingPage from '@/pages/TradingPage.vue'
+import ChartPage from '@/pages/ChartPage.vue'
 
 const routes = [
   {
@@ -46,7 +49,17 @@ const routes = [
   {
     path: '/investment-result',
     name: 'InvestmentResult',
-    component: () => import('@/pages/InvestmentTestPage/InvestmentResult.vue'),
+    component: InvestmentResult,
+  },
+  {
+    path: '/trading',
+    name: 'trading',
+    component: TradingPage,
+  },
+  {
+    path: '/chart',
+    name: 'chart',
+    component: ChartPage,
   },
   // 나중에 /home, /mypage 등 추가 가능
 ]
