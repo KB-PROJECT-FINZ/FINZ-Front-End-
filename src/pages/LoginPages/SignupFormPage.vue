@@ -136,7 +136,6 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 const router = useRouter()
-
 const name = ref('')
 const email = ref('')
 const nickname = ref('')
@@ -167,7 +166,7 @@ const checkNickname = async () => {
   }
 
   try {
-    const res = await axios.get(`/api/auth/check-nickname?nickname=${nickname.value}`)
+    const res = await axios.get(`/auth/check-nickname?nickname=${nickname.value}`)
     console.log('요청 닉네임:', nickname.value)
     console.log('응답 데이터:', res.data)
     console.log('닉네임 중복확인 응답:', res.data) // 디버깅용 로그
@@ -184,14 +183,15 @@ const checkNickname = async () => {
 
 const handleSignup = async () => {
   try {
-    const res = await axios.post('/api/auth/register', {
-      // eslint-disable-next-line no-undef
-      username: username.value,
+    const res = await axios.post('/auth/register', {
+      username: email.value,
       password: password.value,
+      name: name.value,
+      email: email.value,
       nickname: nickname.value,
-      phoneNumber: '010-0000-0000', // 선택 입력값이 없으므로 임의값
+      phoneNumber: '010-0000-0000',
       provider: 'local',
-      riskType: 'CSD', // 초기값 (성향 테스트 후 갱신)
+      riskType: 'CSD',
     })
 
     if (res.data) {
