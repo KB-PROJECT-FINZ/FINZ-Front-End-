@@ -2,7 +2,6 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-
 export const useCounterStore = defineStore('counter', () => {
   const count = ref(0)
   const doubleCount = computed(() => count.value * 2)
@@ -15,34 +14,31 @@ export const useCounterStore = defineStore('counter', () => {
 
 export const useChatStore = defineStore('chat', {
   state: () => ({
-    messages: []  // [{ role: 'user'|'bot', content: '' }]
+    messages: [],
   }),
 
   actions: {
-    async sendMessage(message) {
-      // 1. 사용자 메시지 추가
+    // ✅ intentType 추가 인자로 받기
+    async sendMessage(message, intentType = 'RECOMMEND_PROFILE') {
       this.messages.push({ role: 'user', content: message })
 
       try {
-        // 2. DTO 구조에 맞춰 전송
         const res = await axios.post('/api/chatbot/message', {
           userId: 1,
           sessionId: 1,
           message: message,
-          intentType: 'RECOMMEND_PROFILE'  // 또는 UI에서 선택
+          intentType: intentType, // ✅ 여기에 포함됨
         })
 
-        console.log('GPT 응답:', res.data) //디버깅
-
-
-        // 3. 응답 처리
-        const reply = res.data.content  // ✅ DTO 필드명: content
+        const reply = res.data.content
         this.messages.push({ role: 'bot', content: reply })
-
+        if (reply === '⚠️ 서버 오류 발생') {
+          console.error('서버 오류 발생:', res.data)
+        }
       } catch (e) {
-        console.error('GPT 응답 오류:', e)
-        this.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했습니다.' })
+        console.error('메시지 전송 중 오류 발생:', e)
+        this.messages.push({ role: 'bot', content: '⚠️ 서버 오류 발생' })
       }
-    }
-  }
+    },
+  },
 })

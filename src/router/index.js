@@ -1,32 +1,34 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
 import HomePage from '../pages/HomePage.vue'
 import TestPage from '../pages/TestPage.vue'
+import LoginPage from '@/pages/LoginPages/LoginPage.vue'
 import ProfilePage from '@/pages//ProfilePages/ProfilePage.vue'
 import JournalPage from '@/pages/ProfilePages//JournalPage.vue'
 import JournalWritePage from '@/pages//ProfilePages/JournalWritePage.vue'
 import FeedbackPage from '@/pages/ProfilePages/FeedbackPage.vue'
-import LoginView from '@/pages/LoginPages/LoginPage.vue'
 import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/LoginPages/SignupFormPage.vue'
-import ChatBotPage from '@/pages/ChatBotPage.vue'
 import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
 import FeedbackListPage from '@/pages/ProfilePages/FeedbackListPage.vue'
+import ChatBotHomePage from '@/pages/ChatBotPage/ChatBotHomePage.vue'
+import RecommendPage from '@/pages/ChatBotPage/RecommendPage.vue'
+import AnalyzePage from '@/pages/ChatBotPage/AnalyzePage.vue'
+import TermExplainPage from '@/pages/ChatBotPage/TermExplainPage.vue'
+import PortfolioPage from '@/pages/ChatBotPage/PortfolioPage.vue'
 import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
 import LearningDetailPage from '@/pages/Learning/LearningDetailPage.vue'
 import LearningQuizPage from '@/pages/Learning/LearningQuizPage.vue'
 import LearningPage from '@/pages/Learning/LearningPage.vue'
+import InvestmentResult from '@/pages/InvestmentTestPage/InvestmentResult.vue'
+import TradingPage from '@/pages/TradingPage.vue'
+import ChartPage from '@/pages/ChartPage.vue'
+import { useUserStore } from '@/stores/user'
 
 const routes = [
   {
     path: '/',
-    name: 'Login',
-    component: LoginView,
-  },
-  {
-    path: '/',
-    name: 'LoginFormPage',
-    component: LoginFormPage,
+    name: 'Loginpage',
+    component: LoginPage,
   },
   {
     path: '/login-form',
@@ -35,18 +37,13 @@ const routes = [
   },
   {
     path: '/signup',
-    name: 'SignupFormPage',
+    name: 'SignupForm',
     component: SignupFormPage,
   },
   {
     path: '/find-account',
-    name: 'FindAccountPage',
+    name: 'FindAccount',
     component: FindAccountPage,
-  },
-  {
-    path: '/chatbot',
-    name: 'ChatBot',
-    component: ChatBotPage,
   },
   {
     path: '/home',
@@ -54,9 +51,9 @@ const routes = [
     component: HomePage,
   },
   {
-    path: '/test',
-    name: 'test',
-    component: TestPage,
+    path: '/investment-result',
+    name: 'InvestmentResult',
+    component: InvestmentResult,
   },
   {
     path: '/profile',
@@ -84,11 +81,35 @@ const routes = [
     component: FeedbackListPage,
   },
   {
+    path: '/chatbot',
+    name: 'ChatBotHomePage',
+    component: ChatBotHomePage,
+  },
+  {
+    path: '/chatbot/recommend',
+    name: 'ChatBotRecommendPage',
+    component: RecommendPage,
+  },
+  {
+    path: '/chatbot/analyze',
+    name: 'ChatBotAnalyzePage',
+    component: AnalyzePage,
+  },
+  {
+    path: '/chatbot/terms',
+    name: 'ChatBotTermExplainPage',
+    component: TermExplainPage,
+  },
+  {
+    path: '/chatbot/portfolio',
+    name: 'ChatBotPortfolioPage',
+    component: PortfolioPage,
+  },
+  {
     path: '/investment-test',
-    name: 'InvestmentTestPage',
+    name: 'InvestmentTest',
     component: InvestmentTestPage,
   },
-  // 나중에 /home, /mypage 등 추가 가능
   {
     path: '/learning',
     name: 'learning',
@@ -104,11 +125,33 @@ const routes = [
     name: 'learning-quiz',
     component: LearningQuizPage,
   },
+  {
+    path: '/trading',
+    name: 'Trading',
+    component: TradingPage,
+  },
+  {
+    path: '/chart',
+    name: 'Chart',
+    component: ChartPage,
+  },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
+  const isLoggedIn = !!userStore.user
+
+  if (to.meta.requiresAuth && !isLoggedIn) {
+    alert('로그인이 필요합니다.')
+    next('/login')
+  } else {
+    next()
+  }
 })
 
 export default router
