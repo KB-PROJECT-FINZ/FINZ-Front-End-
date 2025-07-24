@@ -1,4 +1,3 @@
-<!-- src/components/TabSwitcher.vue -->
 <template>
   <div class="flex gap-2 mb-4">
     <button
