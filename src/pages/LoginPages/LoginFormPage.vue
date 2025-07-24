@@ -109,6 +109,7 @@ const handleLogin = async () => {
     if (res.data) {
       userStore.setUser(res.data) // Pinia에 저장
       alert('로그인 성공!')
+      localStorage.setItem('userId', res.data.userId)
       router.push('/home') // 메인페이지 이동
     }
   } catch (err) {
