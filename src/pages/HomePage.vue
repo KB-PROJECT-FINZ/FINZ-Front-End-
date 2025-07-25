@@ -100,6 +100,20 @@
       </div>
     </div>
 
+    <!-- 개발자 도구 -->
+    <div class="px-5 mt-6">
+      <h2 class="text-md font-bold mb-2">개발자 도구</h2>
+      <div class="grid grid-cols-1 gap-3">
+        <button
+          @click="navigateToChart"
+          class="bg-blue-500 text-white p-4 rounded-xl text-center hover:bg-blue-600 transition-colors"
+        >
+          <p class="font-bold">차트 보기</p>
+          <p class="text-sm opacity-80">캔들스틱 차트</p>
+        </button>
+      </div>
+    </div>
+
     <!-- 하단 네비게이션 -->
     <div>
       <router-view />
