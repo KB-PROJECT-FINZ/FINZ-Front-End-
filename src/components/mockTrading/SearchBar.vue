@@ -89,9 +89,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { searchStocks } from '@/services/mockTradingApi'
 import MarketIndexTicker from './MarketIndexTicker.vue'
 
+const router = useRouter()
 const searchQuery = ref('')
 const showResults = ref(false)
 const filteredStocks = ref([])
@@ -145,15 +147,29 @@ const handleSearch = async () => {
   }, 300)
 }
 
-const selectStock = (stock) => {
+const selectStock = async (stock) => {
   searchQuery.value = `${stock.name} (${stock.code})`
   showResults.value = false
   filteredStocks.value = []
 
   console.log('📊 선택된 종목:', stock.name, `(${stock.code})`)
 
-  // TODO: 추후 종목 선택 이벤트 emit 또는 라우팅 처리
-  // emit('stock-selected', stock)
+  try {
+    // 종목 차트 페이지로 라우팅
+    await router.push({
+      name: 'ChartPage',
+      params: {
+        stockCode: stock.code
+      },
+      query: {
+        stockName: stock.name
+      }
+    })
+
+    console.log('🔀 종목 차트 페이지로 이동:', `/mock-trading/${stock.code}/chart`)
+  } catch (error) {
+    console.error('❌ 라우팅 오류:', error)
+  }
 }
 
 const hideResults = () => {
