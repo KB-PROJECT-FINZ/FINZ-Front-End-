@@ -80,8 +80,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { getVolumeRanking } from '@/services/mockTradingApi'
 
+const router = useRouter()
 const stockRanking = ref([])
 const updateTime = ref('')
 const isLoading = ref(false)
@@ -209,9 +211,26 @@ const formatTradingVolume = (volume) => {
   }
 }
 
-const selectStock = (stock) => {
-  console.log('📊 선택된 종목:', stock.name, `(${stock.code})`)
-  // TODO: 추후 종목 상세 페이지로 라우팅 또는 모달 표시
+const selectStock = async (stock) => {
+  console.log('📊 거래량 순위에서 종목 선택:', stock.name, `(${stock.code})`)
+
+  try {
+    // 종목 차트 페이지로 라우팅
+    await router.push({
+      name: 'ChartPage',
+      params: {
+        stockCode: stock.code
+      },
+      query: {
+        stockName: stock.name,
+        source: 'volume-ranking' // 어디서 온 건지 추적용
+      }
+    })
+
+    console.log('🔀 종목 차트 페이지로 이동:', `/mock-trading/${stock.code}/chart`)
+  } catch (error) {
+    console.error('❌ 라우팅 오류:', error)
+  }
 }
 
 // 이미지 로딩 에러 처리
