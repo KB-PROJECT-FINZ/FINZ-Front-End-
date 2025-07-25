@@ -25,8 +25,22 @@
       <div class="quiz-credit">{{ quiz.credit }}크레딧</div>
       <div class="quiz-question">{{ removeOX(quiz.question) }}</div>
       <div class="quiz-ox-choices">
-        <button class="quiz-ox-btn o-btn" :class="{ selected: selected === 'O', disabled: result !== null }" :disabled="result !== null" @click="selectOX('O')">O (맞음)</button>
-        <button class="quiz-ox-btn x-btn" :class="{ selected: selected === 'X', disabled: result !== null }" :disabled="result !== null" @click="selectOX('X')">X (틀림)</button>
+        <button
+          class="quiz-ox-btn o-btn"
+          :class="{ selected: selected === 'O', disabled: result !== null }"
+          :disabled="result !== null"
+          @click="selectOX('O')"
+        >
+          O (맞음)
+        </button>
+        <button
+          class="quiz-ox-btn x-btn"
+          :class="{ selected: selected === 'X', disabled: result !== null }"
+          :disabled="result !== null"
+          @click="selectOX('X')"
+        >
+          X (틀림)
+        </button>
       </div>
       <div v-if="result !== null" class="quiz-feedback">
         <div v-if="result" class="quiz-correct">✅ 정답입니다!</div>
@@ -44,54 +58,53 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { fetchLearningContentById, fetchLearningQuizById } from '../../services/learning';
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { fetchLearningContentById, fetchLearningQuizById } from '../../services/learning'
 
-const route = useRoute();
-const router = useRouter();
-const content = ref(null);
-const quiz = ref(null);
-const selected = ref('');
-const result = ref(null);
-const showExplain = ref(false);
-const showExplainBtnClicked = ref(false);
+const route = useRoute()
+const router = useRouter()
+const content = ref(null)
+const quiz = ref(null)
+const selected = ref('')
+const result = ref(null)
+const showExplainBtnClicked = ref(false)
 
 onMounted(async () => {
-  content.value = await fetchLearningContentById(route.params.id);
-  quiz.value = await fetchLearningQuizById(route.params.id);
-});
+  content.value = await fetchLearningContentById(route.params.id)
+  quiz.value = await fetchLearningQuizById(route.params.id)
+})
 
 function goBack() {
-  router.back();
+  router.back()
 }
 
 function selectOX(val) {
-  if (result.value !== null) return;
-  selected.value = val;
+  if (result.value !== null) return
+  selected.value = val
   // 정답이 'O' 또는 'X'로 저장되어 있다고 가정
-  result.value = selected.value === quiz.value.answer;
-  showExplainBtnClicked.value = false; // 선택 시 해설은 다시 숨김
+  result.value = selected.value === quiz.value.answer
+  showExplainBtnClicked.value = false // 선택 시 해설은 다시 숨김
 }
 
 function extractYoutubeId(url) {
-  const match = url.match(/(?:youtu.be\/|youtube.com\/(?:watch\?v=|embed\/))([\w-]{11})/);
-  return match ? match[1] : '';
+  const match = url.match(/(?:youtube\/|youtube.com\/(?:watch\?v=|embed\/))([\w-]{11})/)
+  return match ? match[1] : ''
 }
 
 function removeOX(text) {
-  return text ? text.replace(/\s*\(O\/X\)/gi, '') : '';
+  return text ? text.replace(/\s*\(O\/X\)/gi, '') : ''
 }
 
 // 본문 줄바꿈, 리스트 등 간단 포맷팅
 const formattedBody = computed(() => {
-  if (!content.value?.body) return '';
+  if (!content.value?.body) return ''
   let html = content.value.body
     .replace(/\n/g, '<br>')
-    .replace(/•\s?(.+?)(?=<br>|$)/g, '<li>$1</li>');
-  if (html.includes('<li>')) html = '<ul>' + html + '</ul>';
-  return html;
-});
+    .replace(/•\s?(.+?)(?=<br>|$)/g, '<li>$1</li>')
+  if (html.includes('<li>')) html = '<ul>' + html + '</ul>'
+  return html
+})
 </script>
 
 <style scoped>
@@ -107,7 +120,7 @@ const formattedBody = computed(() => {
   position: relative;
   background: #fff;
   padding: 18px 0 12px 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   margin-bottom: 8px;
 }
 .back-btn {
@@ -132,7 +145,7 @@ const formattedBody = computed(() => {
   border-radius: 18px;
   margin: 18px 16px 0 16px;
   padding: 22px 18px 18px 18px;
-  box-shadow: 0 2px 12px rgba(127,127,213,0.08);
+  box-shadow: 0 2px 12px rgba(127, 127, 213, 0.08);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -144,7 +157,7 @@ const formattedBody = computed(() => {
   border-radius: 14px;
   margin: 0 auto 18px auto;
   display: block;
-  box-shadow: 0 2px 8px rgba(44,62,80,0.10);
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.1);
 }
 .detail-title {
   font-size: 1.2rem;
@@ -172,7 +185,7 @@ const formattedBody = computed(() => {
   border-radius: 16px;
   margin: 18px 16px 0 16px;
   padding: 20px 18px 18px 18px;
-  box-shadow: 0 2px 12px rgba(127,127,213,0.08);
+  box-shadow: 0 2px 12px rgba(127, 127, 213, 0.08);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -206,7 +219,9 @@ const formattedBody = computed(() => {
   font-size: 1rem;
   color: #333;
   cursor: pointer;
-  transition: background 0.15s, border 0.15s;
+  transition:
+    background 0.15s,
+    border 0.15s;
 }
 .quiz-choice.selected {
   background: #e0e7ff;
@@ -232,8 +247,11 @@ const formattedBody = computed(() => {
   border-radius: 10px;
   padding: 12px 0;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
-  box-shadow: 0 1px 4px rgba(44,62,80,0.07);
+  transition:
+    background 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
+  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.07);
 }
 .o-btn {
   background: #e0f7e9;
@@ -244,7 +262,7 @@ const formattedBody = computed(() => {
   color: #e74c3c;
 }
 .quiz-ox-btn.selected {
-  box-shadow: 0 2px 8px rgba(44,62,80,0.13);
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.13);
   border: 2px solid #3730a3;
   background: #e0e7ff;
   color: #3730a3;
@@ -303,7 +321,9 @@ const formattedBody = computed(() => {
   font-weight: bold;
   margin-top: 10px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .quiz-explain-toggle:hover {
   background: #e0e7ff;
@@ -317,10 +337,11 @@ const formattedBody = computed(() => {
   width: 100%;
   height: 220px;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(44,62,80,0.10);
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.1);
 }
 @media (max-width: 600px) {
-  .detail-content, .quiz-card {
+  .detail-content,
+  .quiz-card {
     margin: 14px 4px 0 4px;
     padding: 16px 6px 14px 10px;
   }
@@ -328,4 +349,4 @@ const formattedBody = computed(() => {
     max-width: 100vw;
   }
 }
-</style> 
+</style>

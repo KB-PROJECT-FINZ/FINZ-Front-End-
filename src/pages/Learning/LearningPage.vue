@@ -8,7 +8,7 @@
 
     <!-- 프로필 박스 -->
     <section class="profile-box">
-      <div class="profile-icon"> <span class="icon">👤</span> </div>
+      <div class="profile-icon"><span class="icon">👤</span></div>
       <div class="profile-info">
         <div class="profile-name">{{ user.name }}은</div>
         <div class="profile-type">{{ user.riskType }} 사고 유형입니다</div>
@@ -20,7 +20,12 @@
     <section class="content-list">
       <h2 class="section-title">추천 학습 콘텐츠</h2>
       <div class="content-list-wrap">
-        <div v-for="(item, idx) in learningContents" :key="item.contentId" class="content-list-card" @click="goToDetail(item.contentId)">
+        <div
+          v-for="item in learningContents"
+          :key="item.contentId"
+          class="content-list-card"
+          @click="goToDetail(item.contentId)"
+        >
           <img :src="item.thumbnail || defaultThumbnail" class="content-thumb" />
           <div class="content-list-info">
             <div class="content-list-title">{{ item.title }}</div>
@@ -34,38 +39,40 @@
         <div v-if="idx < learningContents.length - 1" class="divider"></div>
       </div>
     </section>
+    <FooterNavigation />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { fetchLearningContentsByGroup } from '../../services/learning';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue'
+import { fetchLearningContentsByGroup } from '../../services/learning'
+import { useRouter } from 'vue-router'
+import FooterNavigation from '../../components/FooterNavigation.vue'
 
-const defaultThumbnail = 'https://via.placeholder.com/150x100?text=No+Image';
-const learningContents = ref([]);
-const router = useRouter();
+const defaultThumbnail = 'https://via.placeholder.com/150x100?text=No+Image'
+const learningContents = ref([])
+const router = useRouter()
 
 const user = ref({
   name: '김지훈',
   riskType: '분석적',
   message: '체계적이고 논리적인 학습을 선호하시는군요!',
-  groupCode: 'ANALYTICAL'
-});
+  groupCode: 'ANALYTICAL',
+})
 
 onMounted(async () => {
   try {
-    learningContents.value = await fetchLearningContentsByGroup(user.value.groupCode);
+    learningContents.value = await fetchLearningContentsByGroup(user.value.groupCode)
   } catch (e) {
-    console.error('러닝 콘텐츠 불러오기 실패:', e);
+    console.error('러닝 콘텐츠 불러오기 실패:', e)
   }
-});
+})
 
 function goToDetail(id) {
-  router.push(`/learning/${id}`);
+  router.push(`/learning/${id}`)
 }
 function goBack() {
-  router.back();
+  router.back()
 }
 </script>
 
@@ -82,7 +89,7 @@ function goBack() {
   position: relative;
   background: #fff;
   padding: 18px 0 12px 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   margin-bottom: 8px;
 }
 .back-btn {
@@ -109,13 +116,13 @@ function goBack() {
   padding: 22px 18px 18px 18px;
   display: flex;
   align-items: center;
-  box-shadow: 0 2px 12px rgba(127,127,213,0.08);
+  box-shadow: 0 2px 12px rgba(127, 127, 213, 0.08);
 }
 .profile-icon {
   width: 54px;
   height: 54px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.25);
+  background: rgba(255, 255, 255, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -151,67 +158,73 @@ function goBack() {
 }
 .content-list-card {
   background: #fff;
-  border-radius: 14px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
-  box-shadow: 0 1px 6px rgba(44,62,80,0.07);
-  padding: 10px 12px;
+  box-shadow: 0 2px 12px rgba(44, 62, 80, 0.1);
+  padding: 24px 20px;
   cursor: pointer;
   transition: box-shadow 0.18s;
   position: relative;
+  min-height: 110px;
+  margin-bottom: 18px;
 }
 .content-list-card:hover {
-  box-shadow: 0 4px 16px rgba(44,62,80,0.13);
+  box-shadow: 0 6px 24px rgba(44, 62, 80, 0.18);
 }
 .content-thumb {
-  width: 60px;
-  height: 60px;
-  border-radius: 10px;
+  width: 90px;
+  height: 90px;
+  border-radius: 14px;
   object-fit: cover;
   background: #eee;
-  margin-right: 14px;
+  margin-right: 24px;
+  box-shadow: 0 1px 8px rgba(44, 62, 80, 0.08);
 }
 .content-list-info {
   flex: 1;
   min-width: 0;
 }
 .content-list-title {
-  font-size: 1rem;
+  font-size: 1.18rem;
   font-weight: bold;
   color: #222;
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-bottom: 8px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
 }
 .content-list-desc {
-  color: #666;
-  font-size: 0.93rem;
-  margin-bottom: 4px;
-  white-space: nowrap;
+  color: #333;
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .content-list-meta {
   display: flex;
-  gap: 10px;
-  font-size: 0.88rem;
+  gap: 12px;
+  font-size: 0.98rem;
   color: #888;
 }
 .content-list-type {
   background: #e0e7ff;
   color: #3730a3;
   border-radius: 8px;
-  padding: 2px 8px;
-  font-size: 0.85rem;
+  padding: 4px 12px;
+  font-size: 0.95rem;
 }
 .content-list-read {
   color: #888;
 }
 .content-list-arrow {
-  font-size: 1.5rem;
+  font-size: 2rem;
   color: #bdbdbd;
-  margin-left: 8px;
+  margin-left: 18px;
 }
 .divider {
   height: 1px;
@@ -231,11 +244,14 @@ function goBack() {
   .content-list-card {
     flex-direction: column;
     align-items: flex-start;
-    padding: 10px 8px;
+    padding: 18px 8px;
+    min-height: 90px;
   }
   .content-thumb {
     margin-right: 0;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    width: 80px;
+    height: 80px;
   }
 }
 </style>

@@ -17,10 +17,12 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
       },
     },
   },
   build: {
-    outDir: '../FINZ-Back-End-/src/main/webapp/resources',
+    outDir: '../FinzBack/src/main/webapp/resources',
   },
 })
