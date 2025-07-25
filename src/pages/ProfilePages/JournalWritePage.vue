@@ -26,7 +26,6 @@
 </template>
 <script setup>
 import axios from 'axios'
-import BottomNavigation from '@/components/FooterNavigation.vue'
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 

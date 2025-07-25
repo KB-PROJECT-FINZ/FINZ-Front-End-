@@ -31,7 +31,7 @@ export default {
 /* 페이드 전환 효과 */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 1s ease;
+  transition: opacity 0.7s ease;
 }
 .fade-enter-from,
 .fade-leave-to {
