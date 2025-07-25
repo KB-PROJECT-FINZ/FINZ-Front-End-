@@ -18,6 +18,7 @@
         <label class="text-sm text-gray-600">이메일</label>
         <div class="relative mt-1">
           <input
+            v-model="email"
             type="email"
             placeholder="이메일을 입력해주세요"
             class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -30,6 +31,7 @@
         <label class="text-sm text-gray-600">비밀번호</label>
         <div class="relative mt-1">
           <input
+            v-model="password"
             :type="showPassword ? 'text' : 'password'"
             placeholder="비밀번호를 입력해주세요"
             class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -79,17 +81,54 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { useUserStore } from '@/stores/user'
+
 const router = useRouter()
+const userStore = useUserStore()
 
 const showPassword = ref(false)
 const togglePassword = () => {
   showPassword.value = !showPassword.value
 }
 
+// 입력값
+const email = ref('')
+const password = ref('')
+
+// 로그인 요청
+const handleLogin = async () => {
+  try {
+    const res = await axios.post('/auth/login', {
+      username: email.value, // 수정: email을 username으로 보냄
+      password: password.value,
+    })
+
+    if (res.data) {
+      const { username, name, id } = res.data
+
+      // 상태 저장
+      userStore.setUser(res.data)
+
+      // 로컬스토리지 저장
+      localStorage.setItem('username', username)
+      localStorage.setItem('name', name)
+      localStorage.setItem('userId', id)
+      console.log(localStorage.getItem('name'))
+      alert('로그인 성공!')
+      router.push('/home')
+    }
+  } catch (err) {
+    alert('로그인 실패: 아이디 또는 비밀번호 확인')
+    console.log('email:', email.value)
+    console.log('password:', password.value)
+    console.error(err)
+  }
+}
+
 const handleFindAccount = () => {
-  console.log('아이디/비밀번호 찾기 클릭')
   router.push('/find-account')
 }
 </script>
