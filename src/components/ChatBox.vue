@@ -7,7 +7,6 @@
         :key="i"
         :class="msg.role === 'user' ? 'text-right' : 'text-left'"
       >
-
         <!-- 일반 메시지 -->
         <p
           v-if="!msg.type"
@@ -35,30 +34,28 @@
     </div>
 
     <!-- 입력창 -->
-
-    <form @submit.prevent="handleSubmit">
+    <form @submit.prevent="handleSubmit" class="flex gap-2">
       <input
         v-model="input"
-        @keydown.enter="submit"
         placeholder="메시지를 입력하세요"
         class="flex-1 border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring focus:border-purple-300"
       />
       <button
+        type="submit"
         class="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-purple-700"
-        @click="submit"
       >
         전송
       </button>
-    </div>
+    </form>
   </div>
 </template>
 
 <script setup>
-
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import axios from 'axios'
 import { useChatStore } from '@/stores/counter.js'
 
-// Props: 외부에서 intent, sessionId, userId 전달
+// Props
 const props = defineProps({
   fixedIntent: { type: String, default: 'MESSAGE' },
   sessionId: { type: Number, default: null },
@@ -67,16 +64,17 @@ const props = defineProps({
 
 // 상태
 const input = ref('')
-
+const loading = ref(false)
 const awaitingKeyword = ref(false)
-const chatStore = useChatStore()
 
-// GPT 호출
+const chatStore = useChatStore()
+const messages = computed(() => chatStore.messages)
+
+// 메시지 전송
 async function fetchGPT(prompt) {
   loading.value = true
   try {
-    // 사용자 메시지 출력
-    messages.value.push({ role: 'user', text: prompt })
+    messages.value.push({ role: 'user', content: prompt })
 
     const res = await axios.post('/api/chatbot/message', {
       userId: props.userId,
@@ -85,8 +83,20 @@ async function fetchGPT(prompt) {
       intentType: props.fixedIntent,
     })
 
+    // 예시: 응답 메시지 처리
+    chatStore.messages.push(...res.data.messages)
+  } catch (e) {
+    console.error('GPT 호출 실패:', e)
+  } finally {
+    loading.value = false
+  }
+}
 
-  // 키워드 입력 모드일 경우
+// 키워드 모드
+async function handleSubmit() {
+  if (!input.value.trim()) return
+
+  // 키워드 입력 요청된 경우
   if (awaitingKeyword.value) {
     const keyword = input.value.trim()
     awaitingKeyword.value = false
@@ -95,29 +105,19 @@ async function fetchGPT(prompt) {
     return
   }
 
-// 전송
-function submit() {
-  if (!input.value.trim()) return
+  // 일반 메시지 전송
   const msg = input.value
   input.value = ''
   fetchGPT(msg)
 }
 
-// 외부에서 호출 가능한 메서드 등록
-function sendPrompt(text) {
-  if (!text) return
-  fetchGPT(text)
-}
-
-
+// 버튼 intent 처리
 async function handleButtonIntent(btn) {
-  // 외부 링크 이동
   if (btn.intent === 'EXTERNAL_LINK' && btn.href) {
     window.location.href = btn.href
     return
   }
 
-  // 종목 추천 → 성향/키워드 분기
   if (btn.intent === 'RECOMMEND_SELECT') {
     chatStore.clearMessages()
     chatStore.messages.push({
@@ -139,7 +139,6 @@ async function handleButtonIntent(btn) {
     return
   }
 
-  // 키워드 입력 요청
   if (btn.intent === 'RECOMMEND_KEYWORD_INPUT') {
     awaitingKeyword.value = true
     chatStore.messages.push({
@@ -149,10 +148,11 @@ async function handleButtonIntent(btn) {
     return
   }
 
-  // 그 외 일반 intent 처리
+  // 기본 intent 처리
   await chatStore.sendMessage(btn.message, btn.intent)
 }
 
+// 첫 진입 시 버튼 메시지 출력
 onMounted(() => {
   if (chatStore.messages.length === 0) {
     chatStore.messages.push({
