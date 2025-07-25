@@ -1,5 +1,8 @@
 <template>
-  <Header />
+  <header class="header">
+    <button class="back-btn" @click="goBack">&#8592;</button>
+    <h1 class="app-title">투자 일지</h1>
+  </header>
   <div class="journal-page">
     <router-link to="/feedback" class="action-btn">
       <span class="action-icon">📊</span>
@@ -40,12 +43,9 @@
   <router-link to="/journalwrite">
     <button class="write-btn" @click="goToWrite">＋</button>
   </router-link>
-  <BottomNavigation />
 </template>
 
 <script setup>
-import Header from '@/components/Header.vue'
-import BottomNavigation from '@/components/FooterNavigation.vue'
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
@@ -129,16 +129,49 @@ async function deleteJournal(id) {
 function goToWrite() {
   selectedJournal.value = null
 }
+function goBack() {
+  router.back()
+}
 </script>
 
 <!-- scoped 제거함 -->
 <style>
 @import 'v-calendar/style.css';
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #fff;
+  padding: 18px 0 12px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 8px;
+}
+.back-btn {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #222;
+  cursor: pointer;
+}
+.app-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #222;
+  letter-spacing: -1px;
+}
+.profile-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #222;
+}
 .journal-page {
-  max-width: 430px;
-  margin: 0 auto;
   padding: 16px;
-  width: 100%;
 }
 
 .action-btn {

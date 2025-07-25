@@ -135,7 +135,6 @@ function goBack() {
   min-height: 0;
   height: 100vh;
   padding-bottom: 60px;
-  overflow-x: hidden;
 }
 .profile-header {
   display: flex;
