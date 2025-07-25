@@ -42,7 +42,6 @@
       />
       <button
         type="submit"
-        type="submit"
         class="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-purple-700"
       >
         전송
@@ -67,7 +66,6 @@ const input = ref('')
 const awaitingKeyword = ref(false)
 const loading = ref(false)
 const chatStore = useChatStore()
-const messages = computed(() => chatStore.messages)
 
 // 메시지 전송
 async function fetchGPT(prompt) {
