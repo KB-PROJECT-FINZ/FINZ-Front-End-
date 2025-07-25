@@ -21,12 +21,12 @@
       <h2 class="section-title">추천 학습 콘텐츠</h2>
       <div class="content-list-wrap">
         <div
-          v-for="item in learningContents"
+          v-for="(item, idx) in learningContents"
           :key="item.contentId"
           class="content-list-card"
           @click="goToDetail(item.contentId)"
         >
-          <img :src="item.thumbnail || defaultThumbnail" class="content-thumb" />
+          <img :src="item.imageUrl || defaultThumbnail" class="content-thumb" />
           <div class="content-list-info">
             <div class="content-list-title">{{ item.title }}</div>
             <div class="content-list-desc">{{ item.body?.slice(0, 40) }}...</div>
@@ -35,8 +35,8 @@
             </div>
           </div>
           <span class="content-list-arrow">&#8250;</span>
+          <div v-if="idx < learningContents.length - 1" class="divider"></div>
         </div>
-        <div v-if="idx < learningContents.length - 1" class="divider"></div>
       </div>
     </section>
     <FooterNavigation />
@@ -62,7 +62,14 @@ const user = ref({
 
 onMounted(async () => {
   try {
-    learningContents.value = await fetchLearningContentsByGroup(user.value.groupCode)
+    console.log('API 호출 시작:', user.value.groupCode)
+    const data = await fetchLearningContentsByGroup(user.value.groupCode)
+    console.log('API 응답 데이터:', data)
+    console.log('데이터 타입:', typeof data)
+    console.log('배열인가?', Array.isArray(data))
+    console.log('데이터 길이:', data?.length)
+    learningContents.value = data
+    console.log('learningContents.value:', learningContents.value)
   } catch (e) {
     console.error('러닝 콘텐츠 불러오기 실패:', e)
   }

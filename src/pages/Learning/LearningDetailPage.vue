@@ -15,7 +15,7 @@
           class="youtube-player"
         ></iframe>
       </div>
-      <img v-else-if="content?.thumbnail" :src="content.thumbnail" class="detail-thumb" />
+      <img v-else-if="content?.imageUrl" :src="content.imageUrl" class="detail-thumb" />
       <h2 class="detail-title">{{ content?.title }}</h2>
       <div class="detail-body" v-html="formattedBody"></div>
     </div>
