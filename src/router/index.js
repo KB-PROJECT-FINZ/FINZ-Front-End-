@@ -24,7 +24,6 @@ import TradingPage from '@/pages/TradingPage.vue'
 import ChartPage from '@/pages/ChartPage.vue'
 import { useUserStore } from '@/stores/user'
 import MockTradingHome from '@/pages/mockTrading/MockTradingHome.vue'
-
 const routes = [
   {
     path: '/',
@@ -141,6 +140,12 @@ const routes = [
     path: '/mock-trading',
     name: 'MockTradingHome',
     component: MockTradingHome,
+  },
+  {
+    path: '/mock-trading/:stockCode/chart',
+    name: 'ChartPage',
+    component: ChartPage,
+    props: true // route params를 props로 전달
   },
 ]
 
