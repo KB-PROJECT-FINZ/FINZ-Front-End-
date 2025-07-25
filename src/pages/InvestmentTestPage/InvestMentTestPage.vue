@@ -68,9 +68,12 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-
 const currentIndex = ref(0)
 const answers = ref([])
+
+import { useRoute } from 'vue-router'
+const route = useRoute()
+const username = route.query.username
 
 const questions = [
   {
@@ -152,6 +155,7 @@ const select = (choice) => {
       name: 'InvestmentResult',
       query: {
         type: typeCode,
+        username: username,
       },
     })
   }
