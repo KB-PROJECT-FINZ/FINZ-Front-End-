@@ -11,7 +11,12 @@
     <div v-if="loading" class="loading">피드백을 불러오는 중...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="rawFeedback">
-      <FeedbackCard :feedback="rawFeedback" />
+      <div v-if="rawFeedback.feedback">
+        <FeedbackCard :feedback="rawFeedback.feedback" />
+      </div>
+      <div v-else class="message">
+        {{ rawFeedback.statusMessage }}
+      </div>
     </div>
     <!-- 버튼은 항상 보이게 -->
     <router-link :to="{ name: 'feedbacklist' }" class="prev-btn">지난 피드백 보기</router-link>
@@ -25,7 +30,7 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 const router = useRouter()
-const rawFeedback = ref('')
+const rawFeedback = ref(null)
 const loading = ref(true)
 const error = ref('')
 function goBack() {
@@ -35,7 +40,7 @@ function goBack() {
 onMounted(async () => {
   try {
     const res = await axios.get('http://localhost:8080/api/gpt')
-    rawFeedback.value = res.data.feedback // feedback만 저장!
+    rawFeedback.value = res.data // feedback만 저장!
   } catch (e) {
     error.value = '피드백을 불러오지 못했습니다.'
   } finally {
