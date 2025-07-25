@@ -1,11 +1,13 @@
 <template>
-  <div class="p-4 border rounded">
-    <div class="h-64 overflow-y-auto mb-2">
+  <div class="flex flex-col gap-3">
+    <!-- 대화 내용 -->
+    <div class="bg-gray-100 rounded-xl p-4 h-[400px] overflow-y-auto space-y-3" ref="chatContainer">
       <div
-        v-for="(msg, i) in chatStore.messages"
+        v-for="(msg, i) in messages"
         :key="i"
         :class="msg.role === 'user' ? 'text-right' : 'text-left'"
       >
+
         <!-- 일반 메시지 -->
         <p
           v-if="!msg.type"
@@ -33,26 +35,56 @@
     </div>
 
     <!-- 입력창 -->
+
     <form @submit.prevent="handleSubmit">
       <input
         v-model="input"
-        placeholder="메시지를 입력하세요..."
-        class="w-full p-2 border rounded"
+        @keydown.enter="submit"
+        placeholder="메시지를 입력하세요"
+        class="flex-1 border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring focus:border-purple-300"
       />
-    </form>
+      <button
+        class="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-purple-700"
+        @click="submit"
+      >
+        전송
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
+
 import { ref, onMounted } from 'vue'
 import { useChatStore } from '@/stores/counter.js'
 
+// Props: 외부에서 intent, sessionId, userId 전달
+const props = defineProps({
+  fixedIntent: { type: String, default: 'MESSAGE' },
+  sessionId: { type: Number, default: null },
+  userId: { type: Number, default: 1 },
+})
+
+// 상태
 const input = ref('')
+
 const awaitingKeyword = ref(false)
 const chatStore = useChatStore()
 
-async function handleSubmit() {
-  if (!input.value.trim()) return
+// GPT 호출
+async function fetchGPT(prompt) {
+  loading.value = true
+  try {
+    // 사용자 메시지 출력
+    messages.value.push({ role: 'user', text: prompt })
+
+    const res = await axios.post('/api/chatbot/message', {
+      userId: props.userId,
+      sessionId: props.sessionId,
+      message: prompt,
+      intentType: props.fixedIntent,
+    })
+
 
   // 키워드 입력 모드일 경우
   if (awaitingKeyword.value) {
@@ -63,9 +95,20 @@ async function handleSubmit() {
     return
   }
 
-  await chatStore.sendMessage(input.value)
+// 전송
+function submit() {
+  if (!input.value.trim()) return
+  const msg = input.value
   input.value = ''
+  fetchGPT(msg)
 }
+
+// 외부에서 호출 가능한 메서드 등록
+function sendPrompt(text) {
+  if (!text) return
+  fetchGPT(text)
+}
+
 
 async function handleButtonIntent(btn) {
   // 외부 링크 이동

@@ -64,8 +64,8 @@
             class="w-full px-4 py-2 rounded-full border border-gray-300 bg-white placeholder-gray-400"
           />
           <button
-            class="px-2 w-25 text-sm bg-gray-200 rounded-full text-gray-600 font-medium cursor-not-allowed"
-            disabled
+            class="px-2 w-25 text-sm bg-purple-100 rounded-full text-purple-600 font-medium"
+            @click="checkNickname"
           >
             중복확인
           </button>
@@ -133,9 +133,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
-
 const name = ref('')
 const email = ref('')
 const nickname = ref('')
@@ -159,9 +159,54 @@ const canSubmit = computed(() => {
   )
 })
 
-const handleSignup = () => {
-  // 추후 여기에 회원가입 API 연동도 추가 예정
-  router.push('/login-form')
+const checkNickname = async () => {
+  if (!nickname.value) {
+    alert('닉네임을 입력해주세요')
+    return
+  }
+
+  try {
+    const res = await axios.get(`/auth/check-nickname?nickname=${nickname.value}`)
+    console.log('요청 닉네임:', nickname.value)
+    console.log('응답 데이터:', res.data)
+    console.log('닉네임 중복확인 응답:', res.data) // 디버깅용 로그
+
+    if (res.data.available) {
+      alert('사용 가능한 닉네임입니다')
+    } else {
+      alert('이미 사용 중인 닉네임입니다')
+    }
+  } catch (err) {
+    console.error('오류:', err.response?.data || err.message)
+  }
+}
+
+const handleSignup = async () => {
+  try {
+    const res = await axios.post('/auth/register', {
+      username: email.value,
+      password: password.value,
+      name: name.value,
+      email: email.value,
+      nickname: nickname.value,
+      phoneNumber: '010-0000-0000',
+      provider: 'local',
+      riskType: 'CSD',
+    })
+
+    if (res.data) {
+      alert('회원가입 성공! 투자 성향 테스트로 이동합니다.')
+      localStorage.setItem('username', email.value)
+      localStorage.setItem('name', name.value)
+      router.push({
+        path: '/investment-test',
+        query: { username: email.value },
+      })
+    }
+  } catch (err) {
+    alert('회원가입 실패: 입력값을 다시 확인해주세요')
+    console.error(err)
+  }
 }
 </script>
 
