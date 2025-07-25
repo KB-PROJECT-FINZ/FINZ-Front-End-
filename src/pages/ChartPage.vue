@@ -388,7 +388,7 @@ const fetchStockChartData = async (stockCode) => {
       console.error('[API 오류] 차트 데이터가 없습니다')
       throw new Error(`API 오류: 차트 데이터가 없습니다`)
     }
-
+    console.log(result)
     console.log(`[API 성공] ${result.output2.length}개 데이터 수신`)
     return result
   } catch (error) {
