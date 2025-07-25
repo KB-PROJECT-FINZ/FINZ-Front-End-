@@ -11,11 +11,8 @@ import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
 import RankingPage from '@/pages/RankingPages/RankingPage.vue'
 import StockAnalysisPage from '@/pages/RankingPages/StockAnalysisPage.vue'
 import FeedbackListPage from '@/pages/ProfilePages/FeedbackListPage.vue'
-import ChatBotHomePage from '@/pages/ChatBotPage/ChatBotHomePage.vue'
-import RecommendPage from '@/pages/ChatBotPage/RecommendPage.vue'
-import AnalyzePage from '@/pages/ChatBotPage/AnalyzePage.vue'
-import TermExplainPage from '@/pages/ChatBotPage/TermExplainPage.vue'
-import PortfolioPage from '@/pages/ChatBotPage/PortfolioPage.vue'
+import ChatBotPage from '@/pages/ChatBotPage/ChatBotPage.vue'
+
 import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
 import LearningDetailPage from '@/pages/Learning/LearningDetailPage.vue'
 import LearningQuizPage from '@/pages/Learning/LearningQuizPage.vue'
@@ -97,28 +94,8 @@ const routes = [
   },
   {
     path: '/chatbot',
-    name: 'ChatBotHomePage',
-    component: ChatBotHomePage,
-  },
-  {
-    path: '/chatbot/recommend',
-    name: 'ChatBotRecommendPage',
-    component: RecommendPage,
-  },
-  {
-    path: '/chatbot/analyze',
-    name: 'ChatBotAnalyzePage',
-    component: AnalyzePage,
-  },
-  {
-    path: '/chatbot/terms',
-    name: 'ChatBotTermExplainPage',
-    component: TermExplainPage,
-  },
-  {
-    path: '/chatbot/portfolio',
-    name: 'ChatBotPortfolioPage',
-    component: PortfolioPage,
+    name: 'ChatBotPage',
+    component: ChatBotPage,
   },
   {
     path: '/investment-test',
