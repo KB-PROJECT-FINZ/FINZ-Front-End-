@@ -25,6 +25,7 @@ import InvestmentResult from '@/pages/InvestmentTestPage/InvestmentResult.vue'
 import TradingPage from '@/pages/TradingPage.vue'
 import ChartPage from '@/pages/ChartPage.vue'
 import { useUserStore } from '@/stores/user'
+import MockTradingHome from '@/pages/mockTrading/MockTradingHome.vue'
 
 const routes = [
   {
@@ -147,6 +148,11 @@ const routes = [
     path: '/chart',
     name: 'Chart',
     component: ChartPage,
+  },
+  {
+    path: '/mock-trading',
+    name: 'MockTradingHome',
+    component: MockTradingHome,
   },
 ]
 
