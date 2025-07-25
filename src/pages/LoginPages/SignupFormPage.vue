@@ -197,6 +197,7 @@ const handleSignup = async () => {
     if (res.data) {
       alert('회원가입 성공! 투자 성향 테스트로 이동합니다.')
       localStorage.setItem('username', email.value)
+      localStorage.setItem('name', name.value)
       router.push({
         path: '/investment-test',
         query: { username: email.value },

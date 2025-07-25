@@ -107,10 +107,18 @@ const handleLogin = async () => {
     })
 
     if (res.data) {
-      userStore.setUser(res.data) // Pinia에 저장
+      const { username, name, id } = res.data
+
+      // 상태 저장
+      userStore.setUser(res.data)
+
+      // 로컬스토리지 저장
+      localStorage.setItem('username', username)
+      localStorage.setItem('name', name)
+      localStorage.setItem('userId', id)
+      console.log(localStorage.getItem('name'))
       alert('로그인 성공!')
-      localStorage.setItem('userId', res.data.userId)
-      router.push('/home') // 메인페이지 이동
+      router.push('/home')
     }
   } catch (err) {
     alert('로그인 실패: 아이디 또는 비밀번호 확인')
