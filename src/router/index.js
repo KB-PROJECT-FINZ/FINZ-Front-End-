@@ -9,6 +9,8 @@ import FeedbackPage from '@/pages/ProfilePages/FeedbackPage.vue'
 import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/LoginPages/SignupFormPage.vue'
 import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
+import RankingPage from '@/pages/RankingPages/RankingPage.vue'
+import StockAnalysisPage from '@/pages/RankingPages/StockAnalysisPage.vue'
 import FeedbackListPage from '@/pages/ProfilePages/FeedbackListPage.vue'
 import ChatBotHomePage from '@/pages/ChatBotPage/ChatBotHomePage.vue'
 import RecommendPage from '@/pages/ChatBotPage/RecommendPage.vue'
@@ -40,6 +42,7 @@ const routes = [
     name: 'SignupForm',
     component: SignupFormPage,
   },
+
   {
     path: '/find-account',
     name: 'FindAccount',
@@ -49,6 +52,16 @@ const routes = [
     path: '/home',
     name: 'HomePage',
     component: HomePage,
+  },
+  {
+    path: '/ranking',
+    name: 'rankingPage',
+    component: RankingPage,
+  },
+  {
+    path: '/ranking/analysis',
+    name: 'AnalysisPage',
+    component: StockAnalysisPage,
   },
   {
     path: '/investment-result',
