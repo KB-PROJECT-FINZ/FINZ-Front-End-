@@ -1,36 +1,86 @@
 <template>
-  <div class="search-market-container">
-    <div class="search-market-wrapper">
-      <div class="search-section">
-        <div class="search-input-container">
+  <div class="p-3 bg-white max-w-full">
+    <div class="flex gap-3 items-start max-w-full">
+      <div class="relative flex-3 w-full">
+        <div
+          class="flex items-center bg-gray-50 border-2 border-gray-200 rounded-xl overflow-hidden h-11 transition-colors focus-within:border-blue-500 focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+        >
           <input
             v-model="searchQuery"
             type="text"
-            class="search-input"
+            class="flex-1 px-3 py-3 bg-transparent border-none text-[14px] outline-none placeholder:text-gray-400"
             placeholder="종목명 또는 종목코드 입력"
             @input="handleSearch"
             @focus="showResults = true"
             @blur="hideResults"
           />
-          <button class="search-button">
-            <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+          <button
+            class="px-3 py-3 border-none bg-transparent text-gray-500 cursor-pointer transition-colors hover:text-blue-500"
+            type="button"
+          >
+            <svg class="w-[18px] h-[18px]" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fill-rule="evenodd"
+                d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+                clip-rule="evenodd"
+              />
             </svg>
           </button>
         </div>
-        <div v-if="showResults && filteredStocks.length > 0" class="search-results">
+
+        <!-- 검색 결과 드롭다운 -->
+        <div
+          v-if="showResults && (filteredStocks.length > 0 || isSearching)"
+          class="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-[250px] overflow-y-auto mt-1"
+        >
+          <!-- 로딩 상태 -->
+          <div v-if="isSearching" class="flex items-center justify-center py-4 text-gray-500">
+            <div class="mini-spinner mr-2"></div>
+            <span class="text-sm">검색 중...</span>
+          </div>
+
+          <!-- 검색 결과 -->
           <div
+            v-else
             v-for="stock in filteredStocks"
             :key="stock.code"
-            class="search-result-item"
+            class="flex justify-between items-center px-3 py-2 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
             @mousedown="selectStock(stock)"
           >
-            <span class="stock-name">{{ stock.name }}</span>
-            <span class="stock-code">{{ stock.code }}</span>
+            <div class="flex items-center gap-2">
+              <!-- 종목 이미지 -->
+              <span
+                class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0"
+              >
+                <img
+                  v-if="stock.imageUrl && !imageErrors[stock.code]"
+                  :src="stock.imageUrl"
+                  :alt="`${stock.name} 로고`"
+                  class="w-full h-full object-cover rounded-full"
+                  @error="handleImageError(stock.code)"
+                />
+                <span
+                  v-else
+                  class="w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-[8px] font-bold"
+                >
+                  {{ getStockInitial(stock.name) }}
+                </span>
+              </span>
+              <span class="font-medium text-gray-800 text-[14px]">{{ stock.name }}</span>
+            </div>
+            <span class="text-[12px] text-gray-500 font-mono">{{ stock.code }}</span>
+          </div>
+
+          <!-- 검색 결과 없음 -->
+          <div
+            v-if="!isSearching && filteredStocks.length === 0 && searchQuery.trim()"
+            class="px-3 py-4 text-center text-gray-500 text-sm"
+          >
+            '{{ searchQuery }}'에 대한 검색 결과가 없습니다.
           </div>
         </div>
       </div>
-      <div class="market-section">
+      <div class="flex-1 flex items-center min-w-[120px]">
         <MarketIndexTicker />
       </div>
     </div>
@@ -38,194 +88,120 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { stockList } from '@/utils/dummyData'
+import { ref, onMounted } from 'vue'
+import { searchStocks } from '@/services/mockTradingApi'
 import MarketIndexTicker from './MarketIndexTicker.vue'
 
 const searchQuery = ref('')
 const showResults = ref(false)
+const filteredStocks = ref([])
+const isSearching = ref(false)
+const imageErrors = ref({}) // 이미지 로딩 에러 추적
 
-// ✅ 간단한 로컬 필터링 (API 호출 제거)
-const filteredStocks = computed(() => {
-  if (!searchQuery.value.trim()) return []
+let searchTimeout = null
 
-  const query = searchQuery.value.toLowerCase()
-  return stockList.filter(stock =>
-    stock.name.toLowerCase().includes(query) ||
-    stock.code.includes(query)
-  ).slice(0, 8)
-})
+const handleSearch = async () => {
+  const query = searchQuery.value.trim()
 
-const handleSearch = () => {
   showResults.value = true
+
+  if (!query) {
+    filteredStocks.value = []
+    return
+  }
+
+  // 검색 디바운싱 (300ms 지연)
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+
+  searchTimeout = setTimeout(async () => {
+    isSearching.value = true
+
+    try {
+      console.log('🔍 종목 검색 시작:', query)
+      const response = await searchStocks(query, 8)
+
+      if (response.success && response.data) {
+        filteredStocks.value = response.data
+        console.log('✅ 종목 검색 성공:', response.data.length, '건')
+
+        // 검색 결과에 이미지 URL 로깅 (디버깅용)
+        response.data.forEach((stock, index) => {
+          if (index < 3) { // 상위 3개만 로깅
+            console.log(`🖼️ 검색결과 ${stock.name} (${stock.code}): ${stock.imageUrl || '이미지 없음'}`)
+          }
+        })
+      } else {
+        console.warn('⚠️ 종목 검색 API 실패:', response.message)
+        filteredStocks.value = []
+      }
+    } catch (error) {
+      console.error('❌ 종목 검색 오류:', error)
+      filteredStocks.value = []
+    } finally {
+      isSearching.value = false
+    }
+  }, 300)
 }
 
 const selectStock = (stock) => {
   searchQuery.value = `${stock.name} (${stock.code})`
   showResults.value = false
+  filteredStocks.value = []
 
-  // ✅ 선택된 종목 이벤트 emit (필요시 부모 컴포넌트에서 처리)
-  console.log('선택된 종목:', stock)
+  console.log('📊 선택된 종목:', stock.name, `(${stock.code})`)
 
-  // TODO: 추후 종목 상세 페이지로 라우팅 또는 부모 컴포넌트로 이벤트 전달
+  // TODO: 추후 종목 선택 이벤트 emit 또는 라우팅 처리
+  // emit('stock-selected', stock)
 }
 
 const hideResults = () => {
-  // 약간의 지연을 주어 클릭 이벤트가 먼저 처리되도록 함
   setTimeout(() => {
     showResults.value = false
   }, 200)
 }
+
+// 이미지 로딩 에러 처리
+const handleImageError = (stockCode) => {
+  console.warn(`🚫 검색결과 이미지 로딩 실패: ${stockCode}`)
+  imageErrors.value[stockCode] = true
+}
+
+// 종목명에서 이니셜 추출 (이미지 대체용)
+const getStockInitial = (stockName) => {
+  if (!stockName) return '?'
+
+  // 한글 종목명의 경우 첫 글자 사용
+  if (/[가-힣]/.test(stockName)) {
+    return stockName.charAt(0)
+  }
+
+  // 영문의 경우 첫 글자 대문자 사용
+  return stockName.charAt(0).toUpperCase()
+}
+
+onMounted(() => {
+  console.log('🔍 SearchBar 컴포넌트 초기화 - DB 기반 검색 활성화')
+})
 </script>
 
 <style scoped>
-.search-market-container {
-  padding: 12px;
-  background: #ffffff;
+.mini-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(107, 114, 128, 0.2);
+  border-top: 2px solid #6b7280;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.search-market-wrapper {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.search-section {
-  position: relative;
-  flex: 3;
-}
-
-.market-section {
-  flex: 1;
-  display: flex;
-  align-items: center;
-}
-
-.search-input-container {
-  display: flex;
-  align-items: center;
-  background: #f9fafb;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  overflow: hidden;
-  transition: border-color 0.3s ease;
-  height: 44px;
-}
-
-.search-input-container:focus-within {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.search-input {
-  flex: 1;
-  padding: 12px 14px;
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  outline: none;
-}
-
-.search-input::placeholder {
-  color: #9ca3af;
-}
-
-.search-button {
-  padding: 12px 14px;
-  border: none;
-  background: transparent;
-  color: #6b7280;
-  cursor: pointer;
-  transition: color 0.3s ease;
-}
-
-.search-button:hover {
-  color: #3b82f6;
-}
-
-.search-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  max-height: 250px;
-  overflow-y: auto;
-  margin-top: 4px;
-}
-
-.search-result-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 14px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.search-result-item:last-child {
-  border-bottom: none;
-}
-
-.search-result-item:hover {
-  background: #f8fafc;
-}
-
-.stock-name {
-  font-weight: 500;
-  color: #1f2937;
-  font-size: 14px;
-}
-
-.stock-code {
-  font-size: 12px;
-  color: #6b7280;
-  font-family: monospace;
-}
-
-@media (max-width: 430px) {
-  .search-market-container {
-    padding: 10px;
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
   }
-
-  .search-market-wrapper {
-    gap: 8px;
-  }
-
-  .search-input-container {
-    height: 40px;
-  }
-
-  .search-input {
-    padding: 10px 12px;
-    font-size: 13px;
-  }
-
-  .search-button {
-    padding: 10px 12px;
-  }
-
-  .search-icon {
-    width: 16px;
-    height: 16px;
-  }
-
-  .stock-name {
-    font-size: 13px;
-  }
-
-  .stock-code {
-    font-size: 11px;
+  100% {
+    transform: rotate(360deg);
   }
 }
 </style>

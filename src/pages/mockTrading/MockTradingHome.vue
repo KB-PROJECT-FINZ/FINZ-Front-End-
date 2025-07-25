@@ -1,15 +1,20 @@
 <template>
-  <div class="mock-trading-home">
+  <div
+    class="min-h-screen max-w-[430px] mx-auto border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)]"
+  >
     <TopNavigation />
 
-    <main class="main-content">
+    <main class="relative pb-[60px]">
       <SearchBar />
       <TradingVolumeRanking />
 
-      <div v-if="isLoading" class="loading-overlay">
-        <div class="loading-spinner">
-          <div class="spinner"></div>
-          <p class="loading-text">실시간 데이터를 불러오는 중...</p>
+      <div
+        v-if="isLoading"
+        class="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] backdrop-blur-sm"
+      >
+        <div class="bg-white p-8 rounded-xl text-center shadow-[0_10px_25px_rgba(0,0,0,0.2)]">
+          <div class="spinner mx-auto mb-4"></div>
+          <p class="text-[16px] text-gray-500 m-0 font-medium">실시간 데이터를 불러오는 중...</p>
         </div>
       </div>
     </main>
@@ -29,19 +34,13 @@ import BottomNavigation from '@/components/BottomNavigation.vue'
 const isLoading = ref(false)
 let marketUpdateInterval = null
 
-/**
- * 시장 데이터 업데이트
- */
 const updateMarketData = async () => {
   try {
-    // API 서버 상태 확인
     const apiHealthy = await checkApiHealth()
     if (!apiHealthy) {
       console.warn('⚠️ API 서버 연결 불안정')
       return
     }
-
-    // 시장 지수 데이터 업데이트
     const response = await getMarketIndices()
     if (response.success) {
       console.log('✅ 시장 데이터 업데이트 성공')
@@ -53,14 +52,9 @@ const updateMarketData = async () => {
   }
 }
 
-/**
- * 컴포넌트 마운트 시 초기화
- */
 onMounted(async () => {
   console.log('🚀 FINZ 모의투자 홈페이지 초기화')
-
   isLoading.value = true
-
   try {
     await updateMarketData()
   } catch (error) {
@@ -68,59 +62,18 @@ onMounted(async () => {
   } finally {
     isLoading.value = false
   }
-
-  // 1분마다 시장 데이터 업데이트
   marketUpdateInterval = setInterval(updateMarketData, 60000)
 })
 
-/**
- * 컴포넌트 언마운트 시 정리
- */
 onUnmounted(() => {
   if (marketUpdateInterval) {
     clearInterval(marketUpdateInterval)
     marketUpdateInterval = null
   }
-  console.log('🔚 FINZ 모의투자 홈페이지 정리 완료')
 })
 </script>
 
-<style scoped>
-.mock-trading-home {
-  min-height: 100vh;
-  max-width: 430px;
-  margin: 0 auto;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-}
-
-.main-content {
-  position: relative;
-  padding-bottom: 60px;
-}
-
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  backdrop-filter: blur(2px);
-}
-
-.loading-spinner {
-  background: white;
-  padding: 32px;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-}
-
+<style>
 .spinner {
   width: 40px;
   height: 40px;
@@ -128,28 +81,13 @@ onUnmounted(() => {
   border-top: 4px solid #3b82f6;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin: 0 auto 16px;
 }
-
 @keyframes spin {
   0% {
     transform: rotate(0deg);
   }
   100% {
     transform: rotate(360deg);
-  }
-}
-
-.loading-text {
-  font-size: 16px;
-  color: #6b7280;
-  margin: 0;
-  font-weight: 500;
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    padding-bottom: 40px;
   }
 }
 </style>

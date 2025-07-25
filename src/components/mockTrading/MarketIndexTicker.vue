@@ -1,29 +1,27 @@
 <template>
-  <div class="market-ticker">
+  <div
+    class="w-full h-11 flex items-center overflow-hidden text-[#353d4a] bg-transparent rounded-none shadow-none p-0"
+  >
     <transition name="slide" mode="out-in">
-      <div :key="currentIndex" class="ticker-content">
-        <div v-if="isLoading" class="loading-content">
+      <div :key="currentIndex" class="flex flex-col justify-center w-full min-w-0">
+        <div v-if="isLoading" class="flex items-center gap-[6px]">
           <div class="mini-spinner"></div>
-          <span class="loading-text">로딩중...</span>
+          <span class="loading-text text-[10px] text-[#353d4a]">로딩중...</span>
         </div>
-        <div v-else class="index-info">
-          <span class="index-name">{{ currentMarketIndex.name }}</span>
-          <span class="index-value-wrap">
+        <div v-else class="flex flex-col items-start mb-[2px]">
+          <span class="index-name text-[11px] font-semibold tracking-[0.3px] whitespace-nowrap">{{
+            currentMarketIndex.name
+          }}</span>
+          <span class="inline-flex items-baseline min-w-[110px] max-w-[120px] justify-start">
             <span
-              class="index-value"
-              :class="{
-                positive: currentMarketIndex.isPositive,
-                negative: !currentMarketIndex.isPositive,
-              }"
+              class="index-value text-[13px] font-extrabold font-mono whitespace-nowrap ml-0 transition-colors duration-200"
+              :class="currentMarketIndex.isPositive ? 'text-[#d60000]' : 'text-[#0033cc]'"
             >
               {{ formatNumber(currentMarketIndex.value) }}
             </span>
             <span
-              class="index-change"
-              :class="{
-                positive: currentMarketIndex.isPositive,
-                negative: !currentMarketIndex.isPositive,
-              }"
+              class="index-change text-[11px] font-bold font-mono text-center whitespace-nowrap ml-2 transition-colors duration-200 flex items-baseline"
+              :class="currentMarketIndex.isPositive ? 'text-[#ff4444]' : 'text-[#4444ff]'"
             >
               {{ currentMarketIndex.isPositive ? '+' : '-'
               }}{{ Math.abs(currentMarketIndex.changePercent).toFixed(2) }}%
@@ -46,9 +44,6 @@ const isLoading = ref(true)
 let intervalId = null
 let dataUpdateInterval = null
 
-/**
- * 현재 표시할 시장 지수 계산
- */
 const currentMarketIndex = computed(() => {
   if (marketIndices.value.length === 0) {
     return {
@@ -61,9 +56,6 @@ const currentMarketIndex = computed(() => {
   return marketIndices.value[currentIndex.value]
 })
 
-/**
- * 숫자 포맷팅 (한국 로케일)
- */
 const formatNumber = (number) => {
   return new Intl.NumberFormat('ko-KR', {
     minimumFractionDigits: 2,
@@ -71,42 +63,30 @@ const formatNumber = (number) => {
   }).format(number)
 }
 
-/**
- * 다음 지수로 전환
- */
 const nextIndex = () => {
   if (marketIndices.value.length > 0) {
     currentIndex.value = (currentIndex.value + 1) % marketIndices.value.length
   }
 }
 
-/**
- * 시장 지수 데이터 가져오기
- */
 const fetchMarketIndices = async () => {
   try {
     const response = await getMarketIndices()
-
     if (response.success && response.data) {
       marketIndices.value = response.data
       console.log('📊 시장 지수 티커 데이터 업데이트:', response.data.length, '건')
     } else {
       console.warn('⚠️ 시장 지수 API 호출 실패:', response.message)
-      // 기본값 설정
       setFallbackData()
     }
   } catch (error) {
     console.error('❌ 시장 지수 조회 실패:', error.message)
-    // 에러 시 기본값
     setFallbackData()
   } finally {
     isLoading.value = false
   }
 }
 
-/**
- * 기본 데이터 설정 (API 실패 시)
- */
 const setFallbackData = () => {
   marketIndices.value = [
     { name: 'KOSPI', value: 2634.15, changePercent: 0.58, isPositive: true },
@@ -114,22 +94,12 @@ const setFallbackData = () => {
   ]
 }
 
-/**
- * 컴포넌트 마운트 시 초기화
- */
 onMounted(async () => {
   await fetchMarketIndices()
-
-  // 5초마다 다음 지수로 전환
   intervalId = setInterval(nextIndex, 5000)
-
-  // 30초마다 데이터 업데이트
   dataUpdateInterval = setInterval(fetchMarketIndices, 30000)
 })
 
-/**
- * 컴포넌트 언마운트 시 정리
- */
 onUnmounted(() => {
   if (intervalId) {
     clearInterval(intervalId)
@@ -142,34 +112,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
-.market-ticker {
-  color: #353d4a;
-  padding: 0;
-  border-radius: 0;
-  box-shadow: none;
-  background: transparent;
-  width: 100%;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-}
-
-.ticker-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  width: 100%;
-  min-width: 0;
-}
-
-.loading-content {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
+<style>
 .mini-spinner {
   width: 12px;
   height: 12px;
@@ -178,118 +121,12 @@ onUnmounted(() => {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
-
 @keyframes spin {
   0% {
     transform: rotate(0deg);
   }
   100% {
     transform: rotate(360deg);
-  }
-}
-
-.loading-text {
-  font-size: 10px;
-  color: #353d4a;
-}
-
-.index-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 2px;
-}
-
-.index-name {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-}
-
-.index-value-wrap {
-  display: inline-flex;
-  align-items: baseline;
-  min-width: 110px;
-  max-width: 120px;
-  justify-content: flex-start;
-}
-
-.index-value {
-  font-size: 13px;
-  font-weight: 800;
-  font-family: monospace;
-  white-space: nowrap;
-  margin-left: 0;
-  transition: color 0.2s;
-}
-.index-value.positive {
-  color: #d60000;
-}
-.index-value.negative {
-  color: #0033cc;
-}
-
-.index-change {
-  font-size: 11px;
-  font-weight: 700;
-  font-family: monospace;
-  text-align: center;
-  white-space: nowrap;
-  margin-left: 8px;
-  transition: color 0.2s;
-  display: flex;
-  align-items: baseline;
-}
-.index-change.positive {
-  color: #ff4444;
-}
-.index-change.negative {
-  color: #4444ff;
-}
-
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.4s ease;
-}
-
-.slide-enter-from {
-  opacity: 0;
-  transform: translateY(5px);
-}
-
-.slide-leave-to {
-  opacity: 0;
-  transform: translateY(-5px);
-}
-
-@media (max-width: 430px) {
-  .market-ticker {
-    height: 40px;
-    padding: 0;
-  }
-
-  .index-name,
-  .index-value,
-  .index-change {
-    font-size: 10px;
-  }
-
-  .index-info {
-    margin-bottom: 1px;
-  }
-
-  .mini-spinner {
-    width: 10px;
-    height: 10px;
-  }
-
-  .loading-text {
-    font-size: 9px;
-  }
-  .index-value-wrap {
-    min-width: 80px;
-    max-width: 90px;
   }
 }
 </style>

@@ -1,11 +1,14 @@
 <template>
-  <nav class="top-nav">
-    <ul class="nav-list">
+  <nav class="bg-white py-4">
+    <ul class="flex gap-5 list-none m-0 p-0 justify-center items-center">
       <li
         v-for="item in navItems"
         :key="item.name"
-        :class="['nav-item', { active: current === item.name }]"
         @click="select(item.name)"
+        :class="[
+          'text-[#6a7885] font-medium text-[14px] min-w-[100px] text-center py-2 px-3 rounded-xl cursor-pointer transition-colors duration-200 relative box-border',
+          current === item.name ? 'bg-[#f2f3f5] text-[#353d4a]' : '',
+        ]"
       >
         {{ item.label }}
       </li>
@@ -26,40 +29,3 @@ function select(name) {
   current.value = name
 }
 </script>
-
-<style scoped>
-.top-nav {
-  background: white;
-  padding: 16px 0;
-}
-
-.nav-list {
-  display: flex;
-  gap: 20px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  justify-content: center;
-  align-items: center;
-}
-
-.nav-item {
-  color: #6a7885;
-  font-weight: 500;
-  font-size: 14px;
-  min-width: 100px;
-  text-align: center;
-  padding: 8px 12px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition:
-    background 0.2s,
-    color 0.2s;
-  position: relative;
-  box-sizing: border-box;
-}
-.nav-item.active {
-  color: #353d4a;
-  background: #f2f3f5;
-}
-</style>

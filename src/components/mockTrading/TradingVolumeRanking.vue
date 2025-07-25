@@ -1,50 +1,77 @@
 <template>
-  <div class="trading-volume-container">
-    <div class="section-header">
-      <h3 class="section-title">거래대금 상위 종목</h3>
-      <span class="update-time">{{ updateTime }}</span>
+  <div class="bg-white w-full h-[79vh] flex flex-col overflow-hidden">
+    <div
+      class="flex justify-between items-center px-5 py-4 border-b border-gray-100 bg-transparent"
+    >
+      <h3 class="text-[18px] font-semibold text-gray-800 m-0 bg-transparent">거래대금 상위 종목</h3>
+      <span class="text-[12px] text-gray-500 font-mono">{{ updateTime }}</span>
     </div>
 
-    <div v-if="isLoading" class="loading-state">
+    <div
+      v-if="isLoading"
+      class="flex flex-col items-center justify-center gap-4 py-10 text-gray-500"
+    >
       <div class="loading-spinner"></div>
       <span>데이터 로딩 중...</span>
     </div>
 
-    <div v-else class="stock-list">
+    <div v-else class="flex-1 overflow-y-auto">
       <div
         v-for="(stock, index) in visibleStocks"
         :key="stock.code"
-        class="stock-item"
+        class="flex justify-between items-center px-5 py-3 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 bg-transparent"
         @click="selectStock(stock)"
       >
-        <div class="rank-info">
-          <span class="rank-number">{{ index + 1 }}</span>
-          <span class="stock-badge">
-            <img v-if="stock.imageUrl" :src="stock.imageUrl" alt="종목 이미지" class="stock-img" />
-            <span v-else class="stock-img-placeholder"></span>
+        <div class="flex items-center gap-1 flex-1">
+          <span
+            class="flex items-center justify-center w-7 h-7 text-blue-500 rounded-full text-[14px] font-bold mr-1"
+          >{{ index + 1 }}</span
+          >
+          <span
+            class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-2"
+          >
+            <img
+              v-if="stock.imageUrl && !imageErrors[stock.code]"
+              :src="stock.imageUrl"
+              :alt="`${stock.name} 로고`"
+              class="w-full h-full object-cover rounded-full"
+              @error="handleImageError(stock.code)"
+            />
+            <span
+              v-else
+              class="w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold"
+            >
+              {{ getStockInitial(stock.name) }}
+            </span>
           </span>
-          <div class="stock-basic-info">
-            <span class="stock-name">{{ stock.name }}</span>
-            <div class="stock-price-info">
-              <span class="current-price">{{ formatPrice(stock.currentPrice) }}</span>
+          <div class="flex flex-col gap-1">
+            <span class="text-[14px] font-medium text-gray-800">{{ stock.name }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[14px] font-semibold text-gray-800 font-mono">{{
+                  formatPrice(stock.currentPrice)
+                }}</span>
               <span
-                class="price-change"
-                :class="{ positive: stock.isPositive, negative: !stock.isPositive }"
+                class="flex items-center gap-1 text-[12px] font-medium font-mono"
+                :class="stock.isPositive ? 'text-red-600' : 'text-blue-600'"
               >
-                <span class="change-arrow">{{ stock.isPositive ? '▲' : '▼' }}</span>
+                <span class="text-[10px]">{{ stock.isPositive ? '▲' : '▼' }}</span>
                 {{ Math.abs(stock.change).toLocaleString() }}
                 ({{ stock.isPositive ? '+' : '-' }}{{ Math.abs(stock.changePercent).toFixed(2) }}%)
               </span>
             </div>
           </div>
         </div>
-        <div class="stock-details">
-          <div class="volume-info">
-            <span class="trading-volume">{{ formatTradingVolume(stock.tradingVolume) }}</span>
-          </div>
+        <div class="flex flex-col items-end gap-1">
+          <span class="text-[12px] text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded">{{
+              formatTradingVolume(stock.tradingVolume)
+            }}</span>
         </div>
       </div>
-      <button v-if="!showAll && stockRanking.length > 10" class="more-btn" @click="showAll = true">
+      <button
+        v-if="!showAll && stockRanking.length > 10"
+        class="block w-full py-3 bg-gray-100 text-gray-800 border-none border-t border-gray-200 text-[14px] font-medium cursor-pointer transition-colors hover:bg-gray-200"
+        @click="showAll = true"
+      >
         더보기
       </button>
     </div>
@@ -59,25 +86,18 @@ const stockRanking = ref([])
 const updateTime = ref('')
 const isLoading = ref(false)
 const showAll = ref(false)
+const imageErrors = ref({}) // 이미지 로딩 에러 추적
 
 let updateInterval = null
 
-/**
- * 표시할 종목 목록 계산
- */
 const visibleStocks = computed(() =>
   showAll.value ? stockRanking.value : stockRanking.value.slice(0, 10),
 )
 
-/**
- * 거래량 순위 데이터 가져오기
- */
 const fetchVolumeRanking = async () => {
   isLoading.value = true
-
   try {
     const response = await getVolumeRanking(20)
-
     if (response.success && response.data) {
       stockRanking.value = response.data
       updateTime.value = new Date().toLocaleTimeString('ko-KR', {
@@ -86,6 +106,13 @@ const fetchVolumeRanking = async () => {
         second: '2-digit',
       })
       console.log('📈 거래량 순위 업데이트 성공:', response.data.length, '건')
+
+      // 이미지 URL 디버깅 로그
+      response.data.forEach((stock, index) => {
+        if (index < 5) { // 상위 5개만 로깅
+          console.log(`🖼️ ${stock.name} (${stock.code}): ${stock.imageUrl || '이미지 없음'}`)
+        }
+      })
     } else {
       console.warn('⚠️ 거래량 순위 API 호출 실패:', response.message)
       setFallbackData()
@@ -98,9 +125,6 @@ const fetchVolumeRanking = async () => {
   }
 }
 
-/**
- * 기본 데이터 설정 (API 실패 시)
- */
 const setFallbackData = () => {
   stockRanking.value = [
     {
@@ -111,6 +135,7 @@ const setFallbackData = () => {
       changePercent: 1.35,
       isPositive: true,
       tradingVolume: 500000000000,
+      imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/005930.png',
     },
     {
       code: '000660',
@@ -120,9 +145,49 @@ const setFallbackData = () => {
       changePercent: -1.64,
       isPositive: false,
       tradingVolume: 300000000000,
-    }
+      imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/000660.png',
+    },
+    {
+      code: '035420',
+      name: 'NAVER',
+      currentPrice: 185000,
+      change: 3500,
+      changePercent: 1.93,
+      isPositive: true,
+      tradingVolume: 250000000000,
+      imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/035420.png',
+    },
+    {
+      code: '005380',
+      name: '현대차',
+      currentPrice: 195000,
+      change: -1500,
+      changePercent: -0.76,
+      isPositive: false,
+      tradingVolume: 200000000000,
+      imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/005380.png',
+    },
+    {
+      code: '035720',
+      name: '카카오',
+      currentPrice: 47000,
+      change: 800,
+      changePercent: 1.73,
+      isPositive: true,
+      tradingVolume: 180000000000,
+      imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/035720.png',
+    },
+    {
+      code: '051910',
+      name: 'LG화학',
+      currentPrice: 420000,
+      change: -5000,
+      changePercent: -1.18,
+      isPositive: false,
+      tradingVolume: 150000000000,
+      imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/051910.png',
+    },
   ]
-
   updateTime.value = new Date().toLocaleTimeString('ko-KR', {
     hour: '2-digit',
     minute: '2-digit',
@@ -130,16 +195,10 @@ const setFallbackData = () => {
   })
 }
 
-/**
- * 가격 포맷팅
- */
 const formatPrice = (price) => {
   return price.toLocaleString() + '원'
 }
 
-/**
- * 거래대금 포맷팅
- */
 const formatTradingVolume = (volume) => {
   if (volume >= 100000000) {
     return Math.floor(volume / 100000000) + '억원'
@@ -150,86 +209,44 @@ const formatTradingVolume = (volume) => {
   }
 }
 
-/**
- * 종목 선택 처리
- */
 const selectStock = (stock) => {
   console.log('📊 선택된 종목:', stock.name, `(${stock.code})`)
-
   // TODO: 추후 종목 상세 페이지로 라우팅 또는 모달 표시
-  // router.push({ name: 'StockDetail', params: { code: stock.code } })
 }
 
-/**
- * 컴포넌트 마운트 시 초기화
- */
+// 이미지 로딩 에러 처리
+const handleImageError = (stockCode) => {
+  console.warn(`🚫 이미지 로딩 실패: ${stockCode}`)
+  imageErrors.value[stockCode] = true
+}
+
+// 종목명에서 이니셜 추출 (이미지 대체용)
+const getStockInitial = (stockName) => {
+  if (!stockName) return '?'
+
+  // 한글 종목명의 경우 첫 글자 사용
+  if (/[가-힣]/.test(stockName)) {
+    return stockName.charAt(0)
+  }
+
+  // 영문의 경우 첫 글자 대문자 사용
+  return stockName.charAt(0).toUpperCase()
+}
+
 onMounted(() => {
-  console.log('📈 거래량 순위 컴포넌트 초기화')
-
   fetchVolumeRanking()
-
-  // 30초마다 데이터 업데이트
   updateInterval = setInterval(fetchVolumeRanking, 30000)
 })
 
-/**
- * 컴포넌트 언마운트 시 정리
- */
 onUnmounted(() => {
   if (updateInterval) {
     clearInterval(updateInterval)
     updateInterval = null
   }
-  console.log('📈 거래량 순위 컴포넌트 정리 완료')
 })
 </script>
 
-<style scoped>
-.trading-volume-container {
-  background: white;
-  margin: 0;
-  border-radius: 0;
-  box-shadow: none;
-  overflow: hidden;
-  width: 100%;
-  height: calc(79vh);
-  display: flex;
-  flex-direction: column;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #f3f4f6;
-  background: transparent;
-}
-
-.section-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-  background: transparent;
-}
-
-.update-time {
-  font-size: 12px;
-  color: #6b7280;
-  font-family: monospace;
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 40px;
-  color: #6b7280;
-}
-
+<style>
 .loading-spinner {
   width: 32px;
   height: 32px;
@@ -238,193 +255,12 @@ onUnmounted(() => {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
-
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.stock-list {
-  flex: 1 1 auto;
-  max-height: none;
-  overflow-y: auto;
-}
-
-.stock-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  border-bottom: 1px solid #f3f4f6;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  background: transparent;
-  border: none;
-}
-
-.stock-item:hover {
-  background: #f8fafc;
-}
-
-.stock-item:last-child {
-  border-bottom: none;
-}
-
-.rank-info {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 1;
-}
-
-.rank-number {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: transparent;
-  color: #3b82f6;
-  border-radius: 50%;
-  font-size: 14px;
-  font-weight: 700;
-  margin-right: 4px;
-  flex-shrink: 0;
-}
-
-.stock-badge {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #f3f4f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  margin-right: 6px;
-  flex-shrink: 0;
-}
-
-.stock-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-.stock-img-placeholder {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: #e5e7eb;
-  display: block;
-}
-
-.stock-basic-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.stock-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.stock-price-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.current-price {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
-  font-family: monospace;
-}
-
-.price-change {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 12px;
-  font-weight: 500;
-  font-family: monospace;
-}
-
-.price-change.positive {
-  color: #dc2626;
-}
-
-.price-change.negative {
-  color: #2563eb;
-}
-
-.change-arrow {
-  font-size: 10px;
-}
-
-.stock-details {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
-.volume-info {
-  margin-top: 2px;
-}
-
-.trading-volume {
-  font-size: 12px;
-  color: #059669;
-  font-weight: 500;
-  background: #ecfdf5;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.more-btn {
-  display: block;
-  width: 100%;
-  padding: 12px 0;
-  background: #f3f4f6;
-  color: #1f2937;
-  border: none;
-  border-top: 1px solid #e5e7eb;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.more-btn:hover {
-  background: #e5e7eb;
-}
-
-@media (max-width: 430px) {
-  .trading-volume-container {
-    margin: 12px;
+  0% {
+    transform: rotate(0deg);
   }
-
-  .section-header {
-    padding: 12px 16px;
-  }
-
-  .stock-item {
-    padding: 10px 16px;
-  }
-
-  .stock-badge {
-    width: 24px;
-    height: 24px;
-    margin-right: 4px;
-  }
-
-  .rank-info {
-    gap: 4px;
+  100% {
+    transform: rotate(360deg);
   }
 }
 </style>

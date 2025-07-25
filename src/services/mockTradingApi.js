@@ -226,27 +226,55 @@ const generateDummyVolumeRanking = (limit) => {
   }))
 }
 
-// 종목 검색 (아직 더미 데이터 사용)
-export const searchStocks = async (query) => {
-  await new Promise((resolve) => setTimeout(resolve, 300))
 
+// 종목 검색 (실제 백엔드 연동)
+export const searchStocks = async (query, limit = 10) => {
   try {
-    // TODO: 실제 백엔드 검색 API 구현 후 연동
-    const { stockList } = await import('@/utils/dummyData')
-
-    if (!query.trim()) {
+    if (!query || !query.trim()) {
       return { success: true, data: [] }
     }
 
+    console.log('🔍 종목 검색 API 호출:', `${API_BASE_URL}/market/stocks/search?query=${encodeURIComponent(query)}&limit=${limit}`)
+
+    const response = await fetch(`${API_BASE_URL}/market/stocks/search?query=${encodeURIComponent(query)}&limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    const data = await handleApiResponse(response)
+    console.log('✅ 종목 검색 API 응답:', data)
+
+    return {
+      success: true,
+      data: data,
+      message: 'success',
+      timestamp: new Date().toISOString(),
+    }
+  } catch (error) {
+    console.error('❌ 종목 검색 오류:', error)
+
+    // 개발 환경에서는 에러 상세 정보 표시
+    if (import.meta.env.MODE === 'development') {
+      console.error('🔍 개발 환경 디버깅 정보:')
+      console.error('- 백엔드 서버가 실행 중인지 확인: http://localhost:8080')
+      console.error('- 종목 검색 API 엔드포인트 확인')
+    }
+
+    // 에러 시 더미 데이터 반환 (fallback)
+    const { stockList } = await import('@/utils/dummyData')
     const filtered = stockList.filter(
       (stock) =>
         stock.name.toLowerCase().includes(query.toLowerCase()) || stock.code.includes(query),
     )
 
-    return { success: true, data: filtered.slice(0, 20) }
-  } catch (error) {
-    console.error('종목 검색 오류:', error)
-    return { success: false, data: [] }
+    return {
+      success: false,
+      data: filtered.slice(0, limit),
+      message: 'API 연결 실패, 더미 데이터 사용',
+      timestamp: new Date().toISOString(),
+    }
   }
 }
 
