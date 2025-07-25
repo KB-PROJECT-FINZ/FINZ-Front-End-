@@ -84,7 +84,7 @@ import axios from 'axios'
 
 const router = useRouter()
 
-// ✅ 반응형 객체 선언
+
 const profile = ref({
   image: '',
   name: '',
