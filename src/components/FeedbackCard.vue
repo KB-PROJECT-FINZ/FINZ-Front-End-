@@ -59,7 +59,6 @@ const parsed = computed(() => parseFeedback(props.feedback || ''))
 }
 .summary-section {
   margin-bottom: 16px;
-  background: #f5f8ff;
   border-radius: 12px;
   padding: 18px 16px 12px 16px;
   box-shadow: 0 2px 8px rgba(97, 102, 204, 0.08);
@@ -76,7 +75,7 @@ const parsed = computed(() => parseFeedback(props.feedback || ''))
   line-height: 1.6;
 }
 .ai-feedback-box {
-  background: #fff;
+  background: #f5f8ff;
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 0;

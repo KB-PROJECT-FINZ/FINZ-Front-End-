@@ -3,7 +3,7 @@
     <!-- 대화 내용 -->
     <div class="bg-gray-100 rounded-xl p-4 h-[400px] overflow-y-auto space-y-3" ref="chatContainer">
       <div
-        v-for="(msg, i) in messages"
+        v-for="(msg, i) in chatStore.messages"
         :key="i"
         :class="msg.role === 'user' ? 'text-right' : 'text-left'"
       >
@@ -62,14 +62,36 @@ const props = defineProps({
   userId: { type: Number, default: 1 },
 })
 
-// 상태 변수
 const input = ref('')
-const messages = ref([])
-const loading = ref(false)
 const awaitingKeyword = ref(false)
+const loading = ref(false)
 const chatStore = useChatStore()
 
-// 전송
+// 메시지 전송
+async function fetchGPT(prompt) {
+  loading.value = true
+
+  // 사용자 메시지 추가
+  chatStore.messages.push({ role: 'user', content: prompt })
+  try {
+    const res = await axios.post('/chatbot/message', {
+      userId: props.userId,
+      sessionId: props.sessionId,
+      message: prompt,
+      intentType: props.fixedIntent,
+    })
+
+    if (res?.data?.content) {
+      chatStore.messages.push({ role: 'bot', content: res.data.content })
+    }
+  } catch (err) {
+    chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
+  } finally {
+    loading.value = false
+  }
+}
+
+// 전송 버튼
 function submit() {
   if (!input.value.trim()) return
 
@@ -81,38 +103,8 @@ function submit() {
     return
   }
 
-  const msg = input.value
+  fetchGPT(input.value.trim())
   input.value = ''
-  fetchGPT(msg)
-}
-
-// GPT API 요청
-async function fetchGPT(prompt) {
-  loading.value = true
-  messages.value.push({ role: 'user', content: prompt })
-
-  try {
-    const res = await axios.post('/chatbot/message', {
-      userId: props.userId,
-      sessionId: props.sessionId,
-      message: prompt,
-      intentType: props.fixedIntent,
-    })
-
-    // 서버 응답 메시지 추가
-    messages.value.push({
-      role: 'bot',
-      content: res.data.content || '응답을 불러오지 못했어요.',
-    })
-  } catch (err) {
-    messages.value.push({
-      role: 'bot',
-      content: '❌ 오류가 발생했습니다. 다시 시도해주세요.',
-    })
-    console.error(err)
-  } finally {
-    loading.value = false
-  }
 }
 
 // 버튼 intent 처리
@@ -124,7 +116,7 @@ async function handleButtonIntent(btn) {
 
   if (btn.intent === 'RECOMMEND_SELECT') {
     chatStore.clearMessages()
-    messages.value.push({
+    chatStore.messages.push({
       role: 'bot',
       type: 'buttons',
       text: '추천 방식을 선택해주세요:',
@@ -138,7 +130,7 @@ async function handleButtonIntent(btn) {
 
   if (btn.intent === 'RECOMMEND_KEYWORD_INPUT') {
     awaitingKeyword.value = true
-    messages.value.push({
+    chatStore.messages.push({
       role: 'bot',
       content: '추천을 원하는 키워드를 입력해주세요. 예: AI, 전기차, 반도체 등',
     })
@@ -151,7 +143,7 @@ async function handleButtonIntent(btn) {
 // 초기 메시지
 onMounted(() => {
   if (chatStore.messages.length === 0) {
-    messages.value.push({
+    chatStore.messages.push({
       role: 'bot',
       type: 'buttons',
       text: '원하시는 기능을 선택해주세요:',
@@ -162,8 +154,6 @@ onMounted(() => {
         { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘' },
       ],
     })
-  } else {
-    messages.value = [...chatStore.messages]
   }
 })
 </script>

@@ -1,5 +1,8 @@
 <template>
-  <Header />
+  <header class="header">
+    <button class="back-btn" @click="goBack">&#8592;</button>
+    <h1 class="app-title">AI 피드백 목록</h1>
+  </header>
   <div class="feedback-list-page">
     <h2>지난 피드백 목록</h2>
     <div v-if="loading" class="loading">목록을 불러오는 중...</div>
@@ -12,16 +15,19 @@
         :period="`${item.weekStart} ~ ${item.weekEnd} 피드백`"
       />
     </div>
-    <BottomNavigation />
   </div>
 </template>
 
 <script setup>
 import BottomNavigation from '@/components/FooterNavigation.vue'
-import Header from '@/components/Header.vue'
 import FeedbackCard from '@/components/FeedbackCard.vue'
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
+const router = useRouter()
+function goBack() {
+  router.back()
+}
 
 const feedbackList = ref([])
 const loading = ref(true)
@@ -40,10 +46,35 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #fff;
+  padding: 18px 0 12px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 8px;
+}
+.back-btn {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #222;
+  cursor: pointer;
+}
+.app-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #222;
+  letter-spacing: -1px;
+}
 .feedback-list-page {
   padding: 24px;
-  background: #f6f8fc;
-  min-height: 100vh;
 }
 h2 {
   font-size: 20px;
