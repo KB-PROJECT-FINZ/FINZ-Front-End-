@@ -27,13 +27,13 @@ export const useChatStore = defineStore('chat', {
         // 2. DTO 구조에 맞춰 전송
         const res = await axios.post('/api/chatbot/message', {
           userId: 1,
-          sessionId: 1,
+          sessionId: this.sessionId,
           message: message,
-          intentType: 'RECOMMEND_PROFILE'  // 또는 UI에서 선택
+          // intentType: 'RECOMMEND_PROFILE'  // 또는 UI에서 선택
         })
 
         console.log('GPT 응답:', res.data) //디버깅
-
+        this.sessionId = res.data.sessionId
 
         // 3. 응답 처리
         const reply = res.data.content  // ✅ DTO 필드명: content
