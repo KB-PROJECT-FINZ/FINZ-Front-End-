@@ -59,7 +59,7 @@
 
       <!-- 변동 정보 -->
       <div class="text-xs">
-        <span class="text-gray-600">어제보다</span>
+        <span class="text-gray-600">어제보다 </span>
         <span :class="priceChangeClass">{{ realTimeChangeText }}</span>
       </div>
     </div>
@@ -260,7 +260,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Chart, registerables } from 'chart.js'
 import { CandlestickController, CandlestickElement } from 'chartjs-chart-financial'
 import 'chartjs-adapter-date-fns'
@@ -268,8 +268,6 @@ import 'chartjs-adapter-date-fns'
 // Chart.js 모든 컴포넌트 등록
 Chart.register(...registerables)
 Chart.register(CandlestickController, CandlestickElement)
-
-const router = useRouter()
 
 // Chart.js 관련 변수
 const chartCanvas = ref(null)
@@ -288,12 +286,15 @@ const showMenu = ref(false)
 const showMinutesModal = ref(false)
 const selectedTimeFrame = ref('1min')
 
+const router = useRouter()
+const route = useRoute()
+
 const stockInfo = reactive({
-  name: '삼성전자',
-  currentPrice: 71200,
-  changeAmount: 1200,
-  changeRate: 1.71,
-  stockCode: '005930', // 종목 코드 추가
+  name: '', // 종목명
+  currentPrice: 0,
+  changeAmount: 0,
+  changeRate: 0,
+  stockCode: '', // 종목코드
 })
 
 // 사용자 보유 정보 (실제로는 API에서 가져올 데이터)
@@ -323,48 +324,38 @@ const minuteOptions = ref([
 ])
 
 // 전체 시간대 옵션들 (기존 호환성 유지)
-const timeFrames = ref([
-  { value: '1min', label: '1분' },
-  { value: '3min', label: '3분' },
-  { value: '5min', label: '5분' },
-  { value: '10min', label: '10분' },
-  { value: '15min', label: '15분' },
-  { value: '30min', label: '30분' },
-  { value: '60min', label: '60분' },
-  { value: 'day', label: '일봉' },
-  { value: 'week', label: '주봉' },
-  { value: 'month', label: '월봉' },
-  { value: 'year', label: '년봉' },
-])
 
 // 컴퓨티드 속성들
+// prdy_vrss_sign: 1(+)이면 빨간색, 2(-)이면 파란색, 그 외 회색
 const priceChangeClass = computed(() => {
-  if (stockInfo.changeAmount > 0) {
+  if (String(stockInfo.changeSign) === '1' || String(stockInfo.changeSign) === '2') {
     return 'text-red-500'
-  } else if (stockInfo.changeAmount < 0) {
+  } else if (String(stockInfo.changeSign) === '5') {
     return 'text-blue-500'
   } else {
     return 'text-gray-500'
   }
 })
 
-const realTimeChangeRateText = computed(() => {
-  const sign = stockInfo.changeAmount > 0 ? '+' : ''
-  return `${sign}${formatPrice(stockInfo.changeAmount)}원 (${sign}${stockInfo.changeRate}%)`
-})
-
+// '어제보다 n원 (n.nn%)' 텍스트 생성
 const realTimeChangeText = computed(() => {
-  const sign = stockInfo.changeAmount > 0 ? '+' : ''
-  return `${sign}${formatPrice(stockInfo.changeAmount)}원 (${sign}${stockInfo.changeRate}%)`
+  // prdy_vrss_sign: 1,2(+) / 5(-)
+  let sign = ''
+  if (String(stockInfo.changeSign) === '1' || String(stockInfo.changeSign) === '2') {
+    sign = '+'
+  } else if (String(stockInfo.changeSign) === '5') {
+    sign = '-'
+  }
+  return `${sign}${formatPrice(Math.abs(stockInfo.changeAmount))}원 (${sign}${Math.abs(stockInfo.changeRate)}%)`
 })
 
 // 메서드들
 const goBack = () => {
-  router.push('/')
+  router.push('/mock-trading')
 }
 
 // 백엔드 서버에서 주식 차트 데이터 조회 (새로운 API 형식)
-const fetchStockChartData = async (stockCode, timeFrame) => {
+const fetchStockChartData = async (stockCode) => {
   try {
     // 프록시를 통한 상대 경로 사용 (CORS 문제 해결)
     const url = `/api/chart/minute/${stockCode}`
@@ -416,7 +407,35 @@ const convertApiDataToChartData = (apiResponse) => {
     return []
   }
 
-  const convertedData = chartDataArray
+  // 15:20~15:29 데이터 제외, 15:19 이전 모든 데이터와 마지막 15:30 데이터만 남김
+  let filteredData = chartDataArray.filter((item) => {
+    const time = item.stck_cntg_hour
+    // 15:20~15:29: 152000~152900
+    if (time >= '152000' && time < '153000') {
+      return false
+    }
+    return true
+  })
+
+  // 15:19 이전 모든 데이터 + 마지막 15:30 데이터만 남김
+  const before1519 = filteredData.filter((item) => item.stck_cntg_hour <= '151900')
+  const idx1530 = filteredData.findLastIndex((item) => item.stck_cntg_hour === '153000')
+  let last1530 = []
+  if (idx1530 !== -1) {
+    // 15:19 데이터의 x값을 구함
+    const last1519 = before1519[before1519.length - 1]
+    if (last1519) {
+      // 15:30 데이터의 시간 정보를 15:20으로 덮어씀
+      const fake1530 = { ...filteredData[idx1530] }
+      fake1530.stck_cntg_hour = '152000'
+      last1530 = [fake1530]
+    } else {
+      last1530 = [filteredData[idx1530]]
+    }
+  }
+  filteredData = [...before1519, ...last1530]
+
+  const convertedData = filteredData
     .map((item, index) => {
       try {
         // 한국투자증권 API 필드 매핑
@@ -468,13 +487,7 @@ const generateCandlestickData = async () => {
       // 현재가 정보 업데이트 (가장 최근 캔들의 종가 사용)
       const latestCandle = chartData[chartData.length - 1]
       stockInfo.currentPrice = latestCandle.c
-
-      // 변동률 계산 (이전 캔들과 비교)
-      if (chartData.length > 1) {
-        const previousCandle = chartData[chartData.length - 2]
-        stockInfo.changeAmount = latestCandle.c - previousCandle.c
-        stockInfo.changeRate = ((stockInfo.changeAmount / previousCandle.c) * 100).toFixed(2)
-      }
+      // changeAmount는 mock price에서만 설정
     }
 
     return chartData
@@ -719,11 +732,6 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('ko-KR').format(price)
 }
 
-const getSelectedTimeFrameLabel = () => {
-  const timeFrame = timeFrames.value.find((tf) => tf.value === selectedTimeFrame.value)
-  return timeFrame ? timeFrame.label : ''
-}
-
 const getSelectedMinuteLabel = () => {
   const minute = minuteOptions.value.find((m) => m.value === selectedTimeFrame.value)
   return minute ? minute.label : '1분'
@@ -749,7 +757,27 @@ const navigateToTradingPage = (type) => {
 
 onMounted(() => {
   // DOM이 완전히 렌더링된 후 차트 생성
+  stockInfo.stockCode = route.params.stockCode || ''
+  stockInfo.name = route.query.stockName || ''
+  // 상단 가격/변동 정보는 mock price API에서만 세팅
+  const setMockPriceInfo = async () => {
+    try {
+      const mockPriceUrl = `/api/mock/price/${stockInfo.stockCode}`
+      const mockPriceRes = await fetch(mockPriceUrl, { method: 'GET' })
+      const mockPriceRaw = await mockPriceRes.json()
+      console.log('[RAW MOCK PRICE]', mockPriceRaw)
+      if (mockPriceRaw && typeof mockPriceRaw === 'object' && mockPriceRaw.output) {
+        stockInfo.currentPrice = Number(mockPriceRaw.output.stck_prpr) || 0
+        stockInfo.changeAmount = Number(mockPriceRaw.output.prdy_vrss) || 0
+        stockInfo.changeRate = Number(mockPriceRaw.output.prdy_ctrt) || 0
+        stockInfo.changeSign = mockPriceRaw.output.prdy_vrss_sign || '2'
+      }
+    } catch (err) {
+      console.warn(`[RAW MOCK PRICE] 요청 실패:`, err)
+    }
+  }
   nextTick(() => {
+    setMockPriceInfo()
     setTimeout(() => {
       createChart()
       startAutoRefresh() // 자동 새로고침 시작
