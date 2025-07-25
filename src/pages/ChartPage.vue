@@ -276,9 +276,9 @@ const chartInstance = ref(null)
 // 차트 상태 관리
 const currentEndTime = ref(null) // 현재 차트 오른쪽 끝 시간
 const autoRefreshInterval = ref(null) // 자동 새로고침 인터벌
-const apiStatus = ref('loading') // API 상태: 'loading', 'success', 'error'
-const apiStatusText = ref('API 연결 중...') // API 상태 텍스트
-const lastApiCall = ref(null) // 마지막 API 호출 시간
+// const apiStatus = ref('loading') // API 상태: 'loading', 'success', 'error'
+// const apiStatusText = ref('API 연결 중...') // API 상태 텍스트
+// const lastApiCall = ref(null) // 마지막 API 호출 시간
 
 // 반응형 데이터
 const isFavorite = ref(false)
@@ -744,12 +744,14 @@ const selectMinute = (value) => {
 }
 
 const navigateToTradingPage = (type) => {
-  // TradingPage로 이동하면서 거래 타입(buy/sell)과 종목 정보 전달
+  // TradingPage로 이동하면서 stockCode와 stockName을 route에서 항상 보존
+  const stockCode = route.params.stockCode || stockInfo.stockCode
+  const stockName = route.query.stockName || stockInfo.name
   router.push({
     path: '/trading',
     query: {
-      stockCode: stockInfo.stockCode,
-      stockName: stockInfo.name,
+      stockCode,
+      stockName,
       tab: type,
     },
   })
