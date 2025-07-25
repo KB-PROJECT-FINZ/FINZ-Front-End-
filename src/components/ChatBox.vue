@@ -7,23 +7,36 @@
         :key="i"
         :class="msg.role === 'user' ? 'text-right' : 'text-left'"
       >
-        <div
-          :class="[
-            'inline-block px-3 py-2 rounded-lg text-sm whitespace-pre-line',
-            msg.role === 'user' ? 'bg-purple-100 text-purple-800' : 'bg-white border text-gray-800',
-          ]"
+
+        <!-- 일반 메시지 -->
+        <p
+          v-if="!msg.type"
+          :class="msg.role === 'user' ? 'bg-blue-200' : 'bg-gray-200'"
+          class="inline-block p-2 rounded m-1"
         >
-          {{ msg.text }}
+          {{ msg.content }}
+        </p>
+
+        <!-- 버튼 메시지 -->
+        <div v-else-if="msg.type === 'buttons'" class="mb-2 text-left">
+          <p class="mb-2 text-sm text-gray-700">{{ msg.text }}</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="(btn, idx) in msg.buttons"
+              :key="idx"
+              @click="handleButtonIntent(btn)"
+              class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
+            >
+              {{ btn.label }}
+            </button>
+          </div>
         </div>
-      </div>
-      <!-- 로딩 상태 -->
-      <div v-if="loading" class="text-left text-sm text-gray-500 animate-pulse">
-        GPT 응답 생성 중...
       </div>
     </div>
 
     <!-- 입력창 -->
-    <div class="flex gap-2 mt-2">
+
+    <form @submit.prevent="handleSubmit">
       <input
         v-model="input"
         @keydown.enter="submit"
@@ -41,8 +54,9 @@
 </template>
 
 <script setup>
-import { ref, defineExpose, onUpdated } from 'vue'
-import axios from 'axios'
+
+import { ref, onMounted } from 'vue'
+import { useChatStore } from '@/stores/counter.js'
 
 // Props: 외부에서 intent, sessionId, userId 전달
 const props = defineProps({
@@ -53,9 +67,9 @@ const props = defineProps({
 
 // 상태
 const input = ref('')
-const messages = ref([])
-const loading = ref(false)
-const chatContainer = ref(null)
+
+const awaitingKeyword = ref(false)
+const chatStore = useChatStore()
 
 // GPT 호출
 async function fetchGPT(prompt) {
@@ -71,15 +85,15 @@ async function fetchGPT(prompt) {
       intentType: props.fixedIntent,
     })
 
-    const reply = res.data.content || '(응답 없음)'
-    messages.value.push({ role: 'assistant', text: reply })
-  } catch (err) {
-    console.error(err)
-    messages.value.push({ role: 'assistant', text: '❗ 서버 오류가 발생했습니다.' })
-  } finally {
-    loading.value = false
+
+  // 키워드 입력 모드일 경우
+  if (awaitingKeyword.value) {
+    const keyword = input.value.trim()
+    awaitingKeyword.value = false
+    await chatStore.sendMessage(`${keyword} 관련 종목 추천해줘`, 'RECOMMEND_KEYWORD')
+    input.value = ''
+    return
   }
-}
 
 // 전송
 function submit() {
@@ -95,12 +109,78 @@ function sendPrompt(text) {
   fetchGPT(text)
 }
 
-defineExpose({ sendPrompt })
 
-// 스크롤 자동 내리기
-onUpdated(() => {
-  if (chatContainer.value) {
-    chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+async function handleButtonIntent(btn) {
+  // 외부 링크 이동
+  if (btn.intent === 'EXTERNAL_LINK' && btn.href) {
+    window.location.href = btn.href
+    return
+  }
+
+  // 종목 추천 → 성향/키워드 분기
+  if (btn.intent === 'RECOMMEND_SELECT') {
+    chatStore.clearMessages()
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '추천 방식을 선택해주세요:',
+      buttons: [
+        {
+          label: '🎯 투자 성향 테스트',
+          intent: 'EXTERNAL_LINK',
+          href: '/chatbot/test',
+        },
+        {
+          label: '🔍 키워드로 추천',
+          intent: 'RECOMMEND_KEYWORD_INPUT',
+        },
+      ],
+    })
+    return
+  }
+
+  // 키워드 입력 요청
+  if (btn.intent === 'RECOMMEND_KEYWORD_INPUT') {
+    awaitingKeyword.value = true
+    chatStore.messages.push({
+      role: 'bot',
+      content: '추천을 원하는 키워드를 입력해주세요. 예: AI, 전기차, 반도체 등',
+    })
+    return
+  }
+
+  // 그 외 일반 intent 처리
+  await chatStore.sendMessage(btn.message, btn.intent)
+}
+
+onMounted(() => {
+  if (chatStore.messages.length === 0) {
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '원하시는 기능을 선택해주세요:',
+      buttons: [
+        {
+          label: '📈 종목 추천',
+          intent: 'RECOMMEND_SELECT',
+        },
+        {
+          label: '📊 종목 분석',
+          intent: 'STOCK_ANALYZE',
+          message: '종목 분석 해줘',
+        },
+        {
+          label: '📚 용어 설명',
+          intent: 'MESSAGE',
+          message: 'PER가 뭐야?',
+        },
+        {
+          label: '🧠 포트폴리오',
+          intent: 'PORTFOLIO_ANALYZE',
+          message: '내 포트폴리오 피드백 줘',
+        },
+      ],
+    })
   }
 })
 </script>
