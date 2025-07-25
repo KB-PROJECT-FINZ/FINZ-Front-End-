@@ -8,9 +8,8 @@
       <SearchBar />
       <TradingVolumeRanking />
     </main>
-
-    <BottomNavigation />
   </div>
+  <FooterNavigation />
 </template>
 
 <script setup>
@@ -19,7 +18,7 @@ import TopNavigation from '@/components/mockTrading/TopNavigation.vue'
 import SearchBar from '@/components/mockTrading/SearchBar.vue'
 import TradingVolumeRanking from '@/components/mockTrading/TradingVolumeRanking.vue'
 import { getMarketIndices, checkApiHealth } from '@/services/mockTradingApi'
-import BottomNavigation from '@/components/BottomNavigation.vue'
+import FooterNavigation from '@/components/FooterNavigation.vue'
 
 let marketUpdateInterval = null
 

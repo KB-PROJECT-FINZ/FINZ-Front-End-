@@ -3,7 +3,7 @@
     <!-- 대화 내용 -->
     <div class="bg-gray-100 rounded-xl p-4 h-[400px] overflow-y-auto space-y-3" ref="chatContainer">
       <div
-        v-for="(msg, i) in messages"
+        v-for="(msg, i) in chatStore.messages"
         :key="i"
         :class="msg.role === 'user' ? 'text-right' : 'text-left'"
       >
@@ -34,13 +34,14 @@
     </div>
 
     <!-- 입력창 -->
-    <form @submit.prevent="handleSubmit" class="flex gap-2">
+    <form @submit.prevent="submit" class="flex gap-2 mt-2">
       <input
         v-model="input"
         placeholder="메시지를 입력하세요"
         class="flex-1 border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring focus:border-purple-300"
       />
       <button
+        type="submit"
         type="submit"
         class="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-purple-700"
       >
@@ -51,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useChatStore } from '@/stores/counter.js'
 
@@ -62,53 +63,50 @@ const props = defineProps({
   userId: { type: Number, default: 1 },
 })
 
-// 상태
 const input = ref('')
-const loading = ref(false)
 const awaitingKeyword = ref(false)
-
+const loading = ref(false)
 const chatStore = useChatStore()
 const messages = computed(() => chatStore.messages)
 
 // 메시지 전송
 async function fetchGPT(prompt) {
   loading.value = true
-  try {
-    messages.value.push({ role: 'user', content: prompt })
 
-    const res = await axios.post('/api/chatbot/message', {
+  // 사용자 메시지 추가
+  chatStore.messages.push({ role: 'user', content: prompt })
+  try {
+    const res = await axios.post('/chatbot/message', {
       userId: props.userId,
       sessionId: props.sessionId,
       message: prompt,
       intentType: props.fixedIntent,
     })
 
-    // 예시: 응답 메시지 처리
-    chatStore.messages.push(...res.data.messages)
-  } catch (e) {
-    console.error('GPT 호출 실패:', e)
+    if (res?.data?.content) {
+      chatStore.messages.push({ role: 'bot', content: res.data.content })
+    }
+  } catch (err) {
+    chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
   } finally {
     loading.value = false
   }
 }
 
-// 키워드 모드
-async function handleSubmit() {
+// 전송 버튼
+function submit() {
   if (!input.value.trim()) return
 
-  // 키워드 입력 요청된 경우
   if (awaitingKeyword.value) {
     const keyword = input.value.trim()
     awaitingKeyword.value = false
-    await chatStore.sendMessage(`${keyword} 관련 종목 추천해줘`, 'RECOMMEND_KEYWORD')
+    chatStore.sendMessage(`${keyword} 관련 종목 추천해줘`, 'RECOMMEND_KEYWORD')
     input.value = ''
     return
   }
 
-  // 일반 메시지 전송
-  const msg = input.value
+  fetchGPT(input.value.trim())
   input.value = ''
-  fetchGPT(msg)
 }
 
 // 버튼 intent 처리
@@ -125,15 +123,8 @@ async function handleButtonIntent(btn) {
       type: 'buttons',
       text: '추천 방식을 선택해주세요:',
       buttons: [
-        {
-          label: '🎯 투자 성향 테스트',
-          intent: 'EXTERNAL_LINK',
-          href: '/chatbot/test',
-        },
-        {
-          label: '🔍 키워드로 추천',
-          intent: 'RECOMMEND_KEYWORD_INPUT',
-        },
+        { label: '🎯 투자 성향 테스트', intent: 'EXTERNAL_LINK', href: '/chatbot/test' },
+        { label: '🔍 키워드로 추천', intent: 'RECOMMEND_KEYWORD_INPUT' },
       ],
     })
     return
@@ -148,11 +139,10 @@ async function handleButtonIntent(btn) {
     return
   }
 
-  // 기본 intent 처리
   await chatStore.sendMessage(btn.message, btn.intent)
 }
 
-// 첫 진입 시 버튼 메시지 출력
+// 초기 메시지
 onMounted(() => {
   if (chatStore.messages.length === 0) {
     chatStore.messages.push({
@@ -160,25 +150,10 @@ onMounted(() => {
       type: 'buttons',
       text: '원하시는 기능을 선택해주세요:',
       buttons: [
-        {
-          label: '📈 종목 추천',
-          intent: 'RECOMMEND_SELECT',
-        },
-        {
-          label: '📊 종목 분석',
-          intent: 'STOCK_ANALYZE',
-          message: '종목 분석 해줘',
-        },
-        {
-          label: '📚 용어 설명',
-          intent: 'MESSAGE',
-          message: 'PER가 뭐야?',
-        },
-        {
-          label: '🧠 포트폴리오',
-          intent: 'PORTFOLIO_ANALYZE',
-          message: '내 포트폴리오 피드백 줘',
-        },
+        { label: '📈 종목 추천', intent: 'RECOMMEND_SELECT' },
+        { label: '📊 종목 분석', intent: 'STOCK_ANALYZE', message: '종목 분석 해줘' },
+        { label: '📚 용어 설명', intent: 'MESSAGE', message: 'PER가 뭐야?' },
+        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘' },
       ],
     })
   }
