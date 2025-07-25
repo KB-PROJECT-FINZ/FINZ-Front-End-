@@ -19,5 +19,3 @@ defineProps({
   logo: String,
 })
 </script>
-
-<style scoped></style>
