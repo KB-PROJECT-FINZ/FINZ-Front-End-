@@ -84,7 +84,6 @@ import axios from 'axios'
 
 const router = useRouter()
 
-
 const profile = ref({
   image: '',
   name: '',
@@ -136,7 +135,6 @@ function goBack() {
   min-height: 0;
   height: 100vh;
   padding-bottom: 60px;
-  overflow-x: hidden;
 }
 .profile-header {
   display: flex;
