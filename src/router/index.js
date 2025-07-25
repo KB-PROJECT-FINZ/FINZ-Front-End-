@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../pages/HomePage.vue'
-import TestPage from '../pages/TestPage.vue'
 import LoginPage from '@/pages/LoginPages/LoginPage.vue'
 import ProfilePage from '@/pages//ProfilePages/ProfilePage.vue'
 import JournalPage from '@/pages/ProfilePages//JournalPage.vue'
@@ -9,6 +8,8 @@ import FeedbackPage from '@/pages/ProfilePages/FeedbackPage.vue'
 import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/LoginPages/SignupFormPage.vue'
 import FindAccountPage from '@/pages/LoginPages/FindAccountPage.vue'
+import RankingPage from '@/pages/RankingPages/RankingPage.vue'
+import StockAnalysisPage from '@/pages/RankingPages/StockAnalysisPage.vue'
 import FeedbackListPage from '@/pages/ProfilePages/FeedbackListPage.vue'
 import ChatBotHomePage from '@/pages/ChatBotPage/ChatBotHomePage.vue'
 import RecommendPage from '@/pages/ChatBotPage/RecommendPage.vue'
@@ -20,9 +21,12 @@ import LearningDetailPage from '@/pages/Learning/LearningDetailPage.vue'
 import LearningQuizPage from '@/pages/Learning/LearningQuizPage.vue'
 import LearningPage from '@/pages/Learning/LearningPage.vue'
 import InvestmentResult from '@/pages/InvestmentTestPage/InvestmentResult.vue'
+import ReTestResult from '@/pages/InvestmentTestPage/ReTestResultpage.vue'
+import ReTestPage from '@/pages/InvestmentTestPage/ReTestPage.vue'
 import TradingPage from '@/pages/TradingPage.vue'
 import ChartPage from '@/pages/ChartPage.vue'
 import { useUserStore } from '@/stores/user'
+import MockTradingHome from '@/pages/mockTrading/MockTradingHome.vue'
 
 const routes = [
   {
@@ -40,6 +44,7 @@ const routes = [
     name: 'SignupForm',
     component: SignupFormPage,
   },
+
   {
     path: '/find-account',
     name: 'FindAccount',
@@ -49,6 +54,16 @@ const routes = [
     path: '/home',
     name: 'HomePage',
     component: HomePage,
+  },
+  {
+    path: '/ranking',
+    name: 'rankingPage',
+    component: RankingPage,
+  },
+  {
+    path: '/ranking/analysis',
+    name: 'AnalysisPage',
+    component: StockAnalysisPage,
   },
   {
     path: '/investment-result',
@@ -134,6 +149,21 @@ const routes = [
     path: '/chart',
     name: 'Chart',
     component: ChartPage,
+  },
+  {
+    path: '/investment-test/retest',
+    name: 'ReTestPage',
+    component: ReTestPage,
+  },
+  {
+    path: '/investment-test/retest/result',
+    name: 'ReTestResult',
+    component: ReTestResult,
+  },
+  {
+    path: '/mock-trading',
+    name: 'MockTradingHome',
+    component: MockTradingHome,
   },
 ]
 

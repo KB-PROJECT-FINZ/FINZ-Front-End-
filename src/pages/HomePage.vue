@@ -3,7 +3,10 @@
     <!-- 상단 로고 + 인사말 -->
     <div class="px-5 pt-6">
       <img src="@/assets/finz.png" alt="finz" class="w-16 mb-2" />
-      <p class="text-lg font-bold">안녕하세요! <span class="font-black">OOO</span>님! 👍</p>
+      <p class="text-lg font-bold">
+        안녕하세요! <span class="font-black">{{ name }}</span
+        >님! 👍
+      </p>
       <p class="text-sm text-gray-600">오늘도 화이팅 해볼까요?</p>
     </div>
 
@@ -11,7 +14,7 @@
     <div class="grid grid-cols-2 gap-3 px-5 mt-6">
       <div class="bg-white p-4 rounded-xl shadow-sm">
         <p class="text-sm text-gray-500 mb-1">내 투자 성향</p>
-        <p class="font-semibold text-purple-600">적극투자형</p>
+        <p class="font-semibold text-purple-600">{{ riskTypeName }}</p>
       </div>
       <div class="bg-white p-4 rounded-xl shadow-sm">
         <p class="text-sm text-gray-500 mb-1">누적 크레딧</p>
@@ -97,6 +100,20 @@
       </div>
     </div>
 
+    <!-- 개발자 도구 -->
+    <div class="px-5 mt-6">
+      <h2 class="text-md font-bold mb-2">개발자 도구</h2>
+      <div class="grid grid-cols-1 gap-3">
+        <button
+          @click="navigateToChart"
+          class="bg-blue-500 text-white p-4 rounded-xl text-center hover:bg-blue-600 transition-colors"
+        >
+          <p class="font-bold">차트 보기</p>
+          <p class="text-sm opacity-80">캔들스틱 차트</p>
+        </button>
+      </div>
+    </div>
+
     <!-- 하단 네비게이션 -->
     <div>
       <router-view />
@@ -110,6 +127,34 @@
 // 추후 데이터 바인딩 가능
 import BottomNav from '@/components/FooterNavigation.vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
+
+import { ref, onMounted } from 'vue'
+const name = ref('')
+const userName = ref('')
+const riskTypeName = ref('')
+
+onMounted(async () => {
+  name.value = localStorage.getItem('name')
+  const username = localStorage.getItem('username')
+  userName.value = username
+
+  try {
+    const response = await axios.get('/user/risk-type-name', {
+      params: { username: userName.value },
+    })
+
+    if (response.headers['content-type'].includes('text/html')) {
+      console.error(' HTML 응답이므로 API 호출 실패')
+      riskTypeName.value = '조회 실패'
+    } else {
+      riskTypeName.value = response.data
+    }
+  } catch (err) {
+    console.error(' 투자 성향 조회 에러:', err)
+    riskTypeName.value = '조회 실패'
+  }
+})
 
 const router = useRouter()
 

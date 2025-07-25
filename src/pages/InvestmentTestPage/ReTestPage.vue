@@ -152,7 +152,7 @@ const select = (choice) => {
 
     // 결과 페이지로 이동 시 typeCode 전달
     router.push({
-      name: 'InvestmentResult',
+      name: 'ReTestResult',
       query: {
         type: typeCode,
         username: username,

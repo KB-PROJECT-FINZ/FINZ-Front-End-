@@ -42,7 +42,7 @@
         </div>
         <span class="menu-arrow">&#8250;</span>
       </router-link>
-      <router-link to="/investment-test" class="menu-card">
+      <router-link to="/investment-test/retest" class="menu-card">
         <span class="menu-icon">📝</span>
         <div class="menu-info">
           <div class="menu-title">나의 투자 성향 알아보기</div>
@@ -79,15 +79,39 @@
 <script setup>
 import FooterNavigation from '../../components/FooterNavigation.vue'
 import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
 
 const router = useRouter()
 
-const profile = {
-  image: '', // 이미지가 없으면 공백
-  name: '김투자',
-  type: '안정형 투자자',
+const profile = ref({
+  image: '',
+  name: '',
+  type: '',
   level: 3,
-}
+})
+
+// 로컬 스토리지 및 API로 데이터 세팅
+onMounted(async () => {
+  profile.value.name = localStorage.getItem('name') || '사용자'
+  const username = localStorage.getItem('username')
+
+  try {
+    const response = await axios.get('/user/risk-type-name', {
+      params: { username },
+    })
+
+    if (response.headers['content-type'].includes('text/html')) {
+      console.error('❌ HTML 응답: 투자 성향 조회 실패')
+      profile.value.type = '조회 실패'
+    } else {
+      profile.value.type = response.data || '정보 없음'
+    }
+  } catch (err) {
+    console.error('❌ 투자 성향 조회 에러:', err)
+    profile.value.type = '조회 실패'
+  }
+})
 
 const asset = {
   amount: 12450000,
