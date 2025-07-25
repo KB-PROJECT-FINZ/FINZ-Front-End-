@@ -105,7 +105,7 @@
               </div>
 
               <div
-                v-for="(ask, index) in askPrices"
+                v-for="(ask, index) in [...askPrices].slice().reverse()"
                 :key="'ask-' + index"
                 class="relative flex justify-between items-center py-2 px-3 text-sm hover:bg-gray-50 cursor-pointer"
                 @click="selectPrice(ask.price)"
@@ -656,8 +656,8 @@ import { getStockInfo } from '@/services/stockApi.js'
 const route = useRoute()
 const router = useRouter()
 
-// 종목 코드
-const STOCK_CODE = '005930' // 삼성전자 종목코드 (6자리 숫자)
+// 종목 코드 (초기값: 삼성전자, 실제 값은 route.query에서 받아옴)
+let STOCK_CODE = ''
 
 // 로딩 상태
 const isLoading = ref(false)
@@ -683,7 +683,7 @@ const loadStockInfo = async () => {
       // 실제 API 데이터로 stockInfo 업데이트
       stockInfo.value = {
         // 여기는 나중에 실제 데이터로 업데이트(다른 API 연동이 필요함)
-        name: '삼성전자', // 종목명 (005950)
+        name: route.query.stockName || '종목명', // 종목명 (005950)
         // 기본 가격 정보
         currentPrice: parseInt(data.stck_prpr) || 0, // 주식 현재가
         basePrice: (parseInt(data.stck_prpr) || 0) - (parseInt(data.prdy_vrss) || 0), // 전일 종가 (현재가 - 전일대비)
@@ -800,7 +800,7 @@ const tickSize = 100
 
 // 종목 정보 (API로부터 동적으로 로드됨)
 const stockInfo = ref({
-  name: '삼성전자',
+  name: '',
   // 기본 가격 정보
   currentPrice: 0, // 주식 현재가
   basePrice: 0, // 주식 기준가 (전일 종가)
@@ -864,6 +864,17 @@ const stockInfo = ref({
   marketWarnCode: '', // 시장경고코드
   shortOverheatingYn: false, // 단기과열여부
   managementIssueYn: false, // 관리종목여부
+})
+
+// 라우터에서 넘어온 stockCode, stockName을 반영
+onMounted(() => {
+  if (route.query.stockCode) {
+    STOCK_CODE = route.query.stockCode
+  }
+  if (route.query.stockName) {
+    stockInfo.value.name = route.query.stockName
+  }
+  // 필요시 loadStockInfo() 등 추가 초기화 호출
 })
 
 // 사용자 정보
@@ -1391,7 +1402,15 @@ const getVolumeRatio = (volume) => {
 
 // 메서드들
 const goBack = () => {
-  router.push('/chart')
+  // stockCode와 stockName을 보존하여 mock-trading/{stockCode}/chart?stockName={stockName}로 이동
+  const stockCode = route.query.stockCode || stockInfo.value.stockCode || ''
+  const stockName = route.query.stockName || stockInfo.value.name || ''
+  router.push({
+    path: `/mock-trading/${stockCode}/chart`,
+    query: {
+      stockName,
+    },
+  })
 }
 
 const formatPrice = (price) => {
