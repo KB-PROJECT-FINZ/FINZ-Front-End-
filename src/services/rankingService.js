@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 export async function fetchMyRanking(userId) {
-  const res = await axios.get(`/api/ranking/user/${userId}`)
+  const res = await axios.get(`/ranking/user/${userId}`)
   const data = res.data
 
   return {
@@ -13,7 +13,7 @@ export async function fetchMyRanking(userId) {
 }
 
 export async function fetchTop5Stocks(week) {
-  const res = await axios.get('/api/ranking/top5', {
+  const res = await axios.get('/ranking/top5', {
     params: { week },
   })
 
@@ -25,7 +25,7 @@ export async function fetchTop5Stocks(week) {
 }
 
 export async function fetchWeeklyRanking(week) {
-  const res = await axios.get('/api/ranking/weekly', {
+  const res = await axios.get('/ranking/weekly', {
     params: { week },
   })
 
@@ -44,7 +44,7 @@ export async function fetchWeeklyRanking(week) {
   }))
 }
 export async function fetchGroupedWeeklyRanking(week) {
-  const res = await axios.get('/api/ranking/weekly/grouped', {
+  const res = await axios.get('/ranking/weekly/grouped', {
     params: { week },
   })
 
