@@ -64,10 +64,7 @@ onMounted(() => {
     options: {
       responsive: true,
       scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { stepSize: 5 },
-        },
+        y: { beginAtZero: true, ticks: { stepSize: 5 } },
       },
       plugins: {
         legend: { display: false },
