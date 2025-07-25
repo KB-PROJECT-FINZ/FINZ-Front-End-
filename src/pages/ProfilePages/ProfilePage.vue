@@ -42,7 +42,7 @@
         </div>
         <span class="menu-arrow">&#8250;</span>
       </router-link>
-      <router-link to="/investment-test" class="menu-card">
+      <router-link to="/investment-test/retest" class="menu-card">
         <span class="menu-icon">📝</span>
         <div class="menu-info">
           <div class="menu-title">나의 투자 성향 알아보기</div>
@@ -84,7 +84,6 @@ import axios from 'axios'
 
 const router = useRouter()
 
-// ✅ 반응형 객체 선언
 const profile = ref({
   image: '',
   name: '',

@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../pages/HomePage.vue'
-import TestPage from '../pages/TestPage.vue'
 import LoginPage from '@/pages/LoginPages/LoginPage.vue'
 import ProfilePage from '@/pages//ProfilePages/ProfilePage.vue'
 import JournalPage from '@/pages/ProfilePages//JournalPage.vue'
@@ -20,6 +19,8 @@ import LearningDetailPage from '@/pages/Learning/LearningDetailPage.vue'
 import LearningQuizPage from '@/pages/Learning/LearningQuizPage.vue'
 import LearningPage from '@/pages/Learning/LearningPage.vue'
 import InvestmentResult from '@/pages/InvestmentTestPage/InvestmentResult.vue'
+import ReTestResult from '@/pages/InvestmentTestPage/ReTestResultpage.vue'
+import ReTestPage from '@/pages/InvestmentTestPage/ReTestPage.vue'
 import TradingPage from '@/pages/TradingPage.vue'
 import ChartPage from '@/pages/ChartPage.vue'
 import { useUserStore } from '@/stores/user'
@@ -134,6 +135,16 @@ const routes = [
     path: '/chart',
     name: 'Chart',
     component: ChartPage,
+  },
+  {
+    path: '/investment-test/retest',
+    name: 'ReTestPage',
+    component: ReTestPage,
+  },
+  {
+    path: '/investment-test/retest/result',
+    name: 'ReTestResult',
+    component: ReTestResult,
   },
 ]
 
