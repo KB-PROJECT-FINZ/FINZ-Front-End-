@@ -49,7 +49,7 @@
       >
         전송
       </button>
-    </div>
+    </form>
   </div>
 </template>
 
@@ -85,15 +85,18 @@ async function fetchGPT(prompt) {
       intentType: props.fixedIntent,
     })
 
-
-  // 키워드 입력 모드일 경우
-  if (awaitingKeyword.value) {
-    const keyword = input.value.trim()
-    awaitingKeyword.value = false
-    await chatStore.sendMessage(`${keyword} 관련 종목 추천해줘`, 'RECOMMEND_KEYWORD')
-    input.value = ''
-    return
+    // 키워드 입력 모드일 경우
+    if (awaitingKeyword.value) {
+      const keyword = input.value.trim()
+      awaitingKeyword.value = false
+      await chatStore.sendMessage(`${keyword} 관련 종목 추천해줘`, 'RECOMMEND_KEYWORD')
+      input.value = ''
+      return
+    }
+  } catch (e) {
+    // 에러 핸들링
   }
+}
 
 // 전송
 function submit() {
