@@ -6,11 +6,11 @@
           class="flex items-center bg-gray-50 border-2 border-gray-200 rounded-xl overflow-hidden h-11 transition-colors focus-within:border-blue-500 focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
         >
           <input
-            v-model="searchQuery"
+            :value="searchQuery"
             type="text"
             class="flex-1 px-3 py-3 bg-transparent border-none text-[14px] outline-none placeholder:text-gray-400"
             placeholder="종목명 또는 종목코드 입력"
-            @input="handleSearch"
+            @input="handleInput"
             @focus="showResults = true"
             @blur="hideResults"
           />
@@ -89,9 +89,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { searchStocks } from '@/services/mockTradingApi'
 import MarketIndexTicker from './MarketIndexTicker.vue'
 
+const router = useRouter()
 const searchQuery = ref('')
 const showResults = ref(false)
 const filteredStocks = ref([])
@@ -100,11 +102,16 @@ const imageErrors = ref({}) // 이미지 로딩 에러 추적
 
 let searchTimeout = null
 
+// 입력 이벤트 핸들러 - v-model 대신 사용
+const handleInput = (e) => {
+  searchQuery.value = e.target.value
+  handleSearch()
+}
+
 const handleSearch = async () => {
   const query = searchQuery.value.trim()
 
   showResults.value = true
-
   if (!query) {
     filteredStocks.value = []
     return
@@ -145,15 +152,29 @@ const handleSearch = async () => {
   }, 300)
 }
 
-const selectStock = (stock) => {
+const selectStock = async (stock) => {
   searchQuery.value = `${stock.name} (${stock.code})`
   showResults.value = false
   filteredStocks.value = []
 
   console.log('📊 선택된 종목:', stock.name, `(${stock.code})`)
 
-  // TODO: 추후 종목 선택 이벤트 emit 또는 라우팅 처리
-  // emit('stock-selected', stock)
+  try {
+    // 종목 차트 페이지로 라우팅
+    await router.push({
+      name: 'ChartPage',
+      params: {
+        stockCode: stock.code
+      },
+      query: {
+        stockName: stock.name
+      }
+    })
+
+    console.log('🔀 종목 차트 페이지로 이동:', `/mock-trading/${stock.code}/chart`)
+  } catch (error) {
+    console.error('❌ 라우팅 오류:', error)
+  }
 }
 
 const hideResults = () => {

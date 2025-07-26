@@ -25,7 +25,7 @@
         <div class="flex items-center gap-1 flex-1">
           <span
             class="flex items-center justify-center w-7 h-7 text-blue-500 rounded-full text-[14px] font-bold mr-1"
-          >{{ index + 1 }}</span
+            >{{ index + 1 }}</span
           >
           <span
             class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-2"
@@ -39,7 +39,8 @@
             />
             <span
               v-else
-              class="w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold"
+              class="w-full h-full rounded-full flex items-center justify-center text-[11px] font-bold border-2 text-center flex-shrink-0"
+              style="border-color: #2272eb; color: #2272eb; background: #fff"
             >
               {{ getStockInitial(stock.name) }}
             </span>
@@ -48,8 +49,8 @@
             <span class="text-[14px] font-medium text-gray-800">{{ stock.name }}</span>
             <div class="flex items-center gap-2">
               <span class="text-[14px] font-semibold text-gray-800 font-mono">{{
-                  formatPrice(stock.currentPrice)
-                }}</span>
+                formatPrice(stock.currentPrice)
+              }}</span>
               <span
                 class="flex items-center gap-1 text-[12px] font-medium font-mono"
                 :class="stock.isPositive ? 'text-red-600' : 'text-blue-600'"
@@ -63,8 +64,8 @@
         </div>
         <div class="flex flex-col items-end gap-1">
           <span class="text-[12px] text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded">{{
-              formatTradingVolume(stock.tradingVolume)
-            }}</span>
+            formatTradingVolume(stock.tradingVolume)
+          }}</span>
         </div>
       </div>
       <button
@@ -80,8 +81,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { getVolumeRanking } from '@/services/mockTradingApi'
 
+const router = useRouter()
 const stockRanking = ref([])
 const updateTime = ref('')
 const isLoading = ref(false)
@@ -109,7 +112,8 @@ const fetchVolumeRanking = async () => {
 
       // 이미지 URL 디버깅 로그
       response.data.forEach((stock, index) => {
-        if (index < 5) { // 상위 5개만 로깅
+        if (index < 5) {
+          // 상위 5개만 로깅
           console.log(`🖼️ ${stock.name} (${stock.code}): ${stock.imageUrl || '이미지 없음'}`)
         }
       })
@@ -209,9 +213,26 @@ const formatTradingVolume = (volume) => {
   }
 }
 
-const selectStock = (stock) => {
-  console.log('📊 선택된 종목:', stock.name, `(${stock.code})`)
-  // TODO: 추후 종목 상세 페이지로 라우팅 또는 모달 표시
+const selectStock = async (stock) => {
+  console.log('📊 거래량 순위에서 종목 선택:', stock.name, `(${stock.code})`)
+
+  try {
+    // 종목 차트 페이지로 라우팅
+    await router.push({
+      name: 'ChartPage',
+      params: {
+        stockCode: stock.code,
+      },
+      query: {
+        stockName: stock.name,
+        source: 'volume-ranking', // 어디서 온 건지 추적용
+      },
+    })
+
+    console.log('🔀 종목 차트 페이지로 이동:', `/mock-trading/${stock.code}/chart`)
+  } catch (error) {
+    console.error('❌ 라우팅 오류:', error)
+  }
 }
 
 // 이미지 로딩 에러 처리
