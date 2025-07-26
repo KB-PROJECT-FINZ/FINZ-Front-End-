@@ -796,7 +796,6 @@ const getStockStatusDescription = (statusCode) => {
   }
   return statusMap[statusCode] || '정상'
 }
-const tickSize = 100
 
 // 종목 정보 (API로부터 동적으로 로드됨)
 const stockInfo = ref({
@@ -922,20 +921,20 @@ const generateOrderBookData = (currentPrice) => {
 
   // console.log('📝 더미 호가 데이터 생성, 현재가:', currentPrice)
 
-  // 매도호가 생성 (현재가 + 100원부터 1000원까지)
+  // 매도호가/매수호가 생성 (현재가 기준 호가단위 적용)
+  const tick = getTickSize(currentPrice)
   askPrices.value = []
   for (let i = 1; i <= 10; i++) {
     askPrices.value.push({
-      price: currentPrice + i * 100,
+      price: currentPrice + i * tick,
       volume: Math.floor(Math.random() * 500000) + 50000, // 5만~55만 랜덤
     })
   }
 
-  // 매수호가 생성 (현재가부터 -900원까지)
   bidPrices.value = []
   for (let i = 0; i < 10; i++) {
     bidPrices.value.push({
-      price: currentPrice - i * 100,
+      price: currentPrice - i * tick,
       volume: Math.floor(Math.random() * 600000) + 100000, // 10만~70만 랜덤
     })
   }
@@ -1460,13 +1459,25 @@ const selectPrice = (price) => {
   orderPrice.value = price
 }
 
-const increasePrice = () => {
-  orderPrice.value += tickSize
+// 호가단위 계산 함수 (현재가 기준)
+const getTickSize = (price) => {
+  if (price < 2000) return 1
+  if (price < 5000) return 5
+  if (price < 20000) return 10
+  if (price < 50000) return 50
+  if (price < 200000) return 100
+  if (price < 500000) return 500
+  return 1000
 }
 
+// 주문 가격 증가/감소 함수
+const increasePrice = () => {
+  orderPrice.value += getTickSize(stockInfo.value.currentPrice)
+}
 const decreasePrice = () => {
-  if (orderPrice.value > tickSize) {
-    orderPrice.value -= tickSize
+  const tick = getTickSize(stockInfo.value.currentPrice)
+  if (orderPrice.value > tick) {
+    orderPrice.value -= tick
   }
 }
 
