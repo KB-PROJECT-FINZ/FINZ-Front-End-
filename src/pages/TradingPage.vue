@@ -43,14 +43,14 @@
 
         <!-- 오른쪽 여백 (대칭을 위한) -->
         <div class="w-10">
-          <!-- API 테스트 버튼 -->
+          <!-- API 테스트 버튼
           <button
             @click="testApiCall"
             class="p-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
             :disabled="isLoading"
           >
             {{ isLoading ? '로딩...' : 'API' }}
-          </button>
+          </button> -->
         </div>
       </div>
     </header>
