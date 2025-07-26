@@ -80,7 +80,16 @@ async function fetchGPT(prompt) {
       message: prompt,
       intentType: props.fixedIntent,
     })
-
+    // 키워드 입력 모드일 경우
+    if (awaitingKeyword.value) {
+      const keyword = input.value.trim()
+      awaitingKeyword.value = false
+      await chatStore.sendMessage(`${keyword} 관련 종목 추천해줘`, 'RECOMMEND_KEYWORD')
+      input.value = ''
+      return
+    }
+  } catch (e) {
+    // 에러 핸들링
     if (res?.data?.content) {
       chatStore.messages.push({ role: 'bot', content: res.data.content })
     }
@@ -102,6 +111,7 @@ function submit() {
     input.value = ''
     return
   }
+}
 
   fetchGPT(input.value.trim())
   input.value = ''

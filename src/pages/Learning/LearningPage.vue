@@ -10,7 +10,7 @@
     <section class="profile-box">
       <div class="profile-icon"><span class="icon">👤</span></div>
       <div class="profile-info">
-        <div class="profile-name">{{ user.name }}은</div>
+        <div class="profile-name">{{ user.name }}님은</div>
         <div class="profile-type">{{ user.riskType }} 사고 유형입니다</div>
         <div class="profile-desc">{{ user.message }}</div>
       </div>
@@ -54,10 +54,10 @@ const learningContents = ref([])
 const router = useRouter()
 
 const user = ref({
-  name: '김지훈',
-  riskType: '분석적',
-  message: '체계적이고 논리적인 학습을 선호하시는군요!',
-  groupCode: 'ANALYTICAL',
+  name: localStorage.getItem('name') || '김지훈',
+  riskType: localStorage.getItem('riskType') || '분석적',
+  message: localStorage.getItem('message') || '체계적이고 논리적인 학습을 선호하시는군요!',
+  groupCode: localStorage.getItem('groupCode') || 'ANALYTICAL',
 })
 
 onMounted(async () => {
