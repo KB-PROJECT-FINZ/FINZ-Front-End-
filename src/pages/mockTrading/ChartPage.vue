@@ -656,12 +656,12 @@ const createChart = async () => {
                   minute: '2-digit',
                 })
                 html += `<div style="font-size:13px;font-weight:bold;color:#111827;margin-bottom:6px;">${title}</div>`
-                html += `<div style='margin-bottom:2px;'>시가: <span style='color:#eab308;font-weight:bold;'>${price(d.o)}원</span></div>`
-                html += `<div style='margin-bottom:2px;'>고가: <span style='color:#ef4444;font-weight:bold;'>${price(d.h)}원</span></div>`
-                html += `<div style='margin-bottom:2px;'>저가: <span style='color:#3b82f6;font-weight:bold;'>${price(d.l)}원</span></div>`
-                html += `<div style='margin-bottom:2px;'>종가: <span style='color:#111827;font-weight:bold;'>${price(d.c)}원</span></div>`
+                html += `<div style='margin-bottom:2px;'>시가: <span style='color:#111827;font-weight:bold;'>${price(d.o)}</span></div>`
+                html += `<div style='margin-bottom:2px;'>고가: <span style='color:#ef4444;font-weight:bold;'>${price(d.h)}</span></div>`
+                html += `<div style='margin-bottom:2px;'>저가: <span style='color:#3b82f6;font-weight:bold;'>${price(d.l)}</span></div>`
+                html += `<div style='margin-bottom:2px;'>종가: <span style='color:#111827;font-weight:bold;'>${price(d.c)}</span></div>`
                 if (d.volume !== undefined) {
-                  html += `<div>거래량: <span style='color:#6366f1;font-weight:bold;'>${price(d.volume)}</span></div>`
+                  html += `<div>거래량: <span style='color:#111827;font-weight:bold;'>${price(d.volume)}</span></div>`
                 }
                 tooltipEl.innerHTML = html
               }
@@ -742,6 +742,10 @@ const createChart = async () => {
       },
     })
 
+    // 차트 캔버스에서 마우스가 벗어나면 툴팁 숨기기
+    if (chartCanvas.value) {
+      chartCanvas.value.addEventListener('mouseleave', hideCustomTooltip)
+    }
     console.log('[차트] 생성 완료')
   } catch (error) {
     console.error('[차트] 생성 오류:', error.message)
@@ -844,12 +848,29 @@ onMounted(() => {
   })
 })
 
+// 커스텀 툴팁 숨기기 함수
+function hideCustomTooltip() {
+  const tooltipEl = document.getElementById('chartjs-custom-tooltip')
+  if (tooltipEl) {
+    tooltipEl.style.opacity = 0
+  }
+}
+
 // 컴포넌트 언마운트 시 정리
 onUnmounted(() => {
   stopAutoRefresh() // 자동 새로고침 중지
   if (chartInstance.value) {
     chartInstance.value.destroy()
     chartInstance.value = null
+  }
+  // 차트 캔버스 이벤트 리스너 제거
+  if (chartCanvas.value) {
+    chartCanvas.value.removeEventListener('mouseleave', hideCustomTooltip)
+  }
+  // 페이지 이동 시 툴팁 완전히 제거
+  const tooltipEl = document.getElementById('chartjs-custom-tooltip')
+  if (tooltipEl) {
+    tooltipEl.remove()
   }
 })
 </script>

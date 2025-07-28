@@ -25,7 +25,7 @@
       <div class="asset-label">총 보유자산</div>
       <div class="asset-main">
         <span class="asset-amount">₩{{ asset.amount.toLocaleString() }}</span>
-        <button class="asset-btn">내 자산 현황 바로가기</button>
+        <button class="asset-btn" @click="goToAssetStatus">내 자산 현황 바로가기</button>
       </div>
       <div class="asset-change" :class="{ positive: asset.change > 0, negative: asset.change < 0 }">
         {{ asset.change > 0 ? '+' : '' }}{{ asset.change }}% (이번 달)
@@ -90,6 +90,10 @@ const profile = ref({
   type: '',
   level: 3,
 })
+
+const goToAssetStatus = () => {
+  router.push('/mock-trading/asset-status')
+}
 
 // 로컬 스토리지 및 API로 데이터 세팅
 onMounted(async () => {
