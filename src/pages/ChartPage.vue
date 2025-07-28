@@ -1,4 +1,12 @@
 <template>
+  <div
+    v-if="isLoading"
+    class="flex flex-col items-center justify-center gap-4 py-10 text-gray-500"
+  >
+    <div class="loading-spinner"></div>
+    <span>데이터 로딩 중...</span>
+  </div>
+  <div v-else>
   <div class="h-screen flex flex-col bg-white overflow-hidden">
     <!-- 상단 네비게이션 -->
     <header class="bg-white px-4 pt-3 pb-3 sticky top-0 z-50">
@@ -256,6 +264,7 @@
       </div>
     </div>
   </div>
+  </div>
 </template>
 
 <script setup>
@@ -288,6 +297,8 @@ const selectedTimeFrame = ref('1min')
 
 const router = useRouter()
 const route = useRoute()
+
+const isLoading = ref(false)
 
 const stockInfo = reactive({
   name: '', // 종목명

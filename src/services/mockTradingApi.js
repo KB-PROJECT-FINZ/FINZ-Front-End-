@@ -93,23 +93,26 @@ export const getMarketIndices = async () => {
   }
 }
 
-// 거래대금 순위 조회 (실제 백엔드 연동)
-export const getVolumeRanking = async (limit = 10) => {
+// 거래대금 순위 조회 (실제 백엔드 연동) - 탭 기능 추가
+export const getVolumeRanking = async (limit = 10, blngClsCode = '3') => {
   try {
     console.log(
-      '🔍 거래대금 순위 API 호출:',
-      `${API_BASE_URL}/market/ranking/volume?limit=${limit}`,
+      '🔍 거래 순위 API 호출:',
+      `${API_BASE_URL}/market/ranking/volume?limit=${limit}&blngClsCode=${blngClsCode}`,
     )
 
-    const response = await fetch(`${API_BASE_URL}/market/ranking/volume?limit=${limit}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
+    const response = await fetch(
+      `${API_BASE_URL}/market/ranking/volume?limit=${limit}&blngClsCode=${blngClsCode}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    )
 
     const data = await handleApiResponse(response)
-    console.log('✅ 거래대금 순위 API 응답:', data)
+    console.log('✅ 거래 순위 API 응답:', data)
 
     // 백엔드 응답이 이미 올바른 형식이므로 그대로 사용
     return {
@@ -119,7 +122,7 @@ export const getVolumeRanking = async (limit = 10) => {
       timestamp: new Date().toISOString(),
     }
   } catch (error) {
-    console.error('❌ 거래대금 순위 조회 오류:', error)
+    console.error('❌ 거래 순위 조회 오류:', error)
 
     // 개발 환경에서는 에러 상세 정보 표시
     if (import.meta.env.MODE === 'development') {
@@ -129,7 +132,7 @@ export const getVolumeRanking = async (limit = 10) => {
     }
 
     // 에러 시 더미 데이터 반환 (fallback)
-    const dummyData = generateDummyVolumeRanking(limit)
+    const dummyData = generateDummyVolumeRanking(limit, blngClsCode)
     return {
       success: false,
       data: dummyData,
@@ -186,46 +189,67 @@ export const getMarketOverview = async () => {
   }
 }
 
-// 더미 데이터 생성 함수 (fallback용)
-const generateDummyVolumeRanking = (limit) => {
+// 더미 데이터 생성 함수 (fallback용) - 탭별 특성 반영
+const generateDummyVolumeRanking = (limit, blngClsCode = '3') => {
   const stockNames = [
-    '삼성전자',
-    'SK하이닉스',
-    'NAVER',
-    '현대차',
-    'LG화학',
-    '삼성SDI',
-    '카카오',
-    '삼성바이오로직스',
-    '셀트리온',
-    '카카오뱅크',
+    '삼성전자', 'SK하이닉스', 'NAVER', '현대차', 'LG화학',
+    '삼성SDI', '카카오', '삼성바이오로직스', '셀트리온', '카카오뱅크',
+    'POSCO홀딩스', 'LG에너지솔루션', '삼성물산', 'KB금융', '신한지주'
   ]
+
   const stockCodes = [
-    '005930',
-    '000660',
-    '035420',
-    '005380',
-    '051910',
-    '006400',
-    '035720',
-    '207940',
-    '068270',
-    '323410',
+    '005930', '000660', '035420', '005380', '051910',
+    '006400', '035720', '207940', '068270', '323410',
+    '005490', '373220', '028260', '105560', '055550'
   ]
 
-  return stockNames.slice(0, limit).map((name, index) => ({
-    code: stockCodes[index],
-    name: name,
-    currentPrice: Math.floor(Math.random() * 100000) + 10000,
-    change: Math.floor(Math.random() * 5000) - 2500,
-    changePercent: Math.random() * 10 - 5,
-    isPositive: Math.random() > 0.5,
-    tradingVolume: Math.floor(Math.random() * 5000000000) + 1000000000,
-    volume: Math.floor(Math.random() * 1000000) + 100000,
-    rank: index + 1,
-  }))
-}
+  return stockNames.slice(0, limit).map((name, index) => {
+    const currentPrice = Math.floor(Math.random() * 100000) + 10000
+    const volume = Math.floor(Math.random() * 50000000) + 1000000
 
+    // 탭별로 특화된 데이터 생성
+    let specialValue;
+    switch (blngClsCode) {
+      case '0': // 거래량
+        specialValue = volume * (1.5 + Math.random() * 2) // 평균거래량 대비
+        break
+      case '1': // 증가율
+        specialValue = Math.random() * 300 + 50 // 50~350% 증가율
+        break
+      case '2': // 회전율
+        specialValue = Math.random() * 80 + 10 // 10~90% 회전율
+        break
+      case '3': // 거래대금
+        specialValue = volume * currentPrice
+        break
+      case '4': // 대금회전율
+        specialValue = Math.random() * 50 + 5 // 5~55% 대금회전율
+        break
+      default:
+        specialValue = volume * currentPrice
+    }
+
+    return {
+      code: stockCodes[index],
+      name: name,
+      currentPrice: currentPrice,
+      change: Math.floor(Math.random() * 5000) - 2500,
+      changePercent: Math.random() * 10 - 5,
+      isPositive: Math.random() > 0.5,
+      tradingVolume: volume * currentPrice,
+      volume: volume,
+      volumeRate: Math.random() * 200 + 50, // 거래량 증가율
+      turnoverRate: Math.random() * 60 + 5, // 거래회전율
+      amountTurnoverRate: Math.random() * 40 + 5, // 대금회전율
+      rank: index + 1,
+      imageUrl: `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stockCodes[index]}.png`,
+
+      // 탭별 특화 값
+      specialValue: specialValue,
+      rankingType: blngClsCode
+    }
+  })
+}
 
 // 종목 검색 (실제 백엔드 연동)
 export const searchStocks = async (query, limit = 10) => {
