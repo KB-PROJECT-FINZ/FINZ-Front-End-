@@ -594,9 +594,9 @@ const createChart = async () => {
             label: stockInfo.name,
             data: data,
             backgroundColors: {
-              up: '#e42939', // 상승 캔들 색상 (빨간색)
-              down: '#2272eb', // 하락 캔들 색상 (파란색)
-              unchanged: '#999999', // 보합 캔들 색상
+              up: '#e42939',
+              down: '#2272eb',
+              unchanged: '#999999',
             },
             borderColors: {
               up: '#e42939',
@@ -611,11 +611,71 @@ const createChart = async () => {
         responsive: true,
         maintainAspectRatio: false,
         animation: {
-          duration: 0, // 애니메이션 비활성화
+          duration: 0,
         },
         plugins: {
           legend: {
             display: false,
+          },
+          tooltip: {
+            enabled: false,
+            external: function (context) {
+              let tooltipEl = document.getElementById('chartjs-custom-tooltip')
+              if (!tooltipEl) {
+                tooltipEl = document.createElement('div')
+                tooltipEl.id = 'chartjs-custom-tooltip'
+                tooltipEl.style.position = 'absolute'
+                tooltipEl.style.pointerEvents = 'none'
+                tooltipEl.style.zIndex = 1000
+                tooltipEl.style.background = 'rgba(255,255,255,0.97)'
+                tooltipEl.style.border = '1px solid #e5e7eb'
+                tooltipEl.style.borderRadius = '8px'
+                tooltipEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'
+                tooltipEl.style.padding = '14px 18px'
+                tooltipEl.style.fontFamily = 'Noto Sans KR, sans-serif'
+                tooltipEl.style.fontSize = '14px'
+                tooltipEl.style.color = '#374151'
+                document.body.appendChild(tooltipEl)
+              }
+              const { chart, tooltip } = context
+              if (tooltip.opacity === 0) {
+                tooltipEl.style.opacity = 0
+                return
+              }
+              if (tooltip.dataPoints && tooltip.dataPoints.length) {
+                const d = tooltip.dataPoints[0].raw
+                const price = (v) => v?.toLocaleString('ko-KR')
+                let html = ''
+                // 날짜 타이틀
+                const date = new Date(d.x)
+                const title = date.toLocaleString('ko-KR', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+                html += `<div style="font-size:13px;font-weight:bold;color:#111827;margin-bottom:6px;">${title}</div>`
+                html += `<div style='margin-bottom:2px;'>시가: <span style='color:#eab308;font-weight:bold;'>${price(d.o)}원</span></div>`
+                html += `<div style='margin-bottom:2px;'>고가: <span style='color:#ef4444;font-weight:bold;'>${price(d.h)}원</span></div>`
+                html += `<div style='margin-bottom:2px;'>저가: <span style='color:#3b82f6;font-weight:bold;'>${price(d.l)}원</span></div>`
+                html += `<div style='margin-bottom:2px;'>종가: <span style='color:#111827;font-weight:bold;'>${price(d.c)}원</span></div>`
+                if (d.volume !== undefined) {
+                  html += `<div>거래량: <span style='color:#6366f1;font-weight:bold;'>${price(d.volume)}</span></div>`
+                }
+                tooltipEl.innerHTML = html
+              }
+              // 위치 조정 (마우스 위치 기준)
+              tooltipEl.style.opacity = 1
+              // Chart.js 3.x 이상에서는 tooltip 객체에 mouseX, mouseY가 없으므로, getBoundingClientRect 사용
+              const canvasRect = chart.canvas.getBoundingClientRect()
+              // tooltip.caretX/Y는 캔버스 내 좌표이므로, 브라우저 전체 좌표로 변환
+              const left = window.scrollX + canvasRect.left + tooltip.caretX + 16
+              const top =
+                window.scrollY + canvasRect.top + tooltip.caretY - tooltipEl.offsetHeight / 2
+              tooltipEl.style.left = left + 'px'
+              tooltipEl.style.top = top + 'px'
+            },
           },
         },
         scales: {
@@ -667,12 +727,9 @@ const createChart = async () => {
                 return value.toLocaleString() + '원'
               },
             },
-            // Y축 범위 확장을 위한 설정
             afterDataLimits: function (scale) {
-              // 데이터의 최대값과 최소값 가져오기
               const range = scale.max - scale.min
-              const padding = range * 0.15 // 위아래로 15%씩 여백 추가
-
+              const padding = range * 0.15
               scale.max = scale.max + padding
               scale.min = scale.min - padding
             },
