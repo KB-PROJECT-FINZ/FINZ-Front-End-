@@ -53,7 +53,7 @@ import axios from 'axios'
 import { useChatStore } from '@/stores/counter.js'
 // Props
 const props = defineProps({
-  fixedIntent: { type: String, default: 'MESSAGE' },
+  fixedIntent: { type: String, default: null },
   sessionId: { type: Number, default: null },
   userId: { type: Number, default: 1 },
 })
@@ -135,7 +135,11 @@ onMounted(() => {
         { label: ':상승세인_차트: 종목 추천', intent: 'RECOMMEND_SELECT' },
         { label: ':막대_차트: 종목 분석', intent: 'STOCK_ANALYZE', message: '종목 분석 해줘' },
         { label: ':책: 용어 설명', intent: 'MESSAGE', message: 'PER가 뭐야?' },
-        { label: ':뇌: 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘' },
+        {
+          label: ':뇌: 포트폴리오',
+          intent: 'PORTFOLIO_ANALYZE',
+          message: '내 포트폴리오 피드백 줘',
+        },
       ],
     })
   }
