@@ -21,7 +21,7 @@
     </div>
     <!-- 퀴즈 카드 -->
     <div v-if="quiz" class="quiz-card">
-      <div class="quiz-credit">🎁 {{ quiz.creditReward }}크레딧 획득 가능</div>
+      <div class="quiz-credit">{{ quiz.creditReward }}크레딧</div>
       <div class="quiz-question">{{ removeOX(quiz.question) }}</div>
       <div class="quiz-ox-choices">
         <button
