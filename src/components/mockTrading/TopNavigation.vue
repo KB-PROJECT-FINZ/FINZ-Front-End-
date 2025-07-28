@@ -23,13 +23,18 @@ import { useRouter } from 'vue-router'
 const router = useRouter();
 
 const navItems = [
-  { name: 'home', label: '홈' },
-  { name: 'asset', label: '나의자산현황' },
-  { name: 'ai', label: 'AI 분석리포트' },
+  { name: 'home', label: '홈', path: '/mock-trading' },
+  { name: 'asset', label: '나의자산현황', path: '/mock-trading/asset-status' },
+  { name: 'ai', label: 'AI 분석리포트', path: '/mock-trading/ai-report' },
 ]
+
 const current = ref('home')
+
 function select(name) {
   current.value = name
-  router.push('/mock-trading/asset-status')
+  const selectedItem = navItems.find(item => item.name === name)
+  if (selectedItem) {
+    router.push(selectedItem.path)
+  }
 }
 </script>
