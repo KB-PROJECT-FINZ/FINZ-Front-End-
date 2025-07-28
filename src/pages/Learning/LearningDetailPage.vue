@@ -19,7 +19,6 @@
       <h2 class="detail-title">{{ content?.title }}</h2>
       <div class="detail-body" v-html="formattedBody"></div>
     </div>
-
     <!-- 퀴즈 카드 -->
     <div v-if="quiz" class="quiz-card">
       <div class="quiz-credit">{{ quiz.credit }}크레딧</div>
@@ -53,6 +52,10 @@
         <div class="quiz-ex-title">💡 해설</div>
         <div class="quiz-ex-body">{{ quiz.comment }}</div>
       </div>
+
+      <div v-if="result !== null" class="complete-button-wrap">
+        <button class="complete-btn" @click="handleComplete">학습 완료</button>
+      </div>
     </div>
   </div>
 </template>
@@ -61,6 +64,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchLearningContentById, fetchLearningQuizById } from '../../services/learning'
+import axios from 'axios'
 
 const route = useRoute()
 const router = useRouter()
@@ -69,6 +73,7 @@ const quiz = ref(null)
 const selected = ref('')
 const result = ref(null)
 const showExplainBtnClicked = ref(false)
+const userId = Number(localStorage.getItem('userId') || 1)
 
 onMounted(async () => {
   content.value = await fetchLearningContentById(route.params.id)
@@ -105,6 +110,19 @@ const formattedBody = computed(() => {
   if (html.includes('<li>')) html = '<ul>' + html + '</ul>'
   return html
 })
+
+async function handleComplete() {
+  try {
+    await axios.post('/learning/history', {
+      userId,
+      contentId: Number(route.params.id),
+    })
+    alert('학습 완료가 기록되었습니다!')
+  } catch (e) {
+    console.error('기록 실패:', e)
+    alert('기록에 실패했습니다.')
+  }
+}
 </script>
 
 <style scoped>
@@ -348,5 +366,28 @@ const formattedBody = computed(() => {
   .detail-thumb {
     max-width: 100vw;
   }
+}
+.complete-button-wrap {
+  width: 100%;
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+}
+
+.complete-btn {
+  background: #3730a3;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.1);
+}
+
+.complete-btn:hover {
+  background: #4b39b0;
 }
 </style>
