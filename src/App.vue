@@ -1,13 +1,14 @@
 <template>
   <div id="app">
     <div class="mobile-container">
-      <transition name="fade" mode="out-in">
-        <router-view />
-      </transition>
+      <router-view v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </div>
   </div>
 </template>
-
 <script>
 import { onMounted } from 'vue'
 import { useUserStore } from './stores/user'
@@ -30,7 +31,7 @@ export default {
 /* 페이드 전환 효과 */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 1s ease;
+  transition: opacity 0.7s ease;
 }
 .fade-enter-from,
 .fade-leave-to {

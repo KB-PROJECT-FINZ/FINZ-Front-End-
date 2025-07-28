@@ -1,7 +1,6 @@
 <template>
   <div class="w-36 p-2 bg-white rounded-lg shadow flex flex-col items-center text-center">
     <!-- 회사 로고와 이름 -->
-
     <div class="text-sm font-semibold mb-2">{{ name }}</div>
 
     <!-- 도넛 차트 캔버스 -->
@@ -44,12 +43,10 @@ const COLORS = {
 
 function createChart() {
   if (!chartCanvas.value) return
+  if (!props.traitRatio) return
 
-  // 비율 값 배열 (성향 비율이 100% 넘지 않도록 가정)
   const dataValues = Object.values(props.traitRatio)
-  // 레이블
   const labels = Object.keys(props.traitRatio)
-  // 색상 배열: labels 순서대로 COLORS에서 가져오기
   const backgroundColors = labels.map((key) => COLORS[key] || '#ccc')
 
   if (chartInstance) {
@@ -80,7 +77,7 @@ function createChart() {
   })
 }
 
-// 차트 그리기: prop이 바뀌면 다시 그리기
+// watch 할 때는 props.traitRatio에 접근하는 getter 함수로 작성
 watch(
   () => props.traitRatio,
   () => {
@@ -99,7 +96,3 @@ onBeforeUnmount(() => {
   }
 })
 </script>
-
-<style scoped>
-/* 필요하면 크기, 여백 추가 조정 가능 */
-</style>
