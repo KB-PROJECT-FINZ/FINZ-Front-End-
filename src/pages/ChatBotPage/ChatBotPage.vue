@@ -31,20 +31,12 @@
         </div>
       </div>
     </div>
-    <!-- 입력창 -->
-    <form @submit.prevent="submit" class="flex gap-2 mt-2">
-      <input
-        v-model="input"
-        placeholder="메시지를 입력하세요"
-        class="flex-1 border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring focus:border-purple-300"
-      />
-      <button
-        type="submit"
-        class="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-purple-700"
-      >
-        전송
-      </button>
-    </form>
+    <!-- 자유 대화 안내 -->
+    <div class="mt-8 bg-white p-4 rounded-xl border shadow-sm">
+      <p class="text-sm text-gray-500 mb-2">아무거나 물어봐도 괜찮아요</p>
+      <ChatBox/>
+    </div>
+
   </div>
 </template>
 <script setup>

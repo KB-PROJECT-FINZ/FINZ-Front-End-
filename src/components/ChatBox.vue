@@ -53,7 +53,7 @@ import axios from 'axios'
 import { useChatStore } from '@/stores/counter.js'
 // Props
 const props = defineProps({
-  fixedIntent: { type: String, default: 'MESSAGE' },
+  fixedIntent: { type: String, default: null },
   sessionId: { type: Number, default: null },
   userId: { type: Number, default: 1 },
 })
