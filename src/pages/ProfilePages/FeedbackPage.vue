@@ -24,7 +24,6 @@
 </template>
 
 <script setup>
-import BottomNavigation from '@/components/FooterNavigation.vue'
 import FeedbackCard from '@/components/FeedbackCard.vue'
 import { ref, onMounted } from 'vue'
 import axios from 'axios'

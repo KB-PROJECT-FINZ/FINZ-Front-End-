@@ -25,7 +25,7 @@ export const useChatStore = defineStore('chat', {
       }
 
       try {
-        const res = await axios.post('/api/chatbot/message', {
+        const res = await axios.post('/chatbot/message', {
           userId: 1,
           sessionId: this.sessionId,
           message: message,
