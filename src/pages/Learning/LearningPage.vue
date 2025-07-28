@@ -24,6 +24,7 @@
           v-for="(item, idx) in learningContents"
           :key="item.contentId"
           class="content-list-card"
+          :class="{ completed: item.isCompleted }"
           @click="goToDetail(item.contentId)"
         >
           <img :src="item.imageUrl || defaultThumbnail" class="content-thumb" />
@@ -48,6 +49,7 @@ import { ref, onMounted } from 'vue'
 import { fetchLearningContentsByGroup } from '../../services/learning'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '../../components/FooterNavigation.vue'
+import axios from 'axios'
 
 const defaultThumbnail = 'https://via.placeholder.com/150x100?text=No+Image'
 const learningContents = ref([])
@@ -60,18 +62,39 @@ const user = ref({
   groupCode: localStorage.getItem('groupCode') || 'ANALYTICAL',
 })
 
+const userId = Number(localStorage.getItem('userId') || 1)
+// onMounted(async () => {
+//   try {
+//     const data = await fetchLearningContentsByGroup(user.value.groupCode)
+//     learningContents.value = data
+//   } catch (e) {
+//     console.error('러닝 콘텐츠 불러오기 실패:', e)
+//   }
+// })
 onMounted(async () => {
   try {
-    console.log('API 호출 시작:', user.value.groupCode)
-    const data = await fetchLearningContentsByGroup(user.value.groupCode)
-    console.log('API 응답 데이터:', data)
-    console.log('데이터 타입:', typeof data)
-    console.log('배열인가?', Array.isArray(data))
-    console.log('데이터 길이:', data?.length)
-    learningContents.value = data
-    console.log('learningContents.value:', learningContents.value)
+    // 콘텐츠 + 완료 목록 요청
+    const [contentList, historyRes] = await Promise.all([
+      fetchLearningContentsByGroup(user.value.groupCode),
+      axios.get('/learning/history/complete/list', {
+        params: { userId },
+      }),
+    ])
+
+    const completedIds = historyRes.data.map((item) => item.contentId)
+
+    // isCompleted 플래그 추가
+    const enriched = contentList.map((item) => ({
+      ...item,
+      isCompleted: completedIds.includes(item.contentId),
+    }))
+
+    // 완료된 건 아래로 정렬
+    enriched.sort((a, b) => a.isCompleted - b.isCompleted)
+
+    learningContents.value = enriched
   } catch (e) {
-    console.error('러닝 콘텐츠 불러오기 실패:', e)
+    console.error('학습 콘텐츠 로딩 실패:', e)
   }
 })
 
@@ -237,6 +260,10 @@ function goBack() {
   height: 1px;
   background: #f0f1f3;
   margin: 0 8px;
+}
+.content-list-card.completed {
+  background-color: #f2f2f2;
+  opacity: 0.9;
 }
 @media (max-width: 600px) {
   .profile-box {

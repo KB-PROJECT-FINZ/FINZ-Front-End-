@@ -54,7 +54,9 @@
       </div>
 
       <div v-if="result !== null" class="complete-button-wrap">
-        <button class="complete-btn" @click="handleComplete">학습 완료</button>
+        <button class="complete-btn" :disabled="isCompleted" @click="handleComplete">
+          {{ isCompleted ? '✅ 완료됨' : '학습 완료' }}
+        </button>
       </div>
     </div>
   </div>
@@ -74,10 +76,23 @@ const selected = ref('')
 const result = ref(null)
 const showExplainBtnClicked = ref(false)
 const userId = Number(localStorage.getItem('userId') || 1)
+const isCompleted = ref(false) // 학습 완료 여부 상태
 
 onMounted(async () => {
   content.value = await fetchLearningContentById(route.params.id)
   quiz.value = await fetchLearningQuizById(route.params.id)
+
+  try {
+    const res = await axios.get('/learning/history/complete', {
+      params: {
+        userId,
+        contentId: Number(route.params.id),
+      },
+    })
+    isCompleted.value = res.data === true
+  } catch (e) {
+    console.warn('완료 여부 확인 실패', e)
+  }
 })
 
 function goBack() {
@@ -117,7 +132,7 @@ async function handleComplete() {
       userId,
       contentId: Number(route.params.id),
     })
-    alert('학습 완료가 기록되었습니다!')
+    isCompleted.value = true // 완료 처리
   } catch (e) {
     console.error('기록 실패:', e)
     alert('기록에 실패했습니다.')
