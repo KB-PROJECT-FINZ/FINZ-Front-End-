@@ -124,50 +124,53 @@
 </template>
 
 <script setup>
-// 추후 데이터 바인딩 가능
 import BottomNav from '@/components/FooterNavigation.vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-
 import { ref, onMounted } from 'vue'
+
+const router = useRouter()
+
+// 사용자 데이터
 const name = ref('')
 const userName = ref('')
 const riskTypeName = ref('')
 
+// 세션 기반 사용자 정보 불러오기
 onMounted(async () => {
-  name.value = localStorage.getItem('name')
-  const username = localStorage.getItem('username')
-  userName.value = username
-
   try {
-    const response = await axios.get('/user/risk-type-name', {
-      params: { username: userName.value },
+    const response = await axios.get('http://localhost:8080/auth/me', {
+      withCredentials: true,
     })
 
-    if (response.headers['content-type'].includes('text/html')) {
-      console.error(' HTML 응답이므로 API 호출 실패')
-      riskTypeName.value = '조회 실패'
-    } else {
-      riskTypeName.value = response.data
-    }
-  } catch (err) {
-    console.error(' 투자 성향 조회 에러:', err)
-    riskTypeName.value = '조회 실패'
+    const user = response.data
+    name.value = user.name
+    userName.value = user.username
+    riskTypeName.value = convertRiskTypeToName(user.riskType)
+  } catch (e) {
+    console.error('세션 정보 불러오기 실패:', e)
+    router.push('/login-form')
   }
 })
 
-const router = useRouter()
+function convertRiskTypeToName(code) {
+  const map = {
+    CSD: '신중한 안정형',
+    CAG: '신중한 성장형',
+    BSS: '균형 잡힌 수익 추구형',
+    BGT: '균형 잡힌 도전형',
+    AID: '적극적 안정형',
+    AGR: '적극적 성장형',
+    EXP: '실험적 모험가형',
+    FAD: '감정적 결정형',
+    SYS: '시스템 트레이더형',
+  }
+  return map[code] || '미분류'
+}
 
-const goToStudy = () => {
-  router.push('/study')
-}
-const goToContents = () => {
-  router.push('/contents')
-}
-const goToQuiz = () => {
-  router.push('/quiz')
-}
-const goToPortfolio = () => {
-  router.push('/portfolio')
-}
+// 페이지 이동용
+const goToStudy = () => router.push('/learning')
+const goToContents = () => router.push('/contents')
+const goToQuiz = () => router.push('/quiz')
+const goToPortfolio = () => router.push('/portfolio')
 </script>
