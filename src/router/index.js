@@ -25,6 +25,8 @@ import ChartPage from '@/pages/ChartPage.vue'
 import { useUserStore } from '@/stores/user'
 import MockTradingHome from '@/pages/mockTrading/MockTradingHome.vue'
 import AssetStatus from '@/pages/mockTrading/AssetStatus.vue'
+import Holdings from '@/pages/mockTrading/Holdings.vue'
+import Transactions from '@/pages/mockTrading/Transactions.vue'
 const routes = [
   {
     path: '/',
@@ -153,8 +155,17 @@ const routes = [
     path: '/mock-trading/asset-status',
     name: 'AssetStatus',
     component: AssetStatus,
-    //meta: { requiresAuth: true } // 로그인 필요
   },
+  {
+    path: '/mock-trading/holdings',
+    name: 'Holdings',
+    component: Holdings,
+  },
+  {
+    path: '/mock-trading/transactions',
+    name: 'Transactions',
+    component: Transactions,
+  }
 ]
 
 const router = createRouter({

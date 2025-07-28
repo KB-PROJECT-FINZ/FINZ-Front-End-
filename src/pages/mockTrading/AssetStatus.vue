@@ -260,11 +260,13 @@ const createPortfolioChart = () => {
 const goBack = () => {
   router.back()
 }
+
 const goHoldingsPage = () => {
-  router.push('/mockTrading/holdings')
+  router.push('/mock-trading/holdings')
 }
+
 const goTransactionsPage = () => {
-  router.push('/mockTrading/transactions')
+  router.push('/mock-trading/transactions')
 }
 const refreshData = async () => {
   loading.value = true
