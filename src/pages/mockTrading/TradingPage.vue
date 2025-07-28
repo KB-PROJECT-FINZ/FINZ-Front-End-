@@ -649,7 +649,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { getStockInfo } from '@/services/stockApi.js'
 
 // Vue Router
@@ -663,8 +663,9 @@ let STOCK_CODE = ''
 const isLoading = ref(false)
 const error = ref(null)
 
-// 웹소켓 연결
+// 웹소켓 연결 및 재연결 타이머
 const socket = ref(null)
+let wsReconnectTimer = null
 
 // API로부터 종목 정보 로드
 const loadStockInfo = async () => {
@@ -1078,8 +1079,12 @@ const initWebSocket = async () => {
 
     socket.value.onclose = () => {
       console.log('[WebSocket] 연결 종료')
-      // 연결이 끊어지면 3초 후 재연결 시도
-      setTimeout(() => {
+      // 연결이 끊어지면 3초 후 재연결 시도 (페이지에 있을 때만)
+      if (wsReconnectTimer) {
+        clearTimeout(wsReconnectTimer)
+        wsReconnectTimer = null
+      }
+      wsReconnectTimer = setTimeout(() => {
         console.log('[WebSocket] 재연결 시도...')
         initWebSocket()
       }, 3000)
@@ -1093,11 +1098,16 @@ const initWebSocket = async () => {
   }
 }
 
-// 웹소켓 연결 해제
+// 웹소켓 연결 해제 및 재연결 타이머 정리
 const closeWebSocket = () => {
   if (socket.value) {
+    socket.value.onclose = null // 재연결 방지
     socket.value.close()
     socket.value = null
+  }
+  if (wsReconnectTimer) {
+    clearTimeout(wsReconnectTimer)
+    wsReconnectTimer = null
   }
 }
 
@@ -1517,13 +1527,18 @@ onMounted(() => {
 })
 
 // 컴포넌트 언마운트 시 웹소켓 연결 해제
+
 onUnmounted(() => {
   closeWebSocket()
-
   // 타이머 정리
   if (timeUpdateTimer.value) {
     clearInterval(timeUpdateTimer.value)
     timeUpdateTimer.value = null
   }
+})
+
+// 라우터 이동 시에도 웹소켓 종료
+onBeforeRouteLeave(() => {
+  closeWebSocket()
 })
 </script>
