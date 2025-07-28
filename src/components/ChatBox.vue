@@ -67,7 +67,7 @@ async function fetchGPT(prompt) {
   // 사용자 메시지 추가
   chatStore.messages.push({ role: 'user', content: prompt })
   try {
-    const res = await axios.post('/chatbot/message', {
+    const res = await axios.post('/api/chatbot/message', {
       userId: props.userId,
       sessionId: props.sessionId,
       message: prompt,

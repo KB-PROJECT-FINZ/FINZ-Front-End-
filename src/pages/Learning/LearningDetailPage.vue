@@ -21,7 +21,7 @@
     </div>
     <!-- 퀴즈 카드 -->
     <div v-if="quiz" class="quiz-card">
-      <div class="quiz-credit">🎁 {{ quiz.creditReward }}크레딧 획득 가능</div>
+      <div class="quiz-credit">{{ quiz.creditReward }}크레딧</div>
       <div class="quiz-question">{{ removeOX(quiz.question) }}</div>
       <div class="quiz-ox-choices">
         <button
@@ -43,8 +43,10 @@
       </div>
       <div v-if="result !== null" class="quiz-feedback">
         <div v-if="result" class="quiz-correct">
-          ✅ 정답입니다! 
-          <span v-if="creditAwarded" class="credit-awarded">+{{ quiz.creditReward }}크레딧 획득!</span>
+          ✅ 정답입니다!
+          <span v-if="creditAwarded" class="credit-awarded"
+            >+{{ quiz.creditReward }}크레딧 획득!</span
+          >
         </div>
         <div v-else class="quiz-wrong">❌ 오답입니다.</div>
       </div>
@@ -66,7 +68,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { fetchLearningContentById, fetchLearningQuizById, awardQuizCredit } from '../../services/learning'
+import {
+  fetchLearningContentById,
+  fetchLearningQuizById,
+  awardQuizCredit,
+} from '../../services/learning'
 import axios from 'axios'
 
 const route = useRoute()
@@ -93,20 +99,20 @@ function selectOX(val) {
   selected.value = val
   result.value = selected.value === quiz.value.answer
   showExplainBtnClicked.value = false // 선택 시 해설은 다시 숨김
-  
+
   // 정답이고 아직 크레딧을 지급하지 않았다면 크레딧 지급
   if (result.value && !creditAwarded.value) {
-    awardQuizCreditLocal();
+    awardQuizCreditLocal()
   }
 }
 
 async function awardQuizCreditLocal() {
   try {
-    const response = await awardQuizCredit(userId, Number(route.params.id));
-    creditAwarded.value = true;
-    alert(`정답입니다! ${quiz.value.creditReward}크레딧이 지급되었습니다!`);
+    const response = await awardQuizCredit(userId, Number(route.params.id))
+    creditAwarded.value = true
+    alert(`정답입니다! ${quiz.value.creditReward}크레딧이 지급되었습니다!`)
   } catch (e) {
-    console.error('크레딧 지급 실패:', e);
+    console.error('크레딧 지급 실패:', e)
   }
 }
 
@@ -341,8 +347,13 @@ async function handleComplete() {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 .quiz-wrong {
   color: #e74c3c;
