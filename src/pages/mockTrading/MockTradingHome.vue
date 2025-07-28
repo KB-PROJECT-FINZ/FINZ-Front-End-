@@ -13,7 +13,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import TopNavigation from '@/components/mockTrading/TopNavigation.vue'
 import SearchBar from '@/components/mockTrading/SearchBar.vue'
 import TradingVolumeRanking from '@/components/mockTrading/TradingVolumeRanking.vue'
