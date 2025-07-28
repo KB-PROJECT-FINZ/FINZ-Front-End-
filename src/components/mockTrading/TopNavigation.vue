@@ -18,6 +18,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter();
 
 const navItems = [
   { name: 'home', label: '홈' },
@@ -27,5 +30,6 @@ const navItems = [
 const current = ref('home')
 function select(name) {
   current.value = name
+  router.push('/mock-trading/asset-status')
 }
 </script>

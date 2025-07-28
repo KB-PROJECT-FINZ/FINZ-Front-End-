@@ -24,6 +24,7 @@ import TradingPage from '@/pages/TradingPage.vue'
 import ChartPage from '@/pages/ChartPage.vue'
 import { useUserStore } from '@/stores/user'
 import MockTradingHome from '@/pages/mockTrading/MockTradingHome.vue'
+import AssetStatus from '@/pages/mockTrading/AssetStatus.vue'
 const routes = [
   {
     path: '/',
@@ -146,6 +147,13 @@ const routes = [
     name: 'ChartPage',
     component: ChartPage,
     props: true // route params를 props로 전달
+  },
+  // 새로 추가할 자산 현황 경로
+  {
+    path: '/mock-trading/asset-status',
+    name: 'AssetStatus',
+    component: AssetStatus,
+    //meta: { requiresAuth: true } // 로그인 필요
   },
 ]
 
