@@ -45,7 +45,7 @@
     <!-- 자유 대화 안내 -->
     <div class="mt-8 bg-white p-4 rounded-xl border shadow-sm">
       <p class="text-sm text-gray-500 mb-2">아무거나 물어봐도 괜찮아요</p>
-      <ChatBox :fixedIntent="'MESSAGE'" />
+      <ChatBox/>
     </div>
   </div>
 </template>
