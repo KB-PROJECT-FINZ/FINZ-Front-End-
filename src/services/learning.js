@@ -28,3 +28,8 @@ export async function awardQuizCredit(userId, quizId) {
   });
   return response.data;
 }
+
+export async function getUserCredit(userId) {
+  const response = await axios.get(`/api/learning/user/credit/${userId}`);
+  return response.data;
+}
