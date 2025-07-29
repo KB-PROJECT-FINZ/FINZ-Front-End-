@@ -693,7 +693,7 @@ function convertApiDataTo1MinChartData(apiResponse) {
         return null
       }
     })
-    .filter((item, idx) => item !== null && item.dateTime >= today9am)
+    .filter((item) => item !== null && item.dateTime >= today9am)
     // 인덱스 재할당 (필터 후)
     .map((item, idx) => ({ ...item, x: idx }))
 
@@ -746,22 +746,24 @@ function convert1MinToNMinChartData(oneMinData, n) {
   for (let i = 0; i < oneMinData.length; i += n) {
     const group = oneMinData.slice(i, i + n)
     if (group.length === 0) continue
-    if (!group[0] || typeof group[0].x === 'undefined') continue
     const o = group[0].o
     const c = group[group.length - 1].c
     const h = Math.max(...group.map((d) => d.h))
     const l = Math.min(...group.map((d) => d.l))
     const volume = group.reduce((sum, d) => sum + (d.volume || 0), 0)
     result.push({
-      x: group[0].x,
+      // x: group[0].x, // 기존: 그룹의 첫번째 인덱스(띄엄띄엄)
+      x: result.length, // 연속 인덱스 부여
       o,
       h,
       l,
       c,
       volume,
+      dateTime: group[0].dateTime, // 그룹의 첫번째 dateTime
+      dateString: group[0].dateString, // 그룹의 첫번째 dateString
     })
   }
-  return result.sort((a, b) => a.x - b.x)
+  return result
 }
 
 // 기존 인터페이스와 호환되는 변환 함수
@@ -963,33 +965,25 @@ const createChart = async () => {
       return
     }
 
-    // 시간대별로 다른 표시 개수 설정
-    let showCount = 20
-    if (selectedTimeFrame.value === 'day') {
-      showCount = 20 // 일봉도 20개로 통일
-    } else if (selectedTimeFrame.value === 'week') {
-      showCount = 20 // 주봉도 20개
-    } else if (selectedTimeFrame.value === 'month') {
-      showCount = 20 // 월봉도 20개
-    } else if (selectedTimeFrame.value === 'year') {
-      showCount = 20 // 년봉도 20개
-    }
+    // 항상 20개만 보이도록 고정
+    const showCount = 20
 
-    // 확대: 마지막 N개만 보이도록 x축 min/max 설정 및 pan 제한 (항상 인덱스 기반)
+    // 항상 마지막 20개만 보이도록 x축 min/max 설정 (좌우 패딩 포함)
     let xMin, xMax, dataMin, dataMax, limitMin
+    const xPadding = 1 // 좌우 1개씩 패딩(20개 기준 5% 이내)
     if (data.length > 0) {
       const lastIdx = data.length - 1
-      const actualShowCount = Math.min(showCount, data.length)
-      xMin = Math.max(0, lastIdx - actualShowCount + 1)
-      // 라인차트면 xMax를 마지막 인덱스+1로, 아니면 기존대로
+      const firstShowIdx = Math.max(0, lastIdx - showCount + 1)
+      xMin = Math.max(0, firstShowIdx - xPadding)
+      // 라인차트면 xMax를 마지막 인덱스+1+패딩, 아니면 기존대로
       if (selectedChartType.value === 'line') {
-        xMax = lastIdx + 3
+        xMax = lastIdx + 3 + xPadding
       } else {
-        xMax = lastIdx
+        xMax = lastIdx + xPadding
       }
       limitMin = 0
       dataMin = 0
-      dataMax = lastIdx
+      dataMax = lastIdx + xPadding
 
       // 값이 undefined이거나 NaN이면 fallback
       if (typeof xMin !== 'number' || isNaN(xMin)) xMin = 0
@@ -1002,14 +996,6 @@ const createChart = async () => {
         dataMin = dataMin - 1
         dataMax = dataMax + 1
       }
-    } else {
-      // // 데이터가 없을 때 기본값 설정
-      // const now = new Date()
-      // xMin = 0
-      // xMax = 19
-      // dataMin = 0
-      // dataMax = 19
-      // limitMin = 0
     }
 
     // 차트 타입에 따라 데이터셋 구성
@@ -1103,8 +1089,8 @@ const createChart = async () => {
                 // 날짜 타이틀
                 let title
                 if (selectedTimeFrame.value.includes('min')) {
-                  // 분봉의 경우 x값이 실제 timestamp이므로 직접 포맷팅
-                  const date = new Date(d.x)
+                  // 분봉: dateTime(실제 시간) 사용
+                  const date = new Date(d.dateTime)
                   const yyyy = date.getFullYear()
                   const mm = String(date.getMonth() + 1).padStart(2, '0')
                   const dd = String(date.getDate()).padStart(2, '0')
@@ -1199,7 +1185,7 @@ const createChart = async () => {
               enabled: false,
             },
             // 추가 설정들
-            interpolate: true, // Y축 값 보간 활성화
+            // interpolate: true, // Y축 값 보간 활성화
             callbacks: {
               beforeZoom: () => false, // zoom 플러그인과의 충돌 방지
               afterZoom: () => false,
@@ -1223,7 +1209,8 @@ const createChart = async () => {
                 // 년봉 또는 월봉: 년도 4자리만, 년도 바뀔 때만 표시
                 if (selectedTimeFrame.value === 'year' || selectedTimeFrame.value === 'month') {
                   const year = dateStr.substr(0, 4)
-                  if (idx === 0) return year
+                  // 첫 인덱스 또는 마지막 인덱스는 무조건 연도 표시
+                  if (idx === 0 || idx === data.length - 1) return year
                   const prev = data[idx - 1]
                   if (prev && prev.dateString) {
                     const prevYear = prev.dateString.substr(0, 4)
@@ -1247,11 +1234,14 @@ const createChart = async () => {
             },
             min: xMin,
             max: xMax,
+            // afterDataLimits: function (scale) {
+            //   // x축 패딩: 이미 xMin/xMax에서 적용, 추가 패딩 필요시 여기에 적용 가능
+            // },
           },
           y: {
             display: true,
             position: 'right',
-            beginAtZero: false, // 이 줄 추가
+            beginAtZero: false,
             grid: {
               color: 'rgba(0, 0, 0, 0.1)',
               drawBorder: false,
@@ -1267,9 +1257,10 @@ const createChart = async () => {
             },
             afterDataLimits: function (scale) {
               const range = scale.max - scale.min
-              const padding = range * 0.15
+              const padding = range * 0.18 // 기존 0.15 → 0.18로 상하 패딩 증가
               scale.max = scale.max + padding
-              scale.min = scale.min - padding
+              // 음수로 내려가지 않게 0으로 보정
+              scale.min = Math.max(0, scale.min - padding)
             },
           },
         },
