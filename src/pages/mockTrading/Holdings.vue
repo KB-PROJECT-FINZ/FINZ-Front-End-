@@ -356,7 +356,7 @@ const holdingsData = ref([
     percentage: 41.9,
     profitLoss: -150000,
     profitRate: -2.3,
-    // imageUrl 없음 (테스트용)
+    imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/000660.png',
   },
   {
     stockCode: '035420',

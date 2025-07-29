@@ -26,7 +26,7 @@
     </header>
 
     <!-- 계좌번호(작고 회색, 위) + 총 자산 & 채우기 버튼을 한 섹션에 -->
-    <section class="flex items-center justify-between gap-6 mt-5 mx-4 px-5 py-4">
+    <section class="flex items-center justify-between gap-6 mt-5 px-8 py-4">
       <div class="flex flex-col justify-center">
         <div class="text-sm text-gray-400 font-normal mb-0">FINZ증권 {{ '1234-5678-9012-34' }}</div>
         <div class="w-full h-px bg-gray-200 my-0"></div>
@@ -37,12 +37,12 @@
       <button
         class="bg-blue-500 text-white rounded-lg px-5 h-11 font-semibold text-base hover:bg-blue-700 ml-3 flex items-center"
       >
-        채우기
+        충전하기
       </button>
     </section>
 
     <!-- 포트폴리오 차트 -->
-    <section class="mt-5 mx-4">
+    <section class="mt-5 px-5">
       <div class="flex flex-col items-center px-5 py-6">
         <canvas
           ref="portfolioChart"
@@ -74,10 +74,10 @@
         </div>
       </div>
     </section>
-    <div class="w-[calc(100%-48px)] h-px bg-gray-200 mx-auto" />
+    <div class="w-full h-px bg-gray-200 mx-auto" />
 
     <!-- 주문 가능 금액 (라벨 아래에 금액) -->
-    <section class="flex flex-col items-start w-full ml-9 mt-4 mb-0">
+    <section class="flex flex-col items-start w-full mt-4 mb-0 px-6">
       <div class="text-base text-gray-500 font-normal">주문 가능 금액</div>
       <div class="text-lg font-bold text-gray-900 ml-1 mt-1">
         ₩ {{ currentBalance.toLocaleString() }}
@@ -85,7 +85,7 @@
     </section>
 
     <!-- 투자 중인 금액 & 수익률(%) -->
-    <section class="flex flex-col items-start w-full ml-9 mt-0 mb-0 py-3">
+    <section class="flex flex-col items-start w-full mt-0 mb-0 py-3 px-6">
       <div class="text-base text-gray-500 font-normal">투자 중인 금액</div>
       <div class="flex items-center gap-2 mt-1 ml-1">
         <div class="text-lg font-bold text-gray-900">₩ {{ stockValue.toLocaleString() }}</div>
@@ -99,10 +99,10 @@
         </span>
       </div>
     </section>
-    <div class="w-[calc(100%-48px)] h-px bg-gray-200 mx-auto" />
+    <div class="w-full h-px bg-gray-200 mx-auto" />
 
     <!-- 보유 종목 바로가기 -->
-    <section class="my-2 ml-9">
+    <section class="my-2 px-6">
       <button
         class="w-full text-left text-base font-semibold text-gray-700 py-4 px-1 hover:bg-gray-100"
         @click="goHoldingsPage"
@@ -110,10 +110,10 @@
         보유 종목 전체 보기 &gt;
       </button>
     </section>
-    <div class="w-[calc(100%-48px)] h-px bg-gray-200 mx-auto" />
+    <div class="w-full h-px bg-gray-200 mx-auto" />
 
     <!-- 최근 거래 내역 바로가기 -->
-    <section class="my-2 ml-9">
+    <section class="my-2 px-6">
       <button
         class="w-full text-left text-base font-semibold text-gray-700 py-4 px-1 hover:bg-gray-100"
         @click="goTransactionsPage"
