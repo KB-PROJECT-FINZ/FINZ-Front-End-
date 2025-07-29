@@ -205,6 +205,93 @@
         >
           년
         </button>
+        <!-- 차트 타입 전환 버튼들 -->
+        <template v-if="selectedChartType === 'candlestick'">
+          <!-- 라인 차트로 전환 버튼 (SVG 아이콘) -->
+          <button
+            @click="
+              () => {
+                selectedChartType = 'line'
+                updateChart()
+              }
+            "
+            class="px-3 py-2 rounded-lg transition-colors ml-2 flex items-center justify-center"
+            :class="'text-gray-600 hover:text-gray-900'"
+            aria-label="라인 차트로 변환"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-6 h-6">
+              <path
+                fill="none"
+                stroke="#EC4452"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.4"
+                d="M22.5 6.945l-7.778 7.778-5.444-5.446L1.5 17.056"
+              ></path>
+            </svg>
+          </button>
+        </template>
+        <template v-else>
+          <!-- 캔들 차트로 전환 버튼 (SVG 아이콘, 내부 색상 채움) -->
+          <button
+            @click="
+              () => {
+                selectedChartType = 'candlestick'
+                updateChart()
+              }
+            "
+            class="px-3 py-2 rounded-lg transition-colors ml-2 flex items-center justify-center"
+            :class="'text-gray-600 hover:text-gray-900'"
+            aria-label="캔들 차트로 변환"
+          >
+            <svg
+              enable-background="new 0 0 24 24"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-6 h-6"
+            >
+              <g fill="none">
+                <path d="m0 0h24v24h-24z" transform="matrix(-1 0 0 -1 24 24)"></path>
+                <path
+                  d="m17 20v-3"
+                  stroke="#3180f4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.2"
+                ></path>
+                <path
+                  d="m17 7v-3"
+                  stroke="#3180f4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.2"
+                ></path>
+                <path
+                  d="m7 22v-2"
+                  stroke="#fb2d4c"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.2"
+                ></path>
+                <path
+                  d="m7 4v-2"
+                  stroke="#fb2d4c"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.2"
+                ></path>
+              </g>
+              <path
+                d="m19 9.2v5.5h-4v-5.5zm1.1-2.2h-6.2c-.6 0-1.1.5-1.1 1.1v7.7c0 .6.5 1.1 1.1 1.1h6.2c.6 0 1.1-.5 1.1-1.1v-7.7c0-.6-.5-1.1-1.1-1.1z"
+                fill="#3180f4"
+              ></path>
+              <path
+                d="m9 6.2v11.7h-4v-11.7zm1.1-2.2h-6.2c-.6 0-1.1.5-1.1 1.1v13.9c0 .6.5 1.1 1.1 1.1h6.2c.6 0 1.1-.5 1.1-1.1v-13.9c0-.6-.5-1.1-1.1-1.1z"
+                fill="#fb2d4c"
+              ></path>
+            </svg>
+          </button>
+        </template>
       </div>
     </div>
 
@@ -302,6 +389,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Chart, registerables } from 'chart.js'
 import { CandlestickController, CandlestickElement } from 'chartjs-chart-financial'
 import zoomPlugin from 'chartjs-plugin-zoom'
+import crosshairPlugin from 'chartjs-plugin-crosshair'
 import 'chartjs-adapter-date-fns'
 
 // --- 분봉 모달 드래그 다운 슬라이드 닫기 로직 ---
@@ -358,10 +446,12 @@ onBeforeUnmount(() => {
 Chart.register(...registerables)
 Chart.register(CandlestickController, CandlestickElement)
 Chart.register(zoomPlugin)
+Chart.register(crosshairPlugin)
 
 // Chart.js 관련 변수
 const chartCanvas = ref(null)
 const chartInstance = ref(null)
+const selectedChartType = ref('candlestick') // candlestick | line
 
 // 차트 로딩 상태
 const isChartLoading = ref(false)
@@ -927,35 +1017,59 @@ const createChart = async () => {
         dataMax = dataMax + 1
       }
     } else {
-      // 데이터가 없을 때 기본값 설정
-      const now = new Date()
-      xMin = 0
-      xMax = 19
-      dataMin = 0
-      dataMax = 19
-      limitMin = 0
+      // // 데이터가 없을 때 기본값 설정
+      // const now = new Date()
+      // xMin = 0
+      // xMax = 19
+      // dataMin = 0
+      // dataMax = 19
+      // limitMin = 0
+    }
+
+    // 차트 타입에 따라 데이터셋 구성
+    let chartType = selectedChartType.value
+    let datasets
+    if (chartType === 'candlestick') {
+      datasets = [
+        {
+          label: stockInfo.name,
+          data: data,
+          backgroundColors: {
+            up: '#e42939',
+            down: '#2272eb',
+            unchanged: '#999999',
+          },
+          borderColors: {
+            up: '#e42939',
+            down: '#2272eb',
+            unchanged: '#999999',
+          },
+          borderWidth: 1,
+        },
+      ]
+    } else {
+      // 라인 차트: 종가만 추출, x/y는 기존과 동일하게
+      datasets = [
+        {
+          label: stockInfo.name + ' (라인)',
+          data: data.map((d) => ({ x: d.x, y: d.c, _candle: d })), // _candle로 원본 참조
+          borderColor: '#e42939',
+          backgroundColor: 'rgba(34,114,235,0.1)',
+          pointRadius: 0, // 동그란 점 제거
+          pointHoverRadius: 3, // 호버 시 동그라미 크기
+          pointHoverBackgroundColor: '#e42939', // 호버 시 채워진 색상
+          pointHoverBorderWidth: 2,
+          tension: 0.5,
+          fill: false,
+        },
+      ]
+      chartType = 'line'
     }
 
     chartInstance.value = new Chart(ctx, {
-      type: 'candlestick',
+      type: chartType,
       data: {
-        datasets: [
-          {
-            label: stockInfo.name,
-            data: data,
-            backgroundColors: {
-              up: '#e42939',
-              down: '#2272eb',
-              unchanged: '#999999',
-            },
-            borderColors: {
-              up: '#e42939',
-              down: '#2272eb',
-              unchanged: '#999999',
-            },
-            borderWidth: 1,
-          },
-        ],
+        datasets: datasets,
       },
       options: {
         responsive: true,
@@ -993,7 +1107,11 @@ const createChart = async () => {
                 return
               }
               if (tooltip.dataPoints && tooltip.dataPoints.length) {
-                const d = tooltip.dataPoints[0].raw
+                // 라인 차트일 때는 _candle에서 원본 캔들 데이터 추출
+                let d = tooltip.dataPoints[0].raw
+                if (selectedChartType.value === 'line' && d._candle) {
+                  d = d._candle
+                }
                 const price = (v) => v?.toLocaleString('ko-KR')
                 let html = ''
                 // 날짜 타이틀
@@ -1079,6 +1197,28 @@ const createChart = async () => {
               },
             },
           },
+          crosshair: {
+            line: {
+              color: '#888',
+              width: 1,
+              dashPattern: [4, 4],
+            },
+            sync: {
+              enabled: true,
+            },
+            zoom: {
+              enabled: false,
+            },
+            snap: {
+              enabled: false,
+            },
+            // 추가 설정들
+            interpolate: true, // Y축 값 보간 활성화
+            callbacks: {
+              beforeZoom: () => false, // zoom 플러그인과의 충돌 방지
+              afterZoom: () => false,
+            },
+          },
         },
         scales: {
           x: selectedTimeFrame.value.includes('min')
@@ -1109,7 +1249,7 @@ const createChart = async () => {
                   maxTicksLimit: 6,
                   color: '#6B7280',
                   font: { size: 10 },
-                  callback: function (value, index) {
+                  callback: function (value) {
                     const idx = Math.floor(value)
                     const dataPoint = data[idx]
                     if (!dataPoint || !dataPoint.dateString) return ''
@@ -1137,6 +1277,7 @@ const createChart = async () => {
           y: {
             display: true,
             position: 'right',
+            beginAtZero: false, // 이 줄 추가
             grid: {
               color: 'rgba(0, 0, 0, 0.1)',
               drawBorder: false,
