@@ -127,7 +127,7 @@ const handleResetPw = async () => {
   }
 
   try {
-    const res = await axios.post('http://localhost:8080/auth/find-password', {
+    const res = await axios.post('http://localhost:8080/api/auth/find-password', {
       email: findEmail.value,
     })
     pwSent.value = true
