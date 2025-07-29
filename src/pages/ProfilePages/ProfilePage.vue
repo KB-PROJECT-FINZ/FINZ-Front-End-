@@ -25,7 +25,7 @@
       <div class="asset-label">총 보유자산</div>
       <div class="asset-main">
         <span class="asset-amount">₩{{ asset.amount.toLocaleString() }}</span>
-        <button class="asset-btn">내 자산 현황 바로가기</button>
+        <button class="asset-btn" @click="goToAssetStatus">내 자산 현황 바로가기</button>
       </div>
       <div class="asset-change" :class="{ positive: asset.change > 0, negative: asset.change < 0 }">
         {{ asset.change > 0 ? '+' : '' }}{{ asset.change }}% (이번 달)
@@ -81,6 +81,7 @@ import FooterNavigation from '../../components/FooterNavigation.vue'
 import { useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { getUserCredit } from '../../services/learning'
 
 const router = useRouter()
 
@@ -91,10 +92,20 @@ const profile = ref({
   level: 3,
 })
 
+const asset = ref({
+  amount: 0,
+  change: 2.3,
+})
+
+const goToAssetStatus = () => {
+  router.push('/mock-trading/asset-status')
+}
+
 // 로컬 스토리지 및 API로 데이터 세팅
 onMounted(async () => {
   profile.value.name = localStorage.getItem('name') || '사용자'
   const username = localStorage.getItem('username')
+  const userId = Number(localStorage.getItem('userId') || 1)
 
   try {
     const response = await axios.get('/user/risk-type-name', {
@@ -111,12 +122,16 @@ onMounted(async () => {
     console.error('❌ 투자 성향 조회 에러:', err)
     profile.value.type = '조회 실패'
   }
-})
 
-const asset = {
-  amount: 12450000,
-  change: 2.3,
-}
+  // 크레딧 조회 및 보유자산 계산
+  try {
+    const totalCredit = await getUserCredit(userId)
+    asset.value.amount = totalCredit * 1000 // 1크레딧 = 1,000원
+  } catch (err) {
+    console.error('❌ 크레딧 조회 에러:', err)
+    asset.value.amount = 0
+  }
+})
 
 const investHistory = [
   { name: '삼성전자', desc: '100주 매수', amount: 75000, change: 2.5 },
@@ -231,6 +246,12 @@ function goBack() {
   font-size: 1.6rem;
   font-weight: bold;
   color: #222;
+}
+.asset-credit {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 4px;
+  font-weight: 500;
 }
 .asset-btn {
   background: #2563eb;
