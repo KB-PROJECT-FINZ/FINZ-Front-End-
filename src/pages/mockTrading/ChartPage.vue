@@ -752,7 +752,7 @@ const createChart = async () => {
         dataMax = dataMax + 60 * 1000 // 1분 후
       }
     } else {
-      // 데이터가 없을 때 기본값 설정 (오늘 오전 9시)
+      // 데이터가 없을 때 기본값 설정 (오늘 오전 9시 )
       const now = new Date()
       const today9am = new Date(
         now.getFullYear(),
