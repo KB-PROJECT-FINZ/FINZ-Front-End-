@@ -148,7 +148,7 @@ const routes = [
     path: '/mock-trading/:stockCode/chart',
     name: 'ChartPage',
     component: ChartPage,
-    props: true // route params를 props로 전달
+    props: true, // route params를 props로 전달
   },
   // 새로 추가할 자산 현황 경로
   {
@@ -166,7 +166,7 @@ const routes = [
     path: '/mock-trading/transactions',
     name: 'Transactions',
     component: Transactions,
-  }
+  },
 ]
 
 const router = createRouter({

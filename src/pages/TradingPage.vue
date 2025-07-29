@@ -4,7 +4,7 @@
     <header class="bg-white px-4 py-3 border-b border-gray-200 sticky top-0 z-50">
       <div class="flex items-center justify-between">
         <!-- 뒤로가기 버튼 -->
-        <button @click="goBack" class="p-2 hover:bg-gray-100 rounded-lg">
+        <button class="p-2 hover:bg-gray-100 rounded-lg">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -43,14 +43,14 @@
 
         <!-- 오른쪽 여백 (대칭을 위한) -->
         <div class="w-10">
-          <!-- API 테스트 버튼
+          <!-- API 테스트 버튼 -->
           <button
             @click="testApiCall"
             class="p-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
             :disabled="isLoading"
           >
             {{ isLoading ? '로딩...' : 'API' }}
-          </button> -->
+          </button>
         </div>
       </div>
     </header>
@@ -649,15 +649,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { getStockInfo } from '@/services/stockApi.js'
 
-// Vue Router
-const route = useRoute()
-const router = useRouter()
-
-// 종목 코드 (초기값: 삼성전자, 실제 값은 route.query에서 받아옴)
-let STOCK_CODE = ''
+// 종목 코드
+const STOCK_CODE = '005930' // 삼성전자 종목코드 (6자리 숫자)
 
 // 로딩 상태
 const isLoading = ref(false)
@@ -683,7 +678,7 @@ const loadStockInfo = async () => {
       // 실제 API 데이터로 stockInfo 업데이트
       stockInfo.value = {
         // 여기는 나중에 실제 데이터로 업데이트(다른 API 연동이 필요함)
-        name: route.query.stockName || '종목명', // 종목명 (005950)
+        name: '삼성전자', // 종목명 (005950)
         // 기본 가격 정보
         currentPrice: parseInt(data.stck_prpr) || 0, // 주식 현재가
         basePrice: (parseInt(data.stck_prpr) || 0) - (parseInt(data.prdy_vrss) || 0), // 전일 종가 (현재가 - 전일대비)
@@ -796,10 +791,11 @@ const getStockStatusDescription = (statusCode) => {
   }
   return statusMap[statusCode] || '정상'
 }
+const tickSize = 100
 
 // 종목 정보 (API로부터 동적으로 로드됨)
 const stockInfo = ref({
-  name: '',
+  name: '삼성전자',
   // 기본 가격 정보
   currentPrice: 0, // 주식 현재가
   basePrice: 0, // 주식 기준가 (전일 종가)
@@ -865,17 +861,6 @@ const stockInfo = ref({
   managementIssueYn: false, // 관리종목여부
 })
 
-// 라우터에서 넘어온 stockCode, stockName을 반영
-onMounted(() => {
-  if (route.query.stockCode) {
-    STOCK_CODE = route.query.stockCode
-  }
-  if (route.query.stockName) {
-    stockInfo.value.name = route.query.stockName
-  }
-  // 필요시 loadStockInfo() 등 추가 초기화 호출
-})
-
 // 사용자 정보
 const userInfo = ref({
   avgPrice: 66500,
@@ -884,16 +869,7 @@ const userInfo = ref({
 })
 
 // 거래 상태
-// 쿼리 파라미터에서 초기 탭 설정 (ChartPage에서 전달받은 값)
-const getInitialTab = () => {
-  const tabFromQuery = route.query.tab
-  if (tabFromQuery === 'buy' || tabFromQuery === 'sell' || tabFromQuery === 'waiting') {
-    return tabFromQuery
-  }
-  return 'buy' // 기본값
-}
-
-const activeTab = ref(getInitialTab()) // 'buy', 'sell', 'waiting'
+const activeTab = ref('buy') // 'buy', 'sell', 'waiting'
 const orderType = ref('limit') // 'limit', 'market'
 const orderPrice = ref(0) // API 로드 후 현재가로 설정됨
 const orderQuantity = ref(0)
@@ -921,20 +897,20 @@ const generateOrderBookData = (currentPrice) => {
 
   // console.log('📝 더미 호가 데이터 생성, 현재가:', currentPrice)
 
-  // 매도호가/매수호가 생성 (현재가 기준 호가단위 적용)
-  const tick = getTickSize(currentPrice)
+  // 매도호가 생성 (현재가 + 100원부터 1000원까지)
   askPrices.value = []
   for (let i = 1; i <= 10; i++) {
     askPrices.value.push({
-      price: currentPrice + i * tick,
+      price: currentPrice + i * 100,
       volume: Math.floor(Math.random() * 500000) + 50000, // 5만~55만 랜덤
     })
   }
 
+  // 매수호가 생성 (현재가부터 -900원까지)
   bidPrices.value = []
   for (let i = 0; i < 10; i++) {
     bidPrices.value.push({
-      price: currentPrice - i * tick,
+      price: currentPrice - i * 100,
       volume: Math.floor(Math.random() * 600000) + 100000, // 10만~70만 랜덤
     })
   }
@@ -1016,60 +992,117 @@ const processOrderBookData = (data) => {
 }
 
 // 웹소켓 연결 초기화
-const initWebSocket = async () => {
+const initWebSocket = () => {
   try {
-    // 종목코드가 없으면 연결하지 않음
-    if (!STOCK_CODE) {
-      console.warn('[WebSocket] STOCK_CODE 없음, 연결 생략')
-      return
-    }
-
-    // 1. 먼저 HTTP API로 백엔드 웹소켓 시작 요청
-    console.log('[HTTP API] 백엔드 웹소켓 시작 요청:', STOCK_CODE)
-    const response = await fetch(`/api/chart/trading?stockCode=${encodeURIComponent(STOCK_CODE)}`)
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${await response.text()}`)
-    }
-
-    console.log('[HTTP API] 백엔드 웹소켓 시작 완료')
-
-    // 2. 그 다음 프론트엔드 웹소켓 연결 (StockRelaySocket)
-    const wsUrl = `ws://localhost:8080/ws/stock`
-    console.log('[WebSocket] 프론트엔드 연결 시도:', wsUrl)
-    socket.value = new WebSocket(wsUrl)
+    console.log('[WebSocket] 연결 시도: ws://localhost:8080/ws/stock')
+    socket.value = new WebSocket('ws://localhost:8080/ws/stock')
 
     socket.value.onopen = () => {
-      console.log('[WebSocket] 프론트엔드 연결 성공')
-      // StockRelaySocket에서 브로드캐스트되는 데이터 수신 대기
+      console.log('[WebSocket] 연결 성공')
     }
 
     socket.value.onmessage = (event) => {
       try {
         const rawData = JSON.parse(event.data)
-        console.log('[WebSocket] 수신 데이터:', rawData)
 
-        // StockRelaySocket에서 전송하는 데이터 구조에 맞춰 처리
+        // 데이터 구조 확인 및 추출
         let data = rawData
         if (rawData.type === 'bidsAndAsks' && rawData.data) {
           data = rawData.data
-          console.log('[호가] 데이터 수신:', data)
-        } else if (rawData.type === 'execution' && rawData.data) {
-          data = rawData.data
-          console.log('[체결] 데이터 수신:', data)
         }
 
-        // 기존 데이터 처리 로직은 그대로 유지
+        // 호가 데이터 처리 (KRX와 NXT 형식 모두 지원)
         processOrderBookData(data)
 
-        // 나머지 기존 로직들...
+        // 체결 내역 데이터 처리
         if (data.currentPrice && data.contractVolume) {
-          // 체결 내역 처리 로직
+          // 체결 내역 추가
+          const newTrade = {
+            price: parseInt(data.currentPrice),
+            volume: parseInt(data.contractVolume),
+            type: data.contractType === '1' ? 'buy' : 'sell', // 1: 매수, 2: 매도
+            time: data.contractTime
+              ? `${data.contractTime.slice(0, 2)}:${data.contractTime.slice(2, 4)}:${data.contractTime.slice(4, 6)}`
+              : new Date().toLocaleTimeString('ko-KR', {
+                  hour12: false,
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                }),
+          }
+
+          // 새로운 데이터를 맨 앞에 추가하고 최대 20개까지만 유지
+          recentTrades.value.unshift(newTrade)
+          if (recentTrades.value.length > 20) {
+            recentTrades.value = recentTrades.value.slice(0, 20)
+          }
+
+          console.log('[체결] 내역 추가:', newTrade)
         }
 
-        // 현재가 업데이트 로직
+        // 체결 강도 업데이트
+        if (data.contractIntensity) {
+          volumePower.value = parseFloat(data.contractIntensity)
+        }
+
+        // 현재가 및 기타 주식 정보 업데이트
         if (data.currentPrice) {
-          // 기존 로직 유지
+          const newCurrentPrice = parseInt(data.currentPrice)
+          stockInfo.value.currentPrice = newCurrentPrice
+
+          // 전일 종가가 있으면 변동 금액과 변동률 계산 (증권사 표준 방식)
+          if (stockInfo.value.basePrice > 0) {
+            const changeAmount = newCurrentPrice - stockInfo.value.basePrice
+            const rate = (changeAmount / stockInfo.value.basePrice) * 100
+
+            // 소수점 3자리에서 버림 (증권사 표준 방식)
+            const truncatedRate =
+              rate >= 0 ? Math.floor(rate * 100) / 100 : Math.ceil(rate * 100) / 100
+
+            stockInfo.value.changeAmount = changeAmount
+            stockInfo.value.changeRate = truncatedRate
+          }
+
+          // 주문 가격도 현재가로 업데이트 (옵션)
+          if (orderPrice.value === 0) {
+            orderPrice.value = newCurrentPrice
+          }
+
+          console.log('[현재가] 업데이트:', {
+            price: newCurrentPrice,
+            change: stockInfo.value.changeAmount,
+            rate: stockInfo.value.changeRate.toFixed(2) + '%',
+          })
+        }
+
+        // 시가 업데이트 (웹소켓에서 시가 정보가 올 경우)
+        if (data.openPrice) {
+          stockInfo.value.openPrice = parseInt(data.openPrice)
+        }
+
+        // 고가, 저가 업데이트
+        if (data.highPrice) {
+          stockInfo.value.dayHigh = parseInt(data.highPrice)
+        }
+        if (data.lowPrice) {
+          stockInfo.value.dayLow = parseInt(data.lowPrice)
+        }
+
+        // 거래량 업데이트
+        if (data.volume) {
+          stockInfo.value.volume = parseInt(data.volume)
+        }
+
+        // 누적 거래량 업데이트 (새로 추가)
+        if (data.accumulatedVolume) {
+          stockInfo.value.volume = parseInt(data.accumulatedVolume)
+        }
+
+        // 전일 대비 정보 업데이트
+        if (data.prevDayDiff && data.prevDayRate && data.prevDaySign) {
+          // 전일 종가 계산 (현재가 - 전일대비)
+          const prevDayDiff = parseInt(data.prevDayDiff)
+          stockInfo.value.basePrice = stockInfo.value.currentPrice - prevDayDiff
         }
       } catch (err) {
         console.error('웹소켓 데이터 파싱 오류:', err)
@@ -1343,18 +1376,6 @@ const getVolumeRatio = (volume) => {
 }
 
 // 메서드들
-const goBack = () => {
-  // stockCode와 stockName을 보존하여 mock-trading/{stockCode}/chart?stockName={stockName}로 이동
-  const stockCode = route.query.stockCode || stockInfo.value.stockCode || ''
-  const stockName = route.query.stockName || stockInfo.value.name || ''
-  router.push({
-    path: `/mock-trading/${stockCode}/chart`,
-    query: {
-      stockName,
-    },
-  })
-}
-
 const formatPrice = (price) => {
   return price.toLocaleString()
 }
@@ -1402,25 +1423,13 @@ const selectPrice = (price) => {
   orderPrice.value = price
 }
 
-// 호가단위 계산 함수 (현재가 기준)
-const getTickSize = (price) => {
-  if (price < 2000) return 1
-  if (price < 5000) return 5
-  if (price < 20000) return 10
-  if (price < 50000) return 50
-  if (price < 200000) return 100
-  if (price < 500000) return 500
-  return 1000
+const increasePrice = () => {
+  orderPrice.value += tickSize
 }
 
-// 주문 가격 증가/감소 함수
-const increasePrice = () => {
-  orderPrice.value += getTickSize(stockInfo.value.currentPrice)
-}
 const decreasePrice = () => {
-  const tick = getTickSize(stockInfo.value.currentPrice)
-  if (orderPrice.value > tick) {
-    orderPrice.value -= tick
+  if (orderPrice.value > tickSize) {
+    orderPrice.value -= tickSize
   }
 }
 
