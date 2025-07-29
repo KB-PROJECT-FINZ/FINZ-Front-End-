@@ -171,7 +171,9 @@ async function handleButtonIntent(btn) {
     chatStore.clearMessages()
     chatStore.messages.push({
       role: 'bot',
-      content: '추천을 원하는 키워드를 입력해주세요. 예: AI, 전기차, 반도체 등',
+      type: 'buttons',
+      text: '추천을 원하는 키워드를 입력해주세요. 예: AI, 전기차, 반도체 등',
+      buttons: [{ label: '🔙 뒤로가기', intent: 'RECOMMEND_SELECT' }],
     })
     return
   }
