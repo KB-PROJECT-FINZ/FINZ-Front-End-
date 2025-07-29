@@ -81,53 +81,71 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useUserStore } from '@/stores/user'
 
+onMounted(() => {
+  checkSession()
+})
+
 const router = useRouter()
 const userStore = useUserStore()
 
+// 이메일/비밀번호 입력값
+const email = ref('')
+const password = ref('')
+
+// 비밀번호 보기 토글
 const showPassword = ref(false)
 const togglePassword = () => {
   showPassword.value = !showPassword.value
 }
 
-// 입력값
-const email = ref('')
-const password = ref('')
-
-// 로그인 요청
+// 로그인 처리
 const handleLogin = async () => {
   try {
-    const res = await axios.post('/auth/login', {
-      username: email.value, // 수정: email을 username으로 보냄
-      password: password.value,
-    })
+    const res = await axios.post(
+      'http://localhost:8080/auth/login',
+      {
+        username: email.value,
+        password: password.value,
+      },
+      {
+        withCredentials: true, // 세션 쿠키 포함
+      },
+    )
 
     if (res.data) {
-      const { username, name, id } = res.data
-
-      // 상태 저장
+      // 사용자 상태 전역 저장 (Pinia 등)
       userStore.setUser(res.data)
 
-      // 로컬스토리지 저장
-      localStorage.setItem('username', username)
-      localStorage.setItem('name', name)
-      localStorage.setItem('userId', id)
-      console.log(localStorage.getItem('name'))
       alert('로그인 성공!')
-      router.push('/home')
+      router.push('/home') // 로그인 성공 후 이동
     }
   } catch (err) {
-    alert('로그인 실패: 아이디 또는 비밀번호 확인')
-    console.log('email:', email.value)
-    console.log('password:', password.value)
+    const message = err.response?.data || '로그인 실패: 아이디 또는 비밀번호 확인'
+    alert(message)
     console.error(err)
   }
 }
 
+// 세션 로그인 상태 확인 (자동 로그인 용도)
+const checkSession = async () => {
+  try {
+    const res = await axios.get('http://localhost:8080/auth/me', {
+      withCredentials: true,
+    })
+    userStore.setUser(res.data)
+  } catch (e) {
+    console.error('세션 확인 실패:', e)
+    userStore.clearUser()
+    router.push('/login-form')
+  }
+}
+
+// 비밀번호/아이디 찾기
 const handleFindAccount = () => {
   router.push('/find-account')
 }
