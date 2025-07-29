@@ -91,6 +91,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 
@@ -102,18 +103,40 @@ const foundId = ref('')
 const findEmail = ref('')
 const pwSent = ref(false)
 
-const handleFindId = () => {
-  // 실제로는 axios 요청으로 대체
-  if (name.value && email.value) {
-    foundId.value = email.value // 테스트용
+const handleFindId = async () => {
+  if (!name.value || !email.value) {
+    alert('이름과 이메일을 모두 입력해주세요.')
+    return
+  }
+
+  try {
+    const res = await axios.post('http://localhost:8080/auth/find-username', {
+      name: name.value,
+      email: email.value,
+    })
+    foundId.value = res.data // 응답: 이메일 (username)
+  } catch (err) {
+    alert('일치하는 아이디를 찾을 수 없습니다.')
+    console.error(err)
+  }
+}
+const handleResetPw = async () => {
+  if (!findEmail.value) {
+    alert('이메일을 입력해주세요.')
+    return
+  }
+
+  try {
+    const res = await axios.post('http://localhost:8080/auth/find-password', {
+      email: findEmail.value,
+    })
+    pwSent.value = true
+  } catch (err) {
+    alert('해당 이메일로 가입된 계정을 찾을 수 없습니다.')
+    console.error(err)
   }
 }
 
-const handleResetPw = () => {
-  if (findEmail.value) {
-    pwSent.value = true
-  }
-}
 const goBack = () => router.push('/login-form')
 
 // 마스킹 처리된 이메일 예시
