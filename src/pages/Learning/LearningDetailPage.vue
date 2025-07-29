@@ -73,7 +73,8 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   fetchLearningContentById,
   fetchLearningQuizById,
-  awardQuizCredit,
+  giveCredit,
+  checkQuiz,
 } from '../../services/learning'
 import axios from 'axios'
 
@@ -103,6 +104,19 @@ onMounted(async () => {
   } catch (e) {
     console.warn('완료 여부 확인 실패', e)
   }
+
+  // 퀴즈 결과 확인
+  try {
+    const hasResult = await checkQuiz(userId, Number(route.params.id))
+    if (hasResult) {
+      // 이미 퀴즈를 풀었다면 결과 표시
+      selected.value = 'O'
+      result.value = true
+      creditAwarded.value = true
+    }
+  } catch (e) {
+    console.warn('퀴즈 결과 확인 실패', e)
+  }
 })
 
 function goBack() {
@@ -115,19 +129,41 @@ function selectOX(val) {
   result.value = selected.value === quiz.value.answer
   showExplainBtnClicked.value = false // 선택 시 해설은 다시 숨김
 
-  // 정답이고 아직 크레딧을 지급하지 않았다면 크레딧 지급
-  if (result.value && !creditAwarded.value) {
+  // 퀴즈 결과 처리 (정답이든 오답이든)
+  if (!creditAwarded.value) {
     awardQuizCreditLocal()
   }
 }
 
 async function awardQuizCreditLocal() {
   try {
-    const response = await awardQuizCredit(userId, Number(route.params.id))
-    creditAwarded.value = true
-    alert(`정답입니다! ${quiz.value.creditReward}크레딧이 지급되었습니다!`)
+    // 이미 퀴즈를 풀었는지 확인
+    const hasResult = await checkQuiz(userId, Number(route.params.id))
+    if (hasResult) {
+      alert('이미 퀴즈를 푸신 콘텐츠입니다.')
+      return
+    }
+
+    if (result.value) {
+      // 정답일 때만 크레딧 지급
+      const response = await giveCredit(userId, Number(route.params.id), selected.value)
+      creditAwarded.value = true
+      alert(`정답입니다! ${quiz.value.creditReward}크레딧이 지급되었습니다!`)
+    } else {
+      // 오답일 때는 결과만 저장 (크레딧 지급 안함)
+      await axios.post('/api/learning/quiz/result/save', {
+        userId,
+        quizId: Number(route.params.id),
+        selectedAnswer: selected.value,
+        isCorrect: false
+      })
+      alert('오답입니다. 다시 시도해보세요!')
+    }
   } catch (e) {
     console.error('크레딧 지급 실패:', e)
+    if (e.response?.data) {
+      alert(e.response.data)
+    }
   }
 }
 
