@@ -8,7 +8,7 @@
     </div>
     <!-- 자유 대화 안내 -->
     <div class="mt-8 bg-white p-4 rounded-xl border shadow-sm">
-      <ChatBox :fixedIntent="'null'" />
+      <ChatBox :fixedIntent="null" />
     </div>
   </div>
 </template>
