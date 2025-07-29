@@ -67,6 +67,7 @@ const props = defineProps({
 
 const input = ref('')
 const awaitingKeyword = ref(false)
+const awaitingStockAnalyze = ref(false) // 종목 분석 상태
 const loading = ref(false)
 const chatStore = useChatStore()
 
@@ -95,14 +96,23 @@ async function fetchGPT(prompt, intent = props.fixedIntent) {
 // 전송 버튼
 function submit() {
   if (!input.value.trim()) return
+  const text = input.value.trim()
+
   if (awaitingKeyword.value) {
-    const keyword = input.value.trim()
     awaitingKeyword.value = false
-    chatStore.sendMessage(`${keyword} 관련 종목 추천해줘`, 'RECOMMEND_KEYWORD')
+    fetchGPT(`${text} 관련 종목 추천해줘`, 'RECOMMEND_KEYWORD')
     input.value = ''
     return
   }
-  fetchGPT(input.value.trim())
+
+  if (awaitingStockAnalyze.value) {
+    awaitingStockAnalyze.value = false
+    fetchGPT(`${text} 종목 분석해줘`, 'STOCK_ANALYZE')
+    input.value = ''
+    return
+  }
+
+  fetchGPT(text)
   input.value = ''
 }
 
@@ -112,7 +122,7 @@ async function handleButtonIntent(btn) {
     window.location.href = btn.href
     return
   }
-  // 종목 추천 선택
+
   if (btn.intent === 'RECOMMEND_SELECT') {
     chatStore.clearMessages()
     chatStore.messages.push({
@@ -120,17 +130,14 @@ async function handleButtonIntent(btn) {
       type: 'buttons',
       text: '추천 방식을 선택해주세요:',
       buttons: [
-        {
-          label: '🎯 투자 성향으로 추천',
-          intent: 'RECOMMEND_PROFILE',
-        },
+        { label: '🎯 투자 성향으로 추천', intent: 'RECOMMEND_PROFILE' },
         { label: '🔍 키워드로 추천', intent: 'RECOMMEND_KEYWORD' },
         { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
       ],
     })
     return
   }
-  // 성향 기반 종목 추천
+
   if (btn.intent === 'RECOMMEND_PROFILE') {
     chatStore.clearMessages()
     chatStore.messages.push({
@@ -141,54 +148,46 @@ async function handleButtonIntent(btn) {
         {
           label: '🧪 투자 성향 테스트 하러 가기',
           intent: 'EXTERNAL_LINK',
-          href: '/investment-test', // 테스트 페이지 링크
+          href: '/investment-test',
         },
         {
           label: '📊 내 성향 기반 추천 받아보기',
-          intent: 'RECOMMEND_PROFILE_FETCH',
+          intent: 'RECOMMEND_PROFILE',
           message: '내 투자 성향으로 종목 추천해줘',
         },
-        {
-          label: '🔙 뒤로가기',
-          intent: 'RECOMMEND_SELECT',
-        },
+        { label: '🔙 뒤로가기', intent: 'RECOMMEND_SELECT' },
       ],
     })
     return
   }
-  if (btn.intent === 'RECOMMEND_PROFILE_FETCH') {
+
+  if (btn.intent === 'RECOMMEND_PROFILE') {
     await fetchGPT(btn.message, btn.intent)
     return
   }
-  // 키워드 기반 종목 추천
+
   if (btn.intent === 'RECOMMEND_KEYWORD') {
-    chatStore.clearMessages()
-    chatStore.messages.push({
-      role: 'bot',
-      type: 'buttons',
-      text: '키워드 기반 추천을 원하시면 아래 옵션 중 하나를 선택해주세요:',
-      buttons: [
-        {
-          label: '📌 내 키워드 기반 추천 받아보기',
-          intent: 'RECOMMEND_KEYWORD_INPUT',
-        },
-        {
-          label: '🔙 돌아가기',
-          intent: 'RECOMMEND_SELECT',
-        },
-      ],
-    })
-    return
-  }
-  if (btn.intent === 'RECOMMEND_KEYWORD_INPUT') {
     awaitingKeyword.value = true
+    chatStore.clearMessages()
     chatStore.messages.push({
       role: 'bot',
       content: '추천을 원하는 키워드를 입력해주세요. 예: AI, 전기차, 반도체 등',
     })
     return
   }
-  // 뒤로가기 버튼
+
+  if (btn.intent === 'STOCK_ANALYZE') {
+    awaitingStockAnalyze.value = true
+    chatStore.clearMessages()
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '분석할 종목명을 입력해주세요. 예: 삼성전자, 테슬라 등',
+      buttons: [{ label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' }],
+    })
+    return
+  }
+
   if (btn.intent === 'BACK_TO_MAIN') {
     chatStore.clearMessages()
     chatStore.messages.push({
@@ -198,15 +197,12 @@ async function handleButtonIntent(btn) {
         { label: '📈 종목 추천', intent: 'RECOMMEND_SELECT' },
         { label: '📊 종목 분석', intent: 'STOCK_ANALYZE', message: '종목 분석 해줘' },
         { label: '📚 용어 설명', intent: 'MESSAGE', message: 'PER가 뭐야?' },
-        {
-          label: '🧠 포트폴리오',
-          intent: 'PORTFOLIO_ANALYZE',
-          message: '내 포트폴리오 피드백 줘',
-        },
+        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘' },
       ],
     })
     return
   }
+
   loading.value = true
   await chatStore.sendMessage(btn.message, btn.intent)
   loading.value = false
@@ -220,7 +216,7 @@ onMounted(() => {
       type: 'buttons',
       buttons: [
         { label: '📈 종목 추천', intent: 'RECOMMEND_SELECT' },
-        { label: '📊 종목 분석', intent: 'STOCK_ANALYZE', message: '종목 분석 해줘' },
+        { label: '📊 종목 분석', intent: 'STOCK_ANALYZE' },
         { label: '📚 용어 설명', intent: 'MESSAGE', message: 'PER가 뭐야?' },
         { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘' },
       ],
