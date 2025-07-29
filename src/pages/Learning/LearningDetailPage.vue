@@ -90,7 +90,7 @@ const creditAwarded = ref(false) // 크레딧 지급 여부
 
 onMounted(async () => {
   try {
-    const res = await axios.get('/auth/me', { withCredentials: true })
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
     user.value = res.data
 
     const realUserId = user.value.userId // 세션 기반 userId
