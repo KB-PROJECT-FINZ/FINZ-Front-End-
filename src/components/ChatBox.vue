@@ -54,22 +54,27 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useChatStore } from '@/stores/counter.js'
+import { useUserStore } from '@/stores/user.js'
 
 // Props
 const props = defineProps({
   fixedIntent: { type: String, default: null },
   sessionId: { type: Number, default: null },
-  userId: { type: Number, default: 1 },
 })
+
+// Pinia 스토어
+const chatStore = useChatStore()
+const userStore = useUserStore()
+
+const userId = computed(() => userStore.userId)
 
 const input = ref('')
 const awaitingKeyword = ref(false)
 const awaitingStockAnalyze = ref(false) // 종목 분석 상태
 const loading = ref(false)
-const chatStore = useChatStore()
 
 // 메시지 전송
 async function fetchGPT(prompt, intent = props.fixedIntent) {
@@ -77,7 +82,7 @@ async function fetchGPT(prompt, intent = props.fixedIntent) {
   chatStore.messages.push({ role: 'user', content: prompt })
   try {
     const res = await axios.post('/api/chatbot/message', {
-      userId: props.userId,
+      userId: userId.value,
       sessionId: props.sessionId,
       message: prompt,
       intentType: intent,
