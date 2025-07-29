@@ -519,6 +519,11 @@ function convertApiDataTo1MinChartData(apiResponse) {
     }
   }
   filteredData = [...before1519, ...last1530]
+
+  // 오늘 오전 9시 이전 데이터는 모두 제외 (즉, 오늘 9시 이전 데이터는 차트에 표시하지 않음)
+  const now = new Date()
+  const today9am = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0, 0).getTime()
+
   const convertedData = filteredData
     .map((item, index) => {
       try {
@@ -544,7 +549,7 @@ function convertApiDataTo1MinChartData(apiResponse) {
         return null
       }
     })
-    .filter((item) => item !== null)
+    .filter((item) => item !== null && item.x >= today9am)
     .sort((a, b) => a.x - b.x)
   return convertedData
 }
@@ -715,13 +720,26 @@ const createChart = async () => {
     }
 
     // 확대: 마지막 30개만 보이도록 x축 min/max 설정 및 pan 제한
-    let xMin, xMax, dataMin, dataMax
+    let xMin, xMax, dataMin, dataMax, min9am
     if (data.length > 0) {
       const lastIdx = data.length - 1
       const showCount = Math.min(30, data.length)
       xMin = data[Math.max(0, lastIdx - showCount + 1)]?.x
       xMax = data[lastIdx]?.x
-      dataMin = data[0]?.x
+      // 오전 9시를 기준으로 x축 최소값 제한
+      // 데이터의 첫 날짜(yyyy-mm-dd)에서 09:00:00을 구함
+      const firstDate = new Date(data[0].x)
+      const nineAM = new Date(
+        firstDate.getFullYear(),
+        firstDate.getMonth(),
+        firstDate.getDate(),
+        9,
+        0,
+        0,
+        0,
+      )
+      min9am = nineAM.getTime()
+      dataMin = Math.max(data[0]?.x, min9am)
       dataMax = data[lastIdx]?.x
       // 값이 undefined이거나 NaN이면 fallback
       if (typeof xMin !== 'number' || isNaN(xMin)) xMin = Date.now() - 60 * 60 * 1000
@@ -734,12 +752,22 @@ const createChart = async () => {
         dataMax = dataMax + 60 * 1000 // 1분 후
       }
     } else {
-      // 데이터가 없을 때 기본값 설정
-      const now = Date.now()
-      xMin = now - 60 * 60 * 1000
-      xMax = now
+      // 데이터가 없을 때 기본값 설정 (오늘 오전 9시)
+      const now = new Date()
+      const today9am = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        9,
+        0,
+        0,
+        0,
+      ).getTime()
+      xMin = today9am
+      xMax = now.getTime()
       dataMin = xMin
       dataMax = xMax
+      min9am = xMin
     }
 
     chartInstance.value = new Chart(ctx, {
@@ -838,7 +866,7 @@ const createChart = async () => {
               enabled: true,
               mode: 'x',
               modifierKey: null, // 마우스만으로 드래그 가능
-              min: dataMin,
+              min: min9am, // 오전 9시 이전으로 pan 불가
               max: dataMax,
               speed: 3, // 기본값 20, 낮을수록 느림, 높을수록 빠름. 10~30 사이로 조절 가능
             },
@@ -852,7 +880,7 @@ const createChart = async () => {
               mode: 'x',
             },
             limits: {
-              x: { minRange: 5, min: dataMin, max: dataMax }, // 최소 5개 캔들까지 축소, pan/zoom 범위 제한
+              x: { minRange: 5, min: min9am, max: dataMax }, // 오전 9시 이전으로 zoom/pan 불가
             },
           },
         },
