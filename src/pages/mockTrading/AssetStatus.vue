@@ -36,9 +36,71 @@
       </div>
       <button
         class="bg-blue-500 text-white rounded-lg px-5 h-11 font-semibold text-base hover:bg-blue-700 ml-3 flex items-center"
+        @click="showChargeModal = true"
       >
         충전하기
       </button>
+      <!-- 크레딧 충전 모달 -->
+      <div
+        v-if="showChargeModal"
+        class="fixed inset-0 z-[1000] flex items-end justify-center bg-black/30 backdrop-blur-sm"
+      >
+        <div
+          class="bg-white w-full max-w-md rounded-t-2xl p-6 pb-8 shadow-lg relative animate-slide-up"
+          @click.stop
+        >
+          <!-- 닫기 버튼 -->
+          <button
+            class="absolute right-4 top-4 text-gray-400 text-2xl"
+            @click="showChargeModal = false"
+          >
+            &times;
+          </button>
+          <div class="mb-4 text-center text-lg font-bold">사용할 수 있는 포인트</div>
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-gray-700">내 크레딧</span>
+            <span class="font-bold text-gray-700">{{ myCredit }}P</span>
+          </div>
+          <div class="mt-6 mb-2 text-gray-700 font-medium">전환신청 크레딧 입력</div>
+          <div class="flex justify-end mb-2">
+            <button
+              class="border border-gray-300 text-gray-700 bg-white rounded px-2 py-1 text-xs font-normal hover:bg-gray-100 transition-colors"
+              style="min-width: 60px"
+              @click="chargeCreditInput = myCredit"
+            >
+              보유크레딧 전체
+            </button>
+          </div>
+          <div class="relative mb-4">
+            <input
+              v-model.number="chargeCreditInput"
+              type="number"
+              min="1"
+              :max="myCredit"
+              class="border rounded-lg px-3 py-2 w-full text-right font-bold text-lg pr-7 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="0"
+            />
+            <span
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 text-lg font-bold pointer-events-none"
+              >P</span
+            >
+          </div>
+          <div class="my-6 text-center text-gray-700">
+            내 계좌에
+            <span class="font-bold text-blue-600">{{
+              numberWithComma(chargeCreditInput * 10000)
+            }}</span
+            >원이 추가됩니다.
+          </div>
+          <button
+            class="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold text-base hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:text-gray-400"
+            :disabled="!chargeCreditInput || chargeCreditInput < 1 || chargeCreditInput > myCredit"
+            @click="onChargeNext"
+          >
+            확인 &gt;
+          </button>
+        </div>
+      </div>
     </section>
 
     <!-- 포트폴리오 차트 -->
@@ -138,6 +200,31 @@
 </template>
 
 <script setup>
+// 크레딧 충전 모달 상태 및 로직
+import { ref as vueRef } from 'vue'
+
+const showChargeModal = vueRef(false)
+const myCredit = 100 // 예시: 실제로는 API 등에서 받아와야 함
+const chargeCreditInput = vueRef(0)
+
+import { watch } from 'vue'
+// 입력값이 보유 크레딧보다 크면 자동으로 최대값으로 변경
+watch(chargeCreditInput, (val) => {
+  if (val > myCredit) chargeCreditInput.value = myCredit
+})
+
+function onChargeNext() {
+  // 실제 충전 로직 또는 다음 단계로 이동
+  alert(`${chargeCreditInput.value}P 충전 신청!`)
+  showChargeModal.value = false
+  chargeCreditInput.value = 0
+}
+
+// 10000단위 콤마 필터
+function numberWithComma(val) {
+  if (!val) return '0'
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+}
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { Chart, registerables } from 'chart.js'
@@ -295,4 +382,5 @@ onUnmounted(() => {
     chartInstance.value = null
   }
 })
+// ...기존 코드...
 </script>
