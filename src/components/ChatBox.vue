@@ -67,7 +67,7 @@ const props = defineProps({
 
 // Pinia 스토어
 const chatStore = useChatStore()
-const userStore = useUserStore
+const userStore = useUserStore()
 
 const userId = computed(() => userStore.userId)
 
