@@ -59,4 +59,15 @@ export default {
   position: relative;
   background-color: white;
 }
+/* @font-face {
+  font-family: 'Paperlogy4Regular';
+  src: url('./fonts/Paperlogy-5Medium.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.mobile-container {
+  font-family: 'Paperlogy4Regular';
+} */
 </style>
