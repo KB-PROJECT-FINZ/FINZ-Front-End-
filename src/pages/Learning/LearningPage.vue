@@ -66,7 +66,7 @@ const user = ref({
 
 onMounted(async () => {
   try {
-    const res = await axios.get('/auth/me', { withCredentials: true })
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
     const data = res.data
     user.value = {
       name: data.name,
