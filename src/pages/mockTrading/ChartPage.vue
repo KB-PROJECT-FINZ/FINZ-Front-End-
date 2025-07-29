@@ -679,9 +679,9 @@ function convertApiDataTo1MinChartData(apiResponse) {
         const dateTime = new Date(year, month, day, hour, minute, second)
 
         return {
-          x: dateTime.getTime(),
-          dateTime: dateTime.getTime(), // 분봉도 dateTime 필드 추가
-          dateString: `${date}${time}`, // 분봉용 dateString 추가
+          x: index, // 인덱스 기반으로 변경
+          dateTime: dateTime.getTime(), // 실제 시간은 별도 저장
+          dateString: `${date}${time}`,
           o: parseInt(item.stck_oprc),
           h: parseInt(item.stck_hgpr),
           l: parseInt(item.stck_lwpr),
@@ -693,8 +693,9 @@ function convertApiDataTo1MinChartData(apiResponse) {
         return null
       }
     })
-    .filter((item) => item !== null && item.x >= today9am)
-    .sort((a, b) => a.x - b.x)
+    .filter((item, idx) => item !== null && item.dateTime >= today9am)
+    // 인덱스 재할당 (필터 후)
+    .map((item, idx) => ({ ...item, x: idx }))
 
   return convertedData
 }
@@ -974,36 +975,21 @@ const createChart = async () => {
       showCount = 20 // 년봉도 20개
     }
 
-    // 확대: 마지막 N개만 보이도록 x축 min/max 설정 및 pan 제한
+    // 확대: 마지막 N개만 보이도록 x축 min/max 설정 및 pan 제한 (항상 인덱스 기반)
     let xMin, xMax, dataMin, dataMax, limitMin
     if (data.length > 0) {
       const lastIdx = data.length - 1
       const actualShowCount = Math.min(showCount, data.length)
-      if (selectedTimeFrame.value.includes('min')) {
-        // 분봉: xMin/xMax는 timestamp
-        xMin = data[Math.max(0, lastIdx - actualShowCount + 1)]?.x
-        xMax = data[lastIdx]?.x
-        const firstDate = new Date(data[0].x)
-        const nineAM = new Date(
-          firstDate.getFullYear(),
-          firstDate.getMonth(),
-          firstDate.getDate(),
-          9,
-          0,
-          0,
-          0,
-        )
-        limitMin = nineAM.getTime()
-        dataMin = Math.max(data[0]?.x, limitMin)
-        dataMax = data[lastIdx]?.x
+      xMin = Math.max(0, lastIdx - actualShowCount + 1)
+      // 라인차트면 xMax를 마지막 인덱스+1로, 아니면 기존대로
+      if (selectedChartType.value === 'line') {
+        xMax = lastIdx + 3
       } else {
-        // 일/주/월/년봉: xMin/xMax는 인덱스
-        xMin = Math.max(0, lastIdx - actualShowCount + 1)
         xMax = lastIdx
-        limitMin = 0
-        dataMin = 0
-        dataMax = lastIdx
       }
+      limitMin = 0
+      dataMin = 0
+      dataMax = lastIdx
 
       // 값이 undefined이거나 NaN이면 fallback
       if (typeof xMin !== 'number' || isNaN(xMin)) xMin = 0
@@ -1221,59 +1207,47 @@ const createChart = async () => {
           },
         },
         scales: {
-          x: selectedTimeFrame.value.includes('min')
-            ? {
-                type: 'time',
-                time: {
-                  unit: 'minute',
-                  displayFormats: {
-                    minute: 'HH:mm',
-                  },
-                },
-                display: true,
-                grid: { display: false },
-                ticks: {
-                  maxTicksLimit: 6,
-                  color: '#6B7280',
-                  font: { size: 10 },
-                  // Chart.js가 자동으로 HH:mm 포맷 적용
-                },
-                min: xMin,
-                max: xMax,
-              }
-            : {
-                type: 'linear',
-                display: true,
-                grid: { display: false },
-                ticks: {
-                  maxTicksLimit: 6,
-                  color: '#6B7280',
-                  font: { size: 10 },
-                  callback: function (value) {
-                    const idx = Math.floor(value)
-                    const dataPoint = data[idx]
-                    if (!dataPoint || !dataPoint.dateString) return ''
-                    const dateStr = dataPoint.dateString
-                    // 년봉 또는 월봉: 년도 4자리만, 년도 바뀔 때만 표시
-                    if (selectedTimeFrame.value === 'year' || selectedTimeFrame.value === 'month') {
-                      const year = dateStr.substr(0, 4)
-                      if (idx === 0) return year
-                      const prev = data[idx - 1]
-                      if (prev && prev.dateString) {
-                        const prevYear = prev.dateString.substr(0, 4)
-                        if (year !== prevYear) return year
-                      }
-                      return ''
-                    }
-                    // 그 외(일/주봉): 기존 MM/DD
-                    const month = dateStr.substr(4, 2)
-                    const day = dateStr.substr(6, 2)
-                    return `${month}/${day}`
-                  },
-                },
-                min: xMin,
-                max: xMax,
+          x: {
+            type: 'linear',
+            display: true,
+            grid: { display: false },
+            ticks: {
+              maxTicksLimit: 6,
+              color: '#6B7280',
+              font: { size: 10 },
+              callback: function (value) {
+                const idx = Math.floor(value)
+                const dataPoint = data[idx]
+                if (!dataPoint || !dataPoint.dateString) return ''
+                const dateStr = dataPoint.dateString
+                // 년봉 또는 월봉: 년도 4자리만, 년도 바뀔 때만 표시
+                if (selectedTimeFrame.value === 'year' || selectedTimeFrame.value === 'month') {
+                  const year = dateStr.substr(0, 4)
+                  if (idx === 0) return year
+                  const prev = data[idx - 1]
+                  if (prev && prev.dateString) {
+                    const prevYear = prev.dateString.substr(0, 4)
+                    if (year !== prevYear) return year
+                  }
+                  return ''
+                }
+                // 그 외(일/주봉/분봉): MM/DD 또는 HH:mm
+                if (selectedTimeFrame.value.includes('min')) {
+                  // 분봉: HH:mm
+                  const timeStr = dataPoint.dateString.substr(8, 4)
+                  const HH = timeStr.substr(0, 2)
+                  const MM = timeStr.substr(2, 2)
+                  return `${HH}:${MM}`
+                } else {
+                  const month = dateStr.substr(4, 2)
+                  const day = dateStr.substr(6, 2)
+                  return `${month}/${day}`
+                }
               },
+            },
+            min: xMin,
+            max: xMax,
+          },
           y: {
             display: true,
             position: 'right',
