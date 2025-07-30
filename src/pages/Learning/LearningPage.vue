@@ -2,7 +2,6 @@
   <div class="learning-page">
     <!-- 상단 헤더 -->
     <header class="header">
-      <button class="back-btn" @click="goBack">&#8592;</button>
       <h1 class="app-title">개념 학습</h1>
     </header>
 
@@ -45,6 +44,7 @@
     <FooterNavigation />
   </div>
 </template>
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { fetchLearningContentsByGroup } from '../../services/learning'
@@ -99,9 +99,6 @@ onMounted(async () => {
 function goToDetail(id) {
   router.push(`/learning/${id}`)
 }
-function goBack() {
-  router.back()
-}
 </script>
 
 <style scoped>
@@ -114,22 +111,10 @@ function goBack() {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
   background: #fff;
   padding: 18px 0 12px 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   margin-bottom: 8px;
-}
-.back-btn {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #222;
-  cursor: pointer;
 }
 .app-title {
   font-size: 1.25rem;
