@@ -167,7 +167,17 @@ async function handleButtonIntent(btn) {
   }
 
   if (btn.intent === 'RECOMMEND_PROFILE') {
-    await fetchGPT(btn.message, btn.intent)
+    const risk = userStore.riskType
+    if (!risk) {
+      chatStore.messages.push({
+        role: 'bot',
+        content: '⚠️ 투자 성향 정보가 없습니다. 먼저 테스트를 진행해주세요.',
+      })
+      return
+    }
+
+    const message = `나의 투자 성향인 ${risk}에 맞는 종목을 추천해줘`
+    await fetchGPT(message, btn.intent)
     return
   }
 
