@@ -2,9 +2,10 @@
   <div id="app">
     <div class="mobile-container">
       <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
+        <!-- <transition name="fade" mode="out-in">
+
+        </transition> -->
+        <component :is="Component" />
       </router-view>
     </div>
   </div>
@@ -28,7 +29,7 @@ export default {
 </script>
 
 <style scoped>
-/* 페이드 전환 효과 */
+/* 페이드 전환 효과
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.7s ease;
@@ -40,7 +41,7 @@ export default {
 .fade-enter-to,
 .fade-leave-from {
   opacity: 1;
-}
+} */
 
 /* 기존 스타일 유지 */
 #app {
