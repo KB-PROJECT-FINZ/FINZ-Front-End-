@@ -27,15 +27,9 @@
           :class="{ completed: item.isCompleted }"
           @click="goToDetail(item.contentId)"
         >
-          <img :src="item.imageUrl || defaultThumbnail" class="content-thumb" />
           <div class="content-list-info">
             <div class="content-list-title">{{ item.title }}</div>
-            <!-- <div class="content-list-desc">{{ item.body?.slice(0, 40) }}...</div> -->
             <div class="content-list-desc">{{ item.body ? item.body.slice(0, 40) : '' }}...</div>
-
-            <div class="content-list-meta">
-              <span class="content-list-type">{{ item.type === 'VIDEO' ? '영상' : '아티클' }}</span>
-            </div>
           </div>
           <span class="content-list-arrow">&#8250;</span>
           <div v-if="idx < learningContents.length - 1" class="divider"></div>
