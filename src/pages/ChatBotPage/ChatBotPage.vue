@@ -6,16 +6,20 @@
       <p class="text-lg font-bold">AI 투자 도우미 챗봇</p>
       <p class="text-sm text-gray-500">원하는 기능을 선택해서 시작해보세요</p>
     </div>
+
     <!-- 자유 대화 안내 -->
     <div class="mt-8 bg-white p-4 rounded-xl border shadow-sm">
       <ChatBox :fixedIntent="null" />
     </div>
   </div>
 </template>
+
 <script setup>
 import { useRouter } from 'vue-router'
 import ChatBox from '@/components/ChatBox.vue'
+
 const router = useRouter()
+
 function goTo(type) {
   const map = {
     recommend: 'ChatBotRecommendPage',

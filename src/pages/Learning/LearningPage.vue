@@ -56,7 +56,6 @@ const defaultThumbnail = 'https://via.placeholder.com/150x100?text=No+Image'
 const learningContents = ref([])
 const router = useRouter()
 
-// 세션에서 가져오는 값
 const user = ref({
   name: '',
   riskType: '',
@@ -66,7 +65,7 @@ const user = ref({
 
 onMounted(async () => {
   try {
-    const res = await axios.get('/auth/me', { withCredentials: true })
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
     const data = res.data
     user.value = {
       name: data.name,
@@ -75,22 +74,37 @@ onMounted(async () => {
       groupCode: data.groupCode,
     }
 
-    console.log('세션에서 받은 groupCode:', user.value.groupCode)
-    const [contentList, historyRes] = await Promise.all([
-      fetchLearningContentsByGroup(user.value.groupCode),
+    const [recommendRes, completeRes] = await Promise.all([
+      axios.get('/api/learning/recommend/list', {
+        params: {
+          userId: user.value.userId,
+          size: 5,
+        },
+        withCredentials: true,
+      }),
       axios.get('/api/learning/history/complete/list', {
-        params: { userId: user.value.userId },
+        params: {
+          userId: user.value.userId,
+        },
         withCredentials: true,
       }),
     ])
 
-    const completedIds = historyRes.data.map((item) => item.contentId)
-    const enriched = contentList.map((item) => ({
-      ...item,
-      isCompleted: completedIds.includes(item.contentId),
-    }))
-    enriched.sort((a, b) => a.isCompleted - b.isCompleted)
-    learningContents.value = enriched
+    const recommended = recommendRes.data
+    const completed = completeRes.data
+
+    // Map을 활용한 병합 로직
+    const map = new Map()
+
+    recommended.forEach((item) => {
+      map.set(Number(item.contentId), { ...item, isCompleted: false })
+    })
+
+    completed.forEach((item) => {
+      map.set(Number(item.contentId), { ...item, isCompleted: true })
+    })
+
+    learningContents.value = Array.from(map.values())
   } catch (e) {
     console.error('학습 콘텐츠 로딩 실패:', e)
   }
