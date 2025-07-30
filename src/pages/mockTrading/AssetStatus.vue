@@ -316,7 +316,7 @@ const loadUserAccount = async () => {
 // 사용자 크레딧 로드
 const loadUserCredit = async () => {
   try {
-    const response = await axios.get(`/api/learning/user/credit/`)
+    const response = await axios.get('/api/learning/user/credit/session')
 
     if (response.data) {
       userCredit.value = response.data.totalCredit || 0
