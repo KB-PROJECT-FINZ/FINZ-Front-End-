@@ -97,12 +97,12 @@ onMounted(async () => {
     // 세션에서 사용자 정보 가져오기
     const res = await axios.get('/auth/me', { withCredentials: true })
     userId.value = res.data.userId || res.data.id
-    
+
     if (!userId.value) {
       console.error('사용자 ID를 가져올 수 없습니다.')
       return
     }
-    
+
     console.log('현재 사용자 ID:', userId.value)
   } catch (e) {
     console.error('세션 정보 로딩 실패:', e)
@@ -110,14 +110,15 @@ onMounted(async () => {
     userId.value = Number(localStorage.getItem('userId') || 1)
   }
 
-  content.value = await fetchLearningContentById(route.params.id)
-  quiz.value = await fetchLearningQuizById(route.params.id)
+  const contentId = Number(route.params.id)
+  content.value = await fetchLearningContentById(contentId)
+  quiz.value = await fetchLearningQuizById(contentId)
 
   try {
     const res = await axios.get('/api/auth/me', { withCredentials: true })
     user.value = res.data
 
-    const realUserId = user.value.userId // 세션 기반 userId
+    const userId = user.value.userId // 세션 기반 userId
     const contentId = Number(route.params.id)
 
     // 콘텐츠 로드
@@ -146,10 +147,10 @@ onMounted(async () => {
       const resultRes = await axios.get('/api/learning/quiz/result/detail', {
         params: {
           userId: userId.value,
-          quizId: Number(route.params.id)
-        }
+          quizId: Number(route.params.id),
+        },
       })
-      
+
       if (resultRes.data) {
         const quizResult = resultRes.data
         selected.value = quizResult.selectedAnswer
@@ -198,7 +199,7 @@ async function awardQuizCreditLocal() {
         userId: userId.value,
         quizId: Number(route.params.id),
         selectedAnswer: selected.value,
-        isCorrect: false
+        isCorrect: false,
       })
       alert('오답입니다. 다시 시도해보세요!')
     }
@@ -212,19 +213,19 @@ async function awardQuizCreditLocal() {
 
 function extractYoutubeId(url) {
   if (!url) return ''
-  
+
   // 다양한 YouTube URL 형식 지원
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
     /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
   ]
-  
+
   for (const pattern of patterns) {
     const match = url.match(pattern)
     if (match) return match[1]
   }
-  
+
   console.warn('YouTube URL 파싱 실패:', url)
   return ''
 }
@@ -245,7 +246,6 @@ const formattedBody = computed(() => {
 async function handleComplete() {
   try {
     await axios.post('/api/learning/history', {
-      userId: userId.value,
       userId: user.value.userId,
       contentId: Number(route.params.id),
     })
