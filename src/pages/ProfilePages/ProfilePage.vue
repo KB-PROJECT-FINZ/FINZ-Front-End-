@@ -25,7 +25,7 @@
       <div class="asset-label">총 보유자산</div>
       <div class="asset-main">
         <span class="asset-amount">₩{{ asset.amount.toLocaleString() }}</span>
-        <button class="asset-btn" @click="goToAssetStatus">내 자산 현황 바로가기</button>
+        <button class="asset-btn">내 자산 현황 바로가기</button>
       </div>
       <div class="asset-change" :class="{ positive: asset.change > 0, negative: asset.change < 0 }">
         {{ asset.change > 0 ? '+' : '' }}{{ asset.change }}% (이번 달)
@@ -137,20 +137,12 @@ const goToAssetStatus = () => {
 }
 
 // 로컬 스토리지 및 API로 데이터 세팅
-onMounted(async () => {
-  profile.value.name = localStorage.getItem('name') || '사용자'
-  const username = localStorage.getItem('username')
-  const userId = Number(localStorage.getItem('userId') || 1)
-
 // 세션 기반 사용자 정보 로딩
 onMounted(async () => {
   try {
     // 세션에서 사용자 정보 가져오기
-    const res = await axios.get('/auth/me', { withCredentials: true })
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
     const data = res.data
-    const response = await axios.get('/api/user/risk-type-name', {
-      params: { username },
-    })
 
     profile.value = {
       name: data.name,
@@ -232,8 +224,6 @@ onMounted(async () => {
     }
   }
 })
-
-
 </script>
 
 <style scoped>
