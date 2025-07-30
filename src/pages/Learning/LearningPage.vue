@@ -12,14 +12,22 @@
       <div class="profile-info">
         <div class="profile-name">{{ user.name }}님은</div>
         <div class="profile-type">{{ user.riskType }} 사고 유형입니다</div>
-        <!-- <div class="profile-desc">{{ user2.message }}</div> -->
       </div>
     </section>
 
     <!-- 추천 학습 콘텐츠 -->
     <section class="content-list">
       <h2 class="section-title">추천 학습 콘텐츠</h2>
-      <div class="content-list-wrap">
+
+      <!-- 로딩 중 메시지 -->
+      <div
+        v-if="learningContents.length === 0"
+        style="text-align: center; color: #888; margin-top: 12px"
+      >
+        콘텐츠를 불러오는 중입니다... 잠시만 기다려주세요.
+      </div>
+
+      <div class="content-list-wrap" v-else>
         <div
           v-for="(item, idx) in learningContents"
           :key="item.contentId"
@@ -36,37 +44,29 @@
         </div>
       </div>
     </section>
+
     <FooterNavigation />
   </div>
 </template>
 <script setup>
 import { ref, onMounted } from 'vue'
-import { fetchLearningContentsByGroup } from '../../services/learning'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '../../components/FooterNavigation.vue'
 import axios from 'axios'
 
-const defaultThumbnail = 'https://via.placeholder.com/150x100?text=No+Image'
-const learningContents = ref([])
 const router = useRouter()
-
+const learningContents = ref([])
 const user = ref({
   name: '',
   riskType: '',
   userId: 0,
   groupCode: '',
 })
+const recommendedCount = ref(0)
 
-onMounted(async () => {
+const fetchContents = async () => {
   try {
-    const res = await axios.get('/api/auth/me', { withCredentials: true })
-    const data = res.data
-    user.value = {
-      name: data.name,
-      riskType: data.riskType,
-      userId: data.userId,
-      groupCode: data.groupCode,
-    }
+    console.log('[📡] /recommend/list + /complete/list 요청 시작')
 
     const [recommendRes, completeRes] = await Promise.all([
       axios.get('/api/learning/recommend/list', {
@@ -86,21 +86,61 @@ onMounted(async () => {
 
     const recommended = recommendRes.data
     const completed = completeRes.data
+    recommendedCount.value = recommended.length
 
-    // Map을 활용한 병합 로직
+    console.log(`[📦] 추천 콘텐츠 ${recommended.length}개, 완료 콘텐츠 ${completed.length}개`)
+
     const map = new Map()
-
     recommended.forEach((item) => {
       map.set(Number(item.contentId), { ...item, isCompleted: false })
     })
-
     completed.forEach((item) => {
       map.set(Number(item.contentId), { ...item, isCompleted: true })
     })
 
-    learningContents.value = Array.from(map.values())
+    const merged = Array.from(map.values())
+    learningContents.value = merged
   } catch (e) {
-    console.error('학습 콘텐츠 로딩 실패:', e)
+    console.error('❌ 콘텐츠 로딩 실패:', e)
+  }
+}
+
+const pollUntilContentReady = async (maxRetry = 5, delay = 2000) => {
+  let retry = 0
+  console.log('[🔁] Polling 시작')
+  while (retry < maxRetry) {
+    console.log(`[⏳] 시도 ${retry + 1}/${maxRetry}...`)
+    await fetchContents()
+    console.log(`[📊] 현재 추천 콘텐츠 개수: ${recommendedCount.value}`)
+    if (recommendedCount.value >= 5) {
+      console.log('[✅] 추천 콘텐츠 5개 이상 확보됨 → polling 종료')
+      break
+    }
+    retry++
+    await new Promise((resolve) => setTimeout(resolve, delay))
+  }
+  if (retry >= maxRetry) {
+    console.warn('[⚠️] polling 끝났지만 추천 콘텐츠가 부족함')
+  }
+}
+
+// 진입 시 초기화
+onMounted(async () => {
+  try {
+    console.log('[🚀] mounted 실행')
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    const data = res.data
+    user.value = {
+      name: data.name,
+      riskType: data.riskType,
+      userId: data.userId,
+      groupCode: data.groupCode,
+    }
+    console.log('[👤] 사용자 정보:', user.value)
+
+    await pollUntilContentReady()
+  } catch (e) {
+    console.error('❌ 사용자 정보 로딩 실패:', e)
   }
 })
 
