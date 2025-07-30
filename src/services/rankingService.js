@@ -1,65 +1,88 @@
 import axios from 'axios'
 
 export async function fetchMyRanking(userId) {
-  const res = await axios.get(`/ranking/user/${userId}`)
-  const data = res.data
+  try {
+    const res = await axios.get('/api/ranking/my', {
+      params: { userId },
+    })
 
-  return {
-    rank: data.ranking,
-    gainRate: data.gainRate,
-    topPercent: data.topPercent,
-    trait: data.traitGroup || 'N/A', // 보조 처리 (실제 성향)
+    const data = res.data
+
+    return {
+      rank: data.ranking,
+      gainRate: data.gainRate,
+      topPercent: data.topPercent,
+      trait: data.traitGroup || 'N/A',
+    }
+  } catch (error) {
+    console.error('fetchMyRanking error:', error)
+    return null
   }
 }
 
-export async function fetchTop5Stocks(week) {
-  const res = await axios.get('/ranking/top5')
+export async function fetchTop5Stocks() {
+  try {
+    const res = await axios.get('/api/ranking/popular-stocks')
+    console.log('Top5 응답:', res.data)
 
-  return res.data.map((stock) => ({
-    name: stock.stockName,
-    gain: 0, // 테스트용: gainRate가 아직 없으므로 0 또는 다른 값
-    image: stock.imageUrl || `/images/stocks/${stock.stockCode}.png`,
-  }))
-}
-
-export async function fetchWeeklyRanking(week) {
-  const res = await axios.get('/ranking/weekly', {
-    params: { week },
-  })
-
-  if (!Array.isArray(res.data)) {
-    console.error('Weekly ranking 응답이 배열이 아닙니다:', res.data)
-    return [] // 빈 배열 반환하거나 에러 처리
+    return res.data.map((stock) => ({
+      name: stock.stockName,
+      gain: stock.avgGainRate,
+      image: stock.stockCode
+        ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
+        : '/images/stocks/default.png',
+    }))
+  } catch (error) {
+    console.error('fetchTop5Stocks error:', error)
+    return []
   }
-
-  return res.data.map((user) => ({
-    userId: user.userId,
-    nickname: user.name,
-    gainRate: user.gainRate,
-    trait: user.traitGroup || '기타',
-    originalTrait: user.originalTrait || 'N/A',
-    image: `/images/profile${(user.userId % 5) + 1}.png`,
-  }))
 }
-export async function fetchGroupedWeeklyRanking(week) {
-  const res = await axios.get('/ranking/weekly/grouped', {
-    params: { week },
-  })
 
-  // 예: { 보수형: [ {...}, {...} ], 적극형: [...] }
-  const rawGrouped = res.data
-  const transformed = {}
+export async function fetchWeeklyRanking() {
+  try {
+    const res = await axios.get('/api/ranking/all')
 
-  for (const group in rawGrouped) {
-    transformed[group] = rawGrouped[group].map((user) => ({
+    if (!Array.isArray(res.data)) {
+      console.error('Weekly ranking 응답이 배열이 아닙니다:', res.data)
+      return []
+    }
+
+    return res.data.map((user) => ({
       userId: user.userId,
       nickname: user.name,
       gainRate: user.gainRate,
-      trait: group,
+      trait: user.traitGroup || '기타',
       originalTrait: user.originalTrait || 'N/A',
+      // user 객체에 stockCode 필드 없으면 기본 프로필 이미지로 처리
       image: `/images/profile${(user.userId % 5) + 1}.png`,
     }))
+  } catch (error) {
+    console.error('fetchWeeklyRanking error:', error)
+    return []
   }
+}
 
-  return transformed
+export async function fetchGroupedWeeklyRanking() {
+  try {
+    const res = await axios.get('/api/ranking/weekly/grouped')
+
+    const rawGrouped = res.data
+    const transformed = {}
+
+    for (const group in rawGrouped) {
+      transformed[group] = rawGrouped[group].map((user) => ({
+        userId: user.userId,
+        nickname: user.name,
+        gainRate: user.gainRate,
+        trait: group,
+        originalTrait: user.originalTrait || 'N/A',
+        image: `/images/profile${(user.userId % 5) + 1}.png`,
+      }))
+    }
+
+    return transformed
+  } catch (error) {
+    console.error('fetchGroupedWeeklyRanking error:', error)
+    return {}
+  }
 }
