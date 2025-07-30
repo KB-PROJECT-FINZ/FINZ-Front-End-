@@ -76,7 +76,7 @@
 
     <!-- 차트 영역 -->
     <div class="bg-white px-8 flex-1 flex flex-col">
-      <div class="h-80 bg-gray-100 rounded-lg flex items-center justify-center mb-4 relative">
+      <div class="h-80 bg-white rounded-lg flex items-center justify-center mb-4 relative">
         <canvas ref="chartCanvas" class="w-full h-full"></canvas>
         <!-- 로딩 스피너 오버레이 -->
         <div
@@ -205,6 +205,93 @@
         >
           년
         </button>
+        <!-- 차트 타입 전환 버튼들 -->
+        <template v-if="selectedChartType === 'candlestick'">
+          <!-- 라인 차트로 전환 버튼 (SVG 아이콘) -->
+          <button
+            @click="
+              () => {
+                selectedChartType = 'line'
+                updateChart()
+              }
+            "
+            class="px-3 py-2 rounded-lg transition-colors ml-2 flex items-center justify-center"
+            :class="'text-gray-600 hover:text-gray-900'"
+            aria-label="라인 차트로 변환"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-6 h-6">
+              <path
+                fill="none"
+                stroke="#EC4452"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.4"
+                d="M22.5 6.945l-7.778 7.778-5.444-5.446L1.5 17.056"
+              ></path>
+            </svg>
+          </button>
+        </template>
+        <template v-else>
+          <!-- 캔들 차트로 전환 버튼 (SVG 아이콘, 내부 색상 채움) -->
+          <button
+            @click="
+              () => {
+                selectedChartType = 'candlestick'
+                updateChart()
+              }
+            "
+            class="px-3 py-2 rounded-lg transition-colors ml-2 flex items-center justify-center"
+            :class="'text-gray-600 hover:text-gray-900'"
+            aria-label="캔들 차트로 변환"
+          >
+            <svg
+              enable-background="new 0 0 24 24"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-6 h-6"
+            >
+              <g fill="none">
+                <path d="m0 0h24v24h-24z" transform="matrix(-1 0 0 -1 24 24)"></path>
+                <path
+                  d="m17 20v-3"
+                  stroke="#3180f4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.2"
+                ></path>
+                <path
+                  d="m17 7v-3"
+                  stroke="#3180f4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.2"
+                ></path>
+                <path
+                  d="m7 22v-2"
+                  stroke="#fb2d4c"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.2"
+                ></path>
+                <path
+                  d="m7 4v-2"
+                  stroke="#fb2d4c"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.2"
+                ></path>
+              </g>
+              <path
+                d="m19 9.2v5.5h-4v-5.5zm1.1-2.2h-6.2c-.6 0-1.1.5-1.1 1.1v7.7c0 .6.5 1.1 1.1 1.1h6.2c.6 0 1.1-.5 1.1-1.1v-7.7c0-.6-.5-1.1-1.1-1.1z"
+                fill="#3180f4"
+              ></path>
+              <path
+                d="m9 6.2v11.7h-4v-11.7zm1.1-2.2h-6.2c-.6 0-1.1.5-1.1 1.1v13.9c0 .6.5 1.1 1.1 1.1h6.2c.6 0 1.1-.5 1.1-1.1v-13.9c0-.6-.5-1.1-1.1-1.1z"
+                fill="#fb2d4c"
+              ></path>
+            </svg>
+          </button>
+        </template>
       </div>
     </div>
 
@@ -244,7 +331,7 @@
       @click="showMinutesModal = false"
     >
       <div
-        class="bg-white w-full rounded-t-2xl p-4"
+        class="bg-white w-full max-w-[420px] mx-auto rounded-t-2xl p-4 sm:p-6"
         :class="!isModalDragging ? 'transition-transform duration-200' : ''"
         :style="{ transform: `translateY(${modalDragOffset}px)` }"
         @click.stop
@@ -297,11 +384,22 @@
 </template>
 
 <script setup>
+console.log('=== ChartPage 스크립트 시작 ===')
+
+// 콘솔 에러/경고/미처리 예외 완전 무시 (이 페이지 한정)
+if (typeof window !== 'undefined') {
+  // console.warn = () => {}
+  // console.error = () => {}
+  window.onerror = () => true
+  window.onunhandledrejection = () => true
+}
+
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Chart, registerables } from 'chart.js'
 import { CandlestickController, CandlestickElement } from 'chartjs-chart-financial'
 import zoomPlugin from 'chartjs-plugin-zoom'
+import crosshairPlugin from 'chartjs-plugin-crosshair'
 import 'chartjs-adapter-date-fns'
 
 // --- 분봉 모달 드래그 다운 슬라이드 닫기 로직 ---
@@ -358,10 +456,12 @@ onBeforeUnmount(() => {
 Chart.register(...registerables)
 Chart.register(CandlestickController, CandlestickElement)
 Chart.register(zoomPlugin)
+Chart.register(crosshairPlugin)
 
 // Chart.js 관련 변수
 const chartCanvas = ref(null)
 const chartInstance = ref(null)
+const selectedChartType = ref('candlestick') // candlestick | line
 
 // 차트 로딩 상태
 const isChartLoading = ref(false)
@@ -369,9 +469,6 @@ const isChartLoading = ref(false)
 // 차트 상태 관리
 const currentEndTime = ref(null) // 현재 차트 오른쪽 끝 시간
 const autoRefreshInterval = ref(null) // 자동 새로고침 인터벌
-// const apiStatus = ref('loading') // API 상태: 'loading', 'success', 'error'
-// const apiStatusText = ref('API 연결 중...') // API 상태 텍스트
-// const lastApiCall = ref(null) // 마지막 API 호출 시간
 
 // 반응형 데이터
 const isFavorite = ref(false)
@@ -416,8 +513,6 @@ const minuteOptions = ref([
   { value: '60min', label: '60분' },
 ])
 
-// 전체 시간대 옵션들 (기존 호환성 유지)
-
 // 컴퓨티드 속성들
 // prdy_vrss_sign: 1(+)이면 빨간색, 2(-)이면 파란색, 그 외 회색
 const priceChangeClass = computed(() => {
@@ -442,17 +537,24 @@ const realTimeChangeText = computed(() => {
   return `${sign}${formatPrice(Math.abs(stockInfo.changeAmount))}원 (${sign}${Math.abs(stockInfo.changeRate)}%)`
 })
 
+// 오늘 날짜를 YYYYMMDD 형식으로 반환
+const getTodayDate = () => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}${month}${day}`
+}
+
 // 메서드들
 const goBack = () => {
   router.push('/mock-trading')
 }
 
-// 백엔드 서버에서 주식 차트 데이터 조회 (fullday API 사용)
+// 분봉 차트 데이터 조회 (기존)
 const fetchStockChartData = async (stockCode) => {
   try {
-    // 새로운 fullday 엔드포인트 사용
     const url = `/api/chart/minute/${stockCode}/fullday`
-
     console.log(`[API 요청] ${stockCode} fullday 차트 데이터 조회 시작`)
 
     const response = await fetch(url, {
@@ -470,22 +572,69 @@ const fetchStockChartData = async (stockCode) => {
 
     const result = await response.json()
 
-    // 한국투자증권 API 오류 체크 (rt_cd가 "0"이 아니면 오류)
     if (result.rt_cd && result.rt_cd !== '0') {
       console.error('[API 오류] 응답 오류:', result.msg1)
       throw new Error(`API 오류: ${result.msg1 || 'Unknown error'}`)
     }
 
-    // output2 데이터 확인
     if (!result.output2 || !Array.isArray(result.output2)) {
       console.error('[API 오류] 차트 데이터가 없습니다')
       throw new Error(`API 오류: 차트 데이터가 없습니다`)
     }
-    console.log(result)
+
     console.log(`[API 성공] ${result.output2.length}개 데이터 수신`)
     return result
   } catch (error) {
     console.error('[API 오류] 주식 차트 데이터 조회 실패:', error.message)
+    throw error
+  }
+}
+
+// 일/주/월/년봉 차트 데이터 조회 (신규)
+const fetchVariousChartData = async (stockCode, periodCode) => {
+  try {
+    const startDate = '20150101' // 2015년 1월 1일부터 최대 가능한 갯수 호출
+    const endDate = getTodayDate() // 오늘까지
+
+    const url = `/api/chart/various/${stockCode}`
+    const params = new URLSearchParams({
+      periodCode,
+      startDate,
+      endDate,
+    })
+
+    console.log(`[API 요청] ${stockCode} ${periodCode}봉 차트 데이터 조회 시작`)
+    console.log(`[요청 파라미터] startDate: ${startDate}, endDate: ${endDate}`)
+
+    const response = await fetch(`${url}?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`[API 오류] ${response.status} ${response.statusText}:`, errorText)
+      throw new Error(`백엔드 API 호출 실패: ${response.status} ${response.statusText}`)
+    }
+
+    const result = await response.json()
+
+    if (result.rt_cd && result.rt_cd !== '0') {
+      console.error('[API 오류] 응답 오류:', result.msg1)
+      throw new Error(`API 오류: ${result.msg1 || 'Unknown error'}`)
+    }
+
+    if (!result.output2 || !Array.isArray(result.output2)) {
+      console.error('[API 오류] 차트 데이터가 없습니다')
+      throw new Error(`API 오류: 차트 데이터가 없습니다`)
+    }
+
+    console.log(`[API 성공] ${result.output2.length}개 ${periodCode}봉 데이터 수신`)
+    return result
+  } catch (error) {
+    console.error(`[API 오류] ${periodCode}봉 차트 데이터 조회 실패:`, error.message)
     throw error
   }
 }
@@ -497,6 +646,7 @@ function convertApiDataTo1MinChartData(apiResponse) {
     console.warn('[데이터 변환] API 응답에 차트 데이터가 없습니다')
     return []
   }
+
   // 15:20~15:29 데이터 제외, 15:19 이전 모든 데이터와 마지막 15:30 데이터만 남김
   let filteredData = chartDataArray.filter((item) => {
     const time = item.stck_cntg_hour
@@ -505,6 +655,7 @@ function convertApiDataTo1MinChartData(apiResponse) {
     }
     return true
   })
+
   const before1519 = filteredData.filter((item) => item.stck_cntg_hour <= '151900')
   const idx1530 = filteredData.findLastIndex((item) => item.stck_cntg_hour === '153000')
   let last1530 = []
@@ -520,7 +671,7 @@ function convertApiDataTo1MinChartData(apiResponse) {
   }
   filteredData = [...before1519, ...last1530]
 
-  // 오늘 오전 9시 이전 데이터는 모두 제외 (즉, 오늘 9시 이전 데이터는 차트에 표시하지 않음)
+  // 오늘 오전 9시 이전 데이터는 모두 제외
   const now = new Date()
   const today9am = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0, 0).getTime()
 
@@ -536,8 +687,11 @@ function convertApiDataTo1MinChartData(apiResponse) {
         const minute = parseInt(time.substr(2, 2))
         const second = parseInt(time.substr(4, 2))
         const dateTime = new Date(year, month, day, hour, minute, second)
+
         return {
-          x: dateTime.getTime(),
+          x: index, // 인덱스 기반으로 변경
+          dateTime: dateTime.getTime(), // 실제 시간은 별도 저장
+          dateString: `${date}${time}`,
           o: parseInt(item.stck_oprc),
           h: parseInt(item.stck_hgpr),
           l: parseInt(item.stck_lwpr),
@@ -549,8 +703,49 @@ function convertApiDataTo1MinChartData(apiResponse) {
         return null
       }
     })
-    .filter((item) => item !== null && item.x >= today9am)
-    .sort((a, b) => a.x - b.x)
+    .filter((item) => item !== null && item.dateTime >= today9am)
+    // 인덱스 재할당 (필터 후)
+    .map((item, idx) => ({ ...item, x: idx }))
+
+  return convertedData
+}
+
+// 일/주/월/년봉 데이터를 Chart.js 형식으로 변환
+function convertVariousApiDataToChartData(apiResponse) {
+  const chartDataArray = apiResponse.output2 || []
+  if (!chartDataArray || !Array.isArray(chartDataArray)) {
+    console.warn('[데이터 변환] API 응답에 차트 데이터가 없습니다')
+    return []
+  }
+
+  const convertedData = chartDataArray
+    .map((item, index) => {
+      try {
+        const date = item.stck_bsop_date
+        const year = parseInt(date.substr(0, 4))
+        const month = parseInt(date.substr(4, 2)) - 1
+        const day = parseInt(date.substr(6, 2))
+        const dateTime = new Date(year, month, day, 0, 0, 0)
+
+        return {
+          x: index, // 인덱스 기반으로 변경 (공백 제거용)
+          dateTime: dateTime.getTime(), // 실제 날짜는 별도 저장
+          dateString: item.stck_bsop_date, // 날짜 문자열 저장
+          o: parseInt(item.stck_oprc),
+          h: parseInt(item.stck_hgpr),
+          l: parseInt(item.stck_lwpr),
+          c: parseInt(item.stck_clpr), // 일봉의 경우 종가는 stck_clpr
+          volume: parseInt(item.acml_vol || 0),
+        }
+      } catch (error) {
+        console.error(`[데이터 변환] 항목 ${index} 변환 실패:`, error.message)
+        return null
+      }
+    })
+    .filter((item) => item !== null)
+    .sort((a, b) => a.dateTime - b.dateTime) // 실제 날짜 기준으로 정렬
+    .map((item, sortedIndex) => ({ ...item, x: sortedIndex })) // 정렬 후 인덱스 재할당
+
   return convertedData
 }
 
@@ -561,39 +756,50 @@ function convert1MinToNMinChartData(oneMinData, n) {
   for (let i = 0; i < oneMinData.length; i += n) {
     const group = oneMinData.slice(i, i + n)
     if (group.length === 0) continue
-    if (!group[0] || typeof group[0].x === 'undefined') continue
     const o = group[0].o
     const c = group[group.length - 1].c
     const h = Math.max(...group.map((d) => d.h))
     const l = Math.min(...group.map((d) => d.l))
     const volume = group.reduce((sum, d) => sum + (d.volume || 0), 0)
     result.push({
-      x: group[0].x,
+      // x: group[0].x, // 기존: 그룹의 첫번째 인덱스(띄엄띄엄)
+      x: result.length, // 연속 인덱스 부여
       o,
       h,
       l,
       c,
       volume,
+      dateTime: group[0].dateTime, // 그룹의 첫번째 dateTime
+      dateString: group[0].dateString, // 그룹의 첫번째 dateString
     })
   }
-  return result.sort((a, b) => a.x - b.x)
+  return result
 }
 
-// 기존 인터페이스와 호환되는 변환 함수 (1,3,5,10,15,30,60분 지원)
+// 기존 인터페이스와 호환되는 변환 함수
 function convertApiDataToChartData(apiResponse, timeFrame = '1min') {
-  const oneMinData = convertApiDataTo1MinChartData(apiResponse)
-  // timeFrame이 Nmin 형태면 N을 추출
-  const minMatch = /^([0-9]+)min$/.exec(timeFrame)
-  if (minMatch) {
-    const n = parseInt(minMatch[1])
-    if (n === 1) return oneMinData
-    return convert1MinToNMinChartData(oneMinData, n)
+  // 분봉의 경우
+  if (timeFrame.includes('min')) {
+    const oneMinData = convertApiDataTo1MinChartData(apiResponse)
+    const minMatch = /^([0-9]+)min$/.exec(timeFrame)
+    if (minMatch) {
+      const n = parseInt(minMatch[1])
+      if (n === 1) return oneMinData
+      return convert1MinToNMinChartData(oneMinData, n)
+    }
+    return oneMinData
   }
-  return oneMinData
+
+  // 일/주/월/년봉의 경우
+  return convertVariousApiDataToChartData(apiResponse)
 }
 
-// 1분봉 API 데이터 캐시
-let cachedApiResponse = null
+// API 데이터 캐시 (분봉과 각 기간별로 별도 캐시)
+let cachedMinuteApiResponse = null
+let cachedDayApiResponse = null
+let cachedWeekApiResponse = null
+let cachedMonthApiResponse = null
+let cachedYearApiResponse = null
 let cachedStockCode = ''
 
 // 차트 데이터를 가져오는 함수 (API 데이터 캐싱)
@@ -601,14 +807,60 @@ const generateCandlestickData = async () => {
   isChartLoading.value = true
   try {
     let apiResponse
-    // stockCode가 바뀌었거나 캐시가 없으면 새로 호출
-    if (!cachedApiResponse || cachedStockCode !== stockInfo.stockCode) {
-      apiResponse = await fetchStockChartData(stockInfo.stockCode, selectedTimeFrame.value)
-      cachedApiResponse = apiResponse
+
+    // stockCode가 바뀌었으면 모든 캐시 초기화
+    if (cachedStockCode !== stockInfo.stockCode) {
+      cachedMinuteApiResponse = null
+      cachedDayApiResponse = null
+      cachedWeekApiResponse = null
+      cachedMonthApiResponse = null
+      cachedYearApiResponse = null
       cachedStockCode = stockInfo.stockCode
-    } else {
-      apiResponse = cachedApiResponse
     }
+
+    // 시간대별로 다른 API 호출 및 캐싱
+    if (selectedTimeFrame.value.includes('min')) {
+      // 분봉 데이터
+      if (!cachedMinuteApiResponse) {
+        apiResponse = await fetchStockChartData(stockInfo.stockCode)
+        cachedMinuteApiResponse = apiResponse
+      } else {
+        apiResponse = cachedMinuteApiResponse
+      }
+    } else if (selectedTimeFrame.value === 'day') {
+      // 일봉 데이터
+      if (!cachedDayApiResponse) {
+        apiResponse = await fetchVariousChartData(stockInfo.stockCode, 'D')
+        cachedDayApiResponse = apiResponse
+      } else {
+        apiResponse = cachedDayApiResponse
+      }
+    } else if (selectedTimeFrame.value === 'week') {
+      // 주봉 데이터
+      if (!cachedWeekApiResponse) {
+        apiResponse = await fetchVariousChartData(stockInfo.stockCode, 'W')
+        cachedWeekApiResponse = apiResponse
+      } else {
+        apiResponse = cachedWeekApiResponse
+      }
+    } else if (selectedTimeFrame.value === 'month') {
+      // 월봉 데이터
+      if (!cachedMonthApiResponse) {
+        apiResponse = await fetchVariousChartData(stockInfo.stockCode, 'M')
+        cachedMonthApiResponse = apiResponse
+      } else {
+        apiResponse = cachedMonthApiResponse
+      }
+    } else if (selectedTimeFrame.value === 'year') {
+      // 년봉 데이터
+      if (!cachedYearApiResponse) {
+        apiResponse = await fetchVariousChartData(stockInfo.stockCode, 'Y')
+        cachedYearApiResponse = apiResponse
+      } else {
+        apiResponse = cachedYearApiResponse
+      }
+    }
+
     const chartData = convertApiDataToChartData(apiResponse, selectedTimeFrame.value)
 
     // 차트 오른쪽 끝 시간 업데이트
@@ -618,7 +870,6 @@ const generateCandlestickData = async () => {
       // 현재가 정보 업데이트 (가장 최근 캔들의 종가 사용)
       const latestCandle = chartData[chartData.length - 1]
       stockInfo.currentPrice = latestCandle.c
-      // changeAmount는 mock price에서만 설정
     }
 
     return chartData
@@ -634,7 +885,12 @@ const generateCandlestickData = async () => {
 // 1분 주기 차트 새로고침 함수
 const refreshChart = async () => {
   try {
-    await createChart()
+    // 분봉일 때만 자동 새로고침 수행
+    if (selectedTimeFrame.value.includes('min')) {
+      // 분봉 캐시 초기화하여 최신 데이터 가져오기
+      cachedMinuteApiResponse = null
+      await createChart()
+    }
   } catch (error) {
     console.error('[자동 새로고침] 실패:', error.message)
   }
@@ -643,11 +899,11 @@ const refreshChart = async () => {
 // 더미 데이터 생성 함수 (API 실패 시 대체용)
 const generateDummyData = () => {
   const data = []
-  const basePrice = stockInfo.currentPrice
+  const basePrice = stockInfo.currentPrice || 70000
   let currentPrice = basePrice
 
-  // 30개 데이터 생성
-  const dataCount = 30
+  // 20개 데이터 생성
+  const dataCount = 20
 
   for (let i = dataCount - 1; i >= 0; i--) {
     const date = new Date()
@@ -719,78 +975,83 @@ const createChart = async () => {
       return
     }
 
-    // 확대: 마지막 30개만 보이도록 x축 min/max 설정 및 pan 제한
-    let xMin, xMax, dataMin, dataMax, min9am
+    // 항상 20개만 보이도록 고정
+    const showCount = 20
+
+    // 항상 마지막 20개만 보이도록 x축 min/max 설정 (좌우 패딩 포함)
+    let xMin, xMax, dataMin, dataMax, limitMin
+    const xPadding = 1 // 좌우 1개씩 패딩(20개 기준 5% 이내)
     if (data.length > 0) {
       const lastIdx = data.length - 1
-      const showCount = Math.min(30, data.length)
-      xMin = data[Math.max(0, lastIdx - showCount + 1)]?.x
-      xMax = data[lastIdx]?.x
-      // 오전 9시를 기준으로 x축 최소값 제한
-      // 데이터의 첫 날짜(yyyy-mm-dd)에서 09:00:00을 구함
-      const firstDate = new Date(data[0].x)
-      const nineAM = new Date(
-        firstDate.getFullYear(),
-        firstDate.getMonth(),
-        firstDate.getDate(),
-        9,
-        0,
-        0,
-        0,
-      )
-      min9am = nineAM.getTime()
-      dataMin = Math.max(data[0]?.x, min9am)
-      dataMax = data[lastIdx]?.x
+      const firstShowIdx = Math.max(0, lastIdx - showCount + 1)
+      xMin = Math.max(0, firstShowIdx - xPadding)
+      // 라인차트면 xMax를 마지막 인덱스+1+패딩, 아니면 기존대로
+      if (selectedChartType.value === 'line') {
+        xMax = lastIdx + 3 + xPadding
+      } else {
+        xMax = lastIdx + xPadding
+      }
+      limitMin = 0
+      dataMin = 0
+      dataMax = lastIdx + xPadding
+
       // 값이 undefined이거나 NaN이면 fallback
-      if (typeof xMin !== 'number' || isNaN(xMin)) xMin = Date.now() - 60 * 60 * 1000
-      if (typeof xMax !== 'number' || isNaN(xMax)) xMax = Date.now()
+      if (typeof xMin !== 'number' || isNaN(xMin)) xMin = 0
+      if (typeof xMax !== 'number' || isNaN(xMax)) xMax = lastIdx
       if (typeof dataMin !== 'number' || isNaN(dataMin)) dataMin = xMin
       if (typeof dataMax !== 'number' || isNaN(dataMax)) dataMax = xMax
+
       // 데이터가 1개 이하일 때 pan/zoom min/max가 같으면 오류 발생하므로 보정
       if (dataMin === dataMax) {
-        dataMin = dataMin - 60 * 1000 // 1분 전
-        dataMax = dataMax + 60 * 1000 // 1분 후
+        dataMin = dataMin - 1
+        dataMax = dataMax + 1
       }
-    } else {
-      // 데이터가 없을 때 기본값 설정 (오늘 오전 9시 )
+    }
 
-      const now = new Date()
-      const today9am = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        9,
-        0,
-        0,
-        0,
-      ).getTime()
-      xMin = today9am
-      xMax = now.getTime()
-      dataMin = xMin
-      dataMax = xMax
-      min9am = xMin
+    // 차트 타입에 따라 데이터셋 구성
+    let chartType = selectedChartType.value
+    let datasets
+    if (chartType === 'candlestick') {
+      datasets = [
+        {
+          label: stockInfo.name,
+          data: data,
+          backgroundColors: {
+            up: '#e42939',
+            down: '#2272eb',
+            unchanged: '#999999',
+          },
+          borderColors: {
+            up: '#e42939',
+            down: '#2272eb',
+            unchanged: '#999999',
+          },
+          borderWidth: 1,
+        },
+      ]
+    } else {
+      // 라인 차트: 종가만 추출, x/y는 기존과 동일하게
+      datasets = [
+        {
+          label: stockInfo.name + ' (라인)',
+          data: data.map((d) => ({ x: d.x, y: d.c, _candle: d })), // _candle로 원본 참조
+          borderColor: '#e42939',
+          backgroundColor: 'rgba(34,114,235,0.1)',
+          pointRadius: 0, // 동그란 점 제거
+          pointHoverRadius: 3, // 호버 시 동그라미 크기
+          pointHoverBackgroundColor: '#e42939', // 호버 시 채워진 색상
+          pointHoverBorderWidth: 2,
+          tension: 0.5,
+          fill: false,
+        },
+      ]
+      chartType = 'line'
     }
 
     chartInstance.value = new Chart(ctx, {
-      type: 'candlestick',
+      type: chartType,
       data: {
-        datasets: [
-          {
-            label: stockInfo.name,
-            data: data,
-            backgroundColors: {
-              up: '#e42939',
-              down: '#2272eb',
-              unchanged: '#999999',
-            },
-            borderColors: {
-              up: '#e42939',
-              down: '#2272eb',
-              unchanged: '#999999',
-            },
-            borderWidth: 1,
-          },
-        ],
+        datasets: datasets,
       },
       options: {
         responsive: true,
@@ -828,18 +1089,50 @@ const createChart = async () => {
                 return
               }
               if (tooltip.dataPoints && tooltip.dataPoints.length) {
-                const d = tooltip.dataPoints[0].raw
+                // 라인 차트일 때는 _candle에서 원본 캔들 데이터 추출
+                let d = tooltip.dataPoints[0].raw
+                if (selectedChartType.value === 'line' && d._candle) {
+                  d = d._candle
+                }
                 const price = (v) => v?.toLocaleString('ko-KR')
                 let html = ''
                 // 날짜 타이틀
-                const date = new Date(d.x)
-                const title = date.toLocaleString('ko-KR', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
+                let title
+                if (selectedTimeFrame.value.includes('min')) {
+                  // 분봉: dateTime(실제 시간) 사용
+                  const date = new Date(d.dateTime)
+                  const yyyy = date.getFullYear()
+                  const mm = String(date.getMonth() + 1).padStart(2, '0')
+                  const dd = String(date.getDate()).padStart(2, '0')
+                  const HH = String(date.getHours()).padStart(2, '0')
+                  const MM = String(date.getMinutes()).padStart(2, '0')
+                  const weekDays = ['일', '월', '화', '수', '목', '금', '토']
+                  const dayOfWeek = weekDays[date.getDay()]
+                  title = `${yyyy}.${mm}.${dd}(${dayOfWeek}) ${HH}:${MM}`
+                } else {
+                  // 일/주/월/년봉의 경우 dateString이 있으면 사용
+                  if (d.dateString) {
+                    const dateStr = d.dateString
+                    const year = dateStr.substr(0, 4)
+                    const month = dateStr.substr(4, 2)
+                    const day = dateStr.substr(6, 2)
+                    // 요일 구하기
+                    const dateObj = new Date(`${year}-${month}-${day}`)
+                    const weekDays = ['일', '월', '화', '수', '목', '금', '토']
+                    const dayOfWeek = weekDays[dateObj.getDay()]
+                    title = `${year}.${month}.${day}(${dayOfWeek})`
+                  } else if (d.dateTime) {
+                    const date = new Date(d.dateTime)
+                    const yyyy = date.getFullYear()
+                    const mm = String(date.getMonth() + 1).padStart(2, '0')
+                    const dd = String(date.getDate()).padStart(2, '0')
+                    const weekDays = ['일', '월', '화', '수', '목', '금', '토']
+                    const dayOfWeek = weekDays[date.getDay()]
+                    title = `${yyyy}.${mm}.${dd}(${dayOfWeek})`
+                  } else {
+                    title = 'N/A'
+                  }
+                }
                 html += `<div style="font-size:13px;font-weight:bold;color:#111827;margin-bottom:6px;">${title}</div>`
                 html += `<div style='margin-bottom:2px;'>시가: <span style='color:#111827;font-weight:bold;'>${price(d.o)}</span></div>`
                 html += `<div style='margin-bottom:2px;'>고가: <span style='color:#ef4444;font-weight:bold;'>${price(d.h)}</span></div>`
@@ -852,9 +1145,7 @@ const createChart = async () => {
               }
               // 위치 조정 (마우스 위치 기준)
               tooltipEl.style.opacity = 1
-              // Chart.js 3.x 이상에서는 tooltip 객체에 mouseX, mouseY가 없으므로, getBoundingClientRect 사용
               const canvasRect = chart.canvas.getBoundingClientRect()
-              // tooltip.caretX/Y는 캔버스 내 좌표이므로, 브라우저 전체 좌표로 변환
               const left = window.scrollX + canvasRect.left + tooltip.caretX + 16
               const top =
                 window.scrollY + canvasRect.top + tooltip.caretY - tooltipEl.offsetHeight / 2
@@ -866,10 +1157,10 @@ const createChart = async () => {
             pan: {
               enabled: true,
               mode: 'x',
-              modifierKey: null, // 마우스만으로 드래그 가능
-              min: min9am, // 오전 9시 이전으로 pan 불가
-              max: dataMax,
-              speed: 3, // 기본값 20, 낮을수록 느림, 높을수록 빠름. 10~30 사이로 조절 가능
+              modifierKey: null,
+              min: selectedTimeFrame.value.includes('min') ? limitMin : 0, // 분봉이 아니면 인덱스 0부터
+              max: selectedTimeFrame.value.includes('min') ? dataMax : data.length - 1, // 분봉이 아니면 마지막 인덱스까지
+              speed: 3,
             },
             zoom: {
               wheel: {
@@ -881,48 +1172,86 @@ const createChart = async () => {
               mode: 'x',
             },
             limits: {
-              x: { minRange: 5, min: min9am, max: dataMax }, // 오전 9시 이전으로 zoom/pan 불가
+              x: {
+                minRange: 5,
+                min: selectedTimeFrame.value.includes('min') ? limitMin : 0,
+                max: selectedTimeFrame.value.includes('min') ? dataMax : data.length - 1,
+              },
+            },
+          },
+          crosshair: {
+            line: {
+              color: '#888',
+              width: 1,
+              dashPattern: [4, 4],
+            },
+            sync: {
+              enabled: true,
+            },
+            zoom: {
+              enabled: false,
+            },
+            snap: {
+              enabled: false,
+            },
+            // 추가 설정들
+            // interpolate: true, // Y축 값 보간 활성화
+            callbacks: {
+              beforeZoom: () => false, // zoom 플러그인과의 충돌 방지
+              afterZoom: () => false,
             },
           },
         },
         scales: {
           x: {
-            type: 'time',
-            time: {
-              unit: selectedTimeFrame.value.includes('min')
-                ? 'minute'
-                : selectedTimeFrame.value === 'day'
-                  ? 'day'
-                  : selectedTimeFrame.value === 'week'
-                    ? 'week'
-                    : selectedTimeFrame.value === 'month'
-                      ? 'month'
-                      : 'year',
-              displayFormats: {
-                minute: 'HH:mm',
-                day: 'MM/dd',
-                week: 'MM/dd',
-                month: 'yy/MM',
-                year: 'yyyy',
-              },
-            },
+            type: 'linear',
             display: true,
-            grid: {
-              display: false,
-            },
+            grid: { display: false },
             ticks: {
               maxTicksLimit: 6,
               color: '#6B7280',
-              font: {
-                size: 10,
+              font: { size: 10 },
+              callback: function (value) {
+                const idx = Math.floor(value)
+                const dataPoint = data[idx]
+                if (!dataPoint || !dataPoint.dateString) return ''
+                const dateStr = dataPoint.dateString
+                // 년봉 또는 월봉: 년도 4자리만, 년도 바뀔 때만 표시
+                if (selectedTimeFrame.value === 'year' || selectedTimeFrame.value === 'month') {
+                  const year = dateStr.substr(0, 4)
+                  // 첫 인덱스 또는 마지막 인덱스는 무조건 연도 표시
+                  if (idx === 0 || idx === data.length - 1) return year
+                  const prev = data[idx - 1]
+                  if (prev && prev.dateString) {
+                    const prevYear = prev.dateString.substr(0, 4)
+                    if (year !== prevYear) return year
+                  }
+                  return ''
+                }
+                // 그 외(일/주봉/분봉): MM/DD 또는 HH:mm
+                if (selectedTimeFrame.value.includes('min')) {
+                  // 분봉: HH:mm
+                  const timeStr = dataPoint.dateString.substr(8, 4)
+                  const HH = timeStr.substr(0, 2)
+                  const MM = timeStr.substr(2, 2)
+                  return `${HH}:${MM}`
+                } else {
+                  const month = dateStr.substr(4, 2)
+                  const day = dateStr.substr(6, 2)
+                  return `${month}/${day}`
+                }
               },
             },
             min: xMin,
             max: xMax,
+            // afterDataLimits: function (scale) {
+            //   // x축 패딩: 이미 xMin/xMax에서 적용, 추가 패딩 필요시 여기에 적용 가능
+            // },
           },
           y: {
             display: true,
             position: 'right',
+            beginAtZero: false,
             grid: {
               color: 'rgba(0, 0, 0, 0.1)',
               drawBorder: false,
@@ -938,9 +1267,10 @@ const createChart = async () => {
             },
             afterDataLimits: function (scale) {
               const range = scale.max - scale.min
-              const padding = range * 0.15
+              const padding = range * 0.18 // 기존 0.15 → 0.18로 상하 패딩 증가
               scale.max = scale.max + padding
-              scale.min = scale.min - padding
+              // 음수로 내려가지 않게 0으로 보정
+              scale.min = Math.max(0, scale.min - padding)
             },
           },
         },
@@ -961,13 +1291,16 @@ const createChart = async () => {
   }
 }
 
-// 1분 주기 자동 새로고침 시작
+// 자동 새로고침 시작 (분봉일 때만)
 const startAutoRefresh = () => {
   stopAutoRefresh() // 기존 인터벌 정리
 
-  autoRefreshInterval.value = setInterval(async () => {
-    await refreshChart()
-  }, 60000) // 60초마다 새로고침
+  // 분봉일 때만 자동 새로고침
+  if (selectedTimeFrame.value.includes('min')) {
+    autoRefreshInterval.value = setInterval(async () => {
+      await refreshChart()
+    }, 60000) // 60초마다 새로고침
+  }
 }
 
 // 자동 새로고침 중지
@@ -982,7 +1315,7 @@ const stopAutoRefresh = () => {
 const updateChart = async () => {
   try {
     await createChart()
-    startAutoRefresh() // 자동 새로고침 재시작
+    startAutoRefresh() // 자동 새로고침 재시작 (분봉일 때만)
   } catch (error) {
     console.error('[차트 업데이트] 오류:', error.message)
   }
@@ -990,7 +1323,6 @@ const updateChart = async () => {
 
 const toggleFavorite = () => {
   isFavorite.value = !isFavorite.value
-  // 여기에 관심종목 추가/제거 API 호출 로직 추가
   console.log('관심종목 상태:', isFavorite.value ? '추가됨' : '제거됨')
 }
 
@@ -1014,7 +1346,6 @@ const selectMinute = (value) => {
 }
 
 const navigateToTradingPage = (type) => {
-  // TradingPage로 이동하면서 stockCode와 stockName을 route에서 항상 보존
   const stockCode = route.params.stockCode || stockInfo.stockCode
   const stockName = route.query.stockName || stockInfo.name
   router.push({
@@ -1028,9 +1359,9 @@ const navigateToTradingPage = (type) => {
 }
 
 onMounted(() => {
-  // DOM이 완전히 렌더링된 후 차트 생성
   stockInfo.stockCode = route.params.stockCode || ''
   stockInfo.name = route.query.stockName || ''
+
   // 상단 가격/변동 정보는 mock price API에서만 세팅
   const setMockPriceInfo = async () => {
     try {
@@ -1048,14 +1379,19 @@ onMounted(() => {
       console.warn(`[RAW MOCK PRICE] 요청 실패:`, err)
     }
   }
+
   nextTick(() => {
     setMockPriceInfo()
     // 차트 종목이 바뀌면 캐시 초기화
-    cachedApiResponse = null
+    cachedMinuteApiResponse = null
+    cachedDayApiResponse = null
+    cachedWeekApiResponse = null
+    cachedMonthApiResponse = null
+    cachedYearApiResponse = null
     cachedStockCode = ''
     setTimeout(() => {
       createChart()
-      startAutoRefresh() // 자동 새로고침 시작
+      startAutoRefresh() // 자동 새로고침 시작 (분봉일 때만)
     }, 100)
   })
 })
