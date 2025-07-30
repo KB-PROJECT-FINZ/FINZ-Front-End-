@@ -1,30 +1,56 @@
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const typeCode = route.query.type || 'UNKNOWN'
 
-//  로그인된 사용자 ID 가져오기
-const username = localStorage.getItem('username')
+// username을 ref로 정의
+const name = ref('')
+const username = ref('')
 
-//  API 호출로 risk_type 저장
-const saveRiskType = async () => {
-  if (!username || typeCode === 'UNKNOWN') return
+// 로그인된 사용자 정보 받아오기
+const fetchUsername = async () => {
   try {
-    await axios.post('/user/risk_type', {
-      username: username,
-      riskType: typeCode,
-    })
-    console.log(' 투자 성향 저장 완료')
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    username.value = res.data.username // ✅ 올바르게 할당
+    name.value = res.data.name // 사용자 이름도 받아오기
+    console.log('✅ username:', username.value)
+    console.log('✅ typeCode:', typeCode)
+    console.log('✅ name:', res.data.name)
+    saveRiskType() // ✅ 이 시점에서 정확한 값으로 호출
+  } catch (err) {
+    console.error('❌ 사용자 정보 조회 실패:', err)
+  }
+}
+
+// 투자 성향 저장
+const saveRiskType = async () => {
+  if (!username.value || typeCode === 'UNKNOWN') {
+    console.warn('❗ username 또는 typeCode 없음, 저장 스킵')
+    return
+  }
+
+  try {
+    await axios.post(
+      '/api/user/risk_type',
+      {
+        username: username.value,
+        riskType: typeCode,
+      },
+      {
+        withCredentials: true,
+      },
+    )
+    console.log('✅ 투자 성향 저장 완료')
   } catch (err) {
     console.error('❌ 저장 실패:', err)
   }
 }
 
 onMounted(() => {
-  saveRiskType()
+  fetchUsername()
 })
 const resultMap = {
   CSD: {
@@ -139,7 +165,7 @@ const result = resultMap[typeCode] || resultMap.UNKNOWN
     </button>
     <button
       class="bg-gray-100 text-gray-600 py-2 px-4 rounded-full w-full font-semibold mb-6 hover:bg-gray-300"
-      @click="() => $router.push('/investment-test')"
+      @click="() => $router.push('/investment-test/retest')"
     >
       테스트 다시하기
     </button>

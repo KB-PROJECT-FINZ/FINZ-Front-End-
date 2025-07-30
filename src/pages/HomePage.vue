@@ -103,4 +103,52 @@
 <script setup>
 // 추후 데이터 바인딩 가능
 import BottomNav from '@/components/FooterNavigation.vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { ref, onMounted } from 'vue'
+
+const router = useRouter()
+
+// 사용자 데이터
+const name = ref('')
+const userName = ref('')
+const riskTypeName = ref('')
+
+// 세션 기반 사용자 정보 불러오기
+onMounted(async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/api/auth/me', {
+      withCredentials: true,
+    })
+
+    const user = response.data
+    name.value = user.name
+    userName.value = user.username
+    riskTypeName.value = convertRiskTypeToName(user.riskType)
+  } catch (e) {
+    console.error('세션 정보 불러오기 실패:', e)
+    router.push('/login-form')
+  }
+})
+
+function convertRiskTypeToName(code) {
+  const map = {
+    CSD: '신중한 안정형',
+    CAG: '신중한 성장형',
+    BSS: '균형 잡힌 수익 추구형',
+    BGT: '균형 잡힌 도전형',
+    AID: '적극적 안정형',
+    AGR: '적극적 성장형',
+    EXP: '실험적 모험가형',
+    FAD: '감정적 결정형',
+    SYS: '시스템 트레이더형',
+  }
+  return map[code] || '미분류'
+}
+
+// 페이지 이동용
+const goToStudy = () => router.push('/learning')
+const goToContents = () => router.push('/contents')
+const goToQuiz = () => router.push('/quiz')
+const goToPortfolio = () => router.push('/portfolio')
 </script>

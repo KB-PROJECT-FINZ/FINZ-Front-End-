@@ -8,6 +8,7 @@
   </div>
 </template>
 <script>
+import axios from 'axios'
 import { onMounted } from 'vue'
 import { useUserStore } from './stores/user'
 
@@ -15,10 +16,13 @@ export default {
   setup() {
     const userStore = useUserStore()
 
-    onMounted(() => {
-      const savedUsername = localStorage.getItem('username')
-      if (savedUsername) {
-        userStore.setUser(savedUsername)
+    onMounted(async () => {
+      try {
+        const res = await axios.get('/auth/me')
+        userStore.setUser(res.data)
+        localStorage.setItem('user', JSON.stringify(res.data)) // Optional
+      } catch (err) {
+        console.warn('로그인된 사용자 정보 없음 또는 세션 만료됨')
       }
     })
   },
@@ -43,4 +47,15 @@ export default {
   position: relative;
   background-color: white;
 }
+/* @font-face {
+  font-family: 'Paperlogy4Regular';
+  src: url('./fonts/Paperlogy-5Medium.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.mobile-container {
+  font-family: 'Paperlogy4Regular';
+} */
 </style>

@@ -107,7 +107,7 @@ const togglePassword = () => {
 const handleLogin = async () => {
   try {
     const res = await axios.post(
-      'http://localhost:8080/auth/login',
+      'http://localhost:8080/api/auth/login',
       {
         username: email.value,
         password: password.value,
@@ -134,7 +134,7 @@ const handleLogin = async () => {
 // 세션 로그인 상태 확인 (자동 로그인 용도)
 const checkSession = async () => {
   try {
-    const res = await axios.get('http://localhost:8080/auth/me', {
+    const res = await axios.get('http://localhost:8080/api/auth/me', {
       withCredentials: true,
     })
     userStore.setUser(res.data)
