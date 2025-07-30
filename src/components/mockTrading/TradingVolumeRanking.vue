@@ -16,7 +16,7 @@
           :class="[
             activeTab === tab.code
               ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-800'
+              : 'text-gray-600 hover:text-gray-800',
           ]"
           @click="changeTab(tab.code)"
         >
@@ -43,7 +43,7 @@
         <div class="flex items-center gap-1 flex-1">
           <span
             class="flex items-center justify-center w-7 h-7 text-blue-500 rounded-full text-[14px] font-bold mr-1"
-          >{{ index + 1 }}</span
+            >{{ index + 1 }}</span
           >
           <span
             class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-2"
@@ -67,8 +67,8 @@
             <span class="text-[14px] font-medium text-gray-800">{{ stock.name }}</span>
             <div class="flex items-center gap-2">
               <span class="text-[14px] font-semibold text-gray-800 font-mono">{{
-                  formatPrice(stock.currentPrice)
-                }}</span>
+                formatPrice(stock.currentPrice)
+              }}</span>
               <span
                 class="flex items-center gap-1 text-[12px] font-medium font-mono"
                 :class="stock.isPositive ? 'text-red-600' : 'text-blue-600'"
@@ -81,10 +81,7 @@
           </div>
         </div>
         <div class="flex flex-col items-end gap-1">
-          <span
-            class="text-[12px] font-medium px-2 py-0.5 rounded"
-            :class="getValueDisplayClass()"
-          >
+          <span class="text-[12px] font-medium px-2 py-0.5 rounded" :class="getValueDisplayClass()">
             {{ formatDisplayValue(stock) }}
           </span>
         </div>
@@ -118,7 +115,7 @@ let updateInterval = null
 // 탭 정의 - 거래대금/거래량 2개로 축소
 const tabs = [
   { code: '3', name: '거래대금', description: '거래금액순' },
-  { code: '0', name: '거래량', description: '평균거래량' }
+  { code: '0', name: '거래량', description: '평균거래량' },
 ]
 
 const visibleStocks = computed(() =>
@@ -137,9 +134,12 @@ const changeTab = async (tabCode) => {
 // 현재 탭에 따른 표시값 클래스
 const getValueDisplayClass = () => {
   switch (activeTab.value) {
-    case '3': return 'text-green-600 bg-green-50' // 거래대금
-    case '0': return 'text-blue-600 bg-blue-50' // 거래량
-    default: return 'text-gray-600 bg-gray-50'
+    case '3':
+      return 'text-green-600 bg-green-50' // 거래대금
+    case '0':
+      return 'text-blue-600 bg-blue-50' // 거래량
+    default:
+      return 'text-gray-600 bg-gray-50'
   }
 }
 
@@ -167,8 +167,12 @@ const fetchVolumeRanking = async () => {
         minute: '2-digit',
         second: '2-digit',
       })
-      const currentTab = tabs.find(tab => tab.code === activeTab.value)
-      console.log(`📈 ${currentTab?.description || '거래'} 순위 업데이트 성공:`, response.data.length, '건')
+      const currentTab = tabs.find((tab) => tab.code === activeTab.value)
+      console.log(
+        `📈 ${currentTab?.description || '거래'} 순위 업데이트 성공:`,
+        response.data.length,
+        '건',
+      )
 
       // 이미지 URL 디버깅 로그
       response.data.forEach((stock, index) => {
@@ -303,8 +307,6 @@ const selectStock = async (stock) => {
       },
       query: {
         stockName: stock.name,
-        source: 'trading-ranking',
-        tab: activeTab.value,
       },
     })
 
@@ -360,7 +362,11 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

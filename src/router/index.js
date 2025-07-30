@@ -21,7 +21,7 @@ import InvestmentResult from '@/pages/InvestmentTestPage/InvestmentResult.vue'
 import ReTestResult from '@/pages/InvestmentTestPage/ReTestResultpage.vue'
 import ReTestPage from '@/pages/InvestmentTestPage/ReTestPage.vue'
 import TradingPage from '@/pages/mockTrading/TradingPage.vue'
-import ChartPage from '@/pages/mockTrading/ChartPage.vue'
+// import ChartPage from '@/pages/mockTrading/ChartPage.vue'
 import { useUserStore } from '@/stores/user'
 import MockTradingHome from '@/pages/mockTrading/MockTradingHome.vue'
 import AssetStatus from '@/pages/mockTrading/AssetStatus.vue'
@@ -124,11 +124,11 @@ const routes = [
     name: 'Trading',
     component: TradingPage,
   },
-  {
-    path: '/chart',
-    name: 'Chart',
-    component: ChartPage,
-  },
+  // {
+  //   path: '/chart',
+  //   name: 'Chart',
+  //   component: ChartPage,
+  // },
   {
     path: '/investment-test/retest',
     name: 'ReTestPage',
@@ -147,8 +147,8 @@ const routes = [
   {
     path: '/mock-trading/:stockCode/chart',
     name: 'ChartPage',
-    component: ChartPage,
-    props: true // route params를 props로 전달
+    component: () => import('@/pages/mockTrading/ChartPage.vue'),
+    props: true, // route params를 props로 전달
   },
   // 새로 추가할 자산 현황 경로
   {
@@ -166,7 +166,7 @@ const routes = [
     path: '/mock-trading/transactions',
     name: 'Transactions',
     component: Transactions,
-  }
+  },
 ]
 
 const router = createRouter({
