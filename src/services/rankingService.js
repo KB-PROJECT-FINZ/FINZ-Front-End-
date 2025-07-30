@@ -13,14 +13,12 @@ export async function fetchMyRanking(userId) {
 }
 
 export async function fetchTop5Stocks(week) {
-  const res = await axios.get('/ranking/top5', {
-    params: { week },
-  })
+  const res = await axios.get('/ranking/top5')
 
   return res.data.map((stock) => ({
     name: stock.stockName,
-    gain: stock.avgGainRate,
-    image: `/images/stocks/${stock.stockCode}.png`,
+    gain: 0, // 테스트용: gainRate가 아직 없으므로 0 또는 다른 값
+    image: stock.imageUrl || `/images/stocks/${stock.stockCode}.png`,
   }))
 }
 

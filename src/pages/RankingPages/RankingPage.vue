@@ -109,10 +109,10 @@
 </template>
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import TabSwitcher from '@/components/TabSwitcher.vue'
-import MyRankingCard from '@/components/MyRankingCard.vue'
-import Top5StockList from '@/components/Top5StockList.vue'
-import UserRankingCard from '@/components/UserRankingCard.vue'
+import TabSwitcher from '@/components/ranking/TabSwitcher.vue'
+import MyRankingCard from '@/components/ranking/MyRankingCard.vue'
+import Top5StockList from '@/components/ranking/Top5StockList.vue'
+import UserRankingCard from '@/components/ranking/UserRankingCard.vue'
 import FooterNavigation from '@/components/FooterNavigation.vue'
 
 import {
