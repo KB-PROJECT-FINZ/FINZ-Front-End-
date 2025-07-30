@@ -649,7 +649,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getStockInfo } from '@/services/stockApi.js'
 
 // Vue Router
@@ -665,7 +665,8 @@ const error = ref(null)
 
 // 웹소켓 연결 및 재연결 타이머
 const socket = ref(null)
-let wsReconnectTimer = null
+let reconnectTimer = null
+let isUnmounted = false
 
 // API로부터 종목 정보 로드
 const loadStockInfo = async () => {
@@ -674,12 +675,12 @@ const loadStockInfo = async () => {
     error.value = null
 
     const response = await getStockInfo(STOCK_CODE)
-    console.log('API 응답 데이터:', response)
+    // console.log('API 응답 데이터:', response)
 
     // API 응답에서 실제 데이터 추출
     if (response && response.output) {
       const data = response.output
-      console.log('[API] 받아온 모든 데이터:', data)
+      // console.log('[API] 받아온 모든 데이터:', data)
 
       // 실제 API 데이터로 stockInfo 업데이트
       stockInfo.value = {
@@ -756,24 +757,24 @@ const loadStockInfo = async () => {
       // 호가 데이터 생성
       generateOrderBookData(stockInfo.value.currentPrice)
 
-      console.log('종목 정보 업데이트 완료:', stockInfo.value)
-      console.log(`
-📈 주식 정보 상세:
-🏷️  종목명: ${stockInfo.value.name} (${stockInfo.value.sectorName})
-💰 현재가: ${stockInfo.value.currentPrice.toLocaleString()}원
-📊 전일종가: ${stockInfo.value.basePrice.toLocaleString()}원
-🌅 시가: ${stockInfo.value.openPrice.toLocaleString()}원
-📈 고가: ${stockInfo.value.dayHigh.toLocaleString()}원 | 📉 저가: ${stockInfo.value.dayLow.toLocaleString()}원
-📊 변동: ${data.prdy_vrss_sign === '2' ? '+' : data.prdy_vrss_sign === '4' ? '-' : ''}${stockInfo.value.changeAmount.toLocaleString()}원 (${stockInfo.value.changeRate}%)
-📦 거래량: ${stockInfo.value.volume.toLocaleString()}주 (전일대비 ${stockInfo.value.volumeRate}%)
-💸 거래대금: ${(stockInfo.value.tradingValue / 100000000).toFixed(1)}억원
-🏢 시가총액: ${stockInfo.value.marketCap}
-📋 투자지표: PER ${stockInfo.value.per}, PBR ${stockInfo.value.pbr}, EPS ${stockInfo.value.eps}원
-🌍 외국인: 보유 ${stockInfo.value.foreignHoldingQty.toLocaleString()}주, 순매수 ${stockInfo.value.foreignNetBuyQty.toLocaleString()}주
-📅 52주 고점: ${stockInfo.value.week52High.toLocaleString()}원 (${stockInfo.value.week52HighDate})
-📅 52주 저점: ${stockInfo.value.week52Low.toLocaleString()}원 (${stockInfo.value.week52LowDate})
-⚠️  종목상태: ${getStockStatusDescription(stockInfo.value.statusCode)} ${stockInfo.value.managementIssueYn ? '(관리종목)' : ''}
-      `)
+      //       console.log('종목 정보 업데이트 완료:', stockInfo.value)
+      //       console.log(`
+      // 📈 주식 정보 상세:
+      // 🏷️  종목명: ${stockInfo.value.name} (${stockInfo.value.sectorName})
+      // 💰 현재가: ${stockInfo.value.currentPrice.toLocaleString()}원
+      // 📊 전일종가: ${stockInfo.value.basePrice.toLocaleString()}원
+      // 🌅 시가: ${stockInfo.value.openPrice.toLocaleString()}원
+      // 📈 고가: ${stockInfo.value.dayHigh.toLocaleString()}원 | 📉 저가: ${stockInfo.value.dayLow.toLocaleString()}원
+      // 📊 변동: ${data.prdy_vrss_sign === '2' ? '+' : data.prdy_vrss_sign === '4' ? '-' : ''}${stockInfo.value.changeAmount.toLocaleString()}원 (${stockInfo.value.changeRate}%)
+      // 📦 거래량: ${stockInfo.value.volume.toLocaleString()}주 (전일대비 ${stockInfo.value.volumeRate}%)
+      // 💸 거래대금: ${(stockInfo.value.tradingValue / 100000000).toFixed(1)}억원
+      // 🏢 시가총액: ${stockInfo.value.marketCap}
+      // 📋 투자지표: PER ${stockInfo.value.per}, PBR ${stockInfo.value.pbr}, EPS ${stockInfo.value.eps}원
+      // 🌍 외국인: 보유 ${stockInfo.value.foreignHoldingQty.toLocaleString()}주, 순매수 ${stockInfo.value.foreignNetBuyQty.toLocaleString()}주
+      // 📅 52주 고점: ${stockInfo.value.week52High.toLocaleString()}원 (${stockInfo.value.week52HighDate})
+      // 📅 52주 저점: ${stockInfo.value.week52Low.toLocaleString()}원 (${stockInfo.value.week52LowDate})
+      // ⚠️  종목상태: ${getStockStatusDescription(stockInfo.value.statusCode)} ${stockInfo.value.managementIssueYn ? '(관리종목)' : ''}
+      //       `)
     }
   } catch (err) {
     console.error('Failed to load stock info:', err)
@@ -783,20 +784,20 @@ const loadStockInfo = async () => {
   }
 }
 
-// 종목 상태 코드를 한글로 변환하는 함수
-const getStockStatusDescription = (statusCode) => {
-  const statusMap = {
-    51: '관리종목',
-    52: '투자위험',
-    53: '투자경고',
-    54: '투자주의',
-    55: '신용가능',
-    57: '증거금100%',
-    58: '거래정지',
-    59: '단기과열종목',
-  }
-  return statusMap[statusCode] || '정상'
-}
+// // 종목 상태 코드를 한글로 변환하는 함수
+// const getStockStatusDescription = (statusCode) => {
+//   const statusMap = {
+//     51: '관리종목',
+//     52: '투자위험',
+//     53: '투자경고',
+//     54: '투자주의',
+//     55: '신용가능',
+//     57: '증거금100%',
+//     58: '거래정지',
+//     59: '단기과열종목',
+//   }
+//   return statusMap[statusCode] || '정상'
+// }
 
 // 종목 정보 (API로부터 동적으로 로드됨)
 const stockInfo = ref({
@@ -1019,6 +1020,7 @@ const processOrderBookData = (data) => {
 // 웹소켓 연결 초기화
 const initWebSocket = async () => {
   try {
+    if (isUnmounted) return
     // 종목코드가 없으면 연결하지 않음
     if (!STOCK_CODE) {
       console.warn('[WebSocket] STOCK_CODE 없음, 연결 생략')
@@ -1041,59 +1043,46 @@ const initWebSocket = async () => {
     socket.value = new WebSocket(wsUrl)
 
     socket.value.onopen = () => {
-      console.log('[WebSocket] 프론트엔드 연결 성공')
+      if (isUnmounted) return
+      console.log(`[WebSocket] 연결됨 (종목코드: ${STOCK_CODE})`)
       // StockRelaySocket에서 브로드캐스트되는 데이터 수신 대기
     }
 
     socket.value.onmessage = (event) => {
+      if (isUnmounted) return
       try {
         const rawData = JSON.parse(event.data)
-        console.log('[WebSocket] 수신 데이터:', rawData)
-
-        // StockRelaySocket에서 전송하는 데이터 구조에 맞춰 처리
+        // 데이터 상세 로그 제거, 데이터 처리만 수행
         let data = rawData
         if (rawData.type === 'bidsAndAsks' && rawData.data) {
           data = rawData.data
-          console.log('[호가] 데이터 수신:', data)
         } else if (rawData.type === 'execution' && rawData.data) {
           data = rawData.data
-          console.log('[체결] 데이터 수신:', data)
         }
-
-        // 기존 데이터 처리 로직은 그대로 유지
         processOrderBookData(data)
-
-        // 나머지 기존 로직들...
-        if (data.currentPrice && data.contractVolume) {
-          // 체결 내역 처리 로직
-        }
-
-        // 현재가 업데이트 로직
-        if (data.currentPrice) {
-          // 기존 로직 유지
-        }
+        // ...기존 로직 유지...
       } catch (err) {
         console.error('웹소켓 데이터 파싱 오류:', err)
       }
     }
 
     socket.value.onclose = () => {
-      console.log('[WebSocket] 연결 종료')
-      // 연결이 끊어지면 3초 후 재연결 시도 (페이지에 있을 때만)
-      if (wsReconnectTimer) {
-        clearTimeout(wsReconnectTimer)
-        wsReconnectTimer = null
-      }
-      wsReconnectTimer = setTimeout(() => {
+      if (isUnmounted) return
+      console.log(`[WebSocket] 연결 종료 (종목코드: ${STOCK_CODE})`)
+      // 연결이 끊어지면 3초 후 재연결 시도
+      reconnectTimer = setTimeout(() => {
+        if (isUnmounted) return
         console.log('[WebSocket] 재연결 시도...')
         initWebSocket()
       }, 3000)
     }
 
     socket.value.onerror = (error) => {
+      if (isUnmounted) return
       console.error('웹소켓 오류:', error)
     }
   } catch (err) {
+    if (isUnmounted) return
     console.error('웹소켓 초기화 오류:', err)
   }
 }
@@ -1101,13 +1090,12 @@ const initWebSocket = async () => {
 // 웹소켓 연결 해제 및 재연결 타이머 정리
 const closeWebSocket = () => {
   if (socket.value) {
-    socket.value.onclose = null // 재연결 방지
     socket.value.close()
     socket.value = null
   }
-  if (wsReconnectTimer) {
-    clearTimeout(wsReconnectTimer)
-    wsReconnectTimer = null
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
   }
 }
 
@@ -1516,6 +1504,7 @@ const timeUpdateTimer = ref(null)
 
 // 컴포넌트 마운트 시 API 호출 및 웹소켓 연결
 onMounted(() => {
+  isUnmounted = false
   console.log('[초기화] 컴포넌트 마운트 시작')
   testApiCall()
   initWebSocket()
@@ -1526,19 +1515,15 @@ onMounted(() => {
   }, 1000)
 })
 
-// 컴포넌트 언마운트 시 웹소켓 연결 해제
-
+// 컴포넌트 언마운트 시 웹소켓 연결 해제 및 재연결 방지
 onUnmounted(() => {
+  isUnmounted = true
   closeWebSocket()
+
   // 타이머 정리
   if (timeUpdateTimer.value) {
     clearInterval(timeUpdateTimer.value)
     timeUpdateTimer.value = null
   }
-})
-
-// 라우터 이동 시에도 웹소켓 종료
-onBeforeRouteLeave(() => {
-  closeWebSocket()
 })
 </script>
