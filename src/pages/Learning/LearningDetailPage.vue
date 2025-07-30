@@ -9,10 +9,12 @@
     <div class="detail-content">
       <div v-if="content?.youtubeUrl" class="video-wrap">
         <iframe
-          :src="`https://www.youtube.com/embed/${extractYoutubeId(content.youtubeUrl)}`"
+          :src="`https://www.youtube.com/embed/${extractYoutubeId(content.youtubeUrl)}?rel=0&modestbranding=1`"
           frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen
           class="youtube-player"
+          loading="lazy"
         ></iframe>
       </div>
       <img v-else-if="content?.imageUrl" :src="content.imageUrl" class="detail-thumb" />
@@ -73,7 +75,8 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   fetchLearningContentById,
   fetchLearningQuizById,
-  awardQuizCredit,
+  giveCredit,
+  checkQuiz,
 } from '../../services/learning'
 import axios from 'axios'
 
@@ -84,11 +87,32 @@ const quiz = ref(null)
 const selected = ref('')
 const result = ref(null)
 const showExplainBtnClicked = ref(false)
+const userId = ref(null) // 세션에서 가져올 예정
 const user = ref(null)
 const isCompleted = ref(false) // 학습 완료 여부 상태
 const creditAwarded = ref(false) // 크레딧 지급 여부
 
 onMounted(async () => {
+  try {
+    // 세션에서 사용자 정보 가져오기
+    const res = await axios.get('/auth/me', { withCredentials: true })
+    userId.value = res.data.userId || res.data.id
+    
+    if (!userId.value) {
+      console.error('사용자 ID를 가져올 수 없습니다.')
+      return
+    }
+    
+    console.log('현재 사용자 ID:', userId.value)
+  } catch (e) {
+    console.error('세션 정보 로딩 실패:', e)
+    // 세션 실패 시 로컬스토리지 fallback
+    userId.value = Number(localStorage.getItem('userId') || 1)
+  }
+
+  content.value = await fetchLearningContentById(route.params.id)
+  quiz.value = await fetchLearningQuizById(route.params.id)
+
   try {
     const res = await axios.get('/api/auth/me', { withCredentials: true })
     user.value = res.data
@@ -103,6 +127,8 @@ onMounted(async () => {
     // 완료 여부 체크
     const completeRes = await axios.get('/api/learning/history/complete', {
       params: {
+        userId: userId.value,
+        contentId: Number(route.params.id),
         userId: realUserId,
         contentId,
       },
@@ -110,6 +136,29 @@ onMounted(async () => {
     isCompleted.value = completeRes.data === true
   } catch (e) {
     console.error('초기 로딩 실패', e)
+  }
+
+  // 퀴즈 결과 확인
+  try {
+    const hasResult = await checkQuiz(userId.value, Number(route.params.id))
+    if (hasResult) {
+      // 실제 퀴즈 결과 가져오기
+      const resultRes = await axios.get('/api/learning/quiz/result/detail', {
+        params: {
+          userId: userId.value,
+          quizId: Number(route.params.id)
+        }
+      })
+      
+      if (resultRes.data) {
+        const quizResult = resultRes.data
+        selected.value = quizResult.selectedAnswer
+        result.value = quizResult.isCorrect
+        creditAwarded.value = quizResult.creditEarned > 0
+      }
+    }
+  } catch (e) {
+    console.warn('퀴즈 결과 확인 실패', e)
   }
 })
 
@@ -123,25 +172,61 @@ function selectOX(val) {
   result.value = selected.value === quiz.value.answer
   showExplainBtnClicked.value = false // 선택 시 해설은 다시 숨김
 
-  // 정답이고 아직 크레딧을 지급하지 않았다면 크레딧 지급
-  if (result.value && !creditAwarded.value) {
+  // 퀴즈 결과 처리 (정답이든 오답이든)
+  if (!creditAwarded.value) {
     awardQuizCreditLocal()
   }
 }
 
 async function awardQuizCreditLocal() {
   try {
-    const response = await awardQuizCredit(userId, Number(route.params.id))
-    creditAwarded.value = true
-    alert(`정답입니다! ${quiz.value.creditReward}크레딧이 지급되었습니다!`)
+    // 이미 퀴즈를 풀었는지 확인
+    const hasResult = await checkQuiz(userId.value, Number(route.params.id))
+    if (hasResult) {
+      alert('이미 퀴즈를 푸신 콘텐츠입니다.')
+      return
+    }
+
+    if (result.value) {
+      // 정답일 때만 크레딧 지급
+      const response = await giveCredit(userId.value, Number(route.params.id), selected.value)
+      creditAwarded.value = true
+      alert(`정답입니다! ${quiz.value.creditReward}크레딧이 지급되었습니다!`)
+    } else {
+      // 오답일 때는 결과만 저장 (크레딧 지급 안함)
+      await axios.post('/api/learning/quiz/result/save', {
+        userId: userId.value,
+        quizId: Number(route.params.id),
+        selectedAnswer: selected.value,
+        isCorrect: false
+      })
+      alert('오답입니다. 다시 시도해보세요!')
+    }
   } catch (e) {
     console.error('크레딧 지급 실패:', e)
+    if (e.response?.data) {
+      alert(e.response.data)
+    }
   }
 }
 
 function extractYoutubeId(url) {
-  const match = url.match(/(?:youtube\/|youtube.com\/(?:watch\?v=|embed\/))([\w-]{11})/)
-  return match ? match[1] : ''
+  if (!url) return ''
+  
+  // 다양한 YouTube URL 형식 지원
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/
+  ]
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern)
+    if (match) return match[1]
+  }
+  
+  console.warn('YouTube URL 파싱 실패:', url)
+  return ''
 }
 
 function removeOX(text) {
@@ -160,6 +245,7 @@ const formattedBody = computed(() => {
 async function handleComplete() {
   try {
     await axios.post('/api/learning/history', {
+      userId: userId.value,
       userId: user.value.userId,
       contentId: Number(route.params.id),
     })
