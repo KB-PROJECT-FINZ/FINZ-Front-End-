@@ -110,7 +110,7 @@ const handleFindId = async () => {
   }
 
   try {
-    const res = await axios.post('http://localhost:8080/auth/find-username', {
+    const res = await axios.post('http://localhost:8080/api/auth/find-username', {
       name: name.value,
       email: email.value,
     })
