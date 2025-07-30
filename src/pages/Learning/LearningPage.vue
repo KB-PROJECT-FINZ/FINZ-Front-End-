@@ -12,7 +12,7 @@
       <div class="profile-info">
         <div class="profile-name">{{ user.name }}님은</div>
         <div class="profile-type">{{ user.riskType }} 사고 유형입니다</div>
-        <div class="profile-desc">{{ user.message }}</div>
+        <!-- <div class="profile-desc">{{ user2.message }}</div> -->
       </div>
     </section>
 
@@ -24,12 +24,15 @@
           v-for="(item, idx) in learningContents"
           :key="item.contentId"
           class="content-list-card"
+          :class="{ completed: item.isCompleted }"
           @click="goToDetail(item.contentId)"
         >
           <img :src="item.imageUrl || defaultThumbnail" class="content-thumb" />
           <div class="content-list-info">
             <div class="content-list-title">{{ item.title }}</div>
-            <div class="content-list-desc">{{ item.body?.slice(0, 40) }}...</div>
+            <!-- <div class="content-list-desc">{{ item.body?.slice(0, 40) }}...</div> -->
+            <div class="content-list-desc">{{ item.body ? item.body.slice(0, 40) : '' }}...</div>
+
             <div class="content-list-meta">
               <span class="content-list-type">{{ item.type === 'VIDEO' ? '영상' : '아티클' }}</span>
             </div>
@@ -42,36 +45,68 @@
     <FooterNavigation />
   </div>
 </template>
-
 <script setup>
 import { ref, onMounted } from 'vue'
 import { fetchLearningContentsByGroup } from '../../services/learning'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '../../components/FooterNavigation.vue'
+import axios from 'axios'
 
 const defaultThumbnail = 'https://via.placeholder.com/150x100?text=No+Image'
 const learningContents = ref([])
 const router = useRouter()
 
 const user = ref({
-  name: localStorage.getItem('name') || '김지훈',
-  riskType: localStorage.getItem('riskType') || '분석적',
-  message: localStorage.getItem('message') || '체계적이고 논리적인 학습을 선호하시는군요!',
-  groupCode: localStorage.getItem('groupCode') || 'ANALYTICAL',
+  name: '',
+  riskType: '',
+  userId: 0,
+  groupCode: '',
 })
 
 onMounted(async () => {
   try {
-    console.log('API 호출 시작:', user.value.groupCode)
-    const data = await fetchLearningContentsByGroup(user.value.groupCode)
-    console.log('API 응답 데이터:', data)
-    console.log('데이터 타입:', typeof data)
-    console.log('배열인가?', Array.isArray(data))
-    console.log('데이터 길이:', data?.length)
-    learningContents.value = data
-    console.log('learningContents.value:', learningContents.value)
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    const data = res.data
+    user.value = {
+      name: data.name,
+      riskType: data.riskType,
+      userId: data.userId,
+      groupCode: data.groupCode,
+    }
+
+    const [recommendRes, completeRes] = await Promise.all([
+      axios.get('/api/learning/recommend/list', {
+        params: {
+          userId: user.value.userId,
+          size: 5,
+        },
+        withCredentials: true,
+      }),
+      axios.get('/api/learning/history/complete/list', {
+        params: {
+          userId: user.value.userId,
+        },
+        withCredentials: true,
+      }),
+    ])
+
+    const recommended = recommendRes.data
+    const completed = completeRes.data
+
+    // Map을 활용한 병합 로직
+    const map = new Map()
+
+    recommended.forEach((item) => {
+      map.set(Number(item.contentId), { ...item, isCompleted: false })
+    })
+
+    completed.forEach((item) => {
+      map.set(Number(item.contentId), { ...item, isCompleted: true })
+    })
+
+    learningContents.value = Array.from(map.values())
   } catch (e) {
-    console.error('러닝 콘텐츠 불러오기 실패:', e)
+    console.error('학습 콘텐츠 로딩 실패:', e)
   }
 })
 
@@ -177,6 +212,7 @@ function goBack() {
   margin-bottom: 18px;
 }
 .content-list-card:hover {
+  transform: translateY(-2px);
   box-shadow: 0 6px 24px rgba(44, 62, 80, 0.18);
 }
 .content-thumb {
@@ -237,6 +273,10 @@ function goBack() {
   height: 1px;
   background: #f0f1f3;
   margin: 0 8px;
+}
+.content-list-card.completed {
+  background-color: #f2f2f2;
+  opacity: 0.9;
 }
 @media (max-width: 600px) {
   .profile-box {

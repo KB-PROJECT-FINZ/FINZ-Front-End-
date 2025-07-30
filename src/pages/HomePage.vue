@@ -139,7 +139,7 @@ const riskTypeName = ref('')
 // 세션 기반 사용자 정보 불러오기
 onMounted(async () => {
   try {
-    const response = await axios.get('http://localhost:8080/auth/me', {
+    const response = await axios.get('http://localhost:8080/api/auth/me', {
       withCredentials: true,
     })
 

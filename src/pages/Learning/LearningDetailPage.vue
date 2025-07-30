@@ -21,7 +21,7 @@
     </div>
     <!-- 퀴즈 카드 -->
     <div v-if="quiz" class="quiz-card">
-      <div class="quiz-credit">{{ quiz.credit }}크레딧</div>
+      <div class="quiz-credit">{{ quiz.creditReward }}크레딧</div>
       <div class="quiz-question">{{ removeOX(quiz.question) }}</div>
       <div class="quiz-ox-choices">
         <button
@@ -42,7 +42,12 @@
         </button>
       </div>
       <div v-if="result !== null" class="quiz-feedback">
-        <div v-if="result" class="quiz-correct">✅ 정답입니다!</div>
+        <div v-if="result" class="quiz-correct">
+          ✅ 정답입니다!
+          <span v-if="creditAwarded" class="credit-awarded"
+            >+{{ quiz.creditReward }}크레딧 획득!</span
+          >
+        </div>
         <div v-else class="quiz-wrong">❌ 오답입니다.</div>
       </div>
       <div v-if="result !== null && !showExplainBtnClicked">
@@ -54,7 +59,9 @@
       </div>
 
       <div v-if="result !== null" class="complete-button-wrap">
-        <button class="complete-btn" @click="handleComplete">학습 완료</button>
+        <button class="complete-btn" :disabled="isCompleted" @click="handleComplete">
+          {{ isCompleted ? '✅ 완료됨' : '학습 완료' }}
+        </button>
       </div>
     </div>
   </div>
@@ -63,7 +70,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { fetchLearningContentById, fetchLearningQuizById } from '../../services/learning'
+import {
+  fetchLearningContentById,
+  fetchLearningQuizById,
+  awardQuizCredit,
+} from '../../services/learning'
 import axios from 'axios'
 
 const route = useRoute()
@@ -73,11 +84,33 @@ const quiz = ref(null)
 const selected = ref('')
 const result = ref(null)
 const showExplainBtnClicked = ref(false)
-const userId = Number(localStorage.getItem('userId') || 1)
+const user = ref(null)
+const isCompleted = ref(false) // 학습 완료 여부 상태
+const creditAwarded = ref(false) // 크레딧 지급 여부
 
 onMounted(async () => {
-  content.value = await fetchLearningContentById(route.params.id)
-  quiz.value = await fetchLearningQuizById(route.params.id)
+  try {
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    user.value = res.data
+
+    const realUserId = user.value.userId // 세션 기반 userId
+    const contentId = Number(route.params.id)
+
+    // 콘텐츠 로드
+    content.value = await fetchLearningContentById(contentId)
+    quiz.value = await fetchLearningQuizById(contentId)
+
+    // 완료 여부 체크
+    const completeRes = await axios.get('/api/learning/history/complete', {
+      params: {
+        userId: realUserId,
+        contentId,
+      },
+    })
+    isCompleted.value = completeRes.data === true
+  } catch (e) {
+    console.error('초기 로딩 실패', e)
+  }
 })
 
 function goBack() {
@@ -87,9 +120,23 @@ function goBack() {
 function selectOX(val) {
   if (result.value !== null) return
   selected.value = val
-  // 정답이 'O' 또는 'X'로 저장되어 있다고 가정
   result.value = selected.value === quiz.value.answer
   showExplainBtnClicked.value = false // 선택 시 해설은 다시 숨김
+
+  // 정답이고 아직 크레딧을 지급하지 않았다면 크레딧 지급
+  if (result.value && !creditAwarded.value) {
+    awardQuizCreditLocal()
+  }
+}
+
+async function awardQuizCreditLocal() {
+  try {
+    const response = await awardQuizCredit(userId, Number(route.params.id))
+    creditAwarded.value = true
+    alert(`정답입니다! ${quiz.value.creditReward}크레딧이 지급되었습니다!`)
+  } catch (e) {
+    console.error('크레딧 지급 실패:', e)
+  }
 }
 
 function extractYoutubeId(url) {
@@ -110,14 +157,13 @@ const formattedBody = computed(() => {
   if (html.includes('<li>')) html = '<ul>' + html + '</ul>'
   return html
 })
-
 async function handleComplete() {
   try {
-    await axios.post('/learning/history', {
-      userId,
+    await axios.post('/api/learning/history', {
+      userId: user.value.userId,
       contentId: Number(route.params.id),
     })
-    alert('학습 완료가 기록되었습니다!')
+    isCompleted.value = true
   } catch (e) {
     console.error('기록 실패:', e)
     alert('기록에 실패했습니다.')
@@ -311,7 +357,25 @@ async function handleComplete() {
   font-weight: bold;
 }
 .quiz-correct {
-  color: #22b573;
+  color: #059669;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.credit-awarded {
+  color: #dc2626;
+  font-weight: bold;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 .quiz-wrong {
   color: #e74c3c;
