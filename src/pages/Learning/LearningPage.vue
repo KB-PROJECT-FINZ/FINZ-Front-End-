@@ -13,33 +13,60 @@
         <div class="profile-type">{{ user.riskType }} 사고 유형입니다</div>
       </div>
     </section>
-
     <!-- 추천 학습 콘텐츠 -->
     <section class="content-list">
       <h2 class="section-title">추천 학습 콘텐츠</h2>
 
-      <!-- 로딩 중 메시지 -->
-      <div
-        v-if="learningContents.length === 0"
-        style="text-align: center; color: #888; margin-top: 12px"
-      >
-        콘텐츠를 불러오는 중입니다... 잠시만 기다려주세요.
+      <div v-if="recommendedContents.length === 0" class="loading-msg">
+        콘텐츠를 불러오는 중입니다...
       </div>
-
       <div class="content-list-wrap" v-else>
         <div
-          v-for="(item, idx) in learningContents"
+          v-for="(item, index) in recommendedContents.slice(0, recommendedViewCount)"
           :key="item.contentId"
           class="content-list-card"
-          :class="{ completed: item.isCompleted }"
           @click="goToDetail(item.contentId)"
         >
           <div class="content-list-info">
-            <div class="content-list-title">{{ item.title }}</div>
-            <div class="content-list-desc">{{ item.body ? item.body.slice(0, 40) : '' }}...</div>
+            <span class="quiz-credit-tag" v-if="item.creditReward"
+              >{{ item.creditReward }}크레딧</span
+            >
+            <div class="content-list-title">
+              {{ item.title }}
+            </div>
           </div>
           <span class="content-list-arrow">&#8250;</span>
-          <div v-if="idx < learningContents.length - 1" class="divider"></div>
+        </div>
+        <div v-if="recommendedViewCount < recommendedContents.length" class="load-more-wrap">
+          <button class="load-more-btn" @click="recommendedViewCount += 3">더보기</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 완료된 콘텐츠 섹션 -->
+    <section class="content-list">
+      <h2 class="section-title">완료한 학습 콘텐츠</h2>
+
+      <div v-if="completedContents.length === 0" class="loading-msg">완료한 콘텐츠가 없습니다.</div>
+      <div class="content-list-wrap" v-else>
+        <div
+          v-for="(item, index) in completedContents.slice(0, completedViewCount)"
+          :key="item.contentId"
+          class="content-list-card completed"
+          @click="goToDetail(item.contentId)"
+        >
+          <div class="content-list-info">
+            <span class="quiz-credit-tag" v-if="item.creditReward"
+              >{{ item.creditReward }}크레딧</span
+            >
+            <div class="content-list-title">
+              {{ item.title }}
+            </div>
+          </div>
+          <span class="content-list-arrow">&#8250;</span>
+        </div>
+        <div v-if="completedViewCount < completedContents.length" class="load-more-wrap">
+          <button class="load-more-btn" @click="completedViewCount += 3">더보기</button>
         </div>
       </div>
     </section>
@@ -55,7 +82,8 @@ import FooterNavigation from '../../components/FooterNavigation.vue'
 import axios from 'axios'
 
 const router = useRouter()
-const learningContents = ref([])
+const recommendedContents = ref([])
+const completedContents = ref([])
 const user = ref({
   name: '',
   riskType: '',
@@ -63,6 +91,24 @@ const user = ref({
   groupCode: '',
 })
 const recommendedCount = ref(0)
+const completedViewCount = ref(3)
+
+const recommendedViewCount = ref(3)
+const fetchCreditRewards = async (contents) => {
+  await Promise.all(
+    contents.map(async (content) => {
+      try {
+        const res = await axios.get(`/api/learning/${content.contentId}/quiz`, {
+          withCredentials: true,
+        })
+        content.creditReward = res.data?.creditReward ?? 0
+      } catch (e) {
+        console.warn(`❌ contentId=${content.contentId}에 대한 크레딧 조회 실패`, e)
+        content.creditReward = 0
+      }
+    }),
+  )
+}
 
 const fetchContents = async () => {
   try {
@@ -84,27 +130,24 @@ const fetchContents = async () => {
       }),
     ])
 
-    const recommended = recommendRes.data
-    const completed = completeRes.data
-    recommendedCount.value = recommended.length
+    recommendedContents.value = recommendRes.data
+    completedContents.value = completeRes.data
+    recommendedCount.value = recommendedContents.value.length
 
-    console.log(`[📦] 추천 콘텐츠 ${recommended.length}개, 완료 콘텐츠 ${completed.length}개`)
+    console.log(
+      `[📦] 추천 콘텐츠 ${recommendedCount.value}개, 완료 콘텐츠 ${completedContents.value.length}개`,
+    )
 
-    const map = new Map()
-    recommended.forEach((item) => {
-      map.set(Number(item.contentId), { ...item, isCompleted: false })
-    })
-    completed.forEach((item) => {
-      map.set(Number(item.contentId), { ...item, isCompleted: true })
-    })
-
-    const merged = Array.from(map.values())
-    learningContents.value = merged
+    await Promise.all([
+      fetchCreditRewards(recommendedContents.value),
+      fetchCreditRewards(completedContents.value),
+    ])
   } catch (e) {
     console.error('❌ 콘텐츠 로딩 실패:', e)
   }
 }
 
+// 👉 polling으로 추천 콘텐츠 확보
 const pollUntilContentReady = async (maxRetry = 5, delay = 2000) => {
   let retry = 0
   console.log('[🔁] Polling 시작')
@@ -124,7 +167,7 @@ const pollUntilContentReady = async (maxRetry = 5, delay = 2000) => {
   }
 }
 
-// 진입 시 초기화
+// 👉 진입 시 초기화
 onMounted(async () => {
   try {
     console.log('[🚀] mounted 실행')
@@ -144,6 +187,7 @@ onMounted(async () => {
   }
 })
 
+// 👉 상세 페이지로 이동
 function goToDetail(id) {
   router.push(`/learning/${id}`)
 }
@@ -153,7 +197,7 @@ function goToDetail(id) {
 .learning-page {
   background: #f7f8fa;
   min-height: 100vh;
-  padding-bottom: 24px;
+  padding-bottom: 80px;
 }
 .header {
   display: flex;
@@ -206,7 +250,7 @@ function goToDetail(id) {
   opacity: 0.9;
 }
 .section-title {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: bold;
   margin: 0 0 10px 8px;
   color: #222;
@@ -297,6 +341,35 @@ function goToDetail(id) {
   background-color: #f2f2f2;
   opacity: 0.9;
 }
+.quiz-credit-tag {
+  font-size: 0.92rem;
+  color: #bfa700;
+  background: #fffbe6;
+  border-radius: 8px;
+  padding: 2px 10px;
+  margin-right: 8px;
+  font-weight: bold;
+  display: inline-block;
+}
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 16px 0;
+}
+.load-more-btn {
+  background: #e0e7ff;
+  color: #3730a3;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.load-more-btn:hover {
+  background: #c7d2fe;
+}
+
 @media (max-width: 600px) {
   .profile-box {
     flex-direction: column;
