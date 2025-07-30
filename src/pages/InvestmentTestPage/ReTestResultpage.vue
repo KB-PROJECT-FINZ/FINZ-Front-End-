@@ -6,7 +6,6 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const typeCode = route.query.type || 'UNKNOWN'
 
-// username을 ref로 정의
 const name = ref('')
 const username = ref('')
 
@@ -14,14 +13,11 @@ const username = ref('')
 const fetchUsername = async () => {
   try {
     const res = await axios.get('/api/auth/me', { withCredentials: true })
-    username.value = res.data.username // ✅ 올바르게 할당
-    name.value = res.data.name // 사용자 이름도 받아오기
-    console.log('✅ username:', username.value)
-    console.log('✅ typeCode:', typeCode)
-    console.log('✅ name:', res.data.name)
-    saveRiskType() // ✅ 이 시점에서 정확한 값으로 호출
+    username.value = res.data.username
+    name.value = res.data.name
+    saveRiskType()
   } catch (err) {
-    console.error('❌ 사용자 정보 조회 실패:', err)
+    console.error(' 사용자 정보 조회 실패:', err)
   }
 }
 
@@ -43,7 +39,7 @@ const saveRiskType = async () => {
         withCredentials: true,
       },
     )
-    console.log('✅ 투자 성향 저장 완료')
+    console.log('투자 성향 저장 완료')
   } catch (err) {
     console.error('❌ 저장 실패:', err)
   }
