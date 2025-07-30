@@ -155,7 +155,7 @@ async function handleButtonIntent(btn) {
           {
             label: '🧪 투자 성향 테스트 하러 가기',
             intent: 'EXTERNAL_LINK',
-            href: '/investment-test',
+            href: '/investment-test/retest',
           },
           {
             label: '📊 내 성향 기반 추천 받아보기',
