@@ -1365,7 +1365,7 @@ onMounted(() => {
   // 상단 가격/변동 정보는 mock price API에서만 세팅
   const setMockPriceInfo = async () => {
     try {
-      const mockPriceUrl = `/api/mock/price/${stockInfo.stockCode}`
+      const mockPriceUrl = `/api/stock/price/${stockInfo.stockCode}`
       const mockPriceRes = await fetch(mockPriceUrl, { method: 'GET' })
       const mockPriceRaw = await mockPriceRes.json()
       console.log('[RAW MOCK PRICE]', mockPriceRaw)
