@@ -108,7 +108,7 @@ onMounted(async () => {
   const userId = Number(localStorage.getItem('userId') || 1)
 
   try {
-    const response = await axios.get('/user/risk-type-name', {
+    const response = await axios.get('/api/user/risk-type-name', {
       params: { username },
     })
 
