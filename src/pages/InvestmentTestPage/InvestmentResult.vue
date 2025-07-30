@@ -1,23 +1,29 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const typeCode = route.query.type || 'UNKNOWN'
-
+const router = useRouter()
 const name = ref('')
 const username = ref('')
 
-// 로그인된 사용자 정보 받아오기
+// 로그인된 사용자 정보 받아오기 -> 해당 코드 삭제예정
 const fetchUsername = async () => {
   try {
     const res = await axios.get('/api/auth/me', { withCredentials: true })
+    if (res.status !== 200 || !res.data.username) {
+      alert('로그인이 필요한 서비스입니다.')
+      router.push('/login-form')
+      return
+    }
     username.value = res.data.username
     name.value = res.data.name
     saveRiskType()
   } catch (err) {
     console.error('❌ 사용자 정보 조회 실패:', err)
+    router.push('/login-form')
   }
 }
 
