@@ -38,7 +38,7 @@
       :rank="myRanking.rank"
       :gainRate="myRanking.gainRate"
       :topPercent="myRanking.topPercent"
-      :trait="userTraitType"
+      :trait="myRanking.trait"
     />
 
     <!-- 4. 인기 종목 Top5 -->
@@ -123,7 +123,6 @@ import {
   fetchGroupedWeeklyRanking,
 } from '@/services/rankingService'
 
-const userId = ref(null)
 const userTraitType = ref(null)
 
 const myRanking = ref(null)
@@ -169,28 +168,37 @@ function selectTraitType(trait) {
 
 const goBack = () => history.back()
 
+// ✅ 수정된 onMounted
 onMounted(async () => {
-  userId.value = Number(localStorage.getItem('userId')) || 32
-  userTraitType.value = localStorage.getItem('userTraitType') || '보수형'
+  myRanking.value = await fetchMyRanking(recordDate)
+  console.log('[디버그] 내 랭킹 응답:', myRanking.value)
+
+  // trait 값 확인
+  if (myRanking.value?.trait && !localStorage.getItem('userTraitType')) {
+    localStorage.setItem('userTraitType', myRanking.value.trait)
+  }
+
+  userTraitType.value = localStorage.getItem('userTraitType') || '미지정'
   currentTraitType.value = userTraitType.value
 
-  myRanking.value = await fetchMyRanking(userId.value, recordDate)
   popularStocks.value = await fetchTop5Stocks(recordDate)
-  allUsers.value = await fetchWeeklyRanking(recordDate)
+  allUsers.value = await fetchWeeklyRanking()
 })
 
+// 성향별 탭 선택 시 다시 fetch
 watch(currentRankingType, async (newType) => {
   if (newType === '성향별') {
-    const groupRankings = await fetchGroupedWeeklyRanking(recordDate)
+    const groupRankings = await fetchGroupedWeeklyRanking()
     allUsers.value = groupRankings[currentTraitType.value] || []
   } else {
-    allUsers.value = await fetchWeeklyRanking(recordDate)
+    allUsers.value = await fetchWeeklyRanking()
   }
 })
 
+// 성향 필터 바뀔 때도 다시 fetch
 watch(currentTraitType, async (newTrait) => {
   if (currentRankingType.value === '성향별') {
-    const groupRankings = await fetchGroupedWeeklyRanking(recordDate)
+    const groupRankings = await fetchGroupedWeeklyRanking()
     allUsers.value = groupRankings[newTrait] || []
   }
 })
