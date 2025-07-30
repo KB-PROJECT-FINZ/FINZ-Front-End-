@@ -384,6 +384,16 @@
 </template>
 
 <script setup>
+console.log('=== ChartPage 스크립트 시작 ===')
+
+// 콘솔 에러/경고/미처리 예외 완전 무시 (이 페이지 한정)
+if (typeof window !== 'undefined') {
+  // console.warn = () => {}
+  // console.error = () => {}
+  window.onerror = () => true
+  window.onunhandledrejection = () => true
+}
+
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Chart, registerables } from 'chart.js'
