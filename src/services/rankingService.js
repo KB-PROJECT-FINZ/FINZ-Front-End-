@@ -1,9 +1,10 @@
 import axios from 'axios'
 
-export async function fetchMyRanking(userId) {
+// 내 랭킹 조회
+export async function fetchMyRanking(userId, recordDate) {
   try {
     const res = await axios.get('/api/ranking/my', {
-      params: { userId },
+      params: { userId, recordDate },
     })
 
     const data = res.data
@@ -20,9 +21,12 @@ export async function fetchMyRanking(userId) {
   }
 }
 
-export async function fetchTop5Stocks() {
+// 인기 종목 Top5
+export async function fetchTop5Stocks(recordDate) {
   try {
-    const res = await axios.get('/api/ranking/popular-stocks')
+    const res = await axios.get('/api/ranking/popular-stocks', {
+      params: { recordDate },
+    })
     console.log('Top5 응답:', res.data)
 
     return res.data.map((stock) => ({
@@ -38,9 +42,12 @@ export async function fetchTop5Stocks() {
   }
 }
 
-export async function fetchWeeklyRanking() {
+// 주간 전체 랭킹 조회
+export async function fetchWeeklyRanking(recordDate) {
   try {
-    const res = await axios.get('/api/ranking/all')
+    const res = await axios.get('/api/ranking/weekly', {
+      params: { recordDate },
+    })
 
     if (!Array.isArray(res.data)) {
       console.error('Weekly ranking 응답이 배열이 아닙니다:', res.data)
@@ -53,7 +60,6 @@ export async function fetchWeeklyRanking() {
       gainRate: user.gainRate,
       trait: user.traitGroup || '기타',
       originalTrait: user.originalTrait || 'N/A',
-      // user 객체에 stockCode 필드 없으면 기본 프로필 이미지로 처리
       image: `/images/profile${(user.userId % 5) + 1}.png`,
     }))
   } catch (error) {
@@ -62,9 +68,12 @@ export async function fetchWeeklyRanking() {
   }
 }
 
-export async function fetchGroupedWeeklyRanking() {
+// 성향 그룹별 랭킹 조회
+export async function fetchGroupedWeeklyRanking(recordDate) {
   try {
-    const res = await axios.get('/api/ranking/weekly/grouped')
+    const res = await axios.get('/api/ranking/weekly/grouped', {
+      params: { recordDate },
+    })
 
     const rawGrouped = res.data
     const transformed = {}
