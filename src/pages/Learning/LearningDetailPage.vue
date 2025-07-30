@@ -88,6 +88,7 @@ const selected = ref('')
 const result = ref(null)
 const showExplainBtnClicked = ref(false)
 const userId = ref(null) // 세션에서 가져올 예정
+const user = ref(null)
 const isCompleted = ref(false) // 학습 완료 여부 상태
 const creditAwarded = ref(false) // 크레딧 지급 여부
 
@@ -113,15 +114,28 @@ onMounted(async () => {
   quiz.value = await fetchLearningQuizById(route.params.id)
 
   try {
-    const res = await axios.get('/api/learning/history/complete', {
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    user.value = res.data
+
+    const realUserId = user.value.userId // 세션 기반 userId
+    const contentId = Number(route.params.id)
+
+    // 콘텐츠 로드
+    content.value = await fetchLearningContentById(contentId)
+    quiz.value = await fetchLearningQuizById(contentId)
+
+    // 완료 여부 체크
+    const completeRes = await axios.get('/api/learning/history/complete', {
       params: {
         userId: userId.value,
         contentId: Number(route.params.id),
+        userId: realUserId,
+        contentId,
       },
     })
-    isCompleted.value = res.data === true
+    isCompleted.value = completeRes.data === true
   } catch (e) {
-    console.warn('완료 여부 확인 실패', e)
+    console.error('초기 로딩 실패', e)
   }
 
   // 퀴즈 결과 확인
@@ -228,14 +242,14 @@ const formattedBody = computed(() => {
   if (html.includes('<li>')) html = '<ul>' + html + '</ul>'
   return html
 })
-
 async function handleComplete() {
   try {
     await axios.post('/api/learning/history', {
       userId: userId.value,
+      userId: user.value.userId,
       contentId: Number(route.params.id),
     })
-    isCompleted.value = true // 완료 처리
+    isCompleted.value = true
   } catch (e) {
     console.error('기록 실패:', e)
     alert('기록에 실패했습니다.')

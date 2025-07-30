@@ -139,13 +139,15 @@ const riskTypeName = ref('')
 // 세션 기반 사용자 정보 불러오기
 onMounted(async () => {
   try {
-    const response = await axios.get('http://localhost:8080/auth/me', {
+    console.log('사용자 정보:', riskTypeName.value)
+    const response = await axios.get('http://localhost:8080/api/auth/me', {
       withCredentials: true,
     })
 
     const user = response.data
     name.value = user.name
     userName.value = user.username
+
     riskTypeName.value = convertRiskTypeToName(user.riskType)
   } catch (e) {
     console.error('세션 정보 불러오기 실패:', e)
@@ -155,15 +157,21 @@ onMounted(async () => {
 
 function convertRiskTypeToName(code) {
   const map = {
-    CSD: '신중한 안정형',
-    CAG: '신중한 성장형',
-    BSS: '균형 잡힌 수익 추구형',
-    BGT: '균형 잡힌 도전형',
-    AID: '적극적 안정형',
     AGR: '적극적 성장형',
+    AID: '적극적 안정형',
+    BGT: '균형 잡힌 도전형',
+    BSS: '균형 잡힌 수익 추구형',
+    CAG: '신중한 성장형',
+    CSD: '신중한 안정형',
+    DTA: '단타 추구형',
     EXP: '실험적 모험가형',
-    FAD: '감정적 결정형',
+    IND: '인덱스 수동형',
+    INF: '정보 수집형',
+    SOC: '사회 책임형',
     SYS: '시스템 트레이더형',
+    TEC: '기술적 분석형',
+    THE: '테마 투자형',
+    VAL: '가치 투자형',
   }
   return map[code] || '미분류'
 }
