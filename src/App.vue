@@ -18,7 +18,7 @@ export default {
 
     onMounted(async () => {
       try {
-        const res = await axios.get('/auth/me')
+        const res = await axios.get('/api/auth/me')
         userStore.setUser(res.data)
         localStorage.setItem('user', JSON.stringify(res.data)) // Optional
       } catch (err) {
