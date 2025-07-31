@@ -93,7 +93,7 @@
           <div class="my-6 text-center text-gray-700">
             내 계좌에
             <span class="font-bold text-blue-600">{{
-              (chargeCreditInput * 10000).toLocaleString()
+              (chargeCreditInput * 1000).toLocaleString()
             }}</span>
             원이 추가됩니다.
           </div>
@@ -316,7 +316,7 @@ const loadUserAccount = async () => {
 // 사용자 크레딧 로드
 const loadUserCredit = async () => {
   try {
-    const response = await axios.get('/api/learning/user/credit/session')
+    const response = await axios.get('/api/mocktrading/user/credit')
 
     if (response.data) {
       userCredit.value = response.data.totalCredit || 0
@@ -332,7 +332,7 @@ const loadHoldings = async () => {
     const response = await axios.get('/api/mocktrading/holdings')
 
     if (response.data && Array.isArray(response.data)) {
-      holdingsData.value = response.data.map((holding, index) => ({
+      holdingsData.value = response.data.map((holding) => ({
         ...holding,
         percentage:
           userAccount.value.totalAssetValue > 0
@@ -416,10 +416,10 @@ const updatePortfolioChart = () => {
 const loadUserData = async () => {
   loading.value = true
   try {
-    // ✅ URL에서 userId 제거 - 세션에서 자동으로 가져옴
+    // ✅ 크레딧 API 경로를 올바르게 수정
     const [dashboardResponse, creditResponse] = await Promise.all([
-      axios.get('/api/mocktrading/dashboard'), // userId 제거!
-      axios.get('/api/user/credit'), // 크레딧도 세션 기반으로 변경 필요
+      axios.get('/api/mocktrading/dashboard'),
+      axios.get('/api/mocktrading/user/credit'),
     ])
 
     if (dashboardResponse.data) {
@@ -432,14 +432,14 @@ const loadUserData = async () => {
 
       // 보유 종목 정보 설정
       if (dashboard.holdings && Array.isArray(dashboard.holdings)) {
-        holdingsData.value = dashboard.holdings.map((holding, index) => ({
+        holdingsData.value = dashboard.holdings.map((holding) => ({
           ...holding,
           percentage:
             dashboard.statistics?.stockPercentage > 0
               ? Math.round(
-                  (holding.currentValue / (dashboard.statistics.totalStockValue || 1)) *
-                    dashboard.statistics.stockPercentage,
-                )
+                (holding.currentValue / (dashboard.statistics.totalStockValue || 1)) *
+                dashboard.statistics.stockPercentage,
+              )
               : 0,
         }))
       }

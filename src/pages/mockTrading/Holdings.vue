@@ -128,7 +128,7 @@
     <!-- 보유 종목 리스트 -->
     <section class="bg-white rounded-xl px-4">
       <div
-        v-for="(holding, idx) in sortedHoldings"
+        v-for="(holding) in sortedHoldings"
         :key="holding.stockCode"
         class="p-4 cursor-pointer transition-colors"
         @click="goToStockDetail(holding.stockCode, holding.stockName)"

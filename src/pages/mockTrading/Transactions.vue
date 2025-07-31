@@ -552,50 +552,6 @@ const visibleTransactions = computed(() => {
     : filteredTransactions.value.slice(0, itemsPerPage)
 })
 
-// 통계 계산된 속성들
-const totalBuyAmount = computed(() => {
-  return filteredTransactions.value
-    .filter((t) => t.type === 'BUY' && t.status === 'COMPLETED')
-    .reduce((sum, t) => sum + t.totalAmount, 0)
-})
-
-const totalSellAmount = computed(() => {
-  return filteredTransactions.value
-    .filter((t) => t.type === 'SELL' && t.status === 'COMPLETED')
-    .reduce((sum, t) => sum + t.totalAmount, 0)
-})
-
-const buyCount = computed(() => {
-  return filteredTransactions.value.filter((t) => t.type === 'BUY' && t.status === 'COMPLETED')
-    .length
-})
-
-const sellCount = computed(() => {
-  return filteredTransactions.value.filter((t) => t.type === 'SELL' && t.status === 'COMPLETED')
-    .length
-})
-
-// 메서드들
-const goBack = () => {
-  router.back()
-}
-
-const changePeriod = (period) => {
-  currentPeriod.value = period
-  currentPage.value = 1 // 페이지 초기화
-}
-
-// 거래 타입 필터 제거
-
-const formatDateTime = (date) => {
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(date))
-}
-
 const getStatusText = (status) => {
   switch (status) {
     case 'COMPLETED':

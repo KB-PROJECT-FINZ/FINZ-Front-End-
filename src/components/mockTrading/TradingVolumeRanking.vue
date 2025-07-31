@@ -292,10 +292,6 @@ const formatVolume = (volume) => {
   }
 }
 
-const formatRate = (rate) => {
-  return Math.abs(rate).toFixed(1) + '%'
-}
-
 const selectStock = async (stock) => {
   console.log('📊 거래 순위에서 종목 선택:', stock.name, `(${stock.code})`)
 
