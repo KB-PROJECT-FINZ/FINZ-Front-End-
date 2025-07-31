@@ -1271,38 +1271,6 @@ const marketStatus = computed(() => {
 // 현재 시간 (reactive)
 const currentTime = ref(new Date())
 
-// ✅ 실시간 체결 정보 표시용 computed
-const latestTradeInfo = computed(() => {
-  if (!latestExecutionData.value) return null
-
-  const data = latestExecutionData.value
-  return {
-    time: formatTime(data.contractTime),
-    price: parseInt(data.currentPrice || 0),
-    volume: parseInt(data.contractVolume || 0),
-    type: getTradeType(data.contractClassCode),
-    intensity: parseFloat(data.contractIntensity || 0),
-    buyRate: parseFloat(data.buyRate || 0),
-  }
-})
-
-// // ✅ 체결 통계 computed
-// const executionStats = computed(() => {
-//   if (executionHistory.value.length === 0) return null
-
-//   const recent10 = executionHistory.value.slice(0, 10)
-//   const buyCount = recent10.filter((trade) => trade.type === 'buy').length
-//   const sellCount = recent10.filter((trade) => trade.type === 'sell').length
-//   const totalVolume = recent10.reduce((sum, trade) => sum + trade.volume, 0)
-
-//   return {
-//     recent10Count: recent10.length,
-//     buyRatio: recent10.length > 0 ? ((buyCount / recent10.length) * 100).toFixed(1) : 0,
-//     sellRatio: recent10.length > 0 ? ((sellCount / recent10.length) * 100).toFixed(1) : 0,
-//     avgVolume: recent10.length > 0 ? Math.round(totalVolume / recent10.length) : 0,
-//   }
-// })
-
 // 계산된 속성들
 const priceChangeClass = computed(() => {
   const changeAmount = stockInfo.value.currentPrice - stockInfo.value.basePrice
