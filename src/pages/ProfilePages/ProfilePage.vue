@@ -25,7 +25,7 @@
       <div class="asset-label">총 보유자산</div>
       <div class="asset-main">
         <span class="asset-amount">₩{{ asset.amount.toLocaleString() }}</span>
-        <button class="asset-btn">내 자산 현황 바로가기</button>
+        <button class="asset-btn" @click="goToAssetStatus">내 자산 현황 바로가기</button>
       </div>
       <div class="asset-change" :class="{ positive: asset.change > 0, negative: asset.change < 0 }">
         {{ asset.change > 0 ? '+' : '' }}{{ asset.change }}% (이번 달)
@@ -87,6 +87,10 @@ import FooterNavigation from '../../components/FooterNavigation.vue'
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { getUserCredit } from '../../services/learning'
+import { useRouter } from 'vue-router'
+
+
+const router = useRouter()
 
 // 더미 투자 내역 데이터
 const dummyInvestHistory = [
@@ -156,7 +160,7 @@ onMounted(async () => {
       console.log('🔍 모의투자 내역 조회 시작:', data.userId)
       const response = await axios.get(`/api/trading/transactions/${data.userId}`)
       console.log('📊 받은 거래 데이터:', response.data)
-      
+
       if (response.data && response.data.length > 0) {
         // 백엔드 데이터를 프론트엔드 형식으로 변환
         investHistory.value = response.data.map(transaction => ({
@@ -192,7 +196,7 @@ onMounted(async () => {
       console.log('🔍 fallback 모의투자 내역 조회 시작:', userId)
       const response = await axios.get(`/api/trading/transactions/${userId}`)
       console.log('📊 fallback 받은 거래 데이터:', response.data)
-      
+
       if (response.data && response.data.length > 0) {
         // 백엔드 데이터를 프론트엔드 형식으로 변환
         investHistory.value = response.data.map(transaction => ({
