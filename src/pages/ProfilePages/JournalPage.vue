@@ -53,15 +53,19 @@ import { Calendar } from 'v-calendar'
 const journals = ref([])
 const selectedJournal = ref(null)
 const router = useRouter()
-
+const userId = ref(null)
 const selectedDate = ref(new Date().toISOString().slice(0, 10)) // 오늘 날짜로 초기화
 
 onMounted(async () => {
   try {
-    const res = await axios.get('http://localhost:8080/api/journals/user/1')
-    journals.value = res.data
+    const authRes = await axios.get('/api/auth/me', { withCredentials: true })
+    userId.value = authRes.data.userId
+    const journalRes = await axios.get(`/api/journals/user/${userId.value}`, {
+      withCredentials: true,
+    })
+    journals.value = journalRes.data
   } catch (err) {
-    console.error(err)
+    console.error('❌ 유저 또는 일지 로딩 실패:', err)
   }
 })
 // 달력에 동그라미 표시
