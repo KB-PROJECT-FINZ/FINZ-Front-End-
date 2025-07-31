@@ -94,9 +94,10 @@ const creditAwarded = ref(false) // 크레딧 지급 여부
 
 onMounted(async () => {
   try {
-    // 세션에서 사용자 정보 가져오기
-    const res = await axios.get('/auth/me', { withCredentials: true })
+    // 1. 세션에서 사용자 정보 가져오기
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
     userId.value = res.data.userId || res.data.id
+    user.value = res.data
 
     if (!userId.value) {
       console.error('사용자 ID를 가져올 수 없습니다.')
@@ -104,50 +105,29 @@ onMounted(async () => {
     }
 
     console.log('현재 사용자 ID:', userId.value)
-  } catch (e) {
-    console.error('세션 정보 로딩 실패:', e)
-    // 세션 실패 시 로컬스토리지 fallback
-    userId.value = Number(localStorage.getItem('userId') || 1)
-  }
 
-  const contentId = Number(route.params.id)
-  content.value = await fetchLearningContentById(contentId)
-  quiz.value = await fetchLearningQuizById(contentId)
-
-  try {
-    const res = await axios.get('/api/auth/me', { withCredentials: true })
-    user.value = res.data
-
-    const userId = user.value.userId // 세션 기반 userId
+    // 2. 콘텐츠와 퀴즈 로드
     const contentId = Number(route.params.id)
-
-    // 콘텐츠 로드
     content.value = await fetchLearningContentById(contentId)
     quiz.value = await fetchLearningQuizById(contentId)
 
-    // 완료 여부 체크
+    // 3. 완료 여부 체크
     const completeRes = await axios.get('/api/learning/history/complete', {
       params: {
         userId: userId.value,
-        contentId: Number(route.params.id),
-        userId: realUserId,
-        contentId,
+        contentId: contentId,
       },
     })
     isCompleted.value = completeRes.data === true
-  } catch (e) {
-    console.error('초기 로딩 실패', e)
-  }
 
-  // 퀴즈 결과 확인
-  try {
-    const hasResult = await checkQuiz(userId.value, Number(route.params.id))
+    // 4. 퀴즈 결과 확인
+    const hasResult = await checkQuiz(userId.value, contentId)
     if (hasResult) {
       // 실제 퀴즈 결과 가져오기
       const resultRes = await axios.get('/api/learning/quiz/result/detail', {
         params: {
           userId: userId.value,
-          quizId: Number(route.params.id),
+          quizId: contentId,
         },
       })
 
@@ -159,7 +139,9 @@ onMounted(async () => {
       }
     }
   } catch (e) {
-    console.warn('퀴즈 결과 확인 실패', e)
+    console.error('초기 로딩 실패:', e)
+    // 세션 실패 시 로컬스토리지 fallback
+    userId.value = Number(localStorage.getItem('userId') || 1)
   }
 })
 
