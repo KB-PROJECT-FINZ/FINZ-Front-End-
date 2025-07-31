@@ -213,7 +213,7 @@
           <!-- 체결 내역 (체결강도 박스 바로 위에 오버레이) -->
           <div
             v-if="showTradeHistory"
-            class="absolute bottom-0 left-0 right-0 bg-white border border-gray-200 shadow-lg z-40 max-h-48 overflow-y-auto"
+            class="absolute bottom-0 left-0 right-0 bg-white border border-gray-200 shadow-lg z-40 max-h-48 min-h-48 overflow-y-auto"
           >
             <!-- 체결강도 정보 헤더 (펼쳤을 때 최상단으로 이동) -->
             <div class="px-3 py-2 bg-white border-b border-gray-200">
@@ -885,7 +885,7 @@ const activeTab = ref(getInitialTab())
 const orderType = ref('limit')
 const orderPrice = ref(0)
 const orderQuantity = ref(0)
-const showTradeHistory = ref(false)
+const showTradeHistory = ref(true)
 
 // 거래 탭 정의
 const tradeTabs = [
