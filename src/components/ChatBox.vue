@@ -1,3 +1,4 @@
+<!-- Chatbox.vue -->
 <template>
   <div class="flex flex-col gap-3">
     <!-- 대화 내용 -->
