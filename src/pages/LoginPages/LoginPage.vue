@@ -39,13 +39,7 @@
           class="w-5 h-5"
         />
       </div>
-      <div class="w-10 h-10 rounded-full border flex items-center justify-center shadow-sm">
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2111/2111683.png"
-          alt="kakao"
-          class="w-5 h-5"
-        />
-      </div>
+      <KakaoCircleButton />
       <div class="w-10 h-10 rounded-full border flex items-center justify-center shadow-sm">
         <img src="https://img.icons8.com/win10/512/google-logo.png" alt="google" class="w-5 h-5" />
       </div>
@@ -57,6 +51,7 @@
 import waveImage from '@/assets/wave.png'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import KakaoCircleButton from '@/components/KakaoLoginButton.vue'
 
 const isLoading = ref(false)
 const router = useRouter()

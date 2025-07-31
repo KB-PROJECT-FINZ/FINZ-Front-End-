@@ -52,26 +52,55 @@
       </router-link>
     </section>
 
-    <!-- 투자 내역 -->
-    <section class="invest-history">
-      <div class="history-title">모의투자 내역</div>
-      <div class="stock-cards">
-        <div
-          v-for="(item, index) in investHistory"
-          :key="index"
-          class="stock-card"
-        >
-          <div class="stock-info">
-            <div class="stock-name">{{ item.name }}</div>
-            <div class="stock-desc">{{ item.desc }}</div>
-          </div>
-          <div class="stock-amounts">
-            <div class="stock-amount">₩{{ item.amount.toLocaleString() }}</div>
+    <!-- 모의투자 내역 카드 -->
+    <section class="invest-history-card">
+      <div class="card-header">
+        <div class="card-title">모의투자 내역</div>
+      </div>
+
+      <div class="card-content">
+        <!-- 매수 내역 -->
+        <div class="transaction-section">
+          <div class="section-title buy-title">매수 내역</div>
+          <div class="stock-cards">
             <div
-              class="stock-change"
-              :class="{ positive: item.change > 0, negative: item.change < 0 }"
+              v-for="(item, index) in buyHistory"
+              :key="`buy-${index}`"
+              class="stock-card buy-card"
             >
-              {{ item.change > 0 ? '+' : '' }}{{ item.change }}%
+              <div class="stock-info">
+                <div class="stock-name">{{ item.name }}</div>
+                <div class="stock-desc">{{ item.desc }}</div>
+              </div>
+              <div class="stock-amounts">
+                <div class="stock-amount">₩{{ item.amount.toLocaleString() }}</div>
+                <div class="stock-change positive">
+                  {{ item.change > 0 ? '+' : '' }}{{ item.change }}%
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 매도 내역 -->
+        <div class="transaction-section">
+          <div class="section-title sell-title">매도 내역</div>
+          <div class="stock-cards">
+            <div
+              v-for="(item, index) in sellHistory"
+              :key="`sell-${index}`"
+              class="stock-card sell-card"
+            >
+              <div class="stock-info">
+                <div class="stock-name">{{ item.name }}</div>
+                <div class="stock-desc">{{ item.desc }}</div>
+              </div>
+              <div class="stock-amounts">
+                <div class="stock-amount">₩{{ item.amount.toLocaleString() }}</div>
+                <div class="stock-change negative">
+                  {{ item.change > 0 ? '+' : '' }}{{ item.change }}%
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -85,6 +114,7 @@
 <script setup>
 import FooterNavigation from '../../components/FooterNavigation.vue'
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { getUserCredit } from '../../services/learning'
 import { useRouter } from 'vue-router'
@@ -92,35 +122,7 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// 더미 투자 내역 데이터
-const dummyInvestHistory = [
-  {
-    name: '삼성전자',
-    desc: '매수 10주',
-    amount: 1500000,
-    change: 2.5
-  },
-  {
-    name: 'SK하이닉스',
-    desc: '매도 5주',
-    amount: 2300000,
-    change: -1.2
-  },
-  {
-    name: 'NAVER',
-    desc: '매수 3주',
-    amount: 800000,
-    change: 3.8
-  },
-  {
-    name: 'LG화학',
-    desc: '매수 2주',
-    amount: 1200000,
-    change: 1.5
-  }
-]
-
-
+const router = useRouter()
 
 const profile = ref({
   image: '',
@@ -134,8 +136,9 @@ const asset = ref({
   change: 2.3,
 })
 
-
-const investHistory = ref([])
+//const investHistory = ref([])
+const buyHistory = ref([]) // 매수
+const sellHistory = ref([]) // 매도
 const goToAssetStatus = () => {
   router.push('/mock-trading/asset-status')
 }
@@ -163,23 +166,48 @@ onMounted(async () => {
 
       if (response.data && response.data.length > 0) {
         // 백엔드 데이터를 프론트엔드 형식으로 변환
-        investHistory.value = response.data.map(transaction => ({
+        // investHistory.value = response.data.map((transaction) => ({
+        //   name: transaction.stockName,
+        //   desc: `${transaction.transactionType === 'BUY' ? '매수' : '매도'} ${transaction.quantity}주`,
+        //   amount: transaction.totalAmount,
+        //   change: 0, // 거래 내역에는 수익률 정보가 없으므로 0으로 설정
+        // }))
+        // console.log('✅ 변환된 투자 내역:', investHistory.value)
+        const buyTransactions = response.data.filter(
+          (t) => t.transactionType === 'BUY' || t.transactionType === 'HOLDING',
+        )
+        const sellTransactions = response.data.filter((t) => t.transactionType === 'SELL')
+
+        buyHistory.value = buyTransactions.slice(0, 2).map((transaction) => ({
           name: transaction.stockName,
-          desc: `${transaction.transactionType === 'BUY' ? '매수' : '매도'} ${transaction.quantity}주`,
+          desc: `매수 ${transaction.quantity}주`,
           amount: transaction.totalAmount,
-          change: 0 // 거래 내역에는 수익률 정보가 없으므로 0으로 설정
+          change: 0,
         }))
-        console.log('✅ 변환된 투자 내역:', investHistory.value)
+        sellHistory.value = sellTransactions.slice(0, 2).map((transaction) => ({
+          name: transaction.stockName,
+          desc: `매도 ${transaction.quantity}주`,
+          amount: transaction.totalAmount,
+          change: 0,
+        }))
+
+        console.log('✅ 매수 내역:', buyHistory.value)
+        console.log('✅ 매도 내역:', sellHistory.value)
       } else {
-        // 데이터가 없으면 더미데이터 사용
-        console.log('📝 더미데이터 사용')
-        investHistory.value = dummyInvestHistory
+        // 데이터가 없으면 빈 배열로 설정
+        console.log('📝 거래 내역 없음')
+        buyHistory.value = []
+        sellHistory.value = []
+
+        console.log('✅ 매수 내역:', buyHistory.value)
+        console.log('✅ 매도 내역:', sellHistory.value)
       }
     } catch (e) {
       console.error('❌ 모의투자 내역 로딩 실패:', e)
-      // 에러 시 더미데이터 사용
-      console.log('📝 에러로 인해 더미데이터 사용')
-      investHistory.value = dummyInvestHistory
+      // 에러 시 빈 배열로 설정
+      console.log('📝 에러로 인해 빈 배열 설정')
+      buyHistory.value = []
+      sellHistory.value = []
     }
 
     // 크레딧 조회 및 보유자산 계산
@@ -187,6 +215,7 @@ onMounted(async () => {
     asset.value.amount = totalCredit * 1000 // 1크레딧 = 1,000원
   } catch (e) {
     console.error('❌ 세션 기반 사용자 정보 로딩 실패:', e)
+
     // 세션 실패 시 로컬스토리지 fallback
     profile.value.name = localStorage.getItem('name') || '사용자'
     profile.value.type = localStorage.getItem('riskType') || '정보 없음'
@@ -199,23 +228,36 @@ onMounted(async () => {
 
       if (response.data && response.data.length > 0) {
         // 백엔드 데이터를 프론트엔드 형식으로 변환
-        investHistory.value = response.data.map(transaction => ({
+        const buyTransactions = response.data.filter(
+          (t) => t.transactionType === 'BUY' || t.transactionType === 'HOLDING',
+        )
+        const sellTransactions = response.data.filter((t) => t.transactionType === 'SELL')
+
+        buyHistory.value = buyTransactions.slice(0, 2).map((transaction) => ({
           name: transaction.stockName,
-          desc: `${transaction.transactionType === 'BUY' ? '매수' : '매도'} ${transaction.quantity}주`,
+          desc: `매수 ${transaction.quantity}주`,
           amount: transaction.totalAmount,
-          change: 0 // 거래 내역에는 수익률 정보가 없으므로 0으로 설정
+          change: 0,
         }))
-        console.log('✅ fallback 변환된 투자 내역:', investHistory.value)
+        sellHistory.value = sellTransactions.slice(0, 2).map((transaction) => ({
+          name: transaction.stockName,
+          desc: `매도 ${transaction.quantity}주`,
+          amount: transaction.totalAmount,
+          change: 0,
+        }))
+        console.log('✅ fallback 변환된 투자 내역:', buyHistory.value, sellHistory.value)
       } else {
-        // 데이터가 없으면 더미데이터 사용
-        console.log('📝 fallback 더미데이터 사용')
-        investHistory.value = dummyInvestHistory
+        // 데이터가 없으면 빈 배열로 설정
+        console.log('📝 fallback 내역 없음')
+        buyHistory.value = []
+        sellHistory.value = []
       }
     } catch (e) {
       console.error('❌ fallback 모의투자 내역 로딩 실패:', e)
-      // 에러 시 더미데이터 사용
-      console.log('📝 fallback 에러로 인해 더미데이터 사용')
-      investHistory.value = dummyInvestHistory
+      // 에러 시에도 빈 배열로 설정
+      console.log('📝 fallback 에러로 인해 빈 배열 설정')
+      buyHistory.value = []
+      sellHistory.value = []
     }
 
     // 세션 실패 시에도 크레딧 조회 시도
@@ -249,7 +291,7 @@ onMounted(async () => {
   z-index: 10;
 }
 .header-spacer {
-  width: 40px; /* 설정 버튼과 같은 너비 */
+  width: 40px;
 }
 .settings-btn {
   background: none;
@@ -411,6 +453,30 @@ onMounted(async () => {
   color: #bdbdbd;
   margin-left: 8px;
 }
+.invest-history-card {
+  background: #fff;
+  border-radius: 16px;
+  margin: 0 16px 18px 16px;
+  box-shadow: 0 2px 12px rgba(127, 127, 213, 0.08);
+  overflow: hidden;
+}
+
+.card-header {
+  background: #f8fafc;
+  padding: 16px 18px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #222;
+}
+
+.card-content {
+  padding: 18px;
+}
+
 .invest-history {
   margin: 0 16px 18px 16px;
 }
@@ -440,17 +506,19 @@ onMounted(async () => {
 .stock-cards {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 .stock-card {
   background: #fff;
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 10px;
+  padding: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 .stock-card:hover {
   transform: translateY(-1px);
@@ -462,26 +530,26 @@ onMounted(async () => {
   flex: 1;
 }
 .stock-name {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: bold;
   color: #222;
   margin-bottom: 2px;
 }
 .stock-desc {
   color: #666;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 .stock-amounts {
   text-align: right;
 }
 .stock-amount {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: bold;
   color: #222;
   margin-bottom: 2px;
 }
 .stock-change {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: bold;
 }
 .stock-change.positive {
@@ -489,6 +557,45 @@ onMounted(async () => {
 }
 .stock-change.negative {
   color: #e74c3c;
+}
+
+.transaction-section {
+  margin-bottom: 16px;
+}
+
+.transaction-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 0.95rem;
+  font-weight: bold;
+  margin-bottom: 6px;
+  padding-left: 4px;
+}
+
+.buy-title {
+  color: #dc2626;
+}
+
+.sell-title {
+  color: #2563eb;
+}
+
+.buy-card {
+  border-left: 4px solid #dc2626;
+}
+
+.sell-card {
+  border-left: 4px solid #2563eb;
+}
+
+.buy-card .stock-change {
+  color: #dc2626;
+}
+
+.sell-card .stock-change {
+  color: #2563eb;
 }
 @media (max-width: 600px) {
   .profile-header,
