@@ -62,7 +62,7 @@ import { useUserStore } from '@/stores/user.js'
 // Props
 const props = defineProps({
   fixedIntent: { type: String, default: null },
-  sessionId: { type: Number, default: null },
+  // sessionId: { type: Number, default: null },
 })
 
 // Pinia 스토어
@@ -78,18 +78,21 @@ const loading = ref(false)
 
 // 메시지 전송
 async function fetchGPT(prompt, intent = props.fixedIntent) {
+
   loading.value = true
   chatStore.messages.push({ role: 'user', content: prompt })
   try {
     const res = await axios.post('/api/chatbot/message', {
       userId: userId.value,
-      sessionId: props.sessionId,
+      sessionId: chatStore.sessionId,
       message: prompt,
-      intentType: intent,
     })
 
     if (res?.data?.content) {
       chatStore.messages.push({ role: 'bot', content: res.data.content })
+      chatStore.sessionId = res.data.sessionId
+      chatStore.intentType = res.data.intentType
+
     }
   } catch (err) {
     chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
