@@ -935,6 +935,10 @@ const orderPrice = ref(0)
 const orderQuantity = ref(0)
 const showTradeHistory = ref(true)
 
+watch(activeTab, () => {
+  orderQuantity.value = 0
+})
+
 // 거래 탭 정의
 const tradeTabs = [
   { key: 'buy', label: '구매' },
