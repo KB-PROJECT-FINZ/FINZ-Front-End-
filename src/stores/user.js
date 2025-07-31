@@ -15,8 +15,10 @@ export const useUserStore = defineStore('user', {
       this.riskType = user.riskType
     },
     clearUser() {
+      this.userId = null
       this.username = ''
       this.name = ''
+      this.riskType = ''
     },
   },
 })

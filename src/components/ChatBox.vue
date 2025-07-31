@@ -144,30 +144,42 @@ async function handleButtonIntent(btn) {
   }
 
   if (btn.intent === 'RECOMMEND_PROFILE') {
-    chatStore.clearMessages()
-    chatStore.messages.push({
-      role: 'bot',
-      type: 'buttons',
-      text: '투자 성향 기반 추천을 위해 아래 옵션 중 하나를 선택해주세요:',
-      buttons: [
-        {
-          label: '🧪 투자 성향 테스트 하러 가기',
-          intent: 'EXTERNAL_LINK',
-          href: '/investment-test',
-        },
-        {
-          label: '📊 내 성향 기반 추천 받아보기',
-          intent: 'RECOMMEND_PROFILE',
-          message: '내 투자 성향으로 종목 추천해줘',
-        },
-        { label: '🔙 뒤로가기', intent: 'RECOMMEND_SELECT' },
-      ],
-    })
-    return
-  }
+    // 1) 버튼만 띄우는 경우
+    if (!btn.message) {
+      chatStore.clearMessages()
+      chatStore.messages.push({
+        role: 'bot',
+        type: 'buttons',
+        text: '투자 성향 기반 추천을 위해 아래 옵션 중 하나를 선택해주세요:',
+        buttons: [
+          {
+            label: '🧪 투자 성향 테스트 하러 가기',
+            intent: 'EXTERNAL_LINK',
+            href: '/investment-test/retest',
+          },
+          {
+            label: '📊 내 성향 기반 추천 받아보기',
+            intent: 'RECOMMEND_PROFILE',
+            message: '내 투자 성향으로 종목 추천해줘',
+          },
+          { label: '🔙 뒤로가기', intent: 'RECOMMEND_SELECT' },
+        ],
+      })
+      return
+    }
 
-  if (btn.intent === 'RECOMMEND_PROFILE') {
-    await fetchGPT(btn.message, btn.intent)
+    // 2) 실제 추천 요청 처리
+    const risk = userStore.riskType
+    if (!risk) {
+      chatStore.messages.push({
+        role: 'bot',
+        content: '⚠️ 투자 성향 정보가 없습니다. 먼저 테스트를 진행해주세요.',
+      })
+      return
+    }
+
+    const message = `나의 투자 성향인 ${risk}에 맞는 종목을 추천해줘`
+    await fetchGPT(message, btn.intent)
     return
   }
 

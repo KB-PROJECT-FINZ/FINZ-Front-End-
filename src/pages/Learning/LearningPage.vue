@@ -11,68 +11,108 @@
       <div class="profile-info">
         <div class="profile-name">{{ user.name }}님은</div>
         <div class="profile-type">{{ user.riskType }} 사고 유형입니다</div>
-        <!-- <div class="profile-desc">{{ user2.message }}</div> -->
       </div>
     </section>
-
     <!-- 추천 학습 콘텐츠 -->
     <section class="content-list">
       <h2 class="section-title">추천 학습 콘텐츠</h2>
-      <div class="content-list-wrap">
+
+      <div v-if="recommendedContents.length === 0" class="loading-msg">
+        콘텐츠를 불러오는 중입니다...
+      </div>
+      <div class="content-list-wrap" v-else>
         <div
-          v-for="(item, idx) in learningContents"
+          v-for="(item, index) in recommendedContents.slice(0, recommendedViewCount)"
           :key="item.contentId"
           class="content-list-card"
-          :class="{ completed: item.isCompleted }"
           @click="goToDetail(item.contentId)"
         >
-          <img :src="item.imageUrl || defaultThumbnail" class="content-thumb" />
           <div class="content-list-info">
-            <div class="content-list-title">{{ item.title }}</div>
-            <!-- <div class="content-list-desc">{{ item.body?.slice(0, 40) }}...</div> -->
-            <div class="content-list-desc">{{ item.body ? item.body.slice(0, 40) : '' }}...</div>
-
-            <div class="content-list-meta">
-              <span class="content-list-type">{{ item.type === 'VIDEO' ? '영상' : '아티클' }}</span>
+            <span class="quiz-credit-tag" v-if="item.creditReward"
+              >{{ item.creditReward }}크레딧</span
+            >
+            <div class="content-list-title">
+              {{ item.title }}
             </div>
           </div>
           <span class="content-list-arrow">&#8250;</span>
-          <div v-if="idx < learningContents.length - 1" class="divider"></div>
+        </div>
+        <div v-if="recommendedViewCount < recommendedContents.length" class="load-more-wrap">
+          <button class="load-more-btn" @click="recommendedViewCount += 3">더보기</button>
         </div>
       </div>
     </section>
+
+    <!-- 완료된 콘텐츠 섹션 -->
+    <section class="content-list">
+      <h2 class="section-title">완료한 학습 콘텐츠</h2>
+
+      <div v-if="completedContents.length === 0" class="loading-msg">완료한 콘텐츠가 없습니다.</div>
+      <div class="content-list-wrap" v-else>
+        <div
+          v-for="(item, index) in completedContents.slice(0, completedViewCount)"
+          :key="item.contentId"
+          class="content-list-card completed"
+          @click="goToDetail(item.contentId)"
+        >
+          <div class="content-list-info">
+            <span class="quiz-credit-tag" v-if="item.creditReward"
+              >{{ item.creditReward }}크레딧</span
+            >
+            <div class="content-list-title">
+              {{ item.title }}
+            </div>
+          </div>
+          <span class="content-list-arrow">&#8250;</span>
+        </div>
+        <div v-if="completedViewCount < completedContents.length" class="load-more-wrap">
+          <button class="load-more-btn" @click="completedViewCount += 3">더보기</button>
+        </div>
+      </div>
+    </section>
+
     <FooterNavigation />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { fetchLearningContentsByGroup } from '../../services/learning'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '../../components/FooterNavigation.vue'
 import axios from 'axios'
 
-const defaultThumbnail = 'https://via.placeholder.com/150x100?text=No+Image'
-const learningContents = ref([])
 const router = useRouter()
-
+const recommendedContents = ref([])
+const completedContents = ref([])
 const user = ref({
   name: '',
   riskType: '',
   userId: 0,
   groupCode: '',
 })
+const recommendedCount = ref(0)
+const completedViewCount = ref(3)
 
-onMounted(async () => {
+const recommendedViewCount = ref(3)
+const fetchCreditRewards = async (contents) => {
+  await Promise.all(
+    contents.map(async (content) => {
+      try {
+        const res = await axios.get(`/api/learning/${content.contentId}/quiz`, {
+          withCredentials: true,
+        })
+        content.creditReward = res.data?.creditReward ?? 0
+      } catch (e) {
+        console.warn(`❌ contentId=${content.contentId}에 대한 크레딧 조회 실패`, e)
+        content.creditReward = 0
+      }
+    }),
+  )
+}
+
+const fetchContents = async () => {
   try {
-    const res = await axios.get('/api/auth/me', { withCredentials: true })
-    const data = res.data
-    user.value = {
-      name: data.name,
-      riskType: data.riskType,
-      userId: data.userId,
-      groupCode: data.groupCode,
-    }
+    console.log('[📡] /recommend/list + /complete/list 요청 시작')
 
     const [recommendRes, completeRes] = await Promise.all([
       axios.get('/api/learning/recommend/list', {
@@ -90,26 +130,64 @@ onMounted(async () => {
       }),
     ])
 
-    const recommended = recommendRes.data
-    const completed = completeRes.data
+    recommendedContents.value = recommendRes.data
+    completedContents.value = completeRes.data
+    recommendedCount.value = recommendedContents.value.length
 
-    // Map을 활용한 병합 로직
-    const map = new Map()
+    console.log(
+      `[📦] 추천 콘텐츠 ${recommendedCount.value}개, 완료 콘텐츠 ${completedContents.value.length}개`,
+    )
 
-    recommended.forEach((item) => {
-      map.set(Number(item.contentId), { ...item, isCompleted: false })
-    })
-
-    completed.forEach((item) => {
-      map.set(Number(item.contentId), { ...item, isCompleted: true })
-    })
-
-    learningContents.value = Array.from(map.values())
+    await Promise.all([
+      fetchCreditRewards(recommendedContents.value),
+      fetchCreditRewards(completedContents.value),
+    ])
   } catch (e) {
-    console.error('학습 콘텐츠 로딩 실패:', e)
+    console.error('❌ 콘텐츠 로딩 실패:', e)
+  }
+}
+
+// 👉 polling으로 추천 콘텐츠 확보
+const pollUntilContentReady = async (maxRetry = 5, delay = 2000) => {
+  let retry = 0
+  console.log('[🔁] Polling 시작')
+  while (retry < maxRetry) {
+    console.log(`[⏳] 시도 ${retry + 1}/${maxRetry}...`)
+    await fetchContents()
+    console.log(`[📊] 현재 추천 콘텐츠 개수: ${recommendedCount.value}`)
+    if (recommendedCount.value >= 5) {
+      console.log('[✅] 추천 콘텐츠 5개 이상 확보됨 → polling 종료')
+      break
+    }
+    retry++
+    await new Promise((resolve) => setTimeout(resolve, delay))
+  }
+  if (retry >= maxRetry) {
+    console.warn('[⚠️] polling 끝났지만 추천 콘텐츠가 부족함')
+  }
+}
+
+// 👉 진입 시 초기화
+onMounted(async () => {
+  try {
+    console.log('[🚀] mounted 실행')
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    const data = res.data
+    user.value = {
+      name: data.name,
+      riskType: data.riskType,
+      userId: data.userId,
+      groupCode: data.groupCode,
+    }
+    console.log('[👤] 사용자 정보:', user.value)
+
+    await pollUntilContentReady()
+  } catch (e) {
+    console.error('❌ 사용자 정보 로딩 실패:', e)
   }
 })
 
+// 👉 상세 페이지로 이동
 function goToDetail(id) {
   router.push(`/learning/${id}`)
 }
@@ -119,7 +197,7 @@ function goToDetail(id) {
 .learning-page {
   background: #f7f8fa;
   min-height: 100vh;
-  padding-bottom: 24px;
+  padding-bottom: 80px;
 }
 .header {
   display: flex;
@@ -172,7 +250,7 @@ function goToDetail(id) {
   opacity: 0.9;
 }
 .section-title {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: bold;
   margin: 0 0 10px 8px;
   color: #222;
@@ -263,6 +341,35 @@ function goToDetail(id) {
   background-color: #f2f2f2;
   opacity: 0.9;
 }
+.quiz-credit-tag {
+  font-size: 0.92rem;
+  color: #bfa700;
+  background: #fffbe6;
+  border-radius: 8px;
+  padding: 2px 10px;
+  margin-right: 8px;
+  font-weight: bold;
+  display: inline-block;
+}
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 16px 0;
+}
+.load-more-btn {
+  background: #e0e7ff;
+  color: #3730a3;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.load-more-btn:hover {
+  background: #c7d2fe;
+}
+
 @media (max-width: 600px) {
   .profile-box {
     flex-direction: column;
