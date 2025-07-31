@@ -45,7 +45,6 @@ const form = ref({
 onMounted(async () => {
   try {
     const res = await axios.get('/api/auth/me', { withCredentials: true })
-    form.value.userId = res.data.userId
   } catch (err) {
     console.error('❌ 유저 정보 조회 실패:', err)
     alert('로그인이 필요합니다')
@@ -53,7 +52,6 @@ onMounted(async () => {
     return
   }
 
-  // query param으로 넘어온 수정용 값 세팅
   if (route.query.emotion) form.value.emotion = route.query.emotion
   if (route.query.reason) form.value.reason = route.query.reason
   if (route.query.mistake) form.value.mistake = route.query.mistake

@@ -34,7 +34,10 @@ const error = ref('')
 
 onMounted(async () => {
   try {
-    const res = await axios.get('http://localhost:8080/api/feedback')
+    const res = await axios.get('http://localhost:8080/api/feedback', {
+      withCredentials: true,
+    })
+    console.log('피드백 목록:', res.data)
     feedbackList.value = Array.isArray(res.data) ? res.data : [res.data]
   } catch (e) {
     error.value = '피드백 목록을 불러오지 못했습니다.'

@@ -58,9 +58,7 @@ const selectedDate = ref(new Date().toISOString().slice(0, 10)) // 오늘 날짜
 
 onMounted(async () => {
   try {
-    const authRes = await axios.get('/api/auth/me', { withCredentials: true })
-    userId.value = authRes.data.userId
-    const journalRes = await axios.get(`/api/journals/user/${userId.value}`, {
+    const journalRes = await axios.get(`/api/journals/user`, {
       withCredentials: true,
     })
     journals.value = journalRes.data
