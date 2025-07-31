@@ -646,21 +646,6 @@
         </div>
       </div>
     </footer>
-
-    <!-- 실시간 체결 알림 -->
-    <div
-      v-if="latestTradeInfo && showExecutionAlert"
-      class="fixed top-20 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-50 animate-fadeInOut"
-    >
-      <div class="flex items-center gap-2">
-        <div
-          class="w-2 h-2 rounded-full"
-          :class="latestTradeInfo.type === 'buy' ? 'bg-red-500' : 'bg-blue-500'"
-        ></div>
-        <span class="text-sm font-medium"> {{ formatPrice(latestTradeInfo.price) }}원 </span>
-        <span class="text-xs text-gray-500"> {{ formatVolume(latestTradeInfo.volume) }}주 </span>
-      </div>
-    </div>
   </div>
 </template>
 
