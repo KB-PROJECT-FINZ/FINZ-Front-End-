@@ -2,8 +2,11 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
+const userStore = useUserStore()
+
 const typeCode = route.query.type || 'UNKNOWN'
 
 const name = ref('')
@@ -15,35 +18,42 @@ const fetchUsername = async () => {
     const res = await axios.get('/api/auth/me', { withCredentials: true })
     username.value = res.data.username
     name.value = res.data.name
-    saveRiskType()
   } catch (err) {
     console.error(' 사용자 정보 조회 실패:', err)
   }
 }
 
 // 투자 성향 저장
-const saveRiskType = async () => {
-  if (!username.value || typeCode === 'UNKNOWN') {
-    console.warn('❗ username 또는 typeCode 없음, 저장 스킵')
-    return
-  }
-
+const fetchAndSyncUser = async () => {
   try {
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    username.value = res.data.username
+    name.value = res.data.name
+
+    // userStore에 최신 정보 반영
+    userStore.setUser({
+      userId: res.data.userId,
+      username: res.data.username,
+      name: res.data.name,
+      riskType: typeCode, // ✅ 최신 성향으로 덮어씀
+    })
+
+    // 서버에도 riskType 저장
     await axios.post(
       '/api/user/risk_type',
       {
-        username: username.value,
+        username: res.data.username,
         riskType: typeCode,
       },
-      {
-        withCredentials: true,
-      },
+      { withCredentials: true },
     )
-    console.log('투자 성향 저장 완료')
+    console.log('✅ 투자 성향 저장 및 상태 반영 완료')
   } catch (err) {
-    console.error('❌ 저장 실패:', err)
+    console.error('❌ 사용자 정보 로딩/저장 실패:', err)
   }
 }
+
+onMounted(fetchAndSyncUser)
 
 onMounted(() => {
   fetchUsername()
