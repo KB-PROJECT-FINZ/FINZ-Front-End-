@@ -168,20 +168,22 @@ function selectTraitType(trait) {
 
 const goBack = () => history.back()
 
-// ✅ 수정된 onMounted
 onMounted(async () => {
+  // 1. 내 랭킹 불러오기
   myRanking.value = await fetchMyRanking(recordDate)
   console.log('[디버그] 내 랭킹 응답:', myRanking.value)
 
-  // trait 값 확인
-  if (myRanking.value?.trait && !localStorage.getItem('userTraitType')) {
-    localStorage.setItem('userTraitType', myRanking.value.trait)
-  }
+  // ✅ 2. 성향 정보 localStorage에 무조건 저장 (기존 값 덮어쓰기)
+  localStorage.setItem('userTraitType', myRanking.value?.trait || '미지정')
 
+  // 3. 현재 성향 타입 초기화
   userTraitType.value = localStorage.getItem('userTraitType') || '미지정'
   currentTraitType.value = userTraitType.value
 
+  // 4. 인기 종목 Top5 불러오기
   popularStocks.value = await fetchTop5Stocks(recordDate)
+
+  // 5. 주간 랭킹 불러오기
   allUsers.value = await fetchWeeklyRanking()
 })
 

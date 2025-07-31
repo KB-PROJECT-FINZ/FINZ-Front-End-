@@ -1,27 +1,6 @@
 import axios from 'axios'
 axios.defaults.withCredentials = true
 
-function mapRiskTypeToTrait(riskType) {
-  const map = {
-    AGR: '적극적 성장형',
-    AID: '적극적 안정형',
-    BGT: '균형 잡힌 도전형',
-    BSS: '균형 잡힌 수익 추구형',
-    CAG: '신중한 성장형',
-    CSD: '신중한 안정형',
-    DTA: '단타 추구형',
-    EXP: '실험적 모험가형',
-    IND: '인덱스 수동형',
-    INF: '정보 수집형',
-    SOC: '사회 책임형',
-    SYS: '시스템 트레이더형',
-    TEC: '기술적 분석형',
-    THE: '테마 투자형',
-    VAL: '가치 투자형',
-  }
-  return map[riskType] || '미지정'
-}
-
 // 내 랭킹 조회 (userId 쿼리 제거, baseDate만 전달)
 export async function fetchMyRanking(baseDate) {
   try {
@@ -32,7 +11,7 @@ export async function fetchMyRanking(baseDate) {
       rank: data.ranking,
       gainRate: data.gainRate,
       topPercent: data.topPercent,
-      trait: mapRiskTypeToTrait(data.riskType),
+      trait: data.riskType || '미지정',
     }
   } catch (error) {
     console.error('fetchMyRanking error:', error)
@@ -71,10 +50,10 @@ export async function fetchWeeklyRanking() {
 
     return res.data.map((user) => ({
       userId: user.userId,
-      nickname: user.name,
+      nickname: user.nickname || 'N/A',
       gainRate: user.gainRate,
       trait: user.traitGroup || '기타',
-      originalTrait: user.originalTrait || 'N/A',
+      originalTrait: user.originalTrait,
       image: `/images/profile${(user.userId % 5) + 1}.png`,
     }))
   } catch (error) {
@@ -94,10 +73,10 @@ export async function fetchGroupedWeeklyRanking() {
     for (const group in rawGrouped) {
       transformed[group] = rawGrouped[group].map((user) => ({
         userId: user.userId,
-        nickname: user.name,
+        nickname: user.nickname,
         gainRate: user.gainRate,
         trait: group,
-        originalTrait: user.originalTrait || 'N/A',
+        originalTrait: user.originalTrait,
         image: `/images/profile${(user.userId % 5) + 1}.png`,
       }))
     }
