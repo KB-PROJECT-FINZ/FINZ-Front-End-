@@ -1,3 +1,4 @@
+<!-- ChatBotPage.vue -->
 <template>
   <div class="min-h-screen bg-gray-50 pb-20 px-5 pt-6 max-w-[430px] mx-auto">
     <!-- 상단 로고 및 안내 -->
