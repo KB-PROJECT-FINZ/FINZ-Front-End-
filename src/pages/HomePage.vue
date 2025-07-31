@@ -139,7 +139,6 @@ const riskTypeName = ref('')
 // 세션 기반 사용자 정보 불러오기
 onMounted(async () => {
   try {
-    console.log('사용자 정보:', riskTypeName.value)
     const response = await axios.get('http://localhost:8080/api/auth/me', {
       withCredentials: true,
     })
@@ -149,6 +148,7 @@ onMounted(async () => {
     userName.value = user.username
 
     riskTypeName.value = convertRiskTypeToName(user.riskType)
+    console.log('사용자 정보:', riskTypeName.value)
   } catch (e) {
     console.error('세션 정보 불러오기 실패:', e)
     router.push('/login-form')
@@ -180,5 +180,5 @@ function convertRiskTypeToName(code) {
 const goToStudy = () => router.push('/learning')
 const goToContents = () => router.push('/contents')
 const goToQuiz = () => router.push('/quiz')
-const goToPortfolio = () => router.push('/portfolio')
+const goToPortfolio = () => router.push('/mock-trading/asset-status')
 </script>
