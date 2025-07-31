@@ -282,10 +282,6 @@
                   </span>
                 </div>
               </div>
-              <!-- 체결 내역이 없을 때 -->
-              <div v-if="recentTrades.length === 0" class="text-center py-4 text-gray-400 text-xs">
-                실시간 체결 데이터를 기다리는 중...
-              </div>
             </div>
           </div>
         </div>
@@ -906,7 +902,7 @@ const generateOrderBookData = (currentPrice) => {
 }
 
 // 체결 강도
-const volumePower = ref(125.4)
+const volumePower = ref(0)
 
 // 실시간 거래 내역
 const recentTrades = ref([])
