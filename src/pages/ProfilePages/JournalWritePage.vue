@@ -39,11 +39,21 @@ const form = ref({
   reason: '',
   mistake: '',
   journalDate: '',
-  userId: 1, // 하드코딩
+  userId: null,
 })
 
-// 페이지 진입 시 query 값이 있으면 폼에 세팅
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    form.value.userId = res.data.userId
+  } catch (err) {
+    console.error('❌ 유저 정보 조회 실패:', err)
+    alert('로그인이 필요합니다')
+    router.push('/login-form') // 필요시 로그인 페이지로 리다이렉트
+    return
+  }
+
+  // query param으로 넘어온 수정용 값 세팅
   if (route.query.emotion) form.value.emotion = route.query.emotion
   if (route.query.reason) form.value.reason = route.query.reason
   if (route.query.mistake) form.value.mistake = route.query.mistake
