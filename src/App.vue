@@ -2,9 +2,7 @@
   <div id="app">
     <div class="mobile-container">
       <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
+        <component :is="Component" />
       </router-view>
     </div>
   </div>
@@ -20,7 +18,7 @@ export default {
 
     onMounted(async () => {
       try {
-        const res = await axios.get('/auth/me')
+        const res = await axios.get('/api/auth/me')
         userStore.setUser(res.data)
         localStorage.setItem('user', JSON.stringify(res.data)) // Optional
       } catch (err) {
@@ -32,20 +30,6 @@ export default {
 </script>
 
 <style scoped>
-/* 페이드 전환 효과 */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.7s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-.fade-enter-to,
-.fade-leave-from {
-  opacity: 1;
-}
-
 /* 기존 스타일 유지 */
 #app {
   display: flex;
