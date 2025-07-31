@@ -101,15 +101,19 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 
-import TabSwitcher from '@/components/TabSwitcher.vue'
-import TraitStockCard from '@/components/TraitStockCard.vue'
-import MyStockChart from '@/components/MyStockChart.vue'
-import PopularStockItem from '@/components/PopularStockItem.vue'
+import TabSwitcher from '@/components/ranking/TabSwitcher.vue'
+import TraitStockCard from '@/components/ranking/TraitStockCard.vue'
+import MyStockChart from '@/components/ranking/MyStockChart.vue'
+import PopularStockItem from '@/components/ranking/PopularStockItem.vue'
 import FooterNavigation from '@/components/FooterNavigation.vue'
 
 const router = useRouter()
 function goBack() {
-  router.back()
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/ranking') // 뒤로갈 페이지가 없으면 이 경로로 이동
+  }
 }
 
 // 1. 성향별 보유 비중 분석
