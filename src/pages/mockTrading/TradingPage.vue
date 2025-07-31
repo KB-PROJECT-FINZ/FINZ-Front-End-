@@ -1606,6 +1606,13 @@ const increaseQuantity = () => {
       alert(`최대 ${userInfo.value.quantity || 0}주까지만 매도할 수 있습니다.`)
       return
     }
+  } else if (activeTab.value === 'buy') {
+    // 구매 탭에서 최대 구매 가능 수량 초과 방지
+    const maxQuantity = Math.floor(userInfo.value.availableAmount / orderPrice.value)
+    if (orderQuantity.value >= maxQuantity) {
+      alert(`최대 ${maxQuantity}주까지만 구매할 수 있습니다.`)
+      return
+    }
   }
   orderQuantity.value += 1
 }
