@@ -649,6 +649,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getStockInfo } from '@/services/stockApi.js'
+import axios from 'axios'
 
 // Vue Router
 const route = useRoute()
@@ -848,10 +849,76 @@ watch(
 
 // 사용자 정보
 const userInfo = ref({
-  avgPrice: 66500,
-  availableAmount: 2500000,
-  holdings: 50,
+  accountId: 0,
+  availableAmount: 0,
+  avgPrice: 0,
+  quantity: 0,
 })
+
+// 사용자 계좌에서 정보 가져오기
+const loadUserAccount = async () => {
+  try {
+    const response = await axios.get('/api/mocktrading/account') // userId 제거
+
+    if (response.data) {
+      // userInfo.value = response.data
+      userInfo.value = {
+        ...userInfo.value, // 기존 avgPrice, holdings 유지
+        accountId: response.data.accountId,
+        availableAmount: response.data.currentBalance,
+      }
+      console.log('계좌 정보 로드 성공:', response.data)
+    }
+  } catch (error) {
+    console.error('계좌 정보 로드 실패:', error)
+    if (error.response?.status === 401) {
+      alert('로그인이 필요합니다.')
+      router.push('/login-form')
+    }
+  }
+}
+
+// 사용자 보유 종목에서 현재 종목 정보 가져오기
+const loadHoldings = async () => {
+  try {
+    const response = await axios.get('/api/mocktrading/holdings')
+
+    if (response.data && Array.isArray(response.data)) {
+      // 현재 종목코드와 일치하는 보유 종목 찾기
+      const currentStockHolding = response.data.find((holding) => holding.stockCode === STOCK_CODE)
+
+      if (currentStockHolding) {
+        // 해당 종목을 보유하고 있는 경우
+        userInfo.value = {
+          ...userInfo.value, // 기존 값 유지
+          avgPrice: currentStockHolding.averagePrice,
+          quantity: currentStockHolding.quantity, // quantity를 holdings로 매핑
+        }
+        console.log('보유 종목 정보 로드 성공:', currentStockHolding)
+      } else {
+        // 해당 종목을 보유하지 않은 경우
+        userInfo.value = {
+          ...userInfo.value, // 기존 값 유지
+          avgPrice: 0,
+          holdings: 0,
+        }
+        console.log('현재 종목을 보유하지 않음:', STOCK_CODE)
+      }
+    }
+  } catch (error) {
+    console.error('보유 종목 정보 로드 실패:', error)
+    if (error.response?.status === 401) {
+      alert('로그인이 필요합니다.')
+      router.push('/login-form')
+    }
+    // 오류 발생 시 기본값 설정
+    userInfo.value = {
+      ...userInfo.value,
+      avgPrice: 0,
+      holdings: 0,
+    }
+  }
+}
 
 // 거래 상태
 const getInitialTab = () => {
@@ -1301,7 +1368,7 @@ const maxOrderQuantity = computed(() => {
   if (activeTab.value === 'buy') {
     return Math.floor(userInfo.value.availableAmount / orderPrice.value)
   } else if (activeTab.value === 'sell') {
-    return userInfo.value.holdings
+    return userInfo.value.quantity
   }
   return 0
 })
@@ -1313,8 +1380,8 @@ const setQuantityByRatio = (ratio) => {
     const targetQuantity = Math.floor((availableShares * ratio) / 100)
     orderQuantity.value = Math.max(0, targetQuantity)
   } else if (activeTab.value === 'sell') {
-    const targetQuantity = Math.floor((userInfo.value.holdings * ratio) / 100)
-    orderQuantity.value = Math.max(0, Math.min(targetQuantity, userInfo.value.holdings))
+    const targetQuantity = Math.floor((userInfo.value.quantity * ratio) / 100)
+    orderQuantity.value = Math.max(0, Math.min(targetQuantity, userInfo.value.quantity))
   }
 }
 
@@ -1322,12 +1389,17 @@ const totalOrderAmount = computed(() => {
   return orderPrice.value * orderQuantity.value
 })
 
-// 예상 수익률 계산 (판매 시)
 const expectedReturnRate = computed(() => {
   if (activeTab.value !== 'sell') return '0.00%'
 
   const avgPrice = userInfo.value.avgPrice
   const sellPrice = orderPrice.value
+
+  // 보유수량이 없거나 평균단가가 0이면 0%로 표시
+  if (!avgPrice || avgPrice === 0) {
+    return '0.00%'
+  }
+
   const returnRate = ((sellPrice - avgPrice) / avgPrice) * 100
 
   if (returnRate > 0) {
@@ -1345,7 +1417,7 @@ const expectedProfit = computed(() => {
 
   const avgPrice = userInfo.value.avgPrice
   const sellPrice = orderPrice.value
-  const quantity = orderQuantity.value || 1
+  const quantity = orderQuantity.value || 0
   const profit = (sellPrice - avgPrice) * quantity
 
   if (profit > 0) {
@@ -1528,6 +1600,13 @@ const decreasePrice = () => {
 }
 
 const increaseQuantity = () => {
+  if (activeTab.value === 'sell') {
+    // 판매 탭에서 최대 보유수량 초과 방지
+    if (orderQuantity.value >= (userInfo.value.quantity || 0)) {
+      alert(`최대 ${userInfo.value.quantity || 0}주까지만 매도할 수 있습니다.`)
+      return
+    }
+  }
   orderQuantity.value += 1
 }
 
@@ -1577,7 +1656,7 @@ const submitOrder = () => {
     return
   }
 
-  if (activeTab.value === 'sell' && orderQuantity.value > userInfo.value.holdings) {
+  if (activeTab.value === 'sell' && orderQuantity.value > userInfo.value.quantity) {
     alert('보유 주식 수량을 초과했습니다.')
     return
   }
@@ -1614,6 +1693,8 @@ const timeUpdateTimer = ref(null)
 onMounted(() => {
   isUnmounted = false
   console.log('[초기화] 컴포넌트 마운트 시작')
+  loadUserAccount()
+  loadHoldings()
   testApiCall()
   initWebSocket()
 
