@@ -401,6 +401,7 @@ import { CandlestickController, CandlestickElement } from 'chartjs-chart-financi
 import zoomPlugin from 'chartjs-plugin-zoom'
 import crosshairPlugin from 'chartjs-plugin-crosshair'
 import 'chartjs-adapter-date-fns'
+import axios from 'axios'
 
 // --- 분봉 모달 드래그 다운 슬라이드 닫기 로직 ---
 import { onBeforeUnmount } from 'vue'
@@ -488,18 +489,61 @@ const stockInfo = reactive({
 })
 
 // 사용자 보유 정보 (실제로는 API에서 가져올 데이터)
-const userHoldings = reactive({
-  '005930': {
-    // 삼성전자 보유
-    quantity: 1,
-    averagePrice: 0, // 평균 매입가
-  },
-  // 다른 종목들...
+const userHoldings = ref({
+  accountId: 0,
+  avgPrice: 0,
+  quantity: 0,
 })
+
+// 사용자 보유 종목에서 현재 종목 정보 가져오기
+const loadHoldings = async () => {
+  try {
+    const response = await axios.get('/api/mocktrading/holdings')
+
+    if (response.data && Array.isArray(response.data)) {
+      // 현재 종목코드와 일치하는 보유 종목 찾기
+      const currentStockHolding = response.data.find(
+        (holding) => holding.stockCode === stockInfo.stockCode,
+      )
+      // console.log('보유 종목 정보:', currentStockHolding)
+
+      if (currentStockHolding) {
+        // 해당 종목을 보유하고 있는 경우
+        userHoldings.value = {
+          ...userHoldings.value, // 기존 값 유지
+          accountId: currentStockHolding.accountId,
+          avgPrice: currentStockHolding.averagePrice,
+          quantity: currentStockHolding.quantity,
+        }
+        console.log('보유 종목 갯수:', userHoldings.value.quantity)
+      } else {
+        // 해당 종목을 보유하지 않은 경우
+        userHoldings.value = {
+          ...userHoldings.value, // 기존 값 유지
+          avgPrice: 0,
+          quantity: 0,
+        }
+        console.log('현재 종목을 보유하지 않음:', stockInfo.stockCode)
+      }
+    }
+  } catch (error) {
+    console.error('보유 종목 정보 로드 실패:', error)
+    if (error.response?.status === 401) {
+      alert('로그인이 필요합니다.')
+      router.push('/login-form')
+    }
+    // 오류 발생 시 기본값 설정
+    userHoldings.value = {
+      ...userHoldings.value,
+      avgPrice: 0,
+      quantity: 0,
+    }
+  }
+}
 
 // 현재 종목 보유 여부
 const hasStock = computed(() => {
-  return userHoldings[stockInfo.stockCode] && userHoldings[stockInfo.stockCode].quantity > 0
+  return userHoldings.value.quantity > 0
 })
 
 // 분봉 옵션들
@@ -1361,6 +1405,8 @@ const navigateToTradingPage = (type) => {
 onMounted(() => {
   stockInfo.stockCode = route.params.stockCode || ''
   stockInfo.name = route.query.stockName || ''
+
+  loadHoldings()
 
   // 상단 가격/변동 정보는 mock price API에서만 세팅
   const setMockPriceInfo = async () => {

@@ -325,7 +325,7 @@
             <button
               v-for="tab in tradeTabs"
               :key="tab.key"
-              @click="activeTab = tab.key"
+              @click="handleTabClick(tab.key)"
               class="flex-1 py-1.5 px-3 text-sm font-medium transition-all duration-200 rounded-md"
               :class="
                 activeTab === tab.key
@@ -475,7 +475,7 @@
                 >
                 <div class="flex items-center">
                   <span class="text-sm text-gray-500">{{ lastRefreshMinutes }}분 전</span>
-                  <button @click="refreshPendingOrders" class="p-1.5 hover:bg-gray-100 rounded">
+                  <button @click="loadPendings" class="p-1.5 hover:bg-gray-100 rounded">
                     <svg
                       class="w-4 h-4 text-gray-400"
                       fill="none"
@@ -649,6 +649,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getStockInfo } from '@/services/stockApi.js'
+import axios from 'axios'
 
 // Vue Router
 const route = useRoute()
@@ -848,10 +849,102 @@ watch(
 
 // 사용자 정보
 const userInfo = ref({
-  avgPrice: 66500,
-  availableAmount: 2500000,
-  holdings: 50,
+  accountId: 0,
+  availableAmount: 0,
+  avgPrice: 0,
+  quantity: 0,
 })
+
+// 사용자 계좌에서 정보 가져오기
+const loadUserAccount = async () => {
+  try {
+    const response = await axios.get('/api/mocktrading/account') // userId 제거
+
+    if (response.data) {
+      // userInfo.value = response.data
+      userInfo.value = {
+        ...userInfo.value, // 기존 avgPrice, holdings 유지
+        accountId: response.data.accountId,
+        availableAmount: response.data.currentBalance,
+      }
+      console.log('계좌 정보 로드 성공:', response.data)
+    }
+  } catch (error) {
+    console.error('계좌 정보 로드 실패:', error)
+    if (error.response?.status === 401) {
+      alert('로그인이 필요합니다.')
+      router.push('/login-form')
+    }
+  }
+}
+
+// 사용자 보유 종목에서 현재 종목 정보 가져오기
+const loadHoldings = async () => {
+  try {
+    const response = await axios.get('/api/mocktrading/holdings')
+
+    if (response.data && Array.isArray(response.data)) {
+      // 현재 종목코드와 일치하는 보유 종목 찾기
+      const currentStockHolding = response.data.find((holding) => holding.stockCode === STOCK_CODE)
+
+      if (currentStockHolding) {
+        // 해당 종목을 보유하고 있는 경우
+        userInfo.value = {
+          ...userInfo.value, // 기존 값 유지
+          avgPrice: currentStockHolding.averagePrice,
+          quantity: currentStockHolding.quantity, // quantity를 holdings로 매핑
+        }
+        console.log('보유 종목 정보 로드 성공:', currentStockHolding)
+      } else {
+        // 해당 종목을 보유하지 않은 경우
+        userInfo.value = {
+          ...userInfo.value, // 기존 값 유지
+          avgPrice: 0,
+          holdings: 0,
+        }
+        console.log('현재 종목을 보유하지 않음:', STOCK_CODE)
+      }
+    }
+  } catch (error) {
+    console.error('보유 종목 정보 로드 실패:', error)
+    if (error.response?.status === 401) {
+      alert('로그인이 필요합니다.')
+      router.push('/login-form')
+    }
+    // 오류 발생 시 기본값 설정
+    userInfo.value = {
+      ...userInfo.value,
+      avgPrice: 0,
+      holdings: 0,
+    }
+  }
+}
+
+// 사용자 계좌에서 거래 대기 목록 가져오기
+const loadPendings = async () => {
+  try {
+    const response = await axios.get('/api/stock/orders')
+    if (response.data && Array.isArray(response.data)) {
+      // 현재 종목코드와 일치하는 주문만 필터링
+      const filtered = response.data.filter((order) => order.stockCode === STOCK_CODE)
+      // 화면에서 사용하는 pendingOrders 형태로 변환
+      pendingOrders.value = filtered.map((order) => ({
+        id: order.orderId,
+        type: order.orderType.toLowerCase() === 'buy' ? 'buy' : 'sell',
+        quantity: order.quantity,
+        price: order.targetPrice,
+        checked: false,
+        stockName: order.stockName,
+        createdAt: order.createdAt,
+      }))
+    } else {
+      pendingOrders.value = []
+    }
+  } catch (error) {
+    console.error('대기 주문 정보 로드 실패:', error)
+    pendingOrders.value = []
+  }
+}
 
 // 거래 상태
 const getInitialTab = () => {
@@ -867,6 +960,18 @@ const orderType = ref('limit')
 const orderPrice = ref(0)
 const orderQuantity = ref(0)
 const showTradeHistory = ref(true)
+
+watch(activeTab, () => {
+  orderQuantity.value = 0
+})
+
+// 거래 유형 탭 클릭 시 처리 함수
+const handleTabClick = (tabKey) => {
+  activeTab.value = tabKey
+  if (tabKey === 'waiting') {
+    loadPendings()
+  }
+}
 
 // 거래 탭 정의
 const tradeTabs = [
@@ -1234,29 +1339,7 @@ const waitingInfo = ref({
 })
 
 // 대기중인 거래 목록
-const pendingOrders = ref([
-  {
-    id: 1,
-    type: 'buy',
-    quantity: 10,
-    price: 66800,
-    checked: false,
-  },
-  {
-    id: 2,
-    type: 'sell',
-    quantity: 5,
-    price: 67200,
-    checked: false,
-  },
-  {
-    id: 3,
-    type: 'buy',
-    quantity: 15,
-    price: 66500,
-    checked: false,
-  },
-])
+const pendingOrders = ref([])
 
 // 새로고침 시점 (분 단위)
 const lastRefreshMinutes = ref(2)
@@ -1301,7 +1384,7 @@ const maxOrderQuantity = computed(() => {
   if (activeTab.value === 'buy') {
     return Math.floor(userInfo.value.availableAmount / orderPrice.value)
   } else if (activeTab.value === 'sell') {
-    return userInfo.value.holdings
+    return userInfo.value.quantity
   }
   return 0
 })
@@ -1313,8 +1396,8 @@ const setQuantityByRatio = (ratio) => {
     const targetQuantity = Math.floor((availableShares * ratio) / 100)
     orderQuantity.value = Math.max(0, targetQuantity)
   } else if (activeTab.value === 'sell') {
-    const targetQuantity = Math.floor((userInfo.value.holdings * ratio) / 100)
-    orderQuantity.value = Math.max(0, Math.min(targetQuantity, userInfo.value.holdings))
+    const targetQuantity = Math.floor((userInfo.value.quantity * ratio) / 100)
+    orderQuantity.value = Math.max(0, Math.min(targetQuantity, userInfo.value.quantity))
   }
 }
 
@@ -1322,12 +1405,17 @@ const totalOrderAmount = computed(() => {
   return orderPrice.value * orderQuantity.value
 })
 
-// 예상 수익률 계산 (판매 시)
 const expectedReturnRate = computed(() => {
   if (activeTab.value !== 'sell') return '0.00%'
 
   const avgPrice = userInfo.value.avgPrice
   const sellPrice = orderPrice.value
+
+  // 보유수량이 없거나 평균단가가 0이면 0%로 표시
+  if (!avgPrice || avgPrice === 0) {
+    return '0.00%'
+  }
+
   const returnRate = ((sellPrice - avgPrice) / avgPrice) * 100
 
   if (returnRate > 0) {
@@ -1345,7 +1433,7 @@ const expectedProfit = computed(() => {
 
   const avgPrice = userInfo.value.avgPrice
   const sellPrice = orderPrice.value
-  const quantity = orderQuantity.value || 1
+  const quantity = orderQuantity.value || 0
   const profit = (sellPrice - avgPrice) * quantity
 
   if (profit > 0) {
@@ -1528,6 +1616,20 @@ const decreasePrice = () => {
 }
 
 const increaseQuantity = () => {
+  if (activeTab.value === 'sell') {
+    // 판매 탭에서 최대 보유수량 초과 방지
+    if (orderQuantity.value >= (userInfo.value.quantity || 0)) {
+      alert(`최대 ${userInfo.value.quantity || 0}주까지만 매도할 수 있습니다.`)
+      return
+    }
+  } else if (activeTab.value === 'buy') {
+    // 구매 탭에서 최대 구매 가능 수량 초과 방지
+    const maxQuantity = Math.floor(userInfo.value.availableAmount / orderPrice.value)
+    if (orderQuantity.value >= maxQuantity) {
+      alert(`최대 ${maxQuantity}주까지만 구매할 수 있습니다.`)
+      return
+    }
+  }
   orderQuantity.value += 1
 }
 
@@ -1549,23 +1651,31 @@ const toggleOrderCheck = (orderId) => {
   }
 }
 
-const refreshPendingOrders = () => {
-  lastRefreshMinutes.value = 0
-  console.log('대기 주문 새로고침')
-}
-
-const cancelSelectedOrders = () => {
+const cancelSelectedOrders = async () => {
   const checkedOrders = pendingOrders.value.filter((order) => order.checked)
   if (checkedOrders.length === 0) {
     alert('취소할 주문을 선택해주세요.')
     return
   }
 
-  console.log('선택된 주문 취소:', checkedOrders)
-  pendingOrders.value = pendingOrders.value.filter((order) => !order.checked)
+  const orderIds = checkedOrders.map((order) => order.id)
+  console.log('취소할 주문 ID 목록:', orderIds)
+  try {
+    await axios.delete('/api/stock/orders', {
+      data: orderIds, // ← 객체가 아니라 배열만!
+      headers: { 'Content-Type': 'application/json' },
+    })
+    alert('선택한 주문이 취소되었습니다.')
+    await loadPendings()
+    await loadUserAccount()
+    await loadHoldings()
+  } catch (error) {
+    console.error('주문 취소 실패:', error)
+    alert('주문 취소에 실패했습니다.')
+  }
 }
 
-const submitOrder = () => {
+const submitOrder = async () => {
   // 주문 유효성 검사
   if (orderQuantity.value <= 0) {
     alert('주문 수량을 입력해주세요.')
@@ -1577,21 +1687,36 @@ const submitOrder = () => {
     return
   }
 
-  if (activeTab.value === 'sell' && orderQuantity.value > userInfo.value.holdings) {
+  if (activeTab.value === 'sell' && orderQuantity.value > userInfo.value.quantity) {
     alert('보유 주식 수량을 초과했습니다.')
     return
   }
 
-  console.log('주문 제출:', {
-    type: activeTab.value,
-    orderType: orderType.value,
-    price: orderPrice.value,
+  // 요청 파라미터 구성
+  const params = {
+    orderType: activeTab.value === 'buy' ? 'BUY' : 'SELL',
     quantity: orderQuantity.value,
-    totalAmount: totalOrderAmount.value,
-  })
+    stockCode: STOCK_CODE,
+    stockName: stockInfo.value.name,
+    targetPrice: orderPrice.value,
+  }
 
-  // 주문 완료 후 초기화
-  orderQuantity.value = 0
+  try {
+    await axios.post('/api/stock/order', params)
+    alert('주문이 정상적으로 접수되었습니다.')
+    // 주문 완료 후 초기화
+    orderQuantity.value = 0
+    // 주문 후 계좌/보유수량 정보 갱신
+    await loadUserAccount()
+    await loadHoldings()
+    // 필요시 대기 목록 새로고침 등 추가
+    if (activeTab.value === 'waiting') {
+      loadPendings()
+    }
+  } catch (error) {
+    console.error('주문 제출 실패:', error)
+    alert('주문 제출에 실패했습니다.')
+  }
 }
 
 // // ✅ 디버깅용 메서드
@@ -1614,6 +1739,8 @@ const timeUpdateTimer = ref(null)
 onMounted(() => {
   isUnmounted = false
   console.log('[초기화] 컴포넌트 마운트 시작')
+  loadUserAccount()
+  loadHoldings()
   testApiCall()
   initWebSocket()
 
