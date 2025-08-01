@@ -605,6 +605,8 @@ const loadUserData = async () => {
           userCredit.value = 0
         }
 
+        userAccount.value.totalAssetValue = userAccount.value.currentBalance + stockValue.value;
+
         dataLoaded.value = true
         await nextTick()
         updatePortfolioChart()
@@ -673,4 +675,3 @@ onMounted(async () => {
   }
 }
 </style>
-  
