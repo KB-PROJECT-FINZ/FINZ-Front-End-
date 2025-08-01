@@ -45,7 +45,7 @@ const rawFeedback = ref(null)
 const loading = ref(true)
 const error = ref('')
 function goBack() {
-  router.back()
+  router.push({ name: 'journal' })
 }
 
 onMounted(async () => {
