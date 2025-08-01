@@ -18,7 +18,7 @@
       </div>
       <div class="bg-white p-4 rounded-xl shadow-sm">
         <p class="text-sm text-gray-500 mb-1">누적 크레딧</p>
-        <p class="font-semibold text-indigo-500">15,420</p>
+        <p class="font-semibold text-indigo-500">{{ totalEarnedCredit }}</p>
       </div>
       <div class="bg-white p-4 rounded-xl shadow-sm">
         <p class="text-sm text-gray-500 mb-1">완료한 학습</p>
@@ -135,6 +135,7 @@ const router = useRouter()
 const name = ref('')
 const userName = ref('')
 const riskTypeName = ref('')
+const totalEarnedCredit = ref(0) // 누적 크레딧 추가
 
 // 세션 기반 사용자 정보 불러오기
 onMounted(async () => {
@@ -146,8 +147,19 @@ onMounted(async () => {
     const user = response.data
     name.value = user.name
     userName.value = user.username
-
     riskTypeName.value = convertRiskTypeToName(user.riskType)
+    
+    // 누적 크레딧 가져오기
+    try {
+      const creditResponse = await axios.get('http://localhost:8080/api/learning/user/total-earned-credit', {
+        withCredentials: true,
+      })
+      totalEarnedCredit.value = creditResponse.data
+    } catch (error) {
+      console.log('누적 크레딧 조회 실패:', error)
+      totalEarnedCredit.value = 0
+    }
+    
     console.log('사용자 정보:', riskTypeName.value)
   } catch (e) {
     console.error('세션 정보 불러오기 실패:', e)
