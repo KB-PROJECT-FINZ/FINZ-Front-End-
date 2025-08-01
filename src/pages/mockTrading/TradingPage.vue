@@ -325,7 +325,7 @@
             <button
               v-for="tab in tradeTabs"
               :key="tab.key"
-              @click="activeTab = tab.key"
+              @click="handleTabClick(tab.key)"
               class="flex-1 py-1.5 px-3 text-sm font-medium transition-all duration-200 rounded-md"
               :class="
                 activeTab === tab.key
@@ -475,7 +475,7 @@
                 >
                 <div class="flex items-center">
                   <span class="text-sm text-gray-500">{{ lastRefreshMinutes }}분 전</span>
-                  <button @click="refreshPendingOrders" class="p-1.5 hover:bg-gray-100 rounded">
+                  <button @click="loadPendings" class="p-1.5 hover:bg-gray-100 rounded">
                     <svg
                       class="w-4 h-4 text-gray-400"
                       fill="none"
@@ -920,6 +920,32 @@ const loadHoldings = async () => {
   }
 }
 
+// 사용자 계좌에서 거래 대기 목록 가져오기
+const loadPendings = async () => {
+  try {
+    const response = await axios.get('/api/stock/orders')
+    if (response.data && Array.isArray(response.data)) {
+      // 현재 종목코드와 일치하는 주문만 필터링
+      const filtered = response.data.filter((order) => order.stockCode === STOCK_CODE)
+      // 화면에서 사용하는 pendingOrders 형태로 변환
+      pendingOrders.value = filtered.map((order) => ({
+        id: order.orderId,
+        type: order.orderType.toLowerCase() === 'buy' ? 'buy' : 'sell',
+        quantity: order.quantity,
+        price: order.targetPrice,
+        checked: false,
+        stockName: order.stockName,
+        createdAt: order.createdAt,
+      }))
+    } else {
+      pendingOrders.value = []
+    }
+  } catch (error) {
+    console.error('대기 주문 정보 로드 실패:', error)
+    pendingOrders.value = []
+  }
+}
+
 // 거래 상태
 const getInitialTab = () => {
   const tabFromQuery = route.query.tab
@@ -938,6 +964,14 @@ const showTradeHistory = ref(true)
 watch(activeTab, () => {
   orderQuantity.value = 0
 })
+
+// 거래 유형 탭 클릭 시 처리 함수
+const handleTabClick = (tabKey) => {
+  activeTab.value = tabKey
+  if (tabKey === 'waiting') {
+    loadPendings()
+  }
+}
 
 // 거래 탭 정의
 const tradeTabs = [
@@ -1305,29 +1339,7 @@ const waitingInfo = ref({
 })
 
 // 대기중인 거래 목록
-const pendingOrders = ref([
-  {
-    id: 1,
-    type: 'buy',
-    quantity: 10,
-    price: 66800,
-    checked: false,
-  },
-  {
-    id: 2,
-    type: 'sell',
-    quantity: 5,
-    price: 67200,
-    checked: false,
-  },
-  {
-    id: 3,
-    type: 'buy',
-    quantity: 15,
-    price: 66500,
-    checked: false,
-  },
-])
+const pendingOrders = ref([])
 
 // 새로고침 시점 (분 단위)
 const lastRefreshMinutes = ref(2)
@@ -1639,23 +1651,31 @@ const toggleOrderCheck = (orderId) => {
   }
 }
 
-const refreshPendingOrders = () => {
-  lastRefreshMinutes.value = 0
-  console.log('대기 주문 새로고침')
-}
-
-const cancelSelectedOrders = () => {
+const cancelSelectedOrders = async () => {
   const checkedOrders = pendingOrders.value.filter((order) => order.checked)
   if (checkedOrders.length === 0) {
     alert('취소할 주문을 선택해주세요.')
     return
   }
 
-  console.log('선택된 주문 취소:', checkedOrders)
-  pendingOrders.value = pendingOrders.value.filter((order) => !order.checked)
+  const orderIds = checkedOrders.map((order) => order.id)
+  console.log('취소할 주문 ID 목록:', orderIds)
+  try {
+    await axios.delete('/api/stock/orders', {
+      data: orderIds, // ← 객체가 아니라 배열만!
+      headers: { 'Content-Type': 'application/json' },
+    })
+    alert('선택한 주문이 취소되었습니다.')
+    await loadPendings()
+    await loadUserAccount()
+    await loadHoldings()
+  } catch (error) {
+    console.error('주문 취소 실패:', error)
+    alert('주문 취소에 실패했습니다.')
+  }
 }
 
-const submitOrder = () => {
+const submitOrder = async () => {
   // 주문 유효성 검사
   if (orderQuantity.value <= 0) {
     alert('주문 수량을 입력해주세요.')
@@ -1672,16 +1692,31 @@ const submitOrder = () => {
     return
   }
 
-  console.log('주문 제출:', {
-    type: activeTab.value,
-    orderType: orderType.value,
-    price: orderPrice.value,
+  // 요청 파라미터 구성
+  const params = {
+    orderType: activeTab.value === 'buy' ? 'BUY' : 'SELL',
     quantity: orderQuantity.value,
-    totalAmount: totalOrderAmount.value,
-  })
+    stockCode: STOCK_CODE,
+    stockName: stockInfo.value.name,
+    targetPrice: orderPrice.value,
+  }
 
-  // 주문 완료 후 초기화
-  orderQuantity.value = 0
+  try {
+    await axios.post('/api/stock/order', params)
+    alert('주문이 정상적으로 접수되었습니다.')
+    // 주문 완료 후 초기화
+    orderQuantity.value = 0
+    // 주문 후 계좌/보유수량 정보 갱신
+    await loadUserAccount()
+    await loadHoldings()
+    // 필요시 대기 목록 새로고침 등 추가
+    if (activeTab.value === 'waiting') {
+      loadPendings()
+    }
+  } catch (error) {
+    console.error('주문 제출 실패:', error)
+    alert('주문 제출에 실패했습니다.')
+  }
 }
 
 // // ✅ 디버깅용 메서드
