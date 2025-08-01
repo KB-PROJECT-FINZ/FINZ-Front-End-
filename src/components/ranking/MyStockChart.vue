@@ -27,20 +27,28 @@ const myPositionPlugin = {
       ctx,
       scales: { x, y },
     } = chart
-    if (props.positionIndex === undefined) return
 
-    const xPos = x.getPixelForValue(props.positionIndex)
-    const yPos = y.getPixelForValue(props.distribution[props.positionIndex])
+    const index = props.positionIndex
+    if (index === undefined || index < 0 || index >= 6) return
+
+    const xPos = x.getPixelForValue(index)
+    const dataValue = props.distribution?.[index] ?? 0
+    const yPos = y.getPixelForValue(dataValue)
 
     ctx.save()
+
+    // 🔴 빨간 점
     ctx.fillStyle = 'red'
     ctx.beginPath()
     ctx.arc(xPos, yPos - 10, 6, 0, 2 * Math.PI)
     ctx.fill()
 
+    // 🔴 텍스트 ("내 위치")
     ctx.font = 'bold 12px Arial'
+    ctx.fillStyle = 'red'
     ctx.textAlign = 'center'
     ctx.fillText('내 위치', xPos, yPos - 20)
+
     ctx.restore()
   },
 }
@@ -51,12 +59,12 @@ onMounted(() => {
   new Chart(canvas.value.getContext('2d'), {
     type: 'bar',
     data: {
-      labels: ['-10%', '-5%', '0%', '5%', '10%', '15%+'],
+      labels: ['-10% 이하', '-10~0%', '0~10%', '10~20%', '20~30%', '30% 초과'],
       datasets: [
         {
           label: '수익률 분포',
-          data: props.distribution,
-          backgroundColor: props.color,
+          data: props.distribution?.length === 6 ? props.distribution : [0, 0, 0, 0, 0, 0],
+          backgroundColor: props.color || '#60a5fa',
           borderRadius: 4,
         },
       ],
