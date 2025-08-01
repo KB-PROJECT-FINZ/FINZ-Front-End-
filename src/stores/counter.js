@@ -29,10 +29,6 @@ export const useChatStore = defineStore('chat', {
           userId: 1,
           sessionId: this.sessionId,
           message: message,
-<<<<<<< HEAD
-          pe: intentType,
-=======
->>>>>>> 5048c083856624e5a5973666ca184b5b570aae33
         })
 
         const reply = res.data.content
