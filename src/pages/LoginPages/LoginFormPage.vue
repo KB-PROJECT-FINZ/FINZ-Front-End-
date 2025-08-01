@@ -116,12 +116,11 @@ const handleLogin = async () => {
         withCredentials: true, // 세션 쿠키 포함
       },
     )
+    userStore.setUser(res.data)
 
     if (res.data) {
       // 사용자 상태 전역 저장 (Pinia 등)
       userStore.setUser(res.data)
-
-      alert('로그인 성공!')
       router.push('/home') // 로그인 성공 후 이동
     }
   } catch (err) {

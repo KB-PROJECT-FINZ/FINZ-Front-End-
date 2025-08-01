@@ -81,7 +81,6 @@ import { Calendar } from 'v-calendar'
 const journals = ref([])
 const selectedJournal = ref(null)
 const router = useRouter()
-const userId = ref(null)
 const selectedDate = ref(new Date().toISOString().slice(0, 10)) // 오늘 날짜로 초기화
 
 onMounted(async () => {
@@ -160,11 +159,10 @@ function goToWrite() {
   selectedJournal.value = null
 }
 function goBack() {
-  router.back()
+  router.push({ name: 'profile' })
 }
 </script>
 
-<!-- Tailwind로 커스텀해야 하는 부분(예: v-calendar 내부)은 아래처럼 추가로 덮어써도 됩니다 -->
 <style>
 @import 'v-calendar/style.css';
 .selected-date-circle {
