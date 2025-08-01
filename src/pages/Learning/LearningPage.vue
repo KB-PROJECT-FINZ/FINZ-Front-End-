@@ -1,72 +1,92 @@
 <template>
-  <div class="learning-page">
+  <div class="bg-[#f7f8fa] min-h-screen pb-20">
     <!-- 상단 헤더 -->
-    <header class="header">
-      <h1 class="app-title">개념 학습</h1>
+    <header class="flex items-center justify-center bg-white py-5 shadow-sm mb-2">
+      <h1 class="text-xl font-bold text-gray-800 tracking-tight">개념 학습</h1>
     </header>
 
     <!-- 프로필 박스 -->
-    <section class="profile-box">
-      <div class="profile-icon"><span class="icon">👤</span></div>
-      <div class="profile-info">
-        <div class="profile-name">{{ user.name }}님은</div>
-        <div class="profile-type">{{ user.riskType }} 사고 유형입니다</div>
+    <section
+      class="flex items-center bg-gradient-to-r from-indigo-400 via-blue-300 to-teal-200 rounded-2xl mx-4 my-5 px-5 py-6 shadow"
+    >
+      <div
+        class="w-[54px] h-[54px] rounded-full bg-white/30 flex items-center justify-center text-3xl mr-4"
+      >
+        <span>👤</span>
+      </div>
+      <div class="text-white">
+        <div class="text-base font-bold">{{ user.name }}님은</div>
+        <div class="text-sm mt-1">{{ user.riskType }} 사고 유형입니다</div>
       </div>
     </section>
-    <!-- 추천 학습 콘텐츠 -->
-    <section class="content-list">
-      <h2 class="section-title">추천 학습 콘텐츠</h2>
 
-      <div v-if="recommendedContents.length === 0" class="loading-msg">
+    <!-- 추천 학습 콘텐츠 -->
+    <section class="mb-8">
+      <h2 class="text-lg font-bold mb-3 ml-2 text-gray-900">추천 학습 콘텐츠</h2>
+      <div v-if="recommendedContents.length === 0" class="text-center text-gray-400 py-8">
         콘텐츠를 불러오는 중입니다...
       </div>
-      <div class="content-list-wrap" v-else>
+      <div v-else class="flex flex-col gap-4 mx-2">
         <div
           v-for="(item, index) in recommendedContents.slice(0, recommendedViewCount)"
           :key="item.contentId"
-          class="content-list-card"
+          class="bg-white rounded-2xl flex items-center shadow px-5 py-6 cursor-pointer transition hover:-translate-y-1 hover:shadow-lg min-h-[110px] mb-4"
           @click="goToDetail(item.contentId)"
         >
-          <div class="content-list-info">
-            <span class="quiz-credit-tag" v-if="item.creditReward"
+          <div class="flex-1 min-w-0">
+            <span
+              v-if="item.creditReward"
+              class="inline-block text-[0.92rem] text-yellow-700 bg-yellow-50 rounded px-2 py-1 mr-2 font-bold"
               >{{ item.creditReward }}크레딧</span
             >
-            <div class="content-list-title">
-              {{ item.title }}
-            </div>
+            <div class="text-base font-bold text-gray-900 mt-1">{{ item.title }}</div>
           </div>
-          <span class="content-list-arrow">&#8250;</span>
+          <span class="text-2xl text-gray-300 ml-4">&#8250;</span>
         </div>
-        <div v-if="recommendedViewCount < recommendedContents.length" class="load-more-wrap">
-          <button class="load-more-btn" @click="recommendedViewCount += 3">더보기</button>
+        <div
+          v-if="recommendedViewCount < recommendedContents.length"
+          class="flex justify-center mt-2"
+        >
+          <button
+            class="bg-indigo-100 text-indigo-700 font-bold rounded-lg px-5 py-2 hover:bg-indigo-200 transition"
+            @click="recommendedViewCount += 3"
+          >
+            더보기
+          </button>
         </div>
       </div>
     </section>
 
-    <!-- 완료된 콘텐츠 섹션 -->
-    <section class="content-list">
-      <h2 class="section-title">완료한 학습 콘텐츠</h2>
-
-      <div v-if="completedContents.length === 0" class="loading-msg">완료한 콘텐츠가 없습니다.</div>
-      <div class="content-list-wrap" v-else>
+    <!-- 완료한 학습 콘텐츠 -->
+    <section>
+      <h2 class="text-lg font-bold mb-3 ml-2 text-gray-900">완료한 학습 콘텐츠</h2>
+      <div v-if="completedContents.length === 0" class="text-center text-gray-400 py-8">
+        완료한 콘텐츠가 없습니다.
+      </div>
+      <div v-else class="flex flex-col gap-4 mx-2">
         <div
           v-for="(item, index) in completedContents.slice(0, completedViewCount)"
           :key="item.contentId"
-          class="content-list-card completed"
+          class="bg-gray-100 rounded-2xl flex items-center shadow px-5 py-6 cursor-pointer opacity-90 min-h-[110px] mb-4"
           @click="goToDetail(item.contentId)"
         >
-          <div class="content-list-info">
-            <span class="quiz-credit-tag" v-if="item.creditReward"
+          <div class="flex-1 min-w-0">
+            <span
+              v-if="item.creditReward"
+              class="inline-block text-[0.92rem] text-yellow-700 bg-yellow-50 rounded px-2 py-1 mr-2 font-bold"
               >{{ item.creditReward }}크레딧</span
             >
-            <div class="content-list-title">
-              {{ item.title }}
-            </div>
+            <div class="text-base font-bold text-gray-900 mt-1">{{ item.title }}</div>
           </div>
-          <span class="content-list-arrow">&#8250;</span>
+          <span class="text-2xl text-gray-300 ml-4">&#8250;</span>
         </div>
-        <div v-if="completedViewCount < completedContents.length" class="load-more-wrap">
-          <button class="load-more-btn" @click="completedViewCount += 3">더보기</button>
+        <div v-if="completedViewCount < completedContents.length" class="flex justify-center mt-2">
+          <button
+            class="bg-indigo-100 text-indigo-700 font-bold rounded-lg px-5 py-2 hover:bg-indigo-200 transition"
+            @click="completedViewCount += 3"
+          >
+            더보기
+          </button>
         </div>
       </div>
     </section>
@@ -116,16 +136,9 @@ const fetchContents = async () => {
 
     const [recommendRes, completeRes] = await Promise.all([
       axios.get('/api/learning/recommend/list', {
-        params: {
-          userId: user.value.userId,
-          size: 5,
-        },
         withCredentials: true,
       }),
       axios.get('/api/learning/history/complete/list', {
-        params: {
-          userId: user.value.userId,
-        },
         withCredentials: true,
       }),
     ])
@@ -148,7 +161,7 @@ const fetchContents = async () => {
 }
 
 // 👉 polling으로 추천 콘텐츠 확보
-const pollUntilContentReady = async (maxRetry = 5, delay = 2000) => {
+const pollUntilContentReady = async (maxRetry = 5, delay = 2500) => {
   let retry = 0
   console.log('[🔁] Polling 시작')
   while (retry < maxRetry) {
@@ -192,205 +205,3 @@ function goToDetail(id) {
   router.push(`/learning/${id}`)
 }
 </script>
-
-<style scoped>
-.learning-page {
-  background: #f7f8fa;
-  min-height: 100vh;
-  padding-bottom: 80px;
-}
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  padding: 18px 0 12px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  margin-bottom: 8px;
-}
-.app-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #222;
-  letter-spacing: -1px;
-}
-.profile-box {
-  background: linear-gradient(90deg, #7f7fd5 0%, #86a8e7 50%, #91eac9 100%);
-  border-radius: 18px;
-  margin: 18px 16px 18px 16px;
-  padding: 22px 18px 18px 18px;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 2px 12px rgba(127, 127, 213, 0.08);
-}
-.profile-icon {
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.2rem;
-  margin-right: 16px;
-}
-.profile-info {
-  color: #fff;
-}
-.profile-name {
-  font-size: 1.1rem;
-  font-weight: bold;
-}
-.profile-type {
-  font-size: 1rem;
-  margin: 2px 0 4px 0;
-}
-.profile-desc {
-  font-size: 0.95rem;
-  opacity: 0.9;
-}
-.section-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin: 0 0 10px 8px;
-  color: #222;
-}
-.content-list-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin: 0 8px;
-}
-.content-list-card {
-  background: #fff;
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 2px 12px rgba(44, 62, 80, 0.1);
-  padding: 24px 20px;
-  cursor: pointer;
-  transition: box-shadow 0.18s;
-  position: relative;
-  min-height: 110px;
-  margin-bottom: 18px;
-}
-.content-list-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(44, 62, 80, 0.18);
-}
-.content-thumb {
-  width: 90px;
-  height: 90px;
-  border-radius: 14px;
-  object-fit: cover;
-  background: #eee;
-  margin-right: 24px;
-  box-shadow: 0 1px 8px rgba(44, 62, 80, 0.08);
-}
-.content-list-info {
-  flex: 1;
-  min-width: 0;
-}
-.content-list-title {
-  font-size: 1.18rem;
-  font-weight: bold;
-  color: #222;
-  margin-bottom: 8px;
-  line-height: 1.5;
-  letter-spacing: 0.01em;
-}
-.content-list-desc {
-  color: #333;
-  font-size: 1.05rem;
-  margin-bottom: 8px;
-  line-height: 1.7;
-  letter-spacing: 0.01em;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.content-list-meta {
-  display: flex;
-  gap: 12px;
-  font-size: 0.98rem;
-  color: #888;
-}
-.content-list-type {
-  background: #e0e7ff;
-  color: #3730a3;
-  border-radius: 8px;
-  padding: 4px 12px;
-  font-size: 0.95rem;
-}
-.content-list-read {
-  color: #888;
-}
-.content-list-arrow {
-  font-size: 2rem;
-  color: #bdbdbd;
-  margin-left: 18px;
-}
-.divider {
-  height: 1px;
-  background: #f0f1f3;
-  margin: 0 8px;
-}
-.content-list-card.completed {
-  background-color: #f2f2f2;
-  opacity: 0.9;
-}
-.quiz-credit-tag {
-  font-size: 0.92rem;
-  color: #bfa700;
-  background: #fffbe6;
-  border-radius: 8px;
-  padding: 2px 10px;
-  margin-right: 8px;
-  font-weight: bold;
-  display: inline-block;
-}
-.load-more-wrap {
-  display: flex;
-  justify-content: center;
-  margin: 8px 0 16px 0;
-}
-.load-more-btn {
-  background: #e0e7ff;
-  color: #3730a3;
-  font-weight: bold;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 18px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-.load-more-btn:hover {
-  background: #c7d2fe;
-}
-
-@media (max-width: 600px) {
-  .profile-box {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 18px 12px;
-  }
-  .profile-icon {
-    margin-bottom: 8px;
-    margin-right: 0;
-  }
-  .content-list-card {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 18px 8px;
-    min-height: 90px;
-  }
-  .content-thumb {
-    margin-right: 0;
-    margin-bottom: 12px;
-    width: 80px;
-    height: 80px;
-  }
-}
-</style>
