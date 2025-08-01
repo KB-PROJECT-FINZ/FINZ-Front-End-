@@ -54,33 +54,60 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed} from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useChatStore } from '@/stores/counter.js'
 import { useUserStore } from '@/stores/user.js'
 
-// Props
+const chatStore = useChatStore()
+const userStore = useUserStore()
+const userId = computed(() => userStore.userId)
+
 // const props = defineProps({
 //   fixedIntent: { type: String, default: null },
 //   // sessionId: { type: Number, default: null },
 // })
 
-// Pinia 스토어
-const chatStore = useChatStore()
-const userStore = useUserStore()
-
-const userId = computed(() => userStore.userId)
-
 const input = ref('')
-const awaitingKeyword = ref(false)
-const awaitingStockAnalyze = ref(false) // 종목 분석 상태
 const loading = ref(false)
+const awaitingKeyword = ref(false)
+const awaitingStockAnalyze = ref(false)
 
-// 메시지 전송
+onMounted(async () => {
+  // 사용자 정보 없으면 다시 조회
+  if (!userStore.userId) {
+    try {
+      const res = await axios.get('/api/auth/me', { withCredentials: true })
+      userStore.setUser({
+        userId: res.data.userId,
+        username: res.data.username,
+        name: res.data.name,
+        riskType: res.data.riskType,
+      })
+      console.log('✅ 사용자 정보 동기화 완료:', userStore.$state)
+    } catch (err) {
+      console.error('❌ 사용자 정보 조회 실패:', err)
+    }
+  }
+
+  if (chatStore.messages.length === 0) {
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      buttons: [
+        {label: '📈 종목 추천', intent: 'RECOMMEND_SELECT'},
+        {label: '📊 종목 분석', intent: 'STOCK_ANALYZE'},
+        {label: '📚 용어 설명', intent: 'MESSAGE', message: 'PER가 뭐야?'},
+        {label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘'},
+      ],
+    })
+  }
+})
 async function fetchGPT(prompt) {
 
   loading.value = true
   chatStore.messages.push({ role: 'user', content: prompt })
+
   try {
     const res = await axios.post('/api/chatbot/message', {
       userId: userId.value,
@@ -92,7 +119,6 @@ async function fetchGPT(prompt) {
       chatStore.messages.push({ role: 'bot', content: res.data.content })
       chatStore.sessionId = res.data.sessionId
       chatStore.intentType = res.data.intentType
-
     }
   } catch (err) {
     chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
@@ -101,7 +127,6 @@ async function fetchGPT(prompt) {
   }
 }
 
-// 전송 버튼
 function submit() {
   if (!input.value.trim()) return
   const text = input.value.trim()
@@ -109,22 +134,16 @@ function submit() {
   if (awaitingKeyword.value) {
     awaitingKeyword.value = false
     fetchGPT(`${text} 관련 종목 추천해줘`, 'RECOMMEND_KEYWORD')
-    input.value = ''
-    return
-  }
-
-  if (awaitingStockAnalyze.value) {
+  } else if (awaitingStockAnalyze.value) {
     awaitingStockAnalyze.value = false
     fetchGPT(`${text} 종목 분석해줘`, 'STOCK_ANALYZE')
-    input.value = ''
-    return
+  } else {
+    fetchGPT(text)
   }
 
-  fetchGPT(text)
   input.value = ''
 }
 
-// 버튼 intent 처리
 async function handleButtonIntent(btn) {
   if (btn.intent === 'EXTERNAL_LINK' && btn.href) {
     window.location.href = btn.href
@@ -147,7 +166,6 @@ async function handleButtonIntent(btn) {
   }
 
   if (btn.intent === 'RECOMMEND_PROFILE') {
-    // 1) 버튼만 띄우는 경우
     if (!btn.message) {
       chatStore.clearMessages()
       chatStore.messages.push({
@@ -171,7 +189,6 @@ async function handleButtonIntent(btn) {
       return
     }
 
-    // 2) 실제 추천 요청 처리
     const risk = userStore.riskType
     if (!risk) {
       chatStore.messages.push({
@@ -229,20 +246,4 @@ async function handleButtonIntent(btn) {
   await chatStore.sendMessage(btn.message, btn.intent)
   loading.value = false
 }
-
-// 초기 메시지
-onMounted(() => {
-  if (chatStore.messages.length === 0) {
-    chatStore.messages.push({
-      role: 'bot',
-      type: 'buttons',
-      buttons: [
-        { label: '📈 종목 추천', intent: 'RECOMMEND_SELECT' },
-        { label: '📊 종목 분석', intent: 'STOCK_ANALYZE' },
-        { label: '📚 용어 설명', intent: 'MESSAGE', message: 'PER가 뭐야?' },
-        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘' },
-      ],
-    })
-  }
-})
 </script>
