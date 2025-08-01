@@ -1,7 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import axios from 'axios'
-import { useUserStore } from './user.js' // ✅ 사용자 store 가져오기
 
 export const useCounterStore = defineStore('counter', () => {
   const count = ref(0)
@@ -17,9 +16,13 @@ export const useChatStore = defineStore('chat', {
     messages: [],
     intentType: null,
     sessionId: null,
+    userId: null,
   }),
 
   actions: {
+    setUserId(id) {
+      this.userId = id
+    },
     async sendMessage(message, intentType = null, userId = null) {
       if (message) {
         this.messages.push({ role: 'user', content: message })

@@ -91,6 +91,8 @@ onMounted(async () => {
         name: res.data.name,
         riskType: res.data.riskType,
       })
+      chatStore.setUserId(res.data.userId)
+
       console.log('✅ 사용자 정보 동기화 완료:', userStore.$state)
     } catch (err) {
       console.error('❌ 사용자 정보 조회 실패:', err)
@@ -141,10 +143,10 @@ async function fetchGPT(prompt, explicitIntent = null) {
     console.log('🧾 최종 intentType 전송값:', intentType, typeof intentType)
 
     const res = await axios.post('/api/chatbot/message', {
-      userId: userId.value,
-      sessionId: chatStore.sessionId,
+      userId: this.userId.value,
+      sessionId: this.sessionId,
       message: prompt,
-      intentType: intentType, // 명시적으로 string or null
+      intentType: intentType ?? this.intentType,
     })
 
     if (res?.data?.content) {
@@ -306,7 +308,7 @@ async function handleButtonIntent(btn) {
   }
 
   loading.value = true
-  await chatStore.sendMessage(btn.message, btn.intent, userId.value)
+  await chatStore.sendMessage(btn.message, btn.intent)
   loading.value = false
 }
 </script>
