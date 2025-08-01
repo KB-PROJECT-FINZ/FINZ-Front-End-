@@ -1,29 +1,57 @@
 <template>
-  <header class="header">
-    <button class="back-btn" @click="goBack">&#8592;</button>
-    <h1 class="app-title">투자 일지</h1>
+  <header class="flex items-center justify-center relative bg-white py-4 pb-3 shadow-sm mb-2">
+    <button
+      class="absolute left-4 top-1/2 -translate-y-1/2 bg-white border-none text-2xl text-black cursor-pointer"
+      @click="goBack"
+    >
+      &#8592;
+    </button>
+    <h1 class="text-xl font-bold text-gray-800 tracking-tight">투자 일지</h1>
   </header>
 
-  <div class="journal-write-page">
-    <h2>오늘의 투자 일지 작성</h2>
+  <div class="journal-write-page px-4 py-6">
+    <h2 class="text-lg font-semibold mb-4">오늘의 투자 일지 작성</h2>
 
-    <form @submit.prevent="submitJournal" class="journal-form">
-      <label>감정</label>
-      <input v-model="form.emotion" type="text" placeholder="예: 불안, 기쁨 등" />
+    <form @submit.prevent="submitJournal" class="flex flex-col gap-4">
+      <label class="font-semibold">감정</label>
+      <input
+        v-model="form.emotion"
+        type="text"
+        placeholder="예: 불안, 기쁨 등"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
+      />
 
-      <label>이유</label>
-      <textarea v-model="form.reason" placeholder="이유를 입력하세요" />
+      <label class="font-semibold">이유</label>
+      <textarea
+        v-model="form.reason"
+        placeholder="이유를 입력하세요"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
+      />
 
-      <label>실수</label>
-      <textarea v-model="form.mistake" placeholder="실수 내용을 입력하세요" />
+      <label class="font-semibold">실수</label>
+      <textarea
+        v-model="form.mistake"
+        placeholder="실수 내용을 입력하세요"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
+      />
 
-      <label>날짜</label>
-      <input v-model="form.journalDate" type="date" />
+      <label class="font-semibold">날짜</label>
+      <input
+        v-model="form.journalDate"
+        type="date"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
+      />
 
-      <button type="submit">저장</button>
+      <button
+        type="submit"
+        class="bg-indigo-500 text-white py-2 rounded-lg font-bold mt-2 hover:bg-indigo-600 transition"
+      >
+        저장
+      </button>
     </form>
   </div>
 </template>
+
 <script setup>
 import axios from 'axios'
 import { ref, onMounted } from 'vue'
@@ -43,17 +71,6 @@ const form = ref({
 })
 
 onMounted(async () => {
-  try {
-    const res = await axios.get('/api/auth/me', { withCredentials: true })
-    form.value.userId = res.data.userId
-  } catch (err) {
-    console.error('❌ 유저 정보 조회 실패:', err)
-    alert('로그인이 필요합니다')
-    router.push('/login-form') // 필요시 로그인 페이지로 리다이렉트
-    return
-  }
-
-  // query param으로 넘어온 수정용 값 세팅
   if (route.query.emotion) form.value.emotion = route.query.emotion
   if (route.query.reason) form.value.reason = route.query.reason
   if (route.query.mistake) form.value.mistake = route.query.mistake
@@ -63,11 +80,9 @@ onMounted(async () => {
 const submitJournal = async () => {
   try {
     if (route.query.id) {
-      // 수정(put)
       await axios.put(`http://localhost:8080/api/journals/${route.query.id}`, form.value)
       alert('수정 완료!')
     } else {
-      // 새로 작성(post)
       await axios.post('http://localhost:8080/api/journals', form.value)
       alert('저장 완료!')
     }
@@ -79,57 +94,3 @@ const submitJournal = async () => {
   }
 }
 </script>
-
-<style scoped>
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  background: #fff;
-  padding: 18px 0 12px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  margin-bottom: 8px;
-}
-.back-btn {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #222;
-  cursor: pointer;
-}
-.app-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #222;
-  letter-spacing: -1px;
-}
-.journal-write-page {
-  padding: 20px;
-}
-.journal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-input,
-textarea {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-}
-button {
-  background-color: #6166cc;
-  color: white;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-}
-</style>

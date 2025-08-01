@@ -4,7 +4,12 @@
     <header class="profile-header">
       <div class="header-spacer"></div>
       <span class="profile-title">마이페이지</span>
-      <button class="settings-btn"><span class="icon">⚙️</span></button>
+      <img
+        src="https://cdn-icons-png.flaticon.com/512/157/157316.png"
+        alt="설정 아이콘"
+        class="w-6 h-6 cursor-pointer"
+        @click="handleLogout"
+      />
     </header>
 
     <!-- 프로필 박스 -->
@@ -42,11 +47,14 @@
         </div>
         <span class="menu-arrow">&#8250;</span>
       </router-link>
-      <router-link to="/investment-test/retest" class="menu-card">
-        <span class="menu-icon">📝</span>
-        <div class="menu-info">
-          <div class="menu-title">나의 투자 성향 알아보기</div>
-          <div class="menu-desc">투자 성향을 분석해보세요</div>
+      <router-link
+        to="/risk-profile"
+        class="flex items-center bg-white rounded-xl shadow px-4 py-4 hover:shadow-lg transition text-inherit no-underline"
+      >
+        <span class="text-xl mr-4">📝</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-base font-bold text-gray-900 mb-0.5">나의 투자 성향 알아보기</div>
+          <div class="text-sm text-gray-500">투자 성향을 분석해보세요</div>
         </div>
         <span class="menu-arrow">&#8250;</span>
       </router-link>
@@ -118,9 +126,7 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { getUserCredit } from '../../services/learning'
 
-
 const router = useRouter()
-
 
 const profile = ref({
   image: '',
@@ -141,6 +147,13 @@ const goToAssetStatus = () => {
   router.push('/mock-trading/asset-status')
 }
 
+import { useUserStore } from '@/stores/user'
+const userStore = useUserStore()
+
+const handleLogout = () => {
+  userStore.clearUser()
+  router.push('/login-form')
+}
 // 로컬 스토리지 및 API로 데이터 세팅
 // 세션 기반 사용자 정보 로딩
 onMounted(async () => {

@@ -14,13 +14,13 @@
           }}</span>
           <span class="inline-flex items-baseline min-w-[110px] max-w-[120px] justify-start">
             <span
-              class="index-value text-[13px] font-extrabold font-mono whitespace-nowrap ml-0 transition-colors duration-200"
+              class="index-value text-[13px] font-extrabold whitespace-nowrap ml-0 transition-colors duration-200"
               :class="currentMarketIndex.isPositive ? 'text-[#d60000]' : 'text-[#0033cc]'"
             >
               {{ formatNumber(currentMarketIndex.value) }}
             </span>
             <span
-              class="index-change text-[11px] font-bold font-mono text-center whitespace-nowrap ml-2 transition-colors duration-200 flex items-baseline"
+              class="index-change text-[11px] font-bold text-center whitespace-nowrap ml-2 transition-colors duration-200 flex items-baseline"
               :class="currentMarketIndex.isPositive ? 'text-[#ff4444]' : 'text-[#4444ff]'"
             >
               {{ currentMarketIndex.isPositive ? '+' : '-'
@@ -44,6 +44,8 @@ const isLoading = ref(true)
 let intervalId = null
 let dataUpdateInterval = null
 
+let isUnmounted = false
+
 const currentMarketIndex = computed(() => {
   if (marketIndices.value.length === 0) {
     return {
@@ -64,6 +66,7 @@ const formatNumber = (number) => {
 }
 
 const nextIndex = () => {
+  if (isUnmounted) return
   if (marketIndices.value.length > 0) {
     currentIndex.value = (currentIndex.value + 1) % marketIndices.value.length
   }
@@ -72,35 +75,42 @@ const nextIndex = () => {
 const fetchMarketIndices = async () => {
   try {
     const response = await getMarketIndices()
+    if (isUnmounted) return
     if (response.success && response.data) {
       marketIndices.value = response.data
-      console.log('📊 시장 지수 티커 데이터 업데이트:', response.data.length, '건')
     } else {
-      console.warn('⚠️ 시장 지수 API 호출 실패:', response.message)
+      console.warn('시장 지수 API 호출 실패:', response.message)
       setFallbackData()
     }
   } catch (error) {
-    console.error('❌ 시장 지수 조회 실패:', error.message)
+    if (isUnmounted) return
+    console.error('시장 지수 조회 실패:', error.message)
     setFallbackData()
   } finally {
-    isLoading.value = false
+    if (!isUnmounted) isLoading.value = false
   }
 }
 
 const setFallbackData = () => {
   marketIndices.value = [
-    { name: 'KOSPI', value: 2634.15, changePercent: 0.58, isPositive: true },
-    { name: 'KOSDAQ', value: 851.47, changePercent: -0.97, isPositive: false },
+    { name: 'KOSPI', value: 5000, changePercent: 0.58, isPositive: true },
+    { name: 'KOSDAQ', value: 1000, changePercent: -0.97, isPositive: false },
   ]
 }
 
 onMounted(async () => {
+  isUnmounted = false
   await fetchMarketIndices()
-  intervalId = setInterval(nextIndex, 5000)
-  dataUpdateInterval = setInterval(fetchMarketIndices, 30000)
+  intervalId = setInterval(() => {
+    if (!isUnmounted) nextIndex()
+  }, 5000)
+  dataUpdateInterval = setInterval(() => {
+    if (!isUnmounted) fetchMarketIndices()
+  }, 60000) // 데이터 갱신 주기 (현재 1분)
 })
 
 onUnmounted(() => {
+  isUnmounted = true
   if (intervalId) {
     clearInterval(intervalId)
     intervalId = null
