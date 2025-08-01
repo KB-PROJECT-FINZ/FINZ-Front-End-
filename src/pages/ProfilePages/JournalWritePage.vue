@@ -71,15 +71,6 @@ const form = ref({
 })
 
 onMounted(async () => {
-  try {
-    const res = await axios.get('/api/auth/me', { withCredentials: true })
-  } catch (err) {
-    console.error('❌ 유저 정보 조회 실패:', err)
-    alert('로그인이 필요합니다')
-    router.push('/login-form')
-    return
-  }
-
   if (route.query.emotion) form.value.emotion = route.query.emotion
   if (route.query.reason) form.value.reason = route.query.reason
   if (route.query.mistake) form.value.mistake = route.query.mistake
