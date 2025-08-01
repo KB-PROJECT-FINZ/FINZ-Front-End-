@@ -1,10 +1,10 @@
-<!-- Chatbox.vue -->
+<!-- chatbox.vue -->
 <template>
   <div class="flex flex-col gap-3">
     <!-- 대화 내용 -->
     <div class="bg-gray-100 rounded-xl p-4 h-[400px] overflow-y-auto space-y-3" ref="chatContainer">
       <p v-if="loading" class="text-sm text-gray-500 italic text-left">
-        ⏳ 답변을 불러오고 있어요...
+        ⏳ 답변을 보르고 있어요...
       </p>
       <div
         v-for="(msg, i) in chatStore.messages"
@@ -66,16 +66,22 @@ const userId = computed(() => userStore.userId)
 
 const props = defineProps({
   fixedIntent: { type: String, default: null },
-  // sessionId: { type: Number, default: null },
 })
 
 const input = ref('')
 const loading = ref(false)
 const awaitingKeyword = ref(false)
 const awaitingStockAnalyze = ref(false)
+const awaitingTermExplain = ref(false)
+
+// ✅ intent 상태 초기화 함수
+function resetAwaitingState() {
+  awaitingKeyword.value = false
+  awaitingStockAnalyze.value = false
+  awaitingTermExplain.value = false
+}
 
 onMounted(async () => {
-  // 사용자 정보 없으면 다시 조회
   if (!userStore.userId) {
     try {
       const res = await axios.get('/api/auth/me', { withCredentials: true })
@@ -98,36 +104,58 @@ onMounted(async () => {
       buttons: [
         { label: '📈 종목 추천', intent: 'RECOMMEND_SELECT' },
         { label: '📊 종목 분석', intent: 'STOCK_ANALYZE' },
-        { label: '📚 용어 설명', intent: 'MESSAGE', message: 'PER가 뭐야?' },
+        { label: '📚 용어 설명', intent: 'TERM_EXPLAIN' },
         { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘' },
       ],
     })
   }
 })
 
-async function fetchGPT(prompt, intent = props.fixedIntent) {
-
+async function fetchGPT(prompt, explicitIntent = null) {
   loading.value = true
   chatStore.messages.push({ role: 'user', content: prompt })
 
   console.log('📤 서버로 보낼 userId:', userId.value)
 
+  // 🔐 intentType을 안전하게 추출
+  let intentType = null
+
+  if (explicitIntent) {
+    intentType = explicitIntent
+  } else if (awaitingTermExplain.value) {
+    intentType = 'TERM_EXPLAIN'
+    awaitingTermExplain.value = false
+  } else if (awaitingKeyword.value) {
+    intentType = 'RECOMMEND_KEYWORD'
+    awaitingKeyword.value = false
+  } else if (awaitingStockAnalyze.value) {
+    intentType = 'STOCK_ANALYZE'
+    awaitingStockAnalyze.value = false
+  } else if (props.fixedIntent) {
+    intentType = props.fixedIntent
+  } else if (typeof chatStore.intentType === 'string') {
+    intentType = chatStore.intentType
+  }
+
   try {
+    console.log('🧾 최종 intentType 전송값:', intentType, typeof intentType)
+
     const res = await axios.post('/api/chatbot/message', {
       userId: userId.value,
       sessionId: chatStore.sessionId,
       message: prompt,
+      intentType: intentType, // 명시적으로 string or null
     })
 
     if (res?.data?.content) {
       chatStore.messages.push({ role: 'bot', content: res.data.content })
       chatStore.sessionId = res.data.sessionId
       chatStore.intentType = res.data.intentType
-
     }
   } catch (error) {
     console.log(userId)
     chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
+    console.error('❌ GPT fetch 실패:', err)
   } finally {
     loading.value = false
   }
@@ -137,20 +165,20 @@ function submit() {
   if (!input.value.trim()) return
   const text = input.value.trim()
 
-  if (awaitingKeyword.value) {
-    awaitingKeyword.value = false
-    fetchGPT(`${text} 관련 종목 추천해줘`, 'RECOMMEND_KEYWORD')
-  } else if (awaitingStockAnalyze.value) {
-    awaitingStockAnalyze.value = false
-    fetchGPT(`${text} 종목 분석해줘`, 'STOCK_ANALYZE')
-  } else {
-    fetchGPT(text)
-  }
+  let explicitIntent = null
+  if (awaitingKeyword.value) explicitIntent = 'RECOMMEND_KEYWORD'
+  else if (awaitingStockAnalyze.value) explicitIntent = 'STOCK_ANALYZE'
+  else if (awaitingTermExplain.value) explicitIntent = 'TERM_EXPLAIN'
 
+  console.log('📥 submit 시 intent:', explicitIntent)
+
+  fetchGPT(text, explicitIntent)
   input.value = ''
 }
 
 async function handleButtonIntent(btn) {
+  resetAwaitingState()
+
   if (btn.intent === 'EXTERNAL_LINK' && btn.href) {
     window.location.href = btn.href
     return
@@ -233,6 +261,18 @@ async function handleButtonIntent(btn) {
     return
   }
 
+  if (btn.intent === 'TERM_EXPLAIN') {
+    awaitingTermExplain.value = true
+    chatStore.clearMessages()
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '설명을 원하는 용어를 입력해주세요. 예: PER, EPS, ROE 등',
+      buttons: [{ label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' }],
+    })
+    return
+  }
+
   if (btn.intent === 'BACK_TO_MAIN') {
     chatStore.clearMessages()
     chatStore.messages.push({
@@ -240,8 +280,8 @@ async function handleButtonIntent(btn) {
       type: 'buttons',
       buttons: [
         { label: '📈 종목 추천', intent: 'RECOMMEND_SELECT' },
-        { label: '📊 종목 분석', intent: 'STOCK_ANALYZE', message: '종목 분석 해줘' },
-        { label: '📚 용어 설명', intent: 'MESSAGE', message: 'PER가 뭐야?' },
+        { label: '📊 종목 분석', intent: 'STOCK_ANALYZE' },
+        { label: '📚 용어 설명', intent: 'TERM_EXPLAIN' },
         { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘' },
       ],
     })
