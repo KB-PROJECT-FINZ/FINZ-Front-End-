@@ -125,7 +125,8 @@ async function fetchGPT(prompt, intent = props.fixedIntent) {
       chatStore.intentType = res.data.intentType
 
     }
-  } catch (err) {
+  } catch (error) {
+    console.log(userId)
     chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
   } finally {
     loading.value = false
