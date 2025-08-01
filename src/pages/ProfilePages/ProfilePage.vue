@@ -47,11 +47,14 @@
         </div>
         <span class="menu-arrow">&#8250;</span>
       </router-link>
-      <router-link to="/investment-test/retest" class="menu-card">
-        <span class="menu-icon">📝</span>
-        <div class="menu-info">
-          <div class="menu-title">나의 투자 성향 알아보기</div>
-          <div class="menu-desc">투자 성향을 분석해보세요</div>
+      <router-link
+        to="/risk-profile"
+        class="flex items-center bg-white rounded-xl shadow px-4 py-4 hover:shadow-lg transition text-inherit no-underline"
+      >
+        <span class="text-xl mr-4">📝</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-base font-bold text-gray-900 mb-0.5">나의 투자 성향 알아보기</div>
+          <div class="text-sm text-gray-500">투자 성향을 분석해보세요</div>
         </div>
         <span class="menu-arrow">&#8250;</span>
       </router-link>

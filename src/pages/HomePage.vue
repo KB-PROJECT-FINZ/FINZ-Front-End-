@@ -22,7 +22,7 @@
       </div>
       <div class="bg-white p-4 rounded-xl shadow-sm">
         <p class="text-sm text-gray-500 mb-1">완료한 학습</p>
-        <p class="font-semibold text-green-500">23개</p>
+        <p class="font-semibold text-green-500">{{ completedLearningCount }}개</p>
       </div>
       <div class="bg-white p-4 rounded-xl shadow-sm">
         <p class="text-sm text-gray-500 mb-1">모의투자 수익</p>
@@ -143,7 +143,7 @@ const router = useRouter()
 const name = ref('')
 const userName = ref('')
 const riskTypeName = ref('')
-
+const completedLearningCount = ref(0)
 // 세션 기반 사용자 정보 불러오기
 onMounted(async () => {
   try {
@@ -154,9 +154,11 @@ onMounted(async () => {
     const user = response.data
     name.value = user.name
     userName.value = user.username
-
+    const countRes = await axios.get('http://localhost:8080/api/learning/history/count', {
+      withCredentials: true,
+    })
+    completedLearningCount.value = countRes.data
     riskTypeName.value = convertRiskTypeToName(user.riskType)
-    console.log('사용자 정보:', riskTypeName.value)
   } catch (e) {
     console.error('세션 정보 불러오기 실패:', e)
     router.push('/login-form')

@@ -30,7 +30,7 @@ import axios from 'axios'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 function goBack() {
-  router.back()
+  router.push({ name: 'feedback' })
 }
 
 const feedbackList = ref([])
