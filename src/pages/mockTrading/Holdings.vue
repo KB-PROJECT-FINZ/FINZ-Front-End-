@@ -128,7 +128,7 @@
     <!-- 보유 종목 리스트 -->
     <section class="bg-white rounded-xl px-4">
       <div
-        v-for="(holding, idx) in sortedHoldings"
+        v-for="holding in sortedHoldings"
         :key="holding.stockCode"
         class="p-4 cursor-pointer transition-colors"
         @click="goToStockDetail(holding.stockCode, holding.stockName)"
@@ -478,8 +478,8 @@ const getStockInitial = (stockName) => {
   if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(stockName.charAt(0))) {
     return stockName.charAt(0)
   }
-  // 영문의 경우 첫 두 글자 사용
-  return stockName.substring(0, 2).toUpperCase()
+  // 영문의 경우도 첫 글자 사용
+  return stockName.substring(0, 1).toUpperCase()
 }
 
 // 이미지 로딩 에러 처리
