@@ -95,42 +95,29 @@ onMounted(async () => {
   content.value = await fetchLearningContentById(contentId)
   quiz.value = await fetchLearningQuizById(contentId)
 
+  // 완료 여부 체크
   try {
-    const contentId = Number(route.params.id)
-
-    // 콘텐츠 로드
-    content.value = await fetchLearningContentById(contentId)
-    quiz.value = await fetchLearningQuizById(contentId)
-
-    // 완료 여부 체크
     const completeRes = await axios.get('/api/learning/history/complete', {
       withCredentials: true,
       params: {
-        contentId: Number(route.params.id),
+        contentId: contentId,
       },
     })
     isCompleted.value = completeRes.data === true
   } catch (e) {
-    console.error('초기 로딩 실패', e)
+    console.error('완료 여부 확인 실패:', e)
   }
 
   // 퀴즈 결과 확인
   try {
-    const hasResult = await checkQuiz(Number(route.params.id))
+    const hasResult = await checkQuiz(contentId)
     if (hasResult) {
-      // 실제 퀴즈 결과 가져오기
-      const resultRes = await axios.get(
-        '/api/learning/quiz/result/detail',
-        {
-          withCredentials: true,
+      const resultRes = await axios.get('/api/learning/quiz/result/detail', {
+        withCredentials: true,
+        params: {
+          quizId: contentId,
         },
-        {
-          params: {
-            quizId: Number(route.params.id),
-          },
-        },
-      )
-
+      })
       if (resultRes.data) {
         const quizResult = resultRes.data
         selected.value = quizResult.selectedAnswer
@@ -139,7 +126,7 @@ onMounted(async () => {
       }
     }
   } catch (e) {
-    console.warn('퀴즈 결과 확인 실패', e)
+    console.error('퀴즈 결과 확인 실패:', e)
   }
 })
 

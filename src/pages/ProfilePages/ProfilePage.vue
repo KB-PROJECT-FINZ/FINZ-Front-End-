@@ -118,9 +118,7 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { getUserCredit } from '../../services/learning'
 
-
 const router = useRouter()
-
 
 const profile = ref({
   image: '',
