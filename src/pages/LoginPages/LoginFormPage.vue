@@ -18,6 +18,7 @@
         <label class="text-sm text-gray-600">이메일</label>
         <div class="relative mt-1">
           <input
+            v-model="email"
             type="email"
             placeholder="이메일을 입력해주세요"
             class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -30,6 +31,7 @@
         <label class="text-sm text-gray-600">비밀번호</label>
         <div class="relative mt-1">
           <input
+            v-model="password"
             :type="showPassword ? 'text' : 'password'"
             placeholder="비밀번호를 입력해주세요"
             class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -79,17 +81,72 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ref } from 'vue'
-const router = useRouter()
+import axios from 'axios'
+import { useUserStore } from '@/stores/user'
 
+onMounted(() => {
+  checkSession()
+})
+
+const router = useRouter()
+const userStore = useUserStore()
+
+// 이메일/비밀번호 입력값
+const email = ref('')
+const password = ref('')
+
+// 비밀번호 보기 토글
 const showPassword = ref(false)
 const togglePassword = () => {
   showPassword.value = !showPassword.value
 }
 
+// 로그인 처리
+const handleLogin = async () => {
+  try {
+    const res = await axios.post(
+      'http://localhost:8080/api/auth/login',
+      {
+        username: email.value,
+        password: password.value,
+      },
+      {
+        withCredentials: true, // 세션 쿠키 포함
+      },
+    )
+
+    if (res.data) {
+      // 사용자 상태 전역 저장 (Pinia 등)
+      userStore.setUser(res.data)
+
+      alert('로그인 성공!')
+      router.push('/home') // 로그인 성공 후 이동
+    }
+  } catch (err) {
+    const message = err.response?.data || '로그인 실패: 아이디 또는 비밀번호 확인'
+    alert(message)
+    console.error(err)
+  }
+}
+
+// 세션 로그인 상태 확인 (자동 로그인 용도)
+const checkSession = async () => {
+  try {
+    const res = await axios.get('http://localhost:8080/api/auth/me', {
+      withCredentials: true,
+    })
+    userStore.setUser(res.data)
+  } catch (e) {
+    console.error('세션 확인 실패:', e)
+    userStore.clearUser()
+    router.push('/login-form')
+  }
+}
+
+// 비밀번호/아이디 찾기
 const handleFindAccount = () => {
-  console.log('아이디/비밀번호 찾기 클릭')
   router.push('/find-account')
 }
 </script>
