@@ -1,25 +1,8 @@
 <template>
   <div class="w-full max-w-[480px] mx-auto pb-24 px-4">
     <!-- 1. 헤더 -->
-    <div class="flex items-center justify-between py-4">
-      <button @click="goBack" class="text-gray-700">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-6 h-6"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-          />
-        </svg>
-      </button>
-      <h1 class="text-lg font-bold text-center flex-1 -ml-6">랭킹</h1>
-      <div class="w-6"></div>
+    <div class="py-4 text-center">
+      <h1 class="text-lg font-bold">랭킹</h1>
     </div>
 
     <!-- 2. 상단 탭 -->
@@ -166,22 +149,22 @@ function selectTraitType(trait) {
   currentTraitType.value = trait
 }
 
-const goBack = () => history.back()
-
-// ✅ 수정된 onMounted
 onMounted(async () => {
+  // 1. 내 랭킹 불러오기
   myRanking.value = await fetchMyRanking(recordDate)
   console.log('[디버그] 내 랭킹 응답:', myRanking.value)
 
-  // trait 값 확인
-  if (myRanking.value?.trait && !localStorage.getItem('userTraitType')) {
-    localStorage.setItem('userTraitType', myRanking.value.trait)
-  }
+  // ✅ 2. 성향 정보 localStorage에 무조건 저장 (기존 값 덮어쓰기)
+  localStorage.setItem('userTraitType', myRanking.value?.trait || '미지정')
 
+  // 3. 현재 성향 타입 초기화
   userTraitType.value = localStorage.getItem('userTraitType') || '미지정'
   currentTraitType.value = userTraitType.value
 
+  // 4. 인기 종목 Top5 불러오기
   popularStocks.value = await fetchTop5Stocks(recordDate)
+
+  // 5. 주간 랭킹 불러오기
   allUsers.value = await fetchWeeklyRanking()
 })
 

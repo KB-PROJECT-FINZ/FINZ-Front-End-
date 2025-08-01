@@ -1,12 +1,13 @@
 <template>
   <div class="w-36 p-2 bg-white rounded-lg shadow flex flex-col items-center text-center">
     <!-- 회사 로고와 이름 -->
-    <div class="text-sm font-semibold mb-2">{{ name }}</div>
+    <img :src="logo" alt="logo" class="w-10 h-10 object-contain rounded mb-1" loading="lazy" />
+    <div class="text-sm font-semibold mb-2 truncate">{{ name }}</div>
 
-    <!-- 도넛 차트 캔버스 -->
+    <!-- 도넛 차트 -->
     <canvas ref="chartCanvas" class="w-24 h-24"></canvas>
 
-    <!-- 성향별 비율 텍스트 -->
+    <!-- 성향 비율 -->
     <div class="mt-2 flex justify-around w-full text-xs">
       <div v-for="(value, key) in traitRatio" :key="key" class="flex flex-col items-center">
         <span
@@ -21,7 +22,7 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
 
 const props = defineProps({
@@ -34,20 +35,34 @@ const props = defineProps({
 const chartCanvas = ref(null)
 let chartInstance = null
 
-// 성향별 색상 지정 (필요하면 색상 변경 가능)
 const COLORS = {
-  공격형: '#ef4444', // red-500
-  중립형: '#3b82f6', // blue-500
-  안정형: '#10b981', // green-500
+  보수형: '#a855f7', // purple
+  균형형: '#3b82f6', // blue
+  공격형: '#ef4444', // red
+  특수형: '#10b981', // green
+  기타: 'rgba(0,0,0,0.1)', // 빈 공간 연한 회색
 }
 
 function createChart() {
-  if (!chartCanvas.value) return
-  if (!props.traitRatio) return
+  if (!chartCanvas.value || !props.traitRatio) return
 
-  const dataValues = Object.values(props.traitRatio)
+  // traitRatio 값, 라벨
   const labels = Object.keys(props.traitRatio)
-  const backgroundColors = labels.map((key) => COLORS[key] || '#ccc')
+  const dataValues = Object.values(props.traitRatio)
+
+  // 합계 계산
+  const total = dataValues.reduce((acc, val) => acc + val, 0)
+
+  // 100보다 작으면 빈 공간 추가
+  const adjustedLabels = [...labels]
+  const adjustedData = [...dataValues]
+  const adjustedColors = labels.map((key) => COLORS[key] || '#ccc')
+
+  if (total < 100) {
+    adjustedLabels.push('기타')
+    adjustedData.push(100 - total)
+    adjustedColors.push(COLORS['기타'])
+  }
 
   if (chartInstance) {
     chartInstance.destroy()
@@ -56,11 +71,11 @@ function createChart() {
   chartInstance = new Chart(chartCanvas.value.getContext('2d'), {
     type: 'doughnut',
     data: {
-      labels,
+      labels: adjustedLabels,
       datasets: [
         {
-          data: dataValues,
-          backgroundColor: backgroundColors,
+          data: adjustedData,
+          backgroundColor: adjustedColors,
           borderWidth: 1,
           borderColor: '#fff',
         },
@@ -70,14 +85,26 @@ function createChart() {
       cutout: '70%',
       responsive: true,
       plugins: {
-        legend: { display: false },
-        tooltip: { enabled: true },
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label(context) {
+              // '기타' 항목 툴팁 다르게 표시 가능
+              const label = context.label || ''
+              const value = context.parsed || 0
+              if (label === '기타') return `기타: ${value.toFixed(2)}%`
+              return `${label}: ${value.toFixed(2)}%`
+            },
+          },
+        },
       },
     },
   })
 }
 
-// watch 할 때는 props.traitRatio에 접근하는 getter 함수로 작성
 watch(
   () => props.traitRatio,
   () => {

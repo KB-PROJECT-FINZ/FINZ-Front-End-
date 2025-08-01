@@ -1,35 +1,39 @@
 <template>
-  <div class="flex gap-2 mb-4">
-    <button
-      v-for="tab in tabs"
-      :key="tab.name"
-      @click="goTo(tab.route)"
-      :class="[
-        'flex-1 py-2 rounded-md text-sm font-semibold transition',
-        $route.path === tab.route
-          ? 'bg-blue-600 text-white shadow'
-          : 'bg-white text-gray-800 border border-gray-300 hover:bg-blue-100',
-      ]"
-    >
-      {{ tab.label }}
-    </button>
+  <div class="flex justify-center mb-4">
+    <div class="inline-flex bg-gray-100 rounded-full p-1 w-full max-w-md">
+      <button
+        v-for="(tab, idx) in tabs"
+        :key="idx"
+        @click="go(tab.route)"
+        :class="[
+          'flex-1 text-center px-0 py-1.5 text-sm font-medium rounded-full transition-all duration-200',
+          route.path === tab.route
+            ? 'bg-blue-600 text-white shadow'
+            : 'text-gray-600 hover:bg-white',
+        ]"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 defineProps({
-  tabs: Array,
+  tabs: {
+    type: Array,
+    required: true,
+  },
 })
 
 const router = useRouter()
+const route = useRoute()
 
-function goTo(route) {
-  if (router.currentRoute.value.path !== route) {
-    router.push(route)
+function go(path) {
+  if (route.path !== path) {
+    router.push(path)
   }
 }
 </script>
-
-<style scoped></style>
