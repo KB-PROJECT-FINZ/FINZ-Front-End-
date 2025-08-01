@@ -74,6 +74,13 @@ const awaitingKeyword = ref(false)
 const awaitingStockAnalyze = ref(false)
 const awaitingTermExplain = ref(false)
 
+// ✅ intent 상태 초기화 함수
+function resetAwaitingState() {
+  awaitingKeyword.value = false
+  awaitingStockAnalyze.value = false
+  awaitingTermExplain.value = false
+}
+
 onMounted(async () => {
   if (!userStore.userId) {
     try {
@@ -115,15 +122,15 @@ async function fetchGPT(prompt, explicitIntent = null) {
 
   if (explicitIntent) {
     intentType = explicitIntent
+  } else if (awaitingTermExplain.value) {
+    intentType = 'TERM_EXPLAIN'
+    awaitingTermExplain.value = false
   } else if (awaitingKeyword.value) {
     intentType = 'RECOMMEND_KEYWORD'
     awaitingKeyword.value = false
   } else if (awaitingStockAnalyze.value) {
     intentType = 'STOCK_ANALYZE'
     awaitingStockAnalyze.value = false
-  } else if (awaitingTermExplain.value) {
-    intentType = 'TERM_EXPLAIN'
-    awaitingTermExplain.value = false
   } else if (props.fixedIntent) {
     intentType = props.fixedIntent
   } else if (typeof chatStore.intentType === 'string') {
@@ -131,6 +138,8 @@ async function fetchGPT(prompt, explicitIntent = null) {
   }
 
   try {
+    console.log('🧾 최종 intentType 전송값:', intentType, typeof intentType)
+
     const res = await axios.post('/api/chatbot/message', {
       userId: userId.value,
       sessionId: chatStore.sessionId,
@@ -155,11 +164,20 @@ function submit() {
   if (!input.value.trim()) return
   const text = input.value.trim()
 
-  fetchGPT(text)
+  let explicitIntent = null
+  if (awaitingKeyword.value) explicitIntent = 'RECOMMEND_KEYWORD'
+  else if (awaitingStockAnalyze.value) explicitIntent = 'STOCK_ANALYZE'
+  else if (awaitingTermExplain.value) explicitIntent = 'TERM_EXPLAIN'
+
+  console.log('📥 submit 시 intent:', explicitIntent)
+
+  fetchGPT(text, explicitIntent)
   input.value = ''
 }
 
 async function handleButtonIntent(btn) {
+  resetAwaitingState()
+
   if (btn.intent === 'EXTERNAL_LINK' && btn.href) {
     window.location.href = btn.href
     return
