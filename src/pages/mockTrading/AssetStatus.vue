@@ -15,7 +15,7 @@
         </svg>
       </button>
       <span class="ml-3 flex-1 text-left text-base font-semibold text-gray-900"
-        >나의 자산 현황</span
+      >나의 자산 현황</span
       >
       <button
         class="bg-none border-none text-xl text-gray-800 cursor-pointer p-2 rounded-full hover:bg-gray-100"
@@ -90,14 +90,14 @@
           />
           <span
             class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 text-lg font-bold pointer-events-none"
-            >P</span
+          >P</span
           >
         </div>
         <div class="my-6 text-center text-gray-700">
           내 계좌에
           <span class="font-bold text-blue-600">{{
-            (chargeCreditInput * 1000).toLocaleString()
-          }}</span>
+              (chargeCreditInput * 1000).toLocaleString()
+            }}</span>
           원이 추가됩니다.
         </div>
         <button
@@ -171,10 +171,10 @@
         <span
           class="font-bold text-lg ml-2"
           :class="
-            profitRate > 0 ? 'text-red-600' : profitRate < 0 ? 'text-blue-600' : 'text-gray-500'
+            calculatedProfitRate > 0 ? 'text-red-600' : calculatedProfitRate < 0 ? 'text-blue-600' : 'text-gray-500'
           "
         >
-          {{ profitRate > 0 ? '+' : '' }}{{ profitRate }}%
+          {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
         </span>
       </div>
     </section>
@@ -265,6 +265,26 @@ const stockValue = computed(() => {
   }, 0)
 })
 
+// Holdings.vue와 동일한 방식으로 계산
+const totalInvestment = computed(() => {
+  return holdingsData.value.reduce((sum, holding) => {
+    return sum + (holding.averagePrice || 0) * (holding.quantity || 0)
+  }, 0)
+})
+
+const totalProfitLoss = computed(() => {
+  return holdingsData.value.reduce((sum, holding) => {
+    return sum + (holding.profitLoss || 0)
+  }, 0)
+})
+
+// Holdings.vue와 동일한 수익률 계산 방식
+const calculatedProfitRate = computed(() => {
+  if (totalInvestment.value === 0) return 0
+  return Number(((totalProfitLoss.value / totalInvestment.value) * 100).toFixed(2))
+})
+
+// 백엔드에서 내려온 수익률 (기존 방식)
 const profitRate = computed(() => {
   return userAccount.value.profitRate || 0
 })
@@ -584,6 +604,8 @@ const loadUserData = async () => {
           console.error('크레딧 로드 실패:', creditError)
           userCredit.value = 0
         }
+
+        userAccount.value.totalAssetValue = userAccount.value.currentBalance + stockValue.value;
 
         dataLoaded.value = true
         await nextTick()
