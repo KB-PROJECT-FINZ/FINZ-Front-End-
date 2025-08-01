@@ -105,10 +105,8 @@
               class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0"
             >
               <img
-                v-if="
-                  getStockImageUrl(transaction.stockCode) && !imageErrors[transaction.stockCode]
-                "
-                :src="getStockImageUrl(transaction.stockCode)"
+                v-if="getStockImageUrl(transaction) && !imageErrors[transaction.stockCode]"
+                :src="getStockImageUrl(transaction)"
                 :alt="`${transaction.stockName} 로고`"
                 class="w-full h-full object-cover rounded-full"
                 @error="handleImageError(transaction.stockCode)"
@@ -212,6 +210,12 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
+const router = useRouter()
+function goBack() {
+  router.back()
+}
+import FooterNavigation from '../../components/FooterNavigation.vue'
 // 날짜(월/일)만 포맷 (7.20 형식, 앞자리 0 제거)
 function formatDateOnly(date) {
   const d = new Date(date)
@@ -299,47 +303,31 @@ function selectPeriod(key) {
   showPeriodModal.value = false
   showAll.value = false
 }
+import axios from 'axios'
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import FooterNavigation from '../../components/FooterNavigation.vue'
 
-const router = useRouter()
 const loading = ref(false)
 const currentPeriod = ref('1month') // 기본 기간: 1개월
-// 거래 타입 필터 제거
 const itemsPerPage = 10
 const showAll = ref(false)
-
-// 종목 이미지 에러 추적
 const imageErrors = ref({})
 
-// 종목명에서 이니셜 추출 (이미지 대체용)
+// 거래 데이터의 imageUrl 필드 우선 사용
+const getStockImageUrl = (transaction) => {
+  if (transaction.imageUrl) return transaction.imageUrl
+  return null
+}
+
 const getStockInitial = (stockName) => {
   if (!stockName) return '?'
-  // 한글 종목명의 경우 첫 글자 사용
   if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(stockName.charAt(0))) {
     return stockName.charAt(0)
   }
-  // 영문의 경우 첫 두 글자 사용
-  return stockName.substring(0, 2).toUpperCase()
+  return stockName.substring(0, 1).toUpperCase()
 }
-
-// 이미지 로딩 에러 처리
 const handleImageError = (stockCode) => {
   imageErrors.value[stockCode] = true
 }
-
-// 종목코드로 이미지 URL 반환 (Holdings.vue와 동일한 방식)
-const stockImageMap = {
-  '005930': 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/005930.png',
-  '000660': 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/000660.png',
-  '035420': 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/035420.png',
-  '035720': 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/035720.png',
-  // 필요시 추가
-}
-const getStockImageUrl = (stockCode) => stockImageMap[stockCode] || null
-
-// 필터 옵션들
 const periodOptions = [
   { key: '1week', label: '1주일' },
   { key: '1month', label: '1개월' },
@@ -348,176 +336,65 @@ const periodOptions = [
   { key: '1year', label: '1년' },
 ]
 
-// 거래 타입 필터 제거
+// 실제 거래 내역 데이터
+const transactionsData = ref([])
 
-// 거래 내역 더미 데이터 (2025-07-29 기준, 각 기간별 테스트가 잘 되도록 날짜 분포)
-const transactionsData = ref([
-  // 1주일 이내 (2025-07-23 ~ 2025-07-29)
-  {
-    id: 1,
-    stockCode: '005930',
-    stockName: '삼성전자',
-    type: 'BUY',
-    quantity: 10,
-    price: 80000,
-    orderType: 'MARKET',
-    totalAmount: 800000,
-    executedAt: new Date('2025-07-20T10:00:00'),
-    status: 'COMPLETED',
-    currentHolding: { currentPrice: 80500, profitLoss: 5000, profitRate: 0.63 },
-  },
-  {
-    id: 2,
-    stockCode: '000660',
-    stockName: 'SK하이닉스',
-    type: 'SELL',
-    quantity: 5,
-    price: 130000,
-    orderType: 'LIMIT',
-    totalAmount: 650000,
-    executedAt: new Date('2025-07-19T14:00:00'),
-    status: 'COMPLETED',
-  },
-  // 구매취소 더미
-  {
-    id: 11,
-    stockCode: '068270',
-    stockName: '셀트리온',
-    type: 'BUY',
-    quantity: 4,
-    price: 180000,
-    orderType: 'LIMIT',
-    totalAmount: 720000,
-    executedAt: new Date('2025-07-18T13:00:00'),
-    status: 'CANCELLED',
-  },
-  // 판매취소 더미
-  {
-    id: 12,
-    stockCode: '207940',
-    stockName: '삼성바이오로직스',
-    type: 'SELL',
-    quantity: 2,
-    price: 700000,
-    orderType: 'MARKET',
-    totalAmount: 1400000,
-    executedAt: new Date('2025-07-17T11:00:00'),
-    status: 'CANCELLED',
-  },
-  // 1개월 이내 (2025-07-01 ~ 2025-07-22)
-  {
-    id: 3,
-    stockCode: '035420',
-    stockName: 'NAVER',
-    type: 'BUY',
-    quantity: 3,
-    price: 200000,
-    orderType: 'LIMIT',
-    totalAmount: 600000,
-    executedAt: new Date('2025-07-15T11:00:00'),
-    status: 'COMPLETED',
-    currentHolding: { currentPrice: 202000, profitLoss: 6000, profitRate: 1.0 },
-  },
-  {
-    id: 4,
-    stockCode: '035720',
-    stockName: '카카오',
-    type: 'BUY',
-    quantity: 7,
-    price: 60000,
-    orderType: 'MARKET',
-    totalAmount: 420000,
-    executedAt: new Date('2025-07-05T09:30:00'),
-    status: 'COMPLETED',
-    currentHolding: { currentPrice: 59000, profitLoss: -7000, profitRate: -1.67 },
-  },
-  // 3개월 이내 (2025-05-01 ~ 2025-06-30)
-  {
-    id: 5,
-    stockCode: '005930',
-    stockName: '삼성전자',
-    type: 'SELL',
-    quantity: 8,
-    price: 81000,
-    orderType: 'LIMIT',
-    totalAmount: 648000,
-    executedAt: new Date('2025-06-10T13:00:00'),
-    status: 'COMPLETED',
-  },
-  {
-    id: 6,
-    stockCode: '000660',
-    stockName: 'SK하이닉스',
-    type: 'BUY',
-    quantity: 4,
-    price: 128000,
-    orderType: 'MARKET',
-    totalAmount: 512000,
-    executedAt: new Date('2025-05-20T15:20:00'),
-    status: 'COMPLETED',
-    currentHolding: { currentPrice: 129000, profitLoss: 4000, profitRate: 0.78 },
-  },
-  // 6개월 이내 (2025-02-01 ~ 2025-04-30)
-  {
-    id: 7,
-    stockCode: '051910',
-    stockName: 'LG화학',
-    type: 'BUY',
-    quantity: 2,
-    price: 450000,
-    orderType: 'LIMIT',
-    totalAmount: 900000,
-    executedAt: new Date('2025-04-10T10:00:00'),
-    status: 'CANCELLED',
-  },
-  {
-    id: 8,
-    stockCode: '035420',
-    stockName: 'NAVER',
-    type: 'SELL',
-    quantity: 1,
-    price: 210000,
-    orderType: 'LIMIT',
-    totalAmount: 210000,
-    executedAt: new Date('2025-02-15T11:10:00'),
-    status: 'COMPLETED',
-  },
-  // 1년 이내 (2024-07-30 ~ 2025-01-31)
-  {
-    id: 9,
-    stockCode: '005930',
-    stockName: '삼성전자',
-    type: 'BUY',
-    quantity: 12,
-    price: 77000,
-    orderType: 'LIMIT',
-    totalAmount: 924000,
-    executedAt: new Date('2024-12-01T09:30:00'),
-    status: 'COMPLETED',
-    currentHolding: { currentPrice: 78000, profitLoss: 12000, profitRate: 1.3 },
-  },
-  {
-    id: 10,
-    stockCode: '000660',
-    stockName: 'SK하이닉스',
-    type: 'SELL',
-    quantity: 6,
-    price: 126000,
-    orderType: 'MARKET',
-    totalAmount: 756000,
-    executedAt: new Date('2024-08-10T14:00:00'),
-    status: 'COMPLETED',
-  },
-])
+// 사용자 ID 가져오기 (세션 기반)
+async function getUserId() {
+  try {
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    return res.data.userId
+  } catch (e) {
+    // 세션 실패 시 로컬스토리지 fallback
+    return Number(localStorage.getItem('userId') || 1)
+  }
+}
 
-// 필터링된 거래 내역
+// 거래 내역 불러오기
+async function fetchTransactions() {
+  loading.value = true
+  try {
+    // 엔드포인트 변경: /api/mocktrading/transactions
+    const response = await axios.get('/api/mocktrading/transactions')
+    console.log('🔍 거래내역 API response:', response)
+    // 날짜 변환 및 id 보정
+    transactionsData.value = (response.data || []).map((t, idx) => {
+      // 날짜: executedAt > orderCreatedAt > 현재시간
+      let execDate = t.executedAt || t.orderCreatedAt
+      // 가격: price > orderPrice > totalAmount/quantity > 0
+      let price = t.price
+      if (!price || price === 0) {
+        if (t.orderPrice && t.orderPrice > 0) price = t.orderPrice
+        else if (t.totalAmount && t.quantity) price = Math.floor(t.totalAmount / t.quantity)
+        else price = 0
+      }
+      return {
+        id: t.transactionId || idx + 1,
+        stockCode: t.stockCode,
+        stockName: t.stockName,
+        type: t.transactionType, // BUY/SELL
+        quantity: t.quantity,
+        price,
+        orderType: t.orderType,
+        totalAmount: t.totalAmount,
+        executedAt: execDate ? new Date(execDate) : new Date(),
+        status: t.status || 'COMPLETED', // 백엔드 status 없으면 기본값
+        imageUrl: t.imageUrl,
+      }
+    })
+    console.log('📊 받은 거래 데이터:', transactionsData.value)
+  } catch (e) {
+    console.error('❌ 거래 내역 로딩 실패:', e)
+    transactionsData.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
 const filteredTransactions = computed(() => {
   let filtered = [...transactionsData.value]
-
-  // 기간 필터
   const now = new Date()
   let startDate = new Date()
-
   switch (currentPeriod.value) {
     case '1week':
       startDate.setDate(now.getDate() - 7)
@@ -535,66 +412,15 @@ const filteredTransactions = computed(() => {
       startDate.setFullYear(now.getFullYear() - 1)
       break
   }
-
   filtered = filtered.filter((transaction) => new Date(transaction.executedAt) >= startDate)
-
-  // 타입 필터
-  // 타입 필터 제거
-
-  // 최신순 정렬
   return filtered.sort((a, b) => new Date(b.executedAt) - new Date(a.executedAt))
 })
 
-// 더보기 방식으로 보여줄 거래내역
 const visibleTransactions = computed(() => {
   return showAll.value
     ? filteredTransactions.value
     : filteredTransactions.value.slice(0, itemsPerPage)
 })
-
-// 통계 계산된 속성들
-const totalBuyAmount = computed(() => {
-  return filteredTransactions.value
-    .filter((t) => t.type === 'BUY' && t.status === 'COMPLETED')
-    .reduce((sum, t) => sum + t.totalAmount, 0)
-})
-
-const totalSellAmount = computed(() => {
-  return filteredTransactions.value
-    .filter((t) => t.type === 'SELL' && t.status === 'COMPLETED')
-    .reduce((sum, t) => sum + t.totalAmount, 0)
-})
-
-const buyCount = computed(() => {
-  return filteredTransactions.value.filter((t) => t.type === 'BUY' && t.status === 'COMPLETED')
-    .length
-})
-
-const sellCount = computed(() => {
-  return filteredTransactions.value.filter((t) => t.type === 'SELL' && t.status === 'COMPLETED')
-    .length
-})
-
-// 메서드들
-const goBack = () => {
-  router.back()
-}
-
-const changePeriod = (period) => {
-  currentPeriod.value = period
-  currentPage.value = 1 // 페이지 초기화
-}
-
-// 거래 타입 필터 제거
-
-const formatDateTime = (date) => {
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(date))
-}
 
 const getStatusText = (status) => {
   switch (status) {
@@ -614,20 +440,11 @@ const goToMockTrading = () => {
 }
 
 const refreshData = async () => {
-  loading.value = true
-  try {
-    // 여기에 API 호출 로직 추가 예정
-    console.log('거래 내역 데이터 새로고침')
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-  } catch (error) {
-    console.error('거래 내역 데이터 새로고침 실패:', error)
-  } finally {
-    loading.value = false
-  }
+  await fetchTransactions()
 }
 
 onMounted(() => {
+  fetchTransactions()
   console.log('거래 내역 페이지 마운트됨')
-  // 초기 데이터 로드 로직 추가 예정
 })
 </script>

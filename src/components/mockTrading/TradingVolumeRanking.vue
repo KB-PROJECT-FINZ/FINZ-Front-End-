@@ -4,7 +4,7 @@
     <div class="px-5 py-4 border-b border-gray-100 bg-transparent">
       <div class="flex justify-between items-center mb-3">
         <h3 class="text-[18px] font-semibold text-gray-800 m-0 bg-transparent">거래 순위</h3>
-        <span class="text-[12px] text-gray-500 font-mono">{{ updateTime }}</span>
+        <span class="text-[12px] text-gray-500">{{ updateTime }}</span>
       </div>
 
       <!-- 탭 메뉴 -->
@@ -63,14 +63,12 @@
               {{ getStockInitial(stock.name) }}
             </span>
           </span>
-          <div class="flex flex-col gap-1">
-            <span class="text-[14px] font-medium text-gray-800">{{ stock.name }}</span>
+          <div class="flex flex-col">
+            <span class="text-[15px] font-medium text-gray-800">{{ stock.name }}</span>
             <div class="flex items-center gap-2">
-              <span class="text-[14px] font-semibold text-gray-800 font-mono">{{
-                formatPrice(stock.currentPrice)
-              }}</span>
+              <span class="text-[14px] text-gray-800">{{ formatPrice(stock.currentPrice) }}</span>
               <span
-                class="flex items-center gap-1 text-[12px] font-medium font-mono"
+                class="flex items-center gap-1 text-[12px] font-medium"
                 :class="stock.isPositive ? 'text-red-600' : 'text-blue-600'"
               >
                 <span class="text-[10px]">{{ stock.isPositive ? '▲' : '▼' }}</span>
@@ -107,12 +105,12 @@ const stockRanking = ref([])
 const updateTime = ref('')
 const isLoading = ref(false)
 const showAll = ref(false)
-const imageErrors = ref({}) // 이미지 로딩 에러 추적
+const imageErrors = ref({})
 const activeTab = ref('3') // 기본값: 거래대금순
 
 let updateInterval = null
 
-// 탭 정의 - 거래대금/거래량 2개로 축소
+// 탭 정의 - 거래대금/거래량
 const tabs = [
   { code: '3', name: '거래대금', description: '거래금액순' },
   { code: '0', name: '거래량', description: '평균거래량' },
@@ -122,33 +120,30 @@ const visibleStocks = computed(() =>
   showAll.value ? stockRanking.value : stockRanking.value.slice(0, 10),
 )
 
-// 탭 변경 함수
 const changeTab = async (tabCode) => {
   if (activeTab.value === tabCode) return
 
   activeTab.value = tabCode
-  showAll.value = false // 탭 변경 시 더보기 상태 초기화
+  showAll.value = false
   await fetchVolumeRanking()
 }
 
-// 현재 탭에 따른 표시값 클래스
 const getValueDisplayClass = () => {
   switch (activeTab.value) {
     case '3':
-      return 'text-green-600 bg-green-50' // 거래대금
+      return 'text-green-600 bg-green-50'
     case '0':
-      return 'text-blue-600 bg-blue-50' // 거래량
+      return 'text-blue-600 bg-blue-50'
     default:
       return 'text-gray-600 bg-gray-50'
   }
 }
 
-// 현재 탭에 따른 표시값 포맷
 const formatDisplayValue = (stock) => {
   switch (activeTab.value) {
-    case '3': // 거래대금
+    case '3':
       return formatTradingVolume(stock.tradingVolume)
-    case '0': // 거래량
+    case '0':
       return formatVolume(stock.volume || stock.tradingVolume)
     default:
       return formatTradingVolume(stock.tradingVolume)
@@ -158,7 +153,6 @@ const formatDisplayValue = (stock) => {
 const fetchVolumeRanking = async () => {
   isLoading.value = true
   try {
-    // 백엔드 API 수정 필요: FID_BLNG_CLS_CODE 파라미터 추가
     const response = await getVolumeRanking(20, activeTab.value)
     if (response.success && response.data) {
       stockRanking.value = response.data
@@ -166,19 +160,6 @@ const fetchVolumeRanking = async () => {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
-      })
-      const currentTab = tabs.find((tab) => tab.code === activeTab.value)
-      console.log(
-        `📈 ${currentTab?.description || '거래'} 순위 업데이트 성공:`,
-        response.data.length,
-        '건',
-      )
-
-      // 이미지 URL 디버깅 로그
-      response.data.forEach((stock, index) => {
-        if (index < 5) {
-          console.log(`🖼️ ${stock.name} (${stock.code}): ${stock.imageUrl || '이미지 없음'}`)
-        }
       })
     } else {
       console.warn('⚠️ 거래 순위 API 호출 실패:', response.message)
@@ -273,7 +254,9 @@ const formatPrice = (price) => {
 }
 
 const formatTradingVolume = (volume) => {
-  if (volume >= 100000000) {
+  if (volume >= 1000000000000) {
+    return (volume / 1000000000000).toFixed(1) + '조원'
+  } else if (volume >= 100000000) {
     return Math.floor(volume / 100000000) + '억원'
   } else if (volume >= 10000000) {
     return Math.floor(volume / 10000000) + '천만원'
@@ -292,13 +275,7 @@ const formatVolume = (volume) => {
   }
 }
 
-const formatRate = (rate) => {
-  return Math.abs(rate).toFixed(1) + '%'
-}
-
 const selectStock = async (stock) => {
-  console.log('📊 거래 순위에서 종목 선택:', stock.name, `(${stock.code})`)
-
   try {
     await router.push({
       name: 'ChartPage',
@@ -309,14 +286,11 @@ const selectStock = async (stock) => {
         stockName: stock.name,
       },
     })
-
-    console.log('🔀 종목 차트 페이지로 이동:', `/mock-trading/${stock.code}/chart`)
   } catch (error) {
     console.error('❌ 라우팅 오류:', error)
   }
 }
 
-// 이미지 로딩 에러 처리
 const handleImageError = (stockCode) => {
   console.warn(`🚫 이미지 로딩 실패: ${stockCode}`)
   imageErrors.value[stockCode] = true
@@ -331,16 +305,14 @@ const getStockInitial = (stockName) => {
     return stockName.charAt(0)
   }
 
-  // 영문의 경우 첫 두 글자 사용
-  return stockName.substring(0, 2).toUpperCase()
+  // 영문의 경우도 첫 글자 사용
+  return stockName.substring(0, 1).toUpperCase()
 }
 
 onMounted(async () => {
-  console.log('🚀 거래 순위 컴포넌트 초기화')
   await fetchVolumeRanking()
-
-  // 30초마다 자동 업데이트
-  updateInterval = setInterval(fetchVolumeRanking, 30000)
+  // 60초마다 자동 업데이트
+  updateInterval = setInterval(fetchVolumeRanking, 60000)
 })
 
 onUnmounted(() => {

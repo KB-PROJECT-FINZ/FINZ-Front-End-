@@ -10,9 +10,6 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl()
 
-console.log('🔧 현재 환경:', import.meta.env.MODE)
-console.log('🌐 API Base URL:', API_BASE_URL)
-
 const handleApiResponse = async (response) => {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`)
@@ -20,11 +17,9 @@ const handleApiResponse = async (response) => {
   return await response.json()
 }
 
-// 시장 지수 정보 조회 (실제 백엔드 연동)
+// 시장 지수 정보 조회
 export const getMarketIndices = async () => {
   try {
-    console.log('🔍 시장 지수 API 호출:', `${API_BASE_URL}/market/indices`)
-
     const response = await fetch(`${API_BASE_URL}/market/indices`, {
       method: 'GET',
       headers: {
@@ -33,7 +28,6 @@ export const getMarketIndices = async () => {
     })
 
     const data = await handleApiResponse(response)
-    console.log('✅ 시장 지수 API 응답:', data)
 
     // 백엔드 응답을 프론트엔드 형식에 맞게 변환
     return {
@@ -93,14 +87,9 @@ export const getMarketIndices = async () => {
   }
 }
 
-// 거래대금 순위 조회 (실제 백엔드 연동) - 탭 기능 추가
+// 거래대금 순위 조회 - 탭 기능 추가
 export const getVolumeRanking = async (limit = 10, blngClsCode = '3') => {
   try {
-    console.log(
-      '🔍 거래 순위 API 호출:',
-      `${API_BASE_URL}/market/ranking/volume?limit=${limit}&blngClsCode=${blngClsCode}`,
-    )
-
     const response = await fetch(
       `${API_BASE_URL}/market/ranking/volume?limit=${limit}&blngClsCode=${blngClsCode}`,
       {
@@ -108,13 +97,11 @@ export const getVolumeRanking = async (limit = 10, blngClsCode = '3') => {
         headers: {
           'Content-Type': 'application/json',
         },
-      }
+      },
     )
 
     const data = await handleApiResponse(response)
-    console.log('✅ 거래 순위 API 응답:', data)
 
-    // 백엔드 응답이 이미 올바른 형식이므로 그대로 사용
     return {
       success: true,
       data: data,
@@ -192,15 +179,39 @@ export const getMarketOverview = async () => {
 // 더미 데이터 생성 함수 (fallback용) - 탭별 특성 반영
 const generateDummyVolumeRanking = (limit, blngClsCode = '3') => {
   const stockNames = [
-    '삼성전자', 'SK하이닉스', 'NAVER', '현대차', 'LG화학',
-    '삼성SDI', '카카오', '삼성바이오로직스', '셀트리온', '카카오뱅크',
-    'POSCO홀딩스', 'LG에너지솔루션', '삼성물산', 'KB금융', '신한지주'
+    '삼성전자',
+    'SK하이닉스',
+    'NAVER',
+    '현대차',
+    'LG화학',
+    '삼성SDI',
+    '카카오',
+    '삼성바이오로직스',
+    '셀트리온',
+    '카카오뱅크',
+    'POSCO홀딩스',
+    'LG에너지솔루션',
+    '삼성물산',
+    'KB금융',
+    '신한지주',
   ]
 
   const stockCodes = [
-    '005930', '000660', '035420', '005380', '051910',
-    '006400', '035720', '207940', '068270', '323410',
-    '005490', '373220', '028260', '105560', '055550'
+    '005930',
+    '000660',
+    '035420',
+    '005380',
+    '051910',
+    '006400',
+    '035720',
+    '207940',
+    '068270',
+    '323410',
+    '005490',
+    '373220',
+    '028260',
+    '105560',
+    '055550',
   ]
 
   return stockNames.slice(0, limit).map((name, index) => {
@@ -208,7 +219,7 @@ const generateDummyVolumeRanking = (limit, blngClsCode = '3') => {
     const volume = Math.floor(Math.random() * 50000000) + 1000000
 
     // 탭별로 특화된 데이터 생성
-    let specialValue;
+    let specialValue
     switch (blngClsCode) {
       case '0': // 거래량
         specialValue = volume * (1.5 + Math.random() * 2) // 평균거래량 대비
@@ -246,7 +257,7 @@ const generateDummyVolumeRanking = (limit, blngClsCode = '3') => {
 
       // 탭별 특화 값
       specialValue: specialValue,
-      rankingType: blngClsCode
+      rankingType: blngClsCode,
     }
   })
 }
@@ -257,18 +268,16 @@ export const searchStocks = async (query, limit = 10) => {
     if (!query || !query.trim()) {
       return { success: true, data: [] }
     }
-
-    console.log('🔍 종목 검색 API 호출:', `${API_BASE_URL}/market/stocks/search?query=${encodeURIComponent(query)}&limit=${limit}`)
-
-    const response = await fetch(`${API_BASE_URL}/market/stocks/search?query=${encodeURIComponent(query)}&limit=${limit}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `${API_BASE_URL}/market/stocks/search?query=${encodeURIComponent(query)}&limit=${limit}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-    })
-
+    )
     const data = await handleApiResponse(response)
-    console.log('✅ 종목 검색 API 응답:', data)
 
     return {
       success: true,

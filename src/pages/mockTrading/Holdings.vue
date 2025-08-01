@@ -128,7 +128,7 @@
     <!-- 보유 종목 리스트 -->
     <section class="bg-white rounded-xl px-4">
       <div
-        v-for="(holding, idx) in sortedHoldings"
+        v-for="holding in sortedHoldings"
         :key="holding.stockCode"
         class="p-4 cursor-pointer transition-colors"
         @click="goToStockDetail(holding.stockCode, holding.stockName)"
@@ -161,14 +161,17 @@
               </div>
             </div>
             <div class="text-right">
-              <div class="text-base font-bold text-gray-900">
-                {{ holding.currentPrice.toLocaleString() }}원
-              </div>
-              <div
-                class="text-sm"
-                :class="holding.priceChange >= 0 ? 'text-red-600' : 'text-blue-600'"
-              >
-                {{ holding.priceChange >= 0 ? '+' : '' }}{{ holding.priceChange }}%
+              <div class="flex flex-col gap-0 text-right">
+                <div class="text-base font-bold text-gray-900 leading-tight">
+                  {{ holding.currentPrice.toLocaleString() }}원
+                </div>
+                <span
+                  class="text-sm leading-tight"
+                  :class="holding.profitRate >= 0 ? 'text-red-600' : 'text-blue-600'"
+                  style="margin-top: 2px"
+                >
+                  {{ holding.profitRate >= 0 ? '+' : '' }}{{ holding.profitRate }}%
+                </span>
               </div>
             </div>
           </div>
@@ -195,38 +198,10 @@
                 class="ml-2 font-medium"
                 :class="holding.profitLoss >= 0 ? 'text-red-600' : 'text-blue-600'"
               >
-                {{ holding.profitLoss >= 0 ? '+' : ''
+                {{ holding.profitLoss > 0 ? '+' : holding.profitLoss < 0 ? '-' : ''
                 }}{{ Math.abs(holding.profitLoss).toLocaleString() }}원
               </span>
             </div>
-          </div>
-          <div class="mt-3 pt-3 border-t border-gray-100">
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-gray-500">수익률</span>
-              <div class="flex items-center gap-2">
-                <span
-                  class="text-sm"
-                  :class="holding.profitRate >= 0 ? 'text-red-600' : 'text-blue-600'"
-                >
-                  {{ holding.profitRate >= 0 ? '+' : '' }}{{ holding.profitRate }}%
-                </span>
-                <div class="text-xs text-gray-400">비중 {{ holding.percentage }}%</div>
-              </div>
-            </div>
-          </div>
-          <div class="flex gap-2 mt-3">
-            <button
-              @click.stop="goToTradingPage(holding.stockCode, holding.stockName, 'buy')"
-              class="flex-1 bg-red-500 text-white text-sm font-medium py-2 rounded-lg hover:bg-red-600 transition-colors"
-            >
-              매수
-            </button>
-            <button
-              @click.stop="goToTradingPage(holding.stockCode, holding.stockName, 'sell')"
-              class="flex-1 bg-blue-500 text-white text-sm font-medium py-2 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              매도
-            </button>
           </div>
         </template>
         <template v-else>
@@ -330,79 +305,60 @@ const sortOptions = [
   { key: 'profitLoss', label: '평가손익' },
 ]
 
-// 보유 종목 데이터 (실제로는 API에서 가져올 데이터)
-const holdingsData = ref([
-  {
-    stockCode: '005930',
-    stockName: '삼성전자',
-    quantity: 100,
-    averagePrice: 75000,
-    currentPrice: 78000,
-    priceChange: 2.1, // 당일 가격 변동률
-    totalValue: 7800000,
-    percentage: 52.4,
-    profitLoss: 300000,
-    profitRate: 4.0,
-    imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/005930.png',
-  },
-  {
-    stockCode: '000660',
-    stockName: 'SK하이닉스',
-    quantity: 50,
-    averagePrice: 128000,
-    currentPrice: 125000,
-    priceChange: -1.5,
-    totalValue: 6250000,
-    percentage: 41.9,
-    profitLoss: -150000,
-    profitRate: -2.3,
-    imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/000660.png',
-  },
-  {
-    stockCode: '035420',
-    stockName: 'NAVER',
-    quantity: 5,
-    averagePrice: 190000,
-    currentPrice: 195000,
-    priceChange: 0.8,
-    totalValue: 975000,
-    percentage: 6.5,
-    profitLoss: 25000,
-    profitRate: 2.6,
-    imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/035420.png',
-  },
-  {
-    stockCode: '035720',
-    stockName: '카카오',
-    quantity: 15,
-    averagePrice: 58000,
-    currentPrice: 55000,
-    priceChange: -2.1,
-    totalValue: 825000,
-    percentage: 5.5,
-    profitLoss: -45000,
-    profitRate: -5.2,
-    imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/035720.png',
-  },
-])
+// 보유 종목 데이터 (API에서 가져옴)
+const holdingsData = ref([])
 
-// 계산된 속성들
+// 실제 API에서 데이터 불러오기
+async function fetchHoldings() {
+  loading.value = true
+  try {
+    const response = await fetch('/api/mocktrading/holdings')
+    const data = await response.json()
+    holdingsData.value = (data || []).map((h) => ({
+      stockCode: h.stockCode,
+      stockName: h.stockName,
+      quantity: h.quantity,
+      averagePrice: h.averagePrice,
+      currentPrice: h.currentPrice,
+      priceChange: 0, // API에 변동률 없으면 0
+      totalValue: h.currentValue,
+      percentage: h.percentage ?? 0,
+      profitLoss: h.profitLoss,
+      profitRate: h.profitRate,
+      imageUrl: h.imageUrl,
+    }))
+  } catch (error) {
+    console.error('보유 종목 데이터 불러오기 실패:', error)
+    holdingsData.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// 계산된 속성들 (API 구조에 맞게 보정)
 const totalInvestment = computed(() => {
+  // 원금: 모든 종목의 평균단가 * 수량 합
   return holdingsData.value.reduce(
-    (sum, holding) => sum + holding.averagePrice * holding.quantity,
+    (sum, holding) => sum + (Number(holding.averagePrice) || 0) * (Number(holding.quantity) || 0),
     0,
   )
 })
 
 const totalCurrentValue = computed(() => {
-  return holdingsData.value.reduce((sum, holding) => sum + holding.totalValue, 0)
+  // 평가금액: 모든 종목의 현재가 * 수량 합
+  return holdingsData.value.reduce(
+    (sum, holding) => sum + (Number(holding.currentPrice) || 0) * (Number(holding.quantity) || 0),
+    0,
+  )
 })
 
 const totalProfitLoss = computed(() => {
-  return holdingsData.value.reduce((sum, holding) => sum + holding.profitLoss, 0)
+  // 총 수익: 모든 종목의 평가손익 합
+  return holdingsData.value.reduce((sum, holding) => sum + (Number(holding.profitLoss) || 0), 0)
 })
 
 const totalProfitRate = computed(() => {
+  // 수익률: (총 수익 / 원금) * 100
   if (totalInvestment.value === 0) return 0
   return Number(((totalProfitLoss.value / totalInvestment.value) * 100).toFixed(2))
 })
@@ -478,8 +434,8 @@ const getStockInitial = (stockName) => {
   if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(stockName.charAt(0))) {
     return stockName.charAt(0)
   }
-  // 영문의 경우 첫 두 글자 사용
-  return stockName.substring(0, 2).toUpperCase()
+  // 영문의 경우도 첫 글자 사용
+  return stockName.substring(0, 1).toUpperCase()
 }
 
 // 이미지 로딩 에러 처리
@@ -488,7 +444,7 @@ const handleImageError = (stockCode) => {
 }
 
 onMounted(() => {
+  fetchHoldings()
   console.log('보유 종목 페이지 마운트됨')
-  // 초기 데이터 로드 로직 추가 예정
 })
 </script>
