@@ -105,7 +105,7 @@ onMounted(async () => {
         { label: '📈 종목 추천', intent: 'RECOMMEND_SELECT' },
         { label: '📊 종목 분석', intent: 'STOCK_ANALYZE' },
         { label: '📚 용어 설명', intent: 'TERM_EXPLAIN' },
-        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘' },
+        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE' },
       ],
     })
   }
@@ -260,6 +260,24 @@ async function handleButtonIntent(btn) {
     return
   }
 
+  if (btn.intent === 'PORTFOLIO_ANALYZE') {
+    chatStore.clearMessages()
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '모의투자 내역 기반 피드백을 드릴게요.\n확인하려면 아래 버튼을 눌러주세요.',
+      buttons: [
+        {
+          label: '🧠 피드백 요청하기',
+          intent: 'PORTFOLIO_ANALYZE',
+          message: '내 포트폴리오 피드백 줘',
+        },
+        { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
+      ],
+    })
+    return
+  }
+
   if (btn.intent === 'TERM_EXPLAIN') {
     awaitingTermExplain.value = true
     chatStore.clearMessages()
@@ -281,14 +299,14 @@ async function handleButtonIntent(btn) {
         { label: '📈 종목 추천', intent: 'RECOMMEND_SELECT' },
         { label: '📊 종목 분석', intent: 'STOCK_ANALYZE' },
         { label: '📚 용어 설명', intent: 'TERM_EXPLAIN' },
-        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘' },
+        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE' },
       ],
     })
     return
   }
 
   loading.value = true
-  await chatStore.sendMessage(btn.message, btn.intent)
+  await chatStore.sendMessage(btn.message, btn.intent, userId.value)
   loading.value = false
 }
 </script>

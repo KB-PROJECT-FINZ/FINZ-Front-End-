@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import axios from 'axios'
+import { useUserStore } from './user.js' // ✅ 사용자 store 가져오기
 
 export const useCounterStore = defineStore('counter', () => {
   const count = ref(0)
@@ -19,22 +20,23 @@ export const useChatStore = defineStore('chat', {
   }),
 
   actions: {
-    async sendMessage(message) {
+    async sendMessage(message, intentType = null, userId = null) {
       if (message) {
         this.messages.push({ role: 'user', content: message })
       }
 
       try {
-        const res = await axios.post('/chatbot/message', {
-          userId: 1,
+        const res = await axios.post('/api/chatbot/message', {
+          userId: userId, // 명시적 전달
           sessionId: this.sessionId,
           message: message,
+          intentType: intentType ?? this.intentType,
         })
 
         const reply = res.data.content
         this.sessionId = res.data.sessionId
-        this.messages.push({ role: 'bot', content: reply })
         this.intentType = res.data.intentType
+        this.messages.push({ role: 'bot', content: reply })
 
         if (reply === '⚠️ 서버 오류 발생') {
           console.error('서버 오류 발생:', res.data)
@@ -44,7 +46,6 @@ export const useChatStore = defineStore('chat', {
         this.messages.push({ role: 'bot', content: '⚠️ 서버 오류 발생' })
       }
     },
-
 
     clearMessages() {
       this.messages = []
