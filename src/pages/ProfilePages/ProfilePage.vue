@@ -4,7 +4,12 @@
     <header class="profile-header">
       <div class="header-spacer"></div>
       <span class="profile-title">마이페이지</span>
-      <button class="settings-btn"><span class="icon">⚙️</span></button>
+      <img
+        src="https://cdn-icons-png.flaticon.com/512/157/157316.png"
+        alt="설정 아이콘"
+        class="w-6 h-6 cursor-pointer"
+        @click="handleLogout"
+      />
     </header>
 
     <!-- 프로필 박스 -->
@@ -139,6 +144,13 @@ const goToAssetStatus = () => {
   router.push('/mock-trading/asset-status')
 }
 
+import { useUserStore } from '@/stores/user'
+const userStore = useUserStore()
+
+const handleLogout = () => {
+  userStore.clearUser()
+  router.push('/login-form')
+}
 // 로컬 스토리지 및 API로 데이터 세팅
 // 세션 기반 사용자 정보 로딩
 onMounted(async () => {
