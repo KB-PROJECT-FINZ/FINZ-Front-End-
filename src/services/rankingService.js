@@ -87,3 +87,71 @@ export async function fetchGroupedWeeklyRanking() {
     return {}
   }
 }
+//                     종목 분석 페이지
+
+// (1) 성향별 보유 비중
+export async function fetchTraitStockAnalysis(userId) {
+  console.log('[DEBUG] fetchTraitStockAnalysis userId:', userId)
+  try {
+    const res = await axios.get('/api/ranking/analysis/trait-stock', {
+      params: { userId },
+    })
+
+    return res.data.map((item) => ({
+      name: item.name,
+      gain: item.gain,
+      logo: item.logo,
+      traitRatio: {
+        보수형: item.conservativeRatio,
+        균형형: item.balancedRatio,
+        공격형: item.aggressiveRatio,
+        특수형: item.specialRatio,
+      },
+    }))
+  } catch (error) {
+    console.error('fetchTraitStockAnalysis error:', error)
+    return []
+  }
+}
+
+// (2) 내 수익률 분포 위치
+export async function fetchMyStockDistribution(userId) {
+  try {
+    const res = await axios.get('/api/ranking/analysis/my-distribution', {
+      params: { userId },
+    })
+
+    return res.data.map((stock) => ({
+      name: stock.stockName,
+      gain: stock.gainRate,
+      positionIndex: stock.positionIndex,
+      positionLabel: stock.positionLabel,
+      distribution: stock.distributionBins,
+      color: '#3b82f6', // 기본 파란색
+    }))
+  } catch (error) {
+    console.error('fetchMyStockDistribution error:', error)
+    return []
+  }
+}
+
+// (3) 유사 성향 투자자 인기 종목
+export async function fetchPopularStocksByTrait(traitGroup) {
+  try {
+    const res = await axios.get('/api/ranking/analysis/popular-stocks', {
+      params: { traitGroup },
+    })
+
+    return res.data.map((stock) => ({
+      name: stock.stockName,
+      gain: stock.transactionCount, // 또는 avgGainRate가 있다면 수정
+      logo: stock.stockCode
+        ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
+        : '/images/stocks/default.png',
+      trait: `${stock.ranking}위`, // 예: "1위", "2위"
+    }))
+  } catch (error) {
+    console.error('fetchPopularStocksByTrait error:', error)
+    return []
+  }
+}

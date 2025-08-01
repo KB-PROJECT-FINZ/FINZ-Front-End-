@@ -1,25 +1,8 @@
 <template>
   <div class="w-full max-w-[480px] mx-auto pb-24 px-4">
     <!-- 1. 헤더 -->
-    <div class="flex items-center justify-between py-4">
-      <button @click="goBack" class="text-gray-700">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-6 h-6"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-          />
-        </svg>
-      </button>
-      <h1 class="text-lg font-bold text-center flex-1 -ml-6">랭킹</h1>
-      <div class="w-6"></div>
+    <div class="py-4 text-center">
+      <h1 class="text-lg font-bold">랭킹</h1>
     </div>
 
     <!-- 2. 상단 탭 -->
@@ -165,8 +148,6 @@ function selectMainRankingTab(tab) {
 function selectTraitType(trait) {
   currentTraitType.value = trait
 }
-
-const goBack = () => history.back()
 
 onMounted(async () => {
   // 1. 내 랭킹 불러오기
