@@ -1,6 +1,7 @@
 <template>
-  <div class="profile-page">
+  <div class="bg-[#f7f8fa] min-h-screen pb-16">
     <!-- 상단 헤더 -->
+<<<<<<< HEAD
     <header class="profile-header">
       <div class="header-spacer"></div>
       <span class="profile-title">마이페이지</span>
@@ -12,99 +13,137 @@
         class="logout-icon"
         @click="logout"
       />
+=======
+    <header
+      class="flex items-center justify-between bg-white px-4 pt-4 pb-3 shadow-sm sticky top-0 z-10"
+    >
+      <div class="w-10"></div>
+      <span class="text-lg font-bold text-gray-800">마이페이지</span>
+      <button class="bg-none border-none text-2xl text-gray-800 cursor-pointer">
+        <span>⚙️</span>
+      </button>
+>>>>>>> 5048c083856624e5a5973666ca184b5b570aae33
     </header>
 
     <!-- 프로필 박스 -->
-    <section class="profile-box">
-      <img v-if="profile.image" class="profile-img" :src="profile.image" alt="프로필" />
-      <div v-else class="profile-img default">
-        <span class="icon">👤</span>
+    <section class="flex items-center bg-[#f3f6fb] rounded-2xl mx-4 my-5 px-5 py-6 shadow">
+      <img
+        v-if="profile.image"
+        class="w-15 h-15 rounded-full object-cover mr-5"
+        :src="profile.image"
+        alt="프로필"
+      />
+      <div
+        v-else
+        class="w-15 h-15 rounded-full bg-gray-200 flex items-center justify-center text-3xl text-gray-400 mr-5"
+      >
+        <span>👤</span>
       </div>
-      <div class="profile-info">
-        <div class="profile-name">{{ profile.name }}</div>
-        <div class="profile-type">{{ profile.type }}</div>
-        <span class="profile-level">Level {{ profile.level }}</span>
+      <div class="text-gray-900">
+        <div class="text-base font-bold">{{ profile.name }}</div>
+        <div class="text-sm text-gray-500 my-1">{{ profile.type }}</div>
+        <span class="bg-indigo-100 text-indigo-800 rounded px-3 py-0.5 text-xs mt-1 inline-block"
+          >Level {{ profile.level }}</span
+        >
       </div>
     </section>
 
     <!-- 자산 카드 -->
-    <section class="asset-card">
-      <div class="asset-label">총 보유자산</div>
-      <div class="asset-main">
-        <span class="asset-amount">₩{{ asset.amount.toLocaleString() }}</span>
-        <button class="asset-btn" @click="goToAssetStatus">내 자산 현황 바로가기</button>
+    <section class="bg-white rounded-xl mx-4 mb-5 px-5 py-5 shadow">
+      <div class="text-gray-500 text-sm mb-1">총 보유자산</div>
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-2xl font-bold text-gray-900">₩{{ asset.amount.toLocaleString() }}</span>
+        <button
+          class="bg-blue-600 text-white rounded px-4 py-2 text-sm font-bold hover:bg-blue-800 transition"
+          @click="goToAssetStatus"
+        >
+          내 자산 현황 바로가기
+        </button>
       </div>
-      <div class="asset-change" :class="{ positive: asset.change > 0, negative: asset.change < 0 }">
+      <div
+        :class="
+          asset.change > 0 ? 'text-green-500' : asset.change < 0 ? 'text-red-500' : 'text-gray-500'
+        "
+        class="text-sm font-bold ml-1"
+      >
         {{ asset.change > 0 ? '+' : '' }}{{ asset.change }}% (이번 달)
       </div>
     </section>
 
     <!-- 메뉴 카드 -->
-    <section class="menu-cards">
-      <router-link to="/journal" class="menu-card">
-        <span class="menu-icon">📒</span>
-        <div class="menu-info">
-          <div class="menu-title">투자 일지</div>
-          <div class="menu-desc">나의 투자 기록을 확인해보세요</div>
+    <section class="flex flex-col gap-3 mx-4 mb-5">
+      <router-link
+        to="/journal"
+        class="flex items-center bg-white rounded-xl shadow px-4 py-4 hover:shadow-lg transition text-inherit no-underline"
+      >
+        <span class="text-xl mr-4">📒</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-base font-bold text-gray-900 mb-0.5">투자 일지</div>
+          <div class="text-sm text-gray-500">나의 투자 기록을 확인해보세요</div>
         </div>
-        <span class="menu-arrow">&#8250;</span>
+        <span class="text-xl text-gray-300 ml-2">&#8250;</span>
       </router-link>
-      <router-link to="/investment-test/retest" class="menu-card">
-        <span class="menu-icon">📝</span>
-        <div class="menu-info">
-          <div class="menu-title">나의 투자 성향 알아보기</div>
-          <div class="menu-desc">투자 성향을 분석해보세요</div>
+      <router-link
+        to="/investment-test/retest"
+        class="flex items-center bg-white rounded-xl shadow px-4 py-4 hover:shadow-lg transition text-inherit no-underline"
+      >
+        <span class="text-xl mr-4">📝</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-base font-bold text-gray-900 mb-0.5">나의 투자 성향 알아보기</div>
+          <div class="text-sm text-gray-500">투자 성향을 분석해보세요</div>
         </div>
-        <span class="menu-arrow">&#8250;</span>
+        <span class="text-xl text-gray-300 ml-2">&#8250;</span>
       </router-link>
     </section>
 
     <!-- 모의투자 내역 카드 -->
-    <section class="invest-history-card">
-      <div class="card-header">
-        <div class="card-title">모의투자 내역</div>
+    <section class="bg-white rounded-xl mx-4 mb-5 shadow overflow-hidden">
+      <div class="bg-gray-50 px-5 py-4 border-b border-gray-200">
+        <div class="text-base font-bold text-gray-900">모의투자 내역</div>
       </div>
-
-      <div class="card-content">
+      <div class="px-5 py-4">
         <!-- 매수 내역 -->
-        <div class="transaction-section">
-          <div class="section-title buy-title">매수 내역</div>
-          <div class="stock-cards">
+        <div class="mb-4">
+          <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
+          <div class="flex flex-col gap-2">
             <div
               v-for="(item, index) in buyHistory"
               :key="`buy-${index}`"
-              class="stock-card buy-card"
+              class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-red-600 hover:shadow-md transition"
             >
-              <div class="stock-info">
-                <div class="stock-name">{{ item.name }}</div>
-                <div class="stock-desc">{{ item.desc }}</div>
+              <div class="flex flex-col flex-1">
+                <div class="text-sm font-bold text-gray-900 mb-0.5">{{ item.name }}</div>
+                <div class="text-xs text-gray-500">{{ item.desc }}</div>
               </div>
-              <div class="stock-amounts">
-                <div class="stock-amount">₩{{ item.amount.toLocaleString() }}</div>
-                <div class="stock-change positive">
+              <div class="text-right">
+                <div class="text-sm font-bold text-gray-900 mb-0.5">
+                  ₩{{ item.amount.toLocaleString() }}
+                </div>
+                <div class="text-xs font-bold text-red-600">
                   {{ item.change > 0 ? '+' : '' }}{{ item.change }}%
                 </div>
               </div>
             </div>
           </div>
         </div>
-
         <!-- 매도 내역 -->
-        <div class="transaction-section">
-          <div class="section-title sell-title">매도 내역</div>
-          <div class="stock-cards">
+        <div>
+          <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
+          <div class="flex flex-col gap-2">
             <div
               v-for="(item, index) in sellHistory"
               :key="`sell-${index}`"
-              class="stock-card sell-card"
+              class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-blue-600 hover:shadow-md transition"
             >
-              <div class="stock-info">
-                <div class="stock-name">{{ item.name }}</div>
-                <div class="stock-desc">{{ item.desc }}</div>
+              <div class="flex flex-col flex-1">
+                <div class="text-sm font-bold text-gray-900 mb-0.5">{{ item.name }}</div>
+                <div class="text-xs text-gray-500">{{ item.desc }}</div>
               </div>
-              <div class="stock-amounts">
-                <div class="stock-amount">₩{{ item.amount.toLocaleString() }}</div>
-                <div class="stock-change negative">
+              <div class="text-right">
+                <div class="text-sm font-bold text-gray-900 mb-0.5">
+                  ₩{{ item.amount.toLocaleString() }}
+                </div>
+                <div class="text-xs font-bold text-blue-600">
                   {{ item.change > 0 ? '+' : '' }}{{ item.change }}%
                 </div>
               </div>
@@ -117,7 +156,6 @@
     <FooterNavigation />
   </div>
 </template>
-
 <script setup>
 import FooterNavigation from '../../components/FooterNavigation.vue'
 import { ref, onMounted } from 'vue'
@@ -286,6 +324,7 @@ onMounted(async () => {
   }
 })
 </script>
+<<<<<<< HEAD
 
 <style scoped>
 .profile-page {
@@ -638,3 +677,5 @@ onMounted(async () => {
   }
 }
 </style>
+=======
+>>>>>>> 5048c083856624e5a5973666ca184b5b570aae33
