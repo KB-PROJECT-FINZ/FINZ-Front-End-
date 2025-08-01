@@ -1,17 +1,25 @@
 <template>
-  <header class="header">
-    <button class="back-btn" @click="goBack">&#8592;</button>
-    <h1 class="app-title">투자 일지</h1>
+  <header class="flex items-center justify-center relative bg-white py-4 pb-3 shadow-sm mb-2">
+    <button
+      class="absolute left-4 top-1/2 -translate-y-1/2 bg-none border-none text-2xl text-gray-800 cursor-pointer"
+      @click="goBack"
+    >
+      &#8592;
+    </button>
+    <h1 class="text-xl font-bold text-gray-800 tracking-tight">투자 일지</h1>
   </header>
-  <div class="journal-page">
-    <router-link to="/feedback" class="action-btn">
-      <span class="action-icon">📊</span>
-      <div class="action-texts">
-        <span class="action-title">AI 피드백 보러가기</span>
+  <div class="journal-page px-4 py-4">
+    <router-link
+      to="/feedback"
+      class="flex items-center gap-4 w-full bg-white rounded-xl p-4 shadow transition hover:-translate-y-0.5 hover:shadow-lg"
+    >
+      <span class="text-3xl">📊</span>
+      <div class="flex flex-col items-start">
+        <span class="text-base font-semibold text-gray-800">AI 피드백 보러가기</span>
       </div>
     </router-link>
     <Calendar
-      class="custom-calendar"
+      class="custom-calendar w-full mt-4 mb-4"
       :attributes="calendarAttrs"
       @dayclick="onDayClick"
       is-expanded
@@ -19,12 +27,14 @@
       :show-arrows="true"
       :first-day-of-week="0"
     />
-    <div v-if="selectedDateJournals.length" class="journal-list">
+    <div v-if="selectedDateJournals.length" class="journal-list mt-3 flex flex-col gap-3 pb-24">
       <div
         v-for="journal in selectedDateJournals"
         :key="journal.id"
-        class="journal-item"
-        :class="{ selected: selectedJournal && selectedJournal.id === journal.id }"
+        class="journal-item bg-gray-100 p-3 rounded-lg"
+        :class="{
+          'border-2 border-indigo-500': selectedJournal && selectedJournal.id === journal.id,
+        }"
         @click="selectJournal(journal)"
       >
         <p>
@@ -33,15 +43,33 @@
         <p>감정: {{ journal.emotion }}</p>
         <p>이유: {{ journal.reason }}</p>
         <p>실수: {{ journal.mistake }}</p>
-        <div v-if="selectedJournal && selectedJournal.id === journal.id" class="edit-delete-btns">
-          <button class="edit-btn" @click.stop="editJournal(journal)">수정하기</button>
-          <button class="delete-btn" @click.stop="deleteJournal(journal.id)">삭제하기</button>
+        <div
+          v-if="selectedJournal && selectedJournal.id === journal.id"
+          class="edit-delete-btns flex justify-between mt-2"
+        >
+          <button
+            class="edit-btn bg-indigo-500 text-white rounded px-4 py-1 mr-2 hover:bg-indigo-700"
+            @click.stop="editJournal(journal)"
+          >
+            수정하기
+          </button>
+          <button
+            class="delete-btn bg-red-500 text-white rounded px-4 py-1 hover:bg-red-700"
+            @click.stop="deleteJournal(journal.id)"
+          >
+            삭제하기
+          </button>
         </div>
       </div>
     </div>
   </div>
   <router-link to="/journalwrite">
-    <button class="write-btn" @click="goToWrite">＋</button>
+    <button
+      class="write-btn fixed bottom-24 right-5 w-14 h-14 rounded-full bg-indigo-500 text-white text-3xl border-none shadow-lg cursor-pointer z-10 md:bottom-24 md:right-5 sm:bottom-20 sm:right-3 sm:w-12 sm:h-12 sm:text-2xl"
+      @click="goToWrite"
+    >
+      ＋
+    </button>
   </router-link>
 </template>
 
@@ -58,9 +86,7 @@ const selectedDate = ref(new Date().toISOString().slice(0, 10)) // 오늘 날짜
 
 onMounted(async () => {
   try {
-    const authRes = await axios.get('/api/auth/me', { withCredentials: true })
-    userId.value = authRes.data.userId
-    const journalRes = await axios.get(`/api/journals/user/${userId.value}`, {
+    const journalRes = await axios.get(`/api/journals/user`, {
       withCredentials: true,
     })
     journals.value = journalRes.data
@@ -138,165 +164,14 @@ function goBack() {
 }
 </script>
 
-<!-- scoped 제거함 -->
+<!-- Tailwind로 커스텀해야 하는 부분(예: v-calendar 내부)은 아래처럼 추가로 덮어써도 됩니다 -->
 <style>
 @import 'v-calendar/style.css';
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  background: #fff;
-  padding: 18px 0 12px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  margin-bottom: 8px;
-}
-.back-btn {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #222;
-  cursor: pointer;
-}
-.app-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #222;
-  letter-spacing: -1px;
-}
-.profile-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #222;
-}
-.journal-page {
-  padding: 16px;
-}
-
-.action-btn {
-  background: white;
-  border: none;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  cursor: pointer;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-}
-
-.action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
-
-.action-icon {
-  font-size: 28px;
-}
-
-.action-texts {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.action-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #212529;
-}
-
-.custom-calendar {
-  width: 100%;
-  margin-top: 16px;
-  margin-bottom: 16px;
-}
-
-/* 핵심: v-calendar 내부 컨테이너 너비 잡아줌 */
-.vc-container {
-  width: 100% !important;
-}
-
-/* 선택된 날짜 하이라이트 */
 .selected-date-circle {
   color: #fff !important;
   border-radius: 50% !important;
 }
-
-.journal-list {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-bottom: 100px;
-}
-.journal-item {
-  background: #f8f9fa;
-  padding: 12px;
-  border-radius: 8px;
-}
-.journal-item.selected {
-  border: 2px solid #6166cc;
-}
-.edit-delete-btns {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-}
-.edit-btn {
-  background: #6166cc;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 16px;
-  margin-right: 8px;
-  cursor: pointer;
-}
-.delete-btn {
-  background: #ff4d4f;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 16px;
-  cursor: pointer;
-}
-.edit-btn:hover {
-  background: #4b50a7;
-}
-.delete-btn:hover {
-  background: #d9363e;
-}
-.write-btn {
-  position: absolute;
-  bottom: 100px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background-color: #6166cc;
-  color: white;
-  font-size: 28px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  z-index: 10;
-}
-@media (max-width: 430px) {
-  .write-btn {
-    right: 12px;
-    bottom: 80px;
-    width: 48px;
-    height: 48px;
-    font-size: 24px;
-  }
+.vc-container {
+  width: 100% !important;
 }
 </style>
