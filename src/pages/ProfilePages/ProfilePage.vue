@@ -70,7 +70,7 @@
         <span class="text-xl text-gray-300 ml-2">&#8250;</span>
       </router-link>
       <router-link
-        to="/investment-test/retest"
+        to="/risk-profile"
         class="flex items-center bg-white rounded-xl shadow px-4 py-4 hover:shadow-lg transition text-inherit no-underline"
       >
         <span class="text-xl mr-4">📝</span>

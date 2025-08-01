@@ -27,6 +27,9 @@ import MockTradingHome from '@/pages/mockTrading/MockTradingHome.vue'
 import AssetStatus from '@/pages/mockTrading/AssetStatus.vue'
 import Holdings from '@/pages/mockTrading/Holdings.vue'
 import Transactions from '@/pages/mockTrading/Transactions.vue'
+import RiskProfile from '@/pages/ProfilePages/RiskProfile.vue'
+import RiskTypesList from '@/pages/ProfilePages/RiskTypesList.vue'
+
 const routes = [
   {
     path: '/',
@@ -167,6 +170,12 @@ const routes = [
     name: 'Transactions',
     component: Transactions,
   },
+  {
+    path: '/risk-profile',
+    name: 'RiskProfile',
+    component: RiskProfile,
+  },
+  { path: '/risk-types-list', name: 'RiskTypesList', component: RiskTypesList },
 ]
 
 const router = createRouter({

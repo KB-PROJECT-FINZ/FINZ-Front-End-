@@ -81,7 +81,6 @@ import { Calendar } from 'v-calendar'
 const journals = ref([])
 const selectedJournal = ref(null)
 const router = useRouter()
-const userId = ref(null)
 const selectedDate = ref(new Date().toISOString().slice(0, 10)) // 오늘 날짜로 초기화
 
 onMounted(async () => {
