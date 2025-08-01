@@ -1,74 +1,103 @@
 <template>
-  <div class="detail-page">
+  <div class="bg-[#f7f8fa] min-h-screen pb-6">
     <!-- 상단 헤더 -->
-    <header class="header">
-      <button class="back-btn" @click="goBack">&#8592;</button>
-      <h1 class="app-title">개념 학습</h1>
+    <header class="flex items-center justify-center relative bg-white py-4 shadow-sm mb-2">
+      <button
+        class="absolute left-4 top-1/2 -translate-y-1/2 bg-white border-none text-2xl text-black cursor-pointer"
+        @click="goBack"
+      >
+        &#8592;
+      </button>
+      <h1 class="text-xl font-bold text-gray-800 tracking-tight">개념 학습</h1>
     </header>
 
-    <div class="detail-content">
-      <div v-if="content?.youtubeUrl" class="video-wrap">
+    <div class="bg-white rounded-2xl mx-4 mt-5 p-6 shadow flex flex-col items-start">
+      <div v-if="content?.youtubeUrl" class="w-full max-w-[420px] mx-auto mb-5">
         <iframe
           :src="`https://www.youtube.com/embed/${extractYoutubeId(content.youtubeUrl)}?rel=0&modestbranding=1`"
           frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen
-          class="youtube-player"
+          class="w-full h-[220px] rounded-xl shadow"
           loading="lazy"
         ></iframe>
       </div>
-      <img v-else-if="content?.imageUrl" :src="content.imageUrl" class="detail-thumb" />
-      <h2 class="detail-title">{{ content?.title }}</h2>
-      <div class="detail-body" v-html="formattedBody"></div>
+      <img
+        v-else-if="content?.imageUrl"
+        :src="content.imageUrl"
+        class="w-full max-w-[420px] rounded-xl mb-5 mx-auto shadow"
+      />
+      <h2 class="text-lg font-bold text-gray-900 mb-3">{{ content?.title }}</h2>
+      <div class="text-gray-700 text-base leading-7" v-html="formattedBody"></div>
     </div>
+
     <!-- 퀴즈 카드 -->
-    <div v-if="quiz" class="quiz-card">
-      <div class="quiz-credit">{{ quiz.creditReward }}크레딧</div>
-      <div class="quiz-question">{{ removeOX(quiz.question) }}</div>
-      <div class="quiz-ox-choices">
+    <div v-if="quiz" class="bg-white rounded-2xl mx-4 mt-5 p-6 shadow flex flex-col items-start">
+      <div class="text-[0.92rem] text-yellow-700 bg-yellow-50 rounded px-3 py-1 mb-2 font-bold">
+        {{ quiz.creditReward }}크레딧
+      </div>
+      <div class="text-base font-bold text-gray-900 mb-4">{{ removeOX(quiz.question) }}</div>
+      <div class="flex gap-4 w-full justify-center mb-3">
         <button
-          class="quiz-ox-btn o-btn"
-          :class="{ selected: selected === 'O', disabled: result !== null }"
+          class="flex-1 text-lg font-bold rounded-lg py-3 bg-green-50 text-green-600 shadow hover:bg-indigo-100 transition border-2 border-transparent"
+          :class="{
+            'border-indigo-700 bg-indigo-100 text-indigo-700': selected === 'O',
+            'opacity-60 cursor-not-allowed': result !== null,
+          }"
           :disabled="result !== null"
           @click="selectOX('O')"
         >
           O (맞음)
         </button>
         <button
-          class="quiz-ox-btn x-btn"
-          :class="{ selected: selected === 'X', disabled: result !== null }"
+          class="flex-1 text-lg font-bold rounded-lg py-3 bg-red-50 text-red-500 shadow hover:bg-indigo-100 transition border-2 border-transparent"
+          :class="{
+            'border-indigo-700 bg-indigo-100 text-indigo-700': selected === 'X',
+            'opacity-60 cursor-not-allowed': result !== null,
+          }"
           :disabled="result !== null"
           @click="selectOX('X')"
         >
           X (틀림)
         </button>
       </div>
-      <div v-if="result !== null" class="quiz-feedback">
-        <div v-if="result" class="quiz-correct">
+      <div v-if="result !== null" class="mt-2 w-full">
+        <div v-if="result" class="text-green-600 font-bold mb-2 flex items-center gap-2">
           ✅ 정답입니다!
-          <span v-if="creditAwarded" class="credit-awarded"
+          <span v-if="creditAwarded" class="text-red-500 font-bold animate-pulse"
             >+{{ quiz.creditReward }}크레딧 획득!</span
           >
         </div>
-        <div v-else class="quiz-wrong">❌ 오답입니다.</div>
+        <div v-else class="text-red-500 font-bold mb-2">❌ 오답입니다.</div>
       </div>
-      <div v-if="result !== null && !showExplainBtnClicked">
-        <button class="quiz-explain-toggle" @click="showExplainBtnClicked = true">해설 보기</button>
+      <div v-if="result !== null && !showExplainBtnClicked" class="w-full">
+        <button
+          class="bg-gray-100 text-indigo-700 font-bold rounded-lg px-5 py-2 mt-2 hover:bg-indigo-100 transition"
+          @click="showExplainBtnClicked = true"
+        >
+          해설 보기
+        </button>
       </div>
-      <div v-if="result !== null && showExplainBtnClicked" class="quiz-explain">
-        <div class="quiz-ex-title">💡 해설</div>
-        <div class="quiz-ex-body">{{ quiz.comment }}</div>
+      <div
+        v-if="result !== null && showExplainBtnClicked"
+        class="bg-[#f7f8fa] rounded-lg px-4 py-3 mt-3 w-full text-gray-700 text-[0.98rem]"
+      >
+        <div class="font-bold mb-1 text-yellow-700">💡 해설</div>
+        <div>{{ quiz.comment }}</div>
       </div>
-
-      <div v-if="result !== null" class="complete-button-wrap">
-        <button class="complete-btn" :disabled="isCompleted" @click="handleComplete">
+      <div v-if="result !== null" class="w-full flex justify-center mt-5">
+        <button
+          class="bg-indigo-700 text-white text-base font-bold rounded-lg px-8 py-3 shadow hover:bg-indigo-800 transition"
+          :disabled="isCompleted"
+          :class="{ 'bg-gray-400 cursor-not-allowed': isCompleted }"
+          @click="handleComplete"
+        >
           {{ isCompleted ? '✅ 완료됨' : '학습 완료' }}
         </button>
       </div>
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -229,288 +258,3 @@ async function handleComplete() {
   }
 }
 </script>
-
-<style scoped>
-.detail-page {
-  background: #f7f8fa;
-  min-height: 100vh;
-  padding-bottom: 24px;
-}
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  background: #fff;
-  padding: 18px 0 12px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  margin-bottom: 8px;
-}
-.back-btn {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #222;
-  cursor: pointer;
-}
-.app-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #222;
-  letter-spacing: -1px;
-}
-.detail-content {
-  background: #fff;
-  border-radius: 18px;
-  margin: 18px 16px 0 16px;
-  padding: 22px 18px 18px 18px;
-  box-shadow: 0 2px 12px rgba(127, 127, 213, 0.08);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-.detail-thumb {
-  width: 100%;
-  max-width: 420px;
-  height: auto;
-  border-radius: 14px;
-  margin: 0 auto 18px auto;
-  display: block;
-  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.1);
-}
-.detail-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #222;
-  margin-bottom: 14px;
-  margin-top: 0;
-}
-.detail-body {
-  color: #444;
-  font-size: 1rem;
-  line-height: 1.7;
-  word-break: keep-all;
-}
-.detail-body ul {
-  margin: 10px 0 10px 18px;
-  padding-left: 0;
-}
-.detail-body li {
-  margin-bottom: 6px;
-  list-style: disc inside;
-}
-.quiz-card {
-  background: #fff;
-  border-radius: 16px;
-  margin: 18px 16px 0 16px;
-  padding: 20px 18px 18px 18px;
-  box-shadow: 0 2px 12px rgba(127, 127, 213, 0.08);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-.quiz-credit {
-  font-size: 0.92rem;
-  color: #bfa700;
-  background: #fffbe6;
-  border-radius: 8px;
-  padding: 2px 10px;
-  margin-bottom: 10px;
-  font-weight: bold;
-}
-.quiz-question {
-  font-size: 1.08rem;
-  font-weight: bold;
-  margin-bottom: 14px;
-  color: #222;
-}
-.quiz-choices {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-.quiz-choice {
-  background: #f3f4f6;
-  border: 1px solid #e0e7ef;
-  border-radius: 8px;
-  padding: 7px 18px;
-  font-size: 1rem;
-  color: #333;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    border 0.15s;
-}
-.quiz-choice.selected {
-  background: #e0e7ff;
-  border: 1.5px solid #3730a3;
-  color: #3730a3;
-}
-.quiz-choice.disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.quiz-ox-choices {
-  display: flex;
-  gap: 18px;
-  margin-bottom: 10px;
-  justify-content: center;
-  width: 100%;
-}
-.quiz-ox-btn {
-  flex: 1 1 0;
-  font-size: 1.15rem;
-  font-weight: bold;
-  border: none;
-  border-radius: 10px;
-  padding: 12px 0;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s,
-    box-shadow 0.15s;
-  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.07);
-}
-.o-btn {
-  background: #e0f7e9;
-  color: #22b573;
-}
-.x-btn {
-  background: #ffeaea;
-  color: #e74c3c;
-}
-.quiz-ox-btn.selected {
-  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.13);
-  border: 2px solid #3730a3;
-  background: #e0e7ff;
-  color: #3730a3;
-}
-.quiz-ox-btn.disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.quiz-submit {
-  background: #3730a3;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 22px;
-  font-size: 1rem;
-  font-weight: bold;
-  margin-top: 6px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.quiz-submit:disabled {
-  background: #bdbdbd;
-  cursor: not-allowed;
-}
-.quiz-feedback {
-  margin: 10px 0 0 0;
-  font-size: 1.05rem;
-  font-weight: bold;
-}
-.quiz-correct {
-  color: #059669;
-  font-weight: bold;
-  margin-bottom: 12px;
-}
-
-.credit-awarded {
-  color: #dc2626;
-  font-weight: bold;
-  animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-.quiz-wrong {
-  color: #e74c3c;
-}
-.quiz-explain {
-  background: #f7f8fa;
-  border-radius: 10px;
-  padding: 10px 14px;
-  margin-top: 14px;
-  color: #444;
-  font-size: 0.98rem;
-}
-.quiz-ex-title {
-  font-weight: bold;
-  margin-bottom: 4px;
-  color: #bfa700;
-}
-.quiz-explain-toggle {
-  background: #f3f4f6;
-  color: #3730a3;
-  border: none;
-  border-radius: 8px;
-  padding: 7px 18px;
-  font-size: 1rem;
-  font-weight: bold;
-  margin-top: 10px;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-.quiz-explain-toggle:hover {
-  background: #e0e7ff;
-}
-.video-wrap {
-  width: 100%;
-  max-width: 420px;
-  margin: 0 auto 18px auto;
-}
-.youtube-player {
-  width: 100%;
-  height: 220px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.1);
-}
-@media (max-width: 600px) {
-  .detail-content,
-  .quiz-card {
-    margin: 14px 4px 0 4px;
-    padding: 16px 6px 14px 10px;
-  }
-  .detail-thumb {
-    max-width: 100vw;
-  }
-}
-.complete-button-wrap {
-  width: 100%;
-  margin-top: 18px;
-  display: flex;
-  justify-content: center;
-}
-
-.complete-btn {
-  background: #3730a3;
-  color: #fff;
-  font-size: 1.05rem;
-  font-weight: bold;
-  border: none;
-  border-radius: 10px;
-  padding: 12px 24px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.1);
-}
-
-.complete-btn:hover {
-  background: #4b39b0;
-}
-</style>
