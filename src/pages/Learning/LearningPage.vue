@@ -161,7 +161,7 @@ const fetchContents = async () => {
 }
 
 // 👉 polling으로 추천 콘텐츠 확보
-const pollUntilContentReady = async (maxRetry = 5, delay = 2500) => {
+const pollUntilContentReady = async (maxRetry = 5, delay = 3500) => {
   let retry = 0
   console.log('[🔁] Polling 시작')
   while (retry < maxRetry) {

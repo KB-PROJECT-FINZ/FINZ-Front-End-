@@ -161,12 +161,15 @@ onMounted(async () => {
     })
     completedLearningCount.value = countRes.data
     riskTypeName.value = convertRiskTypeToName(user.riskType)
-    
+
     // 누적 크레딧 가져오기
     try {
-      const creditResponse = await axios.get('http://localhost:8080/api/learning/user/total-earned-credit', {
-        withCredentials: true,
-      })
+      const creditResponse = await axios.get(
+        'http://localhost:8080/api/learning/user/total-earned-credit',
+        {
+          withCredentials: true,
+        },
+      )
       totalEarnedCredit.value = creditResponse.data
     } catch (error) {
       console.log('누적 크레딧 조회 실패:', error)
