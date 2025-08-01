@@ -4,7 +4,14 @@
     <header class="profile-header">
       <div class="header-spacer"></div>
       <span class="profile-title">마이페이지</span>
-      <button class="settings-btn"><span class="icon">⚙️</span></button>
+
+      <!-- 이미지 클릭 시 바로 로그아웃 -->
+      <img
+        src="https://cdn-icons-png.flaticon.com/512/659/659989.png"
+        alt="logout"
+        class="logout-icon"
+        @click="logout"
+      />
     </header>
 
     <!-- 프로필 박스 -->
@@ -117,8 +124,10 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { getUserCredit } from '../../services/learning'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 const profile = ref({
   image: '',
@@ -137,6 +146,16 @@ const buyHistory = ref([]) // 매수
 const sellHistory = ref([]) // 매도
 const goToAssetStatus = () => {
   router.push('/mock-trading/asset-status')
+}
+const logout = async () => {
+  try {
+    await axios.get('/api/auth/logout')
+    userStore.clearUser()
+    alert('로그아웃 되었습니다.')
+    router.push('/')
+  } catch (e) {
+    alert('로그아웃 실패: ' + (e.response?.data || e.message))
+  }
 }
 
 // 로컬 스토리지 및 API로 데이터 세팅
@@ -504,6 +523,12 @@ onMounted(async () => {
   flex-direction: column;
   gap: 6px;
 }
+.logout-icon {
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+}
+
 .stock-card {
   background: #fff;
   border-radius: 10px;

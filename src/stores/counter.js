@@ -29,7 +29,7 @@ export const useChatStore = defineStore('chat', {
           userId: 1,
           sessionId: this.sessionId,
           message: message,
-pe: intentType,
+          pe: intentType,
         })
 
         const reply = res.data.content
@@ -45,7 +45,6 @@ pe: intentType,
         this.messages.push({ role: 'bot', content: '⚠️ 서버 오류 발생' })
       }
     },
-
 
     clearMessages() {
       this.messages = []

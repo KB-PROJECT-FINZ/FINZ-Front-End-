@@ -36,7 +36,7 @@ onMounted(async () => {
   try {
     const res = await axios.get('http://localhost:8080/api/feedback')
     feedbackList.value = Array.isArray(res.data) ? res.data : [res.data]
-  } catch (e) {
+  } catch (error) {
     error.value = '피드백 목록을 불러오지 못했습니다.'
   } finally {
     loading.value = false

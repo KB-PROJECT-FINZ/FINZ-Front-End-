@@ -12,7 +12,7 @@ import RankingPage from '@/pages/RankingPages/RankingPage.vue'
 import StockAnalysisPage from '@/pages/RankingPages/StockAnalysisPage.vue'
 import FeedbackListPage from '@/pages/ProfilePages/FeedbackListPage.vue'
 import ChatBotPage from '@/pages/ChatBotPage/ChatBotPage.vue'
-
+import recomend from '@/pages/InvestmentTestPage/recommend.vue'
 import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
 import LearningDetailPage from '@/pages/Learning/LearningDetailPage.vue'
 import LearningQuizPage from '@/pages/Learning/LearningQuizPage.vue'
@@ -27,6 +27,7 @@ import MockTradingHome from '@/pages/mockTrading/MockTradingHome.vue'
 import AssetStatus from '@/pages/mockTrading/AssetStatus.vue'
 import Holdings from '@/pages/mockTrading/Holdings.vue'
 import Transactions from '@/pages/mockTrading/Transactions.vue'
+import KakaoSignupPage from '@/pages/LoginPages/KakaoSignupPage.vue'
 const routes = [
   {
     path: '/',
@@ -166,6 +167,21 @@ const routes = [
     path: '/mock-trading/transactions',
     name: 'Transactions',
     component: Transactions,
+  },
+  {
+    path: '/kakao-signup',
+    name: 'KakaoSignupPage',
+    component: KakaoSignupPage,
+  },
+  {
+    path: '/kakaologin',
+    name: 'KakaoLogin',
+    component: () => import('@/pages/LoginPages/KakaoLogin.vue'),
+  },
+  {
+    path: '/recommend',
+    name: 'Recommend',
+    component: recomend,
   },
 ]
 

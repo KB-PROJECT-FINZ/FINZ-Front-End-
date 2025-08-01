@@ -178,7 +178,7 @@ function convertRiskTypeToName(code) {
 
 // 페이지 이동용
 const goToStudy = () => router.push('/learning')
-const goToContents = () => router.push('/contents')
+const goToContents = () => router.push('/recommend')
 const goToQuiz = () => router.push('/quiz')
 const goToPortfolio = () => router.push('/mock-trading/asset-status')
 </script>

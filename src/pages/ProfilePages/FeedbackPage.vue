@@ -40,7 +40,7 @@ onMounted(async () => {
   try {
     const res = await axios.get('http://localhost:8080/api/gpt')
     rawFeedback.value = res.data // feedback만 저장!
-  } catch (e) {
+  } catch (error) {
     error.value = '피드백을 불러오지 못했습니다.'
   } finally {
     loading.value = false
