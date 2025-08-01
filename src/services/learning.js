@@ -23,21 +23,23 @@ export async function fetchLearningContentsByGroup(groupCode) {
   return response.data
 }
 
-export async function giveCredit(userId, quizId, selectedAnswer) {
+export async function giveCredit(quizId, selectedAnswer) {
   const response = await axios.post('/api/learning/quiz/credit', null, {
-    params: { userId, quizId, selectedAnswer }
-  });
-  return response.data;
+    withCredentials: true,
+    params: { quizId, selectedAnswer },
+  })
+  return response.data
 }
 
 export async function getUserCredit(userId) {
-  const response = await axios.get(`/api/learning/user/credit/${userId}`);
-  return response.data;
+  const response = await axios.get(`/api/learning/user/credit`)
+  return response.data
 }
 
-export async function checkQuiz(userId, quizId) {
+export async function checkQuiz(quizId) {
   const response = await axios.get('/api/learning/quiz/result', {
-    params: { userId, quizId }
-  });
-  return response.data;
+    withCredentials: true,
+    params: { quizId },
+  })
+  return response.data
 }

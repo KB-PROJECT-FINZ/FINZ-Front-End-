@@ -116,16 +116,9 @@ const fetchContents = async () => {
 
     const [recommendRes, completeRes] = await Promise.all([
       axios.get('/api/learning/recommend/list', {
-        params: {
-          userId: user.value.userId,
-          size: 5,
-        },
         withCredentials: true,
       }),
       axios.get('/api/learning/history/complete/list', {
-        params: {
-          userId: user.value.userId,
-        },
         withCredentials: true,
       }),
     ])
@@ -148,7 +141,7 @@ const fetchContents = async () => {
 }
 
 // 👉 polling으로 추천 콘텐츠 확보
-const pollUntilContentReady = async (maxRetry = 5, delay = 2000) => {
+const pollUntilContentReady = async (maxRetry = 5, delay = 2500) => {
   let retry = 0
   console.log('[🔁] Polling 시작')
   while (retry < maxRetry) {
