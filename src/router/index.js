@@ -12,7 +12,7 @@ import RankingPage from '@/pages/RankingPages/RankingPage.vue'
 import StockAnalysisPage from '@/pages/RankingPages/StockAnalysisPage.vue'
 import FeedbackListPage from '@/pages/ProfilePages/FeedbackListPage.vue'
 import ChatBotPage from '@/pages/ChatBotPage/ChatBotPage.vue'
-
+import recomend from '@/pages/InvestmentTestPage/recommend.vue'
 import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
 import LearningDetailPage from '@/pages/Learning/LearningDetailPage.vue'
 import LearningQuizPage from '@/pages/Learning/LearningQuizPage.vue'
@@ -20,10 +20,16 @@ import LearningPage from '@/pages/Learning/LearningPage.vue'
 import InvestmentResult from '@/pages/InvestmentTestPage/InvestmentResult.vue'
 import ReTestResult from '@/pages/InvestmentTestPage/ReTestResultpage.vue'
 import ReTestPage from '@/pages/InvestmentTestPage/ReTestPage.vue'
-import TradingPage from '@/pages/TradingPage.vue'
-import ChartPage from '@/pages/ChartPage.vue'
+import TradingPage from '@/pages/mockTrading/TradingPage.vue'
+// import ChartPage from '@/pages/mockTrading/ChartPage.vue'
 import { useUserStore } from '@/stores/user'
 import MockTradingHome from '@/pages/mockTrading/MockTradingHome.vue'
+import AssetStatus from '@/pages/mockTrading/AssetStatus.vue'
+import Holdings from '@/pages/mockTrading/Holdings.vue'
+import Transactions from '@/pages/mockTrading/Transactions.vue'
+import RiskProfile from '@/pages/ProfilePages/RiskProfile.vue'
+import RiskTypesList from '@/pages/ProfilePages/RiskTypesList.vue'
+import KakaoSignupPage from '@/pages/LoginPages/KakaoSignupPage.vue'
 const routes = [
   {
     path: '/',
@@ -121,11 +127,11 @@ const routes = [
     name: 'Trading',
     component: TradingPage,
   },
-  {
-    path: '/chart',
-    name: 'Chart',
-    component: ChartPage,
-  },
+  // {
+  //   path: '/chart',
+  //   name: 'Chart',
+  //   component: ChartPage,
+  // },
   {
     path: '/investment-test/retest',
     name: 'ReTestPage',
@@ -144,9 +150,47 @@ const routes = [
   {
     path: '/mock-trading/:stockCode/chart',
     name: 'ChartPage',
-    component: ChartPage,
-    props: true // route params를 props로 전달
+    component: () => import('@/pages/mockTrading/ChartPage.vue'),
+    props: true, // route params를 props로 전달
   },
+  // 새로 추가할 자산 현황 경로
+  {
+    path: '/mock-trading/asset-status',
+    name: 'AssetStatus',
+    component: AssetStatus,
+    //meta: { requiresAuth: true } // 로그인 필요
+  },
+  {
+    path: '/mock-trading/holdings',
+    name: 'Holdings',
+    component: Holdings,
+  },
+  {
+    path: '/mock-trading/transactions',
+    name: 'Transactions',
+    component: Transactions,
+  },
+  {
+    path: '/kakao-signup',
+    name: 'KakaoSignupPage',
+    component: KakaoSignupPage,
+  },
+  {
+    path: '/kakaologin',
+    name: 'KakaoLogin',
+    component: () => import('@/pages/LoginPages/KakaoLogin.vue'),
+  },
+  {
+    path: '/recommend',
+    name: 'Recommend',
+    component: recomend,
+  },
+  {
+    path: '/risk-profile',
+    name: 'RiskProfile',
+    component: RiskProfile,
+  },
+  { path: '/risk-types-list', name: 'RiskTypesList', component: RiskTypesList },
 ]
 
 const router = createRouter({

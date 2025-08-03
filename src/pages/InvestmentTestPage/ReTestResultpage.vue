@@ -1,30 +1,62 @@
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
+const userStore = useUserStore()
+
 const typeCode = route.query.type || 'UNKNOWN'
 
-//  로그인된 사용자 ID 가져오기
-const username = localStorage.getItem('username')
+const name = ref('')
+const username = ref('')
 
-//  API 호출로 risk_type 저장
-const saveRiskType = async () => {
-  if (!username || typeCode === 'UNKNOWN') return
+// 로그인된 사용자 정보 받아오기
+const fetchUsername = async () => {
   try {
-    await axios.post('/user/risk_type', {
-      username: username,
-      riskType: typeCode,
-    })
-    console.log(' 투자 성향 저장 완료')
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    username.value = res.data.username
+    name.value = res.data.name
   } catch (err) {
-    console.error('❌ 저장 실패:', err)
+    console.error(' 사용자 정보 조회 실패:', err)
   }
 }
 
+// 투자 성향 저장
+const fetchAndSyncUser = async () => {
+  try {
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    username.value = res.data.username
+    name.value = res.data.name
+
+    // userStore에 최신 정보 반영
+    userStore.setUser({
+      userId: res.data.userId,
+      username: res.data.username,
+      name: res.data.name,
+      riskType: typeCode, // ✅ 최신 성향으로 덮어씀
+    })
+
+    // 서버에도 riskType 저장
+    await axios.post(
+      '/api/user/risk_type',
+      {
+        username: res.data.username,
+        riskType: typeCode,
+      },
+      { withCredentials: true },
+    )
+    console.log('✅ 투자 성향 저장 및 상태 반영 완료')
+  } catch (err) {
+    console.error('❌ 사용자 정보 로딩/저장 실패:', err)
+  }
+}
+
+onMounted(fetchAndSyncUser)
+
 onMounted(() => {
-  saveRiskType()
+  fetchUsername()
 })
 const resultMap = {
   CSD: {
@@ -139,7 +171,7 @@ const result = resultMap[typeCode] || resultMap.UNKNOWN
     </button>
     <button
       class="bg-gray-100 text-gray-600 py-2 px-4 rounded-full w-full font-semibold mb-6 hover:bg-gray-300"
-      @click="() => $router.push('/investment-test')"
+      @click="() => $router.push('/investment-test/retest')"
     >
       테스트 다시하기
     </button>

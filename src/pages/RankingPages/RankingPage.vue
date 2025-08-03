@@ -1,25 +1,8 @@
 <template>
   <div class="w-full max-w-[480px] mx-auto pb-24 px-4">
     <!-- 1. 헤더 -->
-    <div class="flex items-center justify-between py-4">
-      <button @click="goBack" class="text-gray-700">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-6 h-6"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-          />
-        </svg>
-      </button>
-      <h1 class="text-lg font-bold text-center flex-1 -ml-6">랭킹</h1>
-      <div class="w-6"></div>
+    <div class="py-4 text-center">
+      <h1 class="text-lg font-bold">랭킹</h1>
     </div>
 
     <!-- 2. 상단 탭 -->
@@ -38,7 +21,7 @@
       :rank="myRanking.rank"
       :gainRate="myRanking.gainRate"
       :topPercent="myRanking.topPercent"
-      :trait="userTraitType"
+      :trait="myRanking.trait"
     />
 
     <!-- 4. 인기 종목 Top5 -->
@@ -86,9 +69,9 @@
         v-for="(user, index) in limitedUsers"
         :key="user.userId"
         :rank="index + 1"
-        :nickname="user.name"
+        :nickname="user.nickname"
         :gainRate="user.gainRate"
-        :trait="user.traitGroup || currentTraitType"
+        :trait="user.trait || currentTraitType"
         :originalTrait="user.originalTrait || ''"
         :image="user.image || '/images/profile1.png'"
       />
@@ -107,12 +90,13 @@
     <FooterNavigation />
   </div>
 </template>
+
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import TabSwitcher from '@/components/TabSwitcher.vue'
-import MyRankingCard from '@/components/MyRankingCard.vue'
-import Top5StockList from '@/components/Top5StockList.vue'
-import UserRankingCard from '@/components/UserRankingCard.vue'
+import TabSwitcher from '@/components/ranking/TabSwitcher.vue'
+import MyRankingCard from '@/components/ranking/MyRankingCard.vue'
+import Top5StockList from '@/components/ranking/Top5StockList.vue'
+import UserRankingCard from '@/components/ranking/UserRankingCard.vue'
 import FooterNavigation from '@/components/FooterNavigation.vue'
 
 import {
@@ -122,65 +106,86 @@ import {
   fetchGroupedWeeklyRanking,
 } from '@/services/rankingService'
 
-//고정값
-const userId = 1
-const week = '2025-W30'
-const userTraitType = '보수형' // 실제 로그인 사용자의 성향
+const userTraitType = ref(null)
 
-// 상태 변수
 const myRanking = ref(null)
 const popularStocks = ref([])
 const allUsers = ref([])
 const visibleCount = ref(10)
 
-//탭 상태
 const mainRankingTabs = ['주간', '성향별']
 const currentRankingType = ref('주간')
 const traitTypes = ['보수형', '균형형', '공격형', '특수형']
-const currentTraitType = ref(traitTypes[0])
+const currentTraitType = ref('')
 
-//탭 전환
+// 월요일 계산 함수
+function getMonday(date) {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = (day === 0 ? -6 : 1) - day
+  d.setDate(d.getDate() + diff)
+  return d
+}
+
+function formatDateToYYYYMMDD(date) {
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+const today = new Date()
+const monday = getMonday(today)
+const recordDate = formatDateToYYYYMMDD(monday)
+
 function selectMainRankingTab(tab) {
   currentRankingType.value = tab
   if (tab === '성향별') {
-    currentTraitType.value = userTraitType
+    currentTraitType.value = userTraitType.value
   }
 }
 
-//성향버튼
 function selectTraitType(trait) {
   currentTraitType.value = trait
 }
-//API호출:onMounted
+
 onMounted(async () => {
-  myRanking.value = await fetchMyRanking(userId)
-  popularStocks.value = await fetchTop5Stocks(week, userTraitType)
-  allUsers.value = await fetchWeeklyRanking(week)
+  // 1. 내 랭킹 불러오기
+  myRanking.value = await fetchMyRanking(recordDate)
+  console.log('[디버그] 내 랭킹 응답:', myRanking.value)
+
+  // ✅ 2. 성향 정보 localStorage에 무조건 저장 (기존 값 덮어쓰기)
+  localStorage.setItem('userTraitType', myRanking.value?.trait || '미지정')
+
+  // 3. 현재 성향 타입 초기화
+  userTraitType.value = localStorage.getItem('userTraitType') || '미지정'
+  currentTraitType.value = userTraitType.value
+
+  // 4. 인기 종목 Top5 불러오기
+  popularStocks.value = await fetchTop5Stocks(recordDate)
+
+  // 5. 주간 랭킹 불러오기
+  allUsers.value = await fetchWeeklyRanking()
 })
-//성향별 그룹 API로 전환
+
+// 성향별 탭 선택 시 다시 fetch
 watch(currentRankingType, async (newType) => {
   if (newType === '성향별') {
-    const groupRankings = await fetchGroupedWeeklyRanking(week)
+    const groupRankings = await fetchGroupedWeeklyRanking()
     allUsers.value = groupRankings[currentTraitType.value] || []
   } else {
-    allUsers.value = await fetchWeeklyRanking(week)
+    allUsers.value = await fetchWeeklyRanking()
   }
 })
 
-//성향 버튼 클릭시 API호출
+// 성향 필터 바뀔 때도 다시 fetch
 watch(currentTraitType, async (newTrait) => {
   if (currentRankingType.value === '성향별') {
-    const groupRankings = await fetchGroupedWeeklyRanking(week)
+    const groupRankings = await fetchGroupedWeeklyRanking()
     allUsers.value = groupRankings[newTrait] || []
   }
 })
 
-//computed 속성
 const filteredUsers = computed(() => allUsers.value)
 const limitedUsers = computed(() => filteredUsers.value.slice(0, visibleCount.value))
-
-//뒤로가기
-const goBack = () => history.back()
 </script>
-
-<style scoped></style>

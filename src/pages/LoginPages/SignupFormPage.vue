@@ -166,7 +166,7 @@ const checkNickname = async () => {
   }
 
   try {
-    const res = await axios.get(`/auth/check-nickname?nickname=${nickname.value}`)
+    const res = await axios.get(`/api/auth/check-nickname?nickname=${nickname.value}`)
     console.log('요청 닉네임:', nickname.value)
     console.log('응답 데이터:', res.data)
     console.log('닉네임 중복확인 응답:', res.data) // 디버깅용 로그
@@ -183,7 +183,7 @@ const checkNickname = async () => {
 
 const handleSignup = async () => {
   try {
-    const res = await axios.post('/auth/register', {
+    const res = await axios.post('/api/auth/signup', {
       username: email.value,
       password: password.value,
       name: name.value,

@@ -1,31 +1,64 @@
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const typeCode = route.query.type || 'UNKNOWN'
+const router = useRouter()
+const name = ref('')
+const username = ref('')
+const result = ref(null) // 동적으로 결과 업데이트용
 
-//  로그인된 사용자 ID 가져오기
-const username = localStorage.getItem('username')
-
-//  API 호출로 risk_type 저장
+// 투자 성향 저장
 const saveRiskType = async () => {
-  if (!username || typeCode === 'UNKNOWN') return
+  if (!username.value || typeCode === 'UNKNOWN') {
+    console.warn('❗ username 또는 typeCode 없음, 저장 스킵')
+    return
+  }
+
   try {
-    await axios.post('/user/risk_type', {
-      username: username,
-      riskType: typeCode,
-    })
-    console.log(' 투자 성향 저장 완료')
+    await axios.post(
+      '/api/user/risk_type',
+      {
+        username: username.value,
+        riskType: typeCode,
+      },
+      {
+        withCredentials: true,
+      },
+    )
+    console.log('✅ 투자 성향 저장 완료')
+    alert('🎉 투자 성향이 저장되었습니다!')
   } catch (err) {
     console.error('❌ 저장 실패:', err)
   }
 }
 
-onMounted(() => {
-  saveRiskType()
+onMounted(async () => {
+  try {
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    if (!res.data.username) {
+      alert('로그인이 필요한 서비스입니다.')
+      router.push('/login-form')
+      return
+    }
+
+    username.value = res.data.username
+    name.value = res.data.name
+
+    await saveRiskType()
+
+    const refreshed = await axios.get('/api/auth/me', { withCredentials: true })
+    console.log('🎯 최신 riskType:', refreshed.data.riskType)
+
+    result.value = resultMap[refreshed.data.riskType] || resultMap.UNKNOWN
+  } catch (err) {
+    console.error('❌ 사용자 정보 조회 실패:', err)
+    router.push('/login-form')
+  }
 })
+
 const resultMap = {
   CSD: {
     title: '신중한 안정형(CSD)',
@@ -105,12 +138,10 @@ const resultMap = {
     tip: '기술지표를 맹신하지 말고, 분산된 신호와 함께 판단하세요.',
   },
 }
-
-const result = resultMap[typeCode] || resultMap.UNKNOWN
 </script>
 
 <template>
-  <div class="max-w-md mx-auto bg-white px-6 py-8 shadow-xl rounded-2xl text-center">
+  <div class="max-w-md mx-auto bg-white px-6 py-8 shadow-xl rounded-2xl text-center" v-if="result">
     <div class="text-left text-xl font-bold text-[#333] mb-4">
       <img src="@/assets/finz.png" alt="finz" class="w-16 mb-2" />
     </div>
@@ -154,5 +185,5 @@ const result = resultMap[typeCode] || resultMap.UNKNOWN
 </template>
 
 <style scoped>
-/* 이미지 경로에 맞게 /public 폴더에 celebrate.png 같은 축하 아이콘이 있어야 합니다 */
+/* /public 에 celebrate.png 혹은 finz.png 가 있어야 정상 표시됨 */
 </style>

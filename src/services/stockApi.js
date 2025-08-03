@@ -27,8 +27,8 @@ async function apiCall(endpoint, options = {}) {
 // 종목 정보 조회 (Swagger 문서에 맞게 수정)
 export async function getStockInfo(stockCode) {
   try {
-    // Swagger 문서의 /api/mock/price/{code} 엔드포인트 사용
-    const response = await fetch(`${API_BASE_URL}/mock/price/${stockCode}`, {
+    // Swagger 문서의 /api/stock/price/{code} 엔드포인트 사용
+    const response = await fetch(`${API_BASE_URL}/stock/price/${stockCode}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

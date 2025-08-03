@@ -14,28 +14,27 @@ export const useCounterStore = defineStore('counter', () => {
 export const useChatStore = defineStore('chat', {
   state: () => ({
     messages: [],
-
+    intentType: null,
     sessionId: null,
   }),
 
   actions: {
-    async sendMessage(message, intentType = null) {
+    async sendMessage(message) {
       if (message) {
         this.messages.push({ role: 'user', content: message })
       }
 
       try {
-        const res = await axios.post('/api/chatbot/message', {
+        const res = await axios.post('/chatbot/message', {
           userId: 1,
           sessionId: this.sessionId,
           message: message,
-pe: intentType,
         })
 
         const reply = res.data.content
         this.sessionId = res.data.sessionId
-
         this.messages.push({ role: 'bot', content: reply })
+        this.intentType = res.data.intentType
 
         if (reply === '⚠️ 서버 오류 발생') {
           console.error('서버 오류 발생:', res.data)
@@ -45,7 +44,6 @@ pe: intentType,
         this.messages.push({ role: 'bot', content: '⚠️ 서버 오류 발생' })
       }
     },
-
 
     clearMessages() {
       this.messages = []

@@ -18,11 +18,11 @@
       </div>
       <div class="bg-white p-4 rounded-xl shadow-sm">
         <p class="text-sm text-gray-500 mb-1">누적 크레딧</p>
-        <p class="font-semibold text-indigo-500">15,420</p>
+        <p class="font-semibold text-indigo-500">{{ totalEarnedCredit }}</p>
       </div>
       <div class="bg-white p-4 rounded-xl shadow-sm">
         <p class="text-sm text-gray-500 mb-1">완료한 학습</p>
-        <p class="font-semibold text-green-500">23개</p>
+        <p class="font-semibold text-green-500">{{ completedLearningCount }}개</p>
       </div>
       <div class="bg-white p-4 rounded-xl shadow-sm">
         <p class="text-sm text-gray-500 mb-1">모의투자 수익</p>
@@ -70,14 +70,14 @@
       </div>
 
       <div class="flex gap-3 overflow-x-auto pb-1">
-        <!-- 콘텐츠 카드 -->
-        <div class="min-w-[160px] bg-white p-3 rounded-xl shadow-sm shrink-0">
-          <p class="text-xs font-bold text-purple-600 mb-1">성장주식</p>
-          <p class="text-sm font-semibold">성장주 투자 핵심 포인트</p>
-        </div>
-        <div class="min-w-[160px] bg-white p-3 rounded-xl shadow-sm shrink-0">
-          <p class="text-xs font-bold text-blue-600 mb-1">백서추천</p>
-          <p class="text-sm font-semibold">스타트업 투자 가이드</p>
+        <div
+          v-for="item in recommendedContents"
+          :key="item.id"
+          class="min-w-[160px] bg-white p-3 rounded-xl shadow-sm shrink-0 cursor-pointer"
+          @click="openContentModal(item)"
+        >
+          <p class="text-xs font-bold mb-1" :class="item.labelColor">{{ item.label }}</p>
+          <p class="text-sm font-semibold">{{ item.title }}</p>
         </div>
       </div>
     </div>
@@ -100,20 +100,6 @@
       </div>
     </div>
 
-    <!-- 개발자 도구 -->
-    <div class="px-5 mt-6">
-      <h2 class="text-md font-bold mb-2">개발자 도구</h2>
-      <div class="grid grid-cols-1 gap-3">
-        <button
-          @click="navigateToChart"
-          class="bg-blue-500 text-white p-4 rounded-xl text-center hover:bg-blue-600 transition-colors"
-        >
-          <p class="font-bold">차트 보기</p>
-          <p class="text-sm opacity-80">캔들스틱 차트</p>
-        </button>
-      </div>
-    </div>
-
     <!-- 하단 네비게이션 -->
     <div>
       <router-view />
@@ -121,53 +107,149 @@
       <!-- 하단 고정 바 -->
     </div>
   </div>
+  <transition name="fade-scale">
+    <div
+      v-if="selectedContent"
+      class="fixed inset-0 bg-gray-300/40 z-50 flex items-center justify-center"
+    >
+      <div
+        class="bg-white p-6 rounded-xl w-[90%] max-w-md relative shadow-2xl ring-1 ring-gray-200 transition-all duration-300 ease-in-out"
+      >
+        <h2 class="text-lg font-bold" :class="selectedContent.titleColor">
+          {{ selectedContent.title }}
+        </h2>
+        <div class="border-b border-gray-300 my-3"></div>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ selectedContent.content }}</p>
+        <button
+          class="absolute top-3 right-4 text-gray-500 hover:text-black"
+          @click="selectedContent = null"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  </transition>
 </template>
 
 <script setup>
-// 추후 데이터 바인딩 가능
 import BottomNav from '@/components/FooterNavigation.vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-
 import { ref, onMounted } from 'vue'
-const name = ref('')
-const userName = ref('')
-const riskTypeName = ref('')
-
-onMounted(async () => {
-  name.value = localStorage.getItem('name')
-  const username = localStorage.getItem('username')
-  userName.value = username
-
-  try {
-    const response = await axios.get('/user/risk-type-name', {
-      params: { username: userName.value },
-    })
-
-    if (response.headers['content-type'].includes('text/html')) {
-      console.error(' HTML 응답이므로 API 호출 실패')
-      riskTypeName.value = '조회 실패'
-    } else {
-      riskTypeName.value = response.data
-    }
-  } catch (err) {
-    console.error(' 투자 성향 조회 에러:', err)
-    riskTypeName.value = '조회 실패'
-  }
-})
 
 const router = useRouter()
 
-const goToStudy = () => {
-  router.push('/study')
+// 사용자 데이터
+const name = ref('')
+const userName = ref('')
+const riskTypeName = ref('')
+const totalEarnedCredit = ref(0) // 누적 크레딧 추가
+const completedLearningCount = ref(0)
+
+// 세션 기반 사용자 정보 불러오기
+onMounted(async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/api/auth/me', {
+      withCredentials: true,
+    })
+
+    const user = response.data
+    name.value = user.name
+    userName.value = user.username
+    const countRes = await axios.get('http://localhost:8080/api/learning/history/count', {
+      withCredentials: true,
+    })
+    completedLearningCount.value = countRes.data
+    riskTypeName.value = convertRiskTypeToName(user.riskType)
+    
+    // 누적 크레딧 가져오기
+    try {
+      const creditResponse = await axios.get('http://localhost:8080/api/learning/user/total-earned-credit', {
+        withCredentials: true,
+      })
+      totalEarnedCredit.value = creditResponse.data
+    } catch (error) {
+      console.log('누적 크레딧 조회 실패:', error)
+      totalEarnedCredit.value = 0
+    }
+  } catch (e) {
+    console.error('세션 정보 불러오기 실패:', e)
+    router.push('/login-form')
+  }
+})
+
+function convertRiskTypeToName(code) {
+  const map = {
+    AGR: '적극적 성장형',
+    AID: '적극적 안정형',
+    BGT: '균형 잡힌 도전형',
+    BSS: '균형 잡힌 수익 추구형',
+    CAG: '신중한 성장형',
+    CSD: '신중한 안정형',
+    DTA: '단타 추구형',
+    EXP: '실험적 모험가형',
+    IND: '인덱스 수동형',
+    INF: '정보 수집형',
+    SOC: '사회 책임형',
+    SYS: '시스템 트레이더형',
+    TEC: '기술적 분석형',
+    THE: '테마 투자형',
+    VAL: '가치 투자형',
+  }
+  return map[code] || '미분류'
 }
-const goToContents = () => {
-  router.push('/contents')
+
+const selectedContent = ref(null)
+
+const recommendedContents = [
+  {
+    id: 1,
+    label: '성장주식',
+    labelColor: 'text-purple-600',
+    titleColor: 'text-purple-600',
+    title: '성장주 투자 핵심 포인트',
+    content: `성장주 투자는 높은 매출 증가율과 잠재력을 가진 기업을 조기에 발굴하는 것이 핵심입니다.\n\n• 시장 확장성과 기술 혁신에 주목하세요.\n• PER, PBR은 높더라도 향후 실적 개선이 예상되면 기회일 수 있습니다.\n• 2차전지, 클라우드, AI 등 테마 확인`,
+  },
+  {
+    id: 2,
+    label: '백서추천',
+    labelColor: 'text-blue-600',
+    titleColor: 'text-blue-600',
+    title: '스타트업 투자 가이드',
+    content: `비상장 기업이나 초기 단계 스타트업은 리스크가 크지만, 큰 수익도 기대할 수 있습니다.\n\n- 창업자의 이력과 팀 역량을 먼저 확인하세요.\n- 시장 진입 시점과 성장 가능성을 비교하세요.\n- 시드/시리즈 A 투자 단계 이해도 중요합니다.`,
+  },
+]
+
+function openContentModal(item) {
+  selectedContent.value = item
 }
-const goToQuiz = () => {
-  router.push('/quiz')
-}
-const goToPortfolio = () => {
-  router.push('/portfolio')
-}
+
+// 페이지 이동용
+const goToStudy = () => router.push('/learning')
+const goToContents = () => router.push('/recommend')
+const goToQuiz = () => router.push('/quiz')
+const goToPortfolio = () => router.push('/mock-trading/asset-status')
 </script>
+
+<style scoped>
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-scale-enter-from {
+  opacity: 0;
+  transform: scale(0.9);
+}
+.fade-scale-enter-to {
+  opacity: 1;
+  transform: scale(1);
+}
+.fade-scale-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+</style>

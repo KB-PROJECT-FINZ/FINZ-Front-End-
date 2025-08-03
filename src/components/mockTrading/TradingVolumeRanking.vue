@@ -1,10 +1,28 @@
 <template>
   <div class="bg-white w-full h-[79vh] flex flex-col overflow-hidden">
-    <div
-      class="flex justify-between items-center px-5 py-4 border-b border-gray-100 bg-transparent"
-    >
-      <h3 class="text-[18px] font-semibold text-gray-800 m-0 bg-transparent">거래대금 상위 종목</h3>
-      <span class="text-[12px] text-gray-500 font-mono">{{ updateTime }}</span>
+    <!-- 헤더와 탭 -->
+    <div class="px-5 py-4 border-b border-gray-100 bg-transparent">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-[18px] font-semibold text-gray-800 m-0 bg-transparent">거래 순위</h3>
+        <span class="text-[12px] text-gray-500">{{ updateTime }}</span>
+      </div>
+
+      <!-- 탭 메뉴 -->
+      <div class="flex bg-gray-100 rounded-lg p-1 gap-1">
+        <button
+          v-for="tab in tabs"
+          :key="tab.code"
+          class="flex-1 px-3 py-2 text-[12px] font-medium rounded-md transition-all duration-200"
+          :class="[
+            activeTab === tab.code
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-800',
+          ]"
+          @click="changeTab(tab.code)"
+        >
+          {{ tab.name }}
+        </button>
+      </div>
     </div>
 
     <div
@@ -45,14 +63,12 @@
               {{ getStockInitial(stock.name) }}
             </span>
           </span>
-          <div class="flex flex-col gap-1">
-            <span class="text-[14px] font-medium text-gray-800">{{ stock.name }}</span>
+          <div class="flex flex-col">
+            <span class="text-[15px] font-medium text-gray-800">{{ stock.name }}</span>
             <div class="flex items-center gap-2">
-              <span class="text-[14px] font-semibold text-gray-800 font-mono">{{
-                formatPrice(stock.currentPrice)
-              }}</span>
+              <span class="text-[14px] text-gray-800">{{ formatPrice(stock.currentPrice) }}</span>
               <span
-                class="flex items-center gap-1 text-[12px] font-medium font-mono"
+                class="flex items-center gap-1 text-[12px] font-medium"
                 :class="stock.isPositive ? 'text-red-600' : 'text-blue-600'"
               >
                 <span class="text-[10px]">{{ stock.isPositive ? '▲' : '▼' }}</span>
@@ -63,9 +79,9 @@
           </div>
         </div>
         <div class="flex flex-col items-end gap-1">
-          <span class="text-[12px] text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded">{{
-            formatTradingVolume(stock.tradingVolume)
-          }}</span>
+          <span class="text-[12px] font-medium px-2 py-0.5 rounded" :class="getValueDisplayClass()">
+            {{ formatDisplayValue(stock) }}
+          </span>
         </div>
       </div>
       <button
@@ -89,18 +105,55 @@ const stockRanking = ref([])
 const updateTime = ref('')
 const isLoading = ref(false)
 const showAll = ref(false)
-const imageErrors = ref({}) // 이미지 로딩 에러 추적
+const imageErrors = ref({})
+const activeTab = ref('3') // 기본값: 거래대금순
 
 let updateInterval = null
+
+// 탭 정의 - 거래대금/거래량
+const tabs = [
+  { code: '3', name: '거래대금', description: '거래금액순' },
+  { code: '0', name: '거래량', description: '평균거래량' },
+]
 
 const visibleStocks = computed(() =>
   showAll.value ? stockRanking.value : stockRanking.value.slice(0, 10),
 )
 
+const changeTab = async (tabCode) => {
+  if (activeTab.value === tabCode) return
+
+  activeTab.value = tabCode
+  showAll.value = false
+  await fetchVolumeRanking()
+}
+
+const getValueDisplayClass = () => {
+  switch (activeTab.value) {
+    case '3':
+      return 'text-green-600 bg-green-50'
+    case '0':
+      return 'text-blue-600 bg-blue-50'
+    default:
+      return 'text-gray-600 bg-gray-50'
+  }
+}
+
+const formatDisplayValue = (stock) => {
+  switch (activeTab.value) {
+    case '3':
+      return formatTradingVolume(stock.tradingVolume)
+    case '0':
+      return formatVolume(stock.volume || stock.tradingVolume)
+    default:
+      return formatTradingVolume(stock.tradingVolume)
+  }
+}
+
 const fetchVolumeRanking = async () => {
   isLoading.value = true
   try {
-    const response = await getVolumeRanking(20)
+    const response = await getVolumeRanking(20, activeTab.value)
     if (response.success && response.data) {
       stockRanking.value = response.data
       updateTime.value = new Date().toLocaleTimeString('ko-KR', {
@@ -108,21 +161,12 @@ const fetchVolumeRanking = async () => {
         minute: '2-digit',
         second: '2-digit',
       })
-      console.log('📈 거래량 순위 업데이트 성공:', response.data.length, '건')
-
-      // 이미지 URL 디버깅 로그
-      response.data.forEach((stock, index) => {
-        if (index < 5) {
-          // 상위 5개만 로깅
-          console.log(`🖼️ ${stock.name} (${stock.code}): ${stock.imageUrl || '이미지 없음'}`)
-        }
-      })
     } else {
-      console.warn('⚠️ 거래량 순위 API 호출 실패:', response.message)
+      console.warn('⚠️ 거래 순위 API 호출 실패:', response.message)
       setFallbackData()
     }
   } catch (error) {
-    console.error('❌ 거래량 순위 조회 실패:', error.message)
+    console.error('❌ 거래 순위 조회 실패:', error.message)
     setFallbackData()
   } finally {
     isLoading.value = false
@@ -139,6 +183,7 @@ const setFallbackData = () => {
       changePercent: 1.35,
       isPositive: true,
       tradingVolume: 500000000000,
+      volume: 15000000,
       imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/005930.png',
     },
     {
@@ -149,6 +194,7 @@ const setFallbackData = () => {
       changePercent: -1.64,
       isPositive: false,
       tradingVolume: 300000000000,
+      volume: 8500000,
       imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/000660.png',
     },
     {
@@ -159,6 +205,7 @@ const setFallbackData = () => {
       changePercent: 1.93,
       isPositive: true,
       tradingVolume: 250000000000,
+      volume: 6200000,
       imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/035420.png',
     },
     {
@@ -169,6 +216,7 @@ const setFallbackData = () => {
       changePercent: -0.76,
       isPositive: false,
       tradingVolume: 200000000000,
+      volume: 4800000,
       imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/005380.png',
     },
     {
@@ -179,6 +227,7 @@ const setFallbackData = () => {
       changePercent: 1.73,
       isPositive: true,
       tradingVolume: 180000000000,
+      volume: 12000000,
       imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/035720.png',
     },
     {
@@ -189,6 +238,7 @@ const setFallbackData = () => {
       changePercent: -1.18,
       isPositive: false,
       tradingVolume: 150000000000,
+      volume: 3200000,
       imageUrl: 'https://file.alphasquare.co.kr/media/images/stock_logo/kr/051910.png',
     },
   ]
@@ -204,7 +254,9 @@ const formatPrice = (price) => {
 }
 
 const formatTradingVolume = (volume) => {
-  if (volume >= 100000000) {
+  if (volume >= 1000000000000) {
+    return (volume / 1000000000000).toFixed(1) + '조원'
+  } else if (volume >= 100000000) {
     return Math.floor(volume / 100000000) + '억원'
   } else if (volume >= 10000000) {
     return Math.floor(volume / 10000000) + '천만원'
@@ -213,11 +265,18 @@ const formatTradingVolume = (volume) => {
   }
 }
 
-const selectStock = async (stock) => {
-  console.log('📊 거래량 순위에서 종목 선택:', stock.name, `(${stock.code})`)
+const formatVolume = (volume) => {
+  if (volume >= 1000000) {
+    return Math.floor(volume / 1000000) + '백만주'
+  } else if (volume >= 10000) {
+    return Math.floor(volume / 10000) + '만주'
+  } else {
+    return Math.floor(volume / 1000) + '천주'
+  }
+}
 
+const selectStock = async (stock) => {
   try {
-    // 종목 차트 페이지로 라우팅
     await router.push({
       name: 'ChartPage',
       params: {
@@ -225,17 +284,13 @@ const selectStock = async (stock) => {
       },
       query: {
         stockName: stock.name,
-        source: 'volume-ranking', // 어디서 온 건지 추적용
       },
     })
-
-    console.log('🔀 종목 차트 페이지로 이동:', `/mock-trading/${stock.code}/chart`)
   } catch (error) {
     console.error('❌ 라우팅 오류:', error)
   }
 }
 
-// 이미지 로딩 에러 처리
 const handleImageError = (stockCode) => {
   console.warn(`🚫 이미지 로딩 실패: ${stockCode}`)
   imageErrors.value[stockCode] = true
@@ -246,17 +301,18 @@ const getStockInitial = (stockName) => {
   if (!stockName) return '?'
 
   // 한글 종목명의 경우 첫 글자 사용
-  if (/[가-힣]/.test(stockName)) {
+  if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(stockName.charAt(0))) {
     return stockName.charAt(0)
   }
 
-  // 영문의 경우 첫 글자 대문자 사용
-  return stockName.charAt(0).toUpperCase()
+  // 영문의 경우도 첫 글자 사용
+  return stockName.substring(0, 1).toUpperCase()
 }
 
-onMounted(() => {
-  fetchVolumeRanking()
-  updateInterval = setInterval(fetchVolumeRanking, 30000)
+onMounted(async () => {
+  await fetchVolumeRanking()
+  // 60초마다 자동 업데이트
+  updateInterval = setInterval(fetchVolumeRanking, 60000)
 })
 
 onUnmounted(() => {
@@ -267,15 +323,16 @@ onUnmounted(() => {
 })
 </script>
 
-<style>
+<style scoped>
 .loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top: 3px solid #3b82f6;
+  width: 24px;
+  height: 24px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
