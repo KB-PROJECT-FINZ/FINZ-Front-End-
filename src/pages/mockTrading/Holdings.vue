@@ -198,7 +198,7 @@
                 class="ml-2 font-medium"
                 :class="holding.profitLoss >= 0 ? 'text-red-600' : 'text-blue-600'"
               >
-                {{ holding.profitLoss > 0 ? '+' : holding.profitLoss < 0 ? '-' : ''
+                {{ holding.profitLoss >= 0 ? '+' : ''
                 }}{{ Math.abs(holding.profitLoss).toLocaleString() }}원
               </span>
             </div>
@@ -335,30 +335,23 @@ async function fetchHoldings() {
   }
 }
 
-// 계산된 속성들 (API 구조에 맞게 보정)
+// 계산된 속성들
 const totalInvestment = computed(() => {
-  // 원금: 모든 종목의 평균단가 * 수량 합
   return holdingsData.value.reduce(
-    (sum, holding) => sum + (Number(holding.averagePrice) || 0) * (Number(holding.quantity) || 0),
+    (sum, holding) => sum + holding.averagePrice * holding.quantity,
     0,
   )
 })
 
 const totalCurrentValue = computed(() => {
-  // 평가금액: 모든 종목의 현재가 * 수량 합
-  return holdingsData.value.reduce(
-    (sum, holding) => sum + (Number(holding.currentPrice) || 0) * (Number(holding.quantity) || 0),
-    0,
-  )
+  return holdingsData.value.reduce((sum, holding) => sum + holding.totalValue, 0)
 })
 
 const totalProfitLoss = computed(() => {
-  // 총 수익: 모든 종목의 평가손익 합
-  return holdingsData.value.reduce((sum, holding) => sum + (Number(holding.profitLoss) || 0), 0)
+  return holdingsData.value.reduce((sum, holding) => sum + holding.profitLoss, 0)
 })
 
 const totalProfitRate = computed(() => {
-  // 수익률: (총 수익 / 원금) * 100
   if (totalInvestment.value === 0) return 0
   return Number(((totalProfitLoss.value / totalInvestment.value) * 100).toFixed(2))
 })

@@ -21,6 +21,7 @@ export default {
         const res = await axios.get('/api/auth/me')
         userStore.setUser(res.data)
         localStorage.setItem('user', JSON.stringify(res.data)) // Optional
+        // eslint-disable-next-line no-unused-vars
       } catch (err) {
         console.warn('로그인된 사용자 정보 없음 또는 세션 만료됨')
       }

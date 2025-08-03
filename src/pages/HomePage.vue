@@ -65,18 +65,27 @@
     <!-- 추천 콘텐츠 -->
     <div class="px-5 mt-6">
       <div class="flex justify-between items-center mb-2">
-        <h2 class="text-md font-bold">적극투자형에게 추천하는 콘텐츠</h2>
+        <h2 class="text-md font-bold">{{ riskTypeName }}에게 추천 콘텐츠</h2>
         <button class="text-xs text-gray-400 underline" @click="goToContents">전체보기</button>
       </div>
 
       <div class="flex gap-3 overflow-x-auto pb-1">
         <div
-          v-for="item in recommendedContents"
+          v-for="(item, index) in recommendedContents"
           :key="item.id"
           class="min-w-[160px] bg-white p-3 rounded-xl shadow-sm shrink-0 cursor-pointer"
           @click="openContentModal(item)"
         >
-          <p class="text-xs font-bold mb-1" :class="item.labelColor">{{ item.label }}</p>
+          <p
+            :class="
+              index % 2 === 0
+                ? 'text-purple-600 text-base font-bold'
+                : 'text-blue-600 text-base font-bold'
+            "
+            class="mb-1"
+          >
+            {{ item.label }}
+          </p>
           <p class="text-sm font-semibold">{{ item.title }}</p>
         </div>
       </div>
@@ -115,7 +124,10 @@
       <div
         class="bg-white p-6 rounded-xl w-[90%] max-w-md relative shadow-2xl ring-1 ring-gray-200 transition-all duration-300 ease-in-out"
       >
-        <h2 class="text-lg font-bold" :class="selectedContent.titleColor">
+        <p v-if="selectedContent.label" class="text-xs text-gray-500 mb-1 uppercase tracking-wide">
+          {{ selectedContent.label }}
+        </p>
+        <h2 class="text-lg font-bold mb-1" :class="selectedContent.titleColor">
           {{ selectedContent.title }}
         </h2>
         <div class="border-b border-gray-300 my-3"></div>
@@ -149,6 +161,7 @@ const completedLearningCount = ref(0)
 // 세션 기반 사용자 정보 불러오기
 onMounted(async () => {
   try {
+    // 사용자 정보 요청
     const response = await axios.get('http://localhost:8080/api/auth/me', {
       withCredentials: true,
     })
@@ -156,24 +169,36 @@ onMounted(async () => {
     const user = response.data
     name.value = user.name
     userName.value = user.username
+    riskTypeName.value = convertRiskTypeToName(user.riskType)
+
+    // 학습 완료 수 조회
     const countRes = await axios.get('http://localhost:8080/api/learning/history/count', {
       withCredentials: true,
     })
     completedLearningCount.value = countRes.data
-    riskTypeName.value = convertRiskTypeToName(user.riskType)
 
-    // 누적 크레딧 가져오기
+    // 누적 크레딧 조회
     try {
       const creditResponse = await axios.get(
         'http://localhost:8080/api/learning/user/total-earned-credit',
-        {
-          withCredentials: true,
-        },
+        { withCredentials: true },
       )
       totalEarnedCredit.value = creditResponse.data
     } catch (error) {
       console.log('누적 크레딧 조회 실패:', error)
       totalEarnedCredit.value = 0
+    }
+
+    // 추천 콘텐츠 조회
+    try {
+      const contentRes = await axios.get(
+        `http://localhost:8080/api/contents/recommend?riskType=${user.riskType}`,
+        { withCredentials: true },
+      )
+      console.log('추천 콘텐츠:', contentRes.data)
+      recommendedContents.value = contentRes.data
+    } catch (error) {
+      console.error('추천 콘텐츠 조회 실패:', error)
     }
   } catch (e) {
     console.error('세션 정보 불러오기 실패:', e)
@@ -204,24 +229,7 @@ function convertRiskTypeToName(code) {
 
 const selectedContent = ref(null)
 
-const recommendedContents = [
-  {
-    id: 1,
-    label: '성장주식',
-    labelColor: 'text-purple-600',
-    titleColor: 'text-purple-600',
-    title: '성장주 투자 핵심 포인트',
-    content: `성장주 투자는 높은 매출 증가율과 잠재력을 가진 기업을 조기에 발굴하는 것이 핵심입니다.\n\n• 시장 확장성과 기술 혁신에 주목하세요.\n• PER, PBR은 높더라도 향후 실적 개선이 예상되면 기회일 수 있습니다.\n• 2차전지, 클라우드, AI 등 테마 확인`,
-  },
-  {
-    id: 2,
-    label: '백서추천',
-    labelColor: 'text-blue-600',
-    titleColor: 'text-blue-600',
-    title: '스타트업 투자 가이드',
-    content: `비상장 기업이나 초기 단계 스타트업은 리스크가 크지만, 큰 수익도 기대할 수 있습니다.\n\n- 창업자의 이력과 팀 역량을 먼저 확인하세요.\n- 시장 진입 시점과 성장 가능성을 비교하세요.\n- 시드/시리즈 A 투자 단계 이해도 중요합니다.`,
-  },
-]
+const recommendedContents = ref([])
 
 function openContentModal(item) {
   selectedContent.value = item
