@@ -24,6 +24,8 @@ export const useChatStore = defineStore('chat', {
       this.userId = id
     },
     async sendMessage(message, intentType = null, userId = null) {
+      console.log('📤 sendMessage 호출됨:', message, intentType, userId)
+
       if (message) {
         this.messages.push({ role: 'user', content: message })
       }

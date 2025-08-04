@@ -178,6 +178,8 @@ function submit() {
 }
 
 async function handleButtonIntent(btn) {
+  console.log('👆 버튼 클릭됨:', btn) // 이게 콘솔에 안 찍히면 렌더링 문제
+
   resetAwaitingState()
 
   if (btn.intent === 'EXTERNAL_LINK' && btn.href) {
@@ -263,23 +265,30 @@ async function handleButtonIntent(btn) {
   }
 
   if (btn.intent === 'PORTFOLIO_ANALYZE') {
-    chatStore.clearMessages()
-    chatStore.messages.push({
-      role: 'bot',
-      type: 'buttons',
-      text: '모의투자 내역 기반 피드백을 드릴게요.\n확인하려면 아래 버튼을 눌러주세요.',
-      buttons: [
-        {
-          label: '🧠 피드백 요청하기',
-          intent: 'PORTFOLIO_ANALYZE',
-          message: '내 포트폴리오 피드백 줘',
-        },
-        { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
-      ],
-    })
+    if (!btn.message) {
+      console.log('⚠️ PORTFOLIO_ANALYZE 초기 안내 단계') // ← 여기는 안내만
+      chatStore.clearMessages()
+      chatStore.messages.push({
+        role: 'bot',
+        type: 'buttons',
+        text: '모의투자 내역 기반 피드백을 드릴게요.\n확인하려면 아래 버튼을 눌러주세요.',
+        buttons: [
+          {
+            label: '🧠 피드백 요청하기',
+            intent: 'PORTFOLIO_ANALYZE',
+            message: '내 포트폴리오 피드백 줘',
+          },
+          { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
+        ],
+      })
+      return
+    }
+    console.log('🚀 피드백 요청 버튼 클릭됨', btn)
+    // 🔥 여기서 메시지가 없으면 보내지지 않음 → 방어 코드 추가
+    const message = btn.message ?? '내 포트폴리오 피드백 줘'
+    await chatStore.sendMessage(message, btn.intent, chatStore.userId)
     return
   }
-
   if (btn.intent === 'TERM_EXPLAIN') {
     awaitingTermExplain.value = true
     chatStore.clearMessages()
