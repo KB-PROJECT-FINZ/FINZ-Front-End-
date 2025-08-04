@@ -15,7 +15,7 @@
         </svg>
       </button>
       <span class="ml-3 flex-1 text-left text-base font-semibold text-gray-900"
-        >나의 자산 현황</span
+      >나의 자산 현황</span
       >
       <button
         class="bg-none border-none text-xl text-gray-800 cursor-pointer p-2 rounded-full hover:bg-gray-100"
@@ -90,14 +90,14 @@
           />
           <span
             class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 text-lg font-bold pointer-events-none"
-            >P</span
+          >P</span
           >
         </div>
         <div class="my-6 text-center text-gray-700">
           내 계좌에
           <span class="font-bold text-blue-600">{{
-            (chargeCreditInput * 1000).toLocaleString()
-          }}</span>
+              (chargeCreditInput * 1000).toLocaleString()
+            }}</span>
           원이 추가됩니다.
         </div>
         <button
@@ -397,6 +397,77 @@ const onChargeNext = async () => {
   }
 }
 
+// 🆕 배치로 여러 종목의 실시간 가격을 한번에 조회하는 함수
+const fetchMultipleStockPrices = async (stockCodes) => {
+  try {
+    const codesString = stockCodes.join(',');
+    const response = await axios.get(`/api/stock/prices/${codesString}`);
+
+    if (response.data && response.data.success) {
+      console.log(`배치 가격 조회 완료: ${response.data.successCount}/${response.data.requestedCount} 성공`);
+
+      if (response.data.errors && response.data.errors.length > 0) {
+        console.warn('⚠️ 일부 종목 조회 실패:', response.data.errors);
+      }
+
+      return response.data.data; // 종목코드를 키로 하는 가격 데이터 객체
+    }
+
+    throw new Error('Invalid response format');
+  } catch (error) {
+    console.error('❌ 배치 주식 가격 조회 실패:', error);
+    return null;
+  }
+}
+
+// 🔄 수정된 보유 종목 실시간 가격 업데이트 함수 (배치 API 사용)
+const updateHoldingsWithRealTimePrice = async (holdings) => {
+  if (holdings.length === 0) return holdings;
+
+  // 모든 종목코드 추출
+  const stockCodes = holdings.map(holding => holding.stockCode);
+
+  // 배치로 모든 종목의 가격을 한번에 조회
+  const pricesData = await fetchMultipleStockPrices(stockCodes);
+
+  if (!pricesData) {
+    console.warn('⚠️ 배치 가격 조회 실패, 기존 데이터 유지');
+    return holdings;
+  }
+
+  const updatedHoldings = holdings.map(holding => {
+    const priceInfo = pricesData[holding.stockCode];
+
+    if (priceInfo && priceInfo.output) {
+      const output = priceInfo.output;
+      const currentPrice = parseInt(output.stck_prpr);
+
+      // 현재 시세로 현재 가치 및 손익 재계산
+      const currentValue = holding.quantity * currentPrice;
+      const totalInvestment = holding.quantity * holding.averagePrice;
+      const profitLoss = currentValue - totalInvestment;
+      const profitRate = totalInvestment > 0 ? (profitLoss / totalInvestment) * 100 : 0;
+
+      return {
+        ...holding,
+        currentPrice: currentPrice,
+        currentValue: currentValue,
+        profitLoss: profitLoss,
+        profitRate: Number(profitRate.toFixed(2)),
+        priceChange: parseInt(output.prdy_vrss),
+        changeRate: parseFloat(output.prdy_ctrt),
+        changeSign: output.prdy_vrss_sign,
+      };
+    } else {
+      // 해당 종목의 가격 조회 실패 시 기존 데이터 유지
+      console.warn(`⚠️ ${holding.stockCode} 가격 조회 실패, 기존 데이터 유지`);
+      return holding;
+    }
+  });
+
+  return updatedHoldings;
+}
+
 // 차트 업데이트 함수
 const updatePortfolioChart = () => {
   if (!portfolioChart.value) {
@@ -466,13 +537,13 @@ const updatePortfolioChart = () => {
   }
 }
 
-// 데이터 로딩 함수
+// 🔄 수정된 데이터 로딩 함수
 const loadUserData = async () => {
   loading.value = true
   dataLoaded.value = false
 
   try {
-    // ===== 1단계: 계좌 정보 먼저 로드 (가장 중요한 기본 데이터) =====
+    // ===== 1단계: 계좌 정보 먼저 로드 =====
     const accountResponse = await axios.get('/api/mocktrading/account')
 
     if (accountResponse.data) {
@@ -484,15 +555,19 @@ const loadUserData = async () => {
         totalProfitLoss: accountResponse.data.totalProfitLoss || 0,
         profitRate: accountResponse.data.profitRate || 0,
       }
+      console.log('계좌 정보 로드 완료')
     } else {
       throw new Error('계좌 정보를 불러올 수 없습니다.')
     }
 
-    // ===== 2단계: 보유 종목 정보 로드 (계좌 정보 기반으로 비율 계산) =====
+    // ===== 2단계: 보유 종목 정보 로드 =====
     const holdingsResponse = await axios.get('/api/mocktrading/holdings')
 
     if (holdingsResponse.data && Array.isArray(holdingsResponse.data)) {
-      holdingsData.value = holdingsResponse.data.map((holding) => ({
+      console.log('보유 종목 데이터 로드 완료')
+
+      // 기본 보유 종목 데이터 정리
+      const basicHoldings = holdingsResponse.data.map((holding) => ({
         stockCode: holding.stockCode,
         stockName: holding.stockName,
         quantity: holding.quantity || 0,
@@ -502,27 +577,36 @@ const loadUserData = async () => {
         profitLoss: holding.profitLoss || 0,
         profitRate: holding.profitRate || 0,
       }))
+
+      // 🆕 실시간 가격으로 업데이트
+      holdingsData.value = await updateHoldingsWithRealTimePrice(basicHoldings)
+      console.log('실시간 가격 업데이트 완료')
     } else {
       holdingsData.value = []
       console.log('📝 보유 종목 없음')
     }
 
-    // ===== 3단계: 크레딧 로드
+    // ===== 3단계: 크레딧 로드 =====
     const creditResponse = await axios.get('/api/mocktrading/user/credit')
 
-    // 크레딧 정보 설정
     if (creditResponse.data) {
       userCredit.value = creditResponse.data.totalCredit || 0
+      console.log('크레딧 정보 로드 완료')
     }
 
-    // ===== 4단계: 모든 데이터 로드 완료 후 상태 업데이트 =====
+    // ===== 4단계: 총 자산 가치 재계산 (실시간 가격 반영) =====
+    const currentStockValue = holdingsData.value.reduce((total, holding) => {
+      return total + (holding.currentValue || 0)
+    }, 0)
+
+    userAccount.value.totalAssetValue = userAccount.value.currentBalance + currentStockValue
+    console.log('총 자산 가치 재계산 완료')
+
+    // ===== 5단계: 모든 데이터 로드 완료 후 상태 업데이트 =====
     dataLoaded.value = true
-    // nextTick을 사용하여 DOM 업데이트 후 차트 그리기
     await nextTick()
     updatePortfolioChart()
 
-    // 일단
-    userAccount.value.totalAssetValue = userAccount.value.currentBalance + stockValue.value
 
   } catch (error) {
     console.error('❌ 사용자 데이터 로드 실패:', error)
@@ -531,6 +615,7 @@ const loadUserData = async () => {
       router.push('/login-form')
       return
     }
+    alert('데이터를 불러오는 중 오류가 발생했습니다.')
   } finally {
     loading.value = false
   }

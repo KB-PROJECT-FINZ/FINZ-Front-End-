@@ -61,15 +61,15 @@
     <!-- 분석 결과 -->
     <div v-else-if="analysisData">
       <!-- 통계 요약 카드들 -->
-      <section class="bg-white px-0 pt-6 pb-6 mx-0 mb-0">
+      <section class="bg-white px-0 pt-6 mx-0 mb-0">
         <h2 class="text-xl font-bold text-gray-900 px-6">투자 성과 요약</h2>
         <div class="flex flex-col gap-3 p-5">
           <div class="flex justify-between items-center px-3">
-            <span class="text-xs text-gray-500">분석 대상 거래</span>
+            <span class="text-sm text-gray-500">분석 대상 거래</span>
             <span class="text-base text-gray-900">{{ analysisData.stats.transactionCount }}건</span>
           </div>
           <div class="flex justify-between items-center px-3">
-            <span class="text-xs text-gray-500">분석 기간</span>
+            <span class="text-sm text-gray-500">분석 기간</span>
             <span class="flex flex-col items-end">
               <span class="text-base text-gray-900"
                 >{{ analysisData.stats.startDate }} ~ {{ analysisData.stats.endDate }}</span
@@ -80,7 +80,7 @@
             </span>
           </div>
           <div class="flex justify-between items-center px-3">
-            <span class="text-xs text-gray-500">총 수익률</span>
+            <span class="text-sm text-gray-500">총 수익률</span>
             <span
               class="text-base"
               :class="analysisData.stats.totalReturn >= 0 ? 'text-red-600' : 'text-blue-600'"
@@ -94,41 +94,14 @@
 
       <!-- 회색 구분선(gap) -->
       <div class="w-full h-4 bg-gray-50"></div>
-      <!-- AI 분석 리포트 -->
+      <!-- AI 분석 리포트 (탭 없이 모두 나열) -->
       <section class="bg-white px-0 pt-6 pb-0 mx-0 mb-0">
         <h2 class="text-xl font-bold text-gray-900 px-6 mb-4">AI 분석 리포트</h2>
-        <!-- 탭 버튼 -->
-        <div class="flex bg-gray-100 rounded-lg p-1 gap-1 mx-6 mb-6">
-          <button
-            v-for="tab in aiTabs"
-            :key="tab.key"
-            @click="selectedTab = tab.key"
-            class="flex-1 px-2 py-1 text-xs font-medium rounded-md transition-all duration-200"
-            :class="selectedTab === tab.key ? tab.activeClass : 'text-gray-600 hover:text-gray-800'"
-          >
-            {{ tab.label }}
-          </button>
-        </div>
-        <!-- 선택된 카드 제목 (카드 밖) -->
         <div class="px-6 mb-1">
-          <div v-if="selectedTab === 'strategy'" class="text-sm font-semibold text-blue-700 mb-2">
-            투자 전략의 특징
-          </div>
-          <div v-else-if="selectedTab === 'risks'" class="text-sm font-semibold text-red-600 mb-2">
-            리스크 요인 및 개선점
-          </div>
-          <div
-            v-else-if="selectedTab === 'advice'"
-            class="text-sm font-semibold text-green-700 mb-2"
-          >
-            초보 투자자에게 맞는 조언
-          </div>
+          <div class="text-sm font-semibold text-blue-700 mb-2">투자 전략의 특징</div>
         </div>
         <div class="px-6">
-          <div
-            v-if="selectedTab === 'strategy'"
-            class="bg-blue-50 border-l-4 border-blue-400 rounded p-4 min-h-[60px]"
-          >
+          <div class="bg-blue-50 border-l-4 border-blue-400 rounded p-4 min-h-[60px]">
             <div
               v-if="analysisData.aiAnalysis?.strategy"
               v-html="formatContent(analysisData.aiAnalysis.strategy)"
@@ -139,10 +112,12 @@
               <div class="h-4 bg-blue-100 rounded w-1/2"></div>
             </div>
           </div>
-          <div
-            v-else-if="selectedTab === 'risks'"
-            class="bg-red-50 border-l-4 border-red-400 rounded p-4 min-h-[60px]"
-          >
+        </div>
+        <div class="px-6 mb-1 mt-6">
+          <div class="text-sm font-semibold text-red-600 mb-2">리스크 요인 및 개선점</div>
+        </div>
+        <div class="px-6">
+          <div class="bg-red-50 border-l-4 border-red-400 rounded p-4 min-h-[60px]">
             <div
               v-if="analysisData.aiAnalysis?.risks"
               v-html="formatContent(analysisData.aiAnalysis.risks)"
@@ -153,10 +128,12 @@
               <div class="h-4 bg-red-100 rounded w-1/2"></div>
             </div>
           </div>
-          <div
-            v-else-if="selectedTab === 'advice'"
-            class="bg-green-50 border-l-4 border-green-400 rounded p-4 min-h-[60px]"
-          >
+        </div>
+        <div class="px-6 mb-1 mt-6">
+          <div class="text-sm font-semibold text-green-700 mb-2">초보 투자자에게 맞는 조언</div>
+        </div>
+        <div class="px-6">
+          <div class="bg-green-50 border-l-4 border-green-400 rounded p-4 min-h-[60px]">
             <div
               v-if="analysisData.aiAnalysis?.advice"
               v-html="formatContent(analysisData.aiAnalysis.advice)"
@@ -168,7 +145,6 @@
             </div>
           </div>
         </div>
-        <!-- 액션 버튼들 제거 (PDF 버튼은 헤더로 이동) -->
       </section>
     </div>
     <FooterNavigation />
@@ -233,25 +209,7 @@ onMounted(() => {
   fetchAnalysis()
 })
 
-// AI 분석 리포트 탭
-const aiTabs = [
-  {
-    key: 'strategy',
-    label: '투자 전략의 특징',
-    activeClass: 'bg-white text-blue-600 shadow-sm',
-  },
-  {
-    key: 'risks',
-    label: '리스크 요인 및 개선점',
-    activeClass: 'bg-white text-red-600 shadow-sm',
-  },
-  {
-    key: 'advice',
-    label: '초보 투자자에게 맞는 조언',
-    activeClass: 'bg-white text-green-600 shadow-sm',
-  },
-]
-const selectedTab = ref('strategy')
+// ...탭 관련 코드 제거...
 </script>
 
 <style scoped>
