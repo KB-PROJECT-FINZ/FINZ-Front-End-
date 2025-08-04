@@ -40,11 +40,8 @@
         }"
         @click="selectJournal(journal)"
       >
-        <!-- 날짜 + 거래내역 pill을 한 줄에 정렬 -->
         <div class="flex items-center flex-wrap gap-2 mb-1">
-          <p class="font-semibold text-sm text-gray-700">
-            {{ journal.journalDate }}
-          </p>
+          <p class="font-semibold text-sm text-gray-700">{{ journal.journalDate }}</p>
           <div class="flex flex-wrap gap-1">
             <div
               v-for="(t, idx) in getTransactionsForDate(journal.journalDate)"
@@ -93,43 +90,41 @@
       @click="goToWrite"
     >
       ＋
-    </button> </router-link
-  ><SuccessModal :visible="showSuccess" :message="successMessage" />
+    </button>
+  </router-link>
+
+  <SuccessModal :visible="showSuccess" :message="successMessage" />
   <ConfirmModal :visible="showConfirm" @confirm="handleDelete" @cancel="showConfirm = false" />
 </template>
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
 import { Calendar } from 'v-calendar'
 import SuccessModal from '@/components/SuccessModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
+import { fetchJournals, fetchTransactions, deleteJournalById } from '@/services/journal.js'
 
-const showSuccess = ref(false)
-const successMessage = ref('삭제')
-
-const showConfirm = ref(false)
-const targetJournalId = ref(null)
 const router = useRouter()
+
 const journals = ref([])
 const transactions = ref([])
-const selectedJournal = ref(null)
 const selectedDate = ref(new Date().toISOString().slice(0, 10))
+const selectedJournal = ref(null)
+const showSuccess = ref(false)
+const successMessage = ref('')
+const showConfirm = ref(false)
+const targetJournalId = ref(null)
 
 onMounted(async () => {
   try {
-    const journalRes = await axios.get(`/api/journals/user`, { withCredentials: true })
-    journals.value = journalRes.data
-
-    const txRes = await axios.get(`/api/trading/transactions`, { withCredentials: true })
-    transactions.value = txRes.data
+    journals.value = await fetchJournals()
+    transactions.value = await fetchTransactions()
   } catch (err) {
     console.error('❌ 데이터 로딩 실패:', err)
   }
 })
 
-// 날짜별 동그라미 표시
 const calendarAttrs = computed(() => {
   const attrs = journals.value.map((j) => ({
     key: j.id,
@@ -150,17 +145,12 @@ const calendarAttrs = computed(() => {
   return attrs
 })
 
-const selectedDateJournals = computed(() => {
-  if (!selectedDate.value) return []
-  return journals.value.filter((j) => j.journalDate === selectedDate.value)
-})
+const selectedDateJournals = computed(() =>
+  journals.value.filter((j) => j.journalDate === selectedDate.value),
+)
 
 function getTransactionsForDate(date) {
   return transactions.value.filter((t) => t.executedAt?.slice(0, 10) === date)
-}
-function deleteJournal(id) {
-  showConfirm.value = true
-  targetJournalId.value = id
 }
 
 function onDayClick(day) {
@@ -184,13 +174,19 @@ function editJournal(journal) {
     },
   })
 }
+
+function deleteJournal(id) {
+  showConfirm.value = true
+  targetJournalId.value = id
+}
+
 async function handleDelete() {
   try {
-    await axios.delete(`http://localhost:8080/api/journals/${targetJournalId.value}`)
+    await deleteJournalById(targetJournalId.value)
     journals.value = journals.value.filter((j) => j.id !== targetJournalId.value)
     selectedJournal.value = null
     showConfirm.value = false
-    successMessage.value = '삭제'
+    successMessage.value = '삭제 완료되었습니다.'
     showSuccess.value = true
     setTimeout(() => {
       showSuccess.value = false
@@ -211,6 +207,7 @@ function goBack() {
 
 <style>
 @import 'v-calendar/style.css';
+
 .selected-date-circle {
   color: #fff !important;
   border-radius: 50% !important;

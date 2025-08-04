@@ -22,28 +22,26 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import FeedbackCard from '@/components/FeedbackCard.vue'
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
 import { useRouter } from 'vue-router'
-const router = useRouter()
-function goBack() {
-  router.push({ name: 'feedback' })
-}
+import { fetchFeedbackList } from '@/services/feedback.js'
 
+const router = useRouter()
 const feedbackList = ref([])
 const loading = ref(true)
 const error = ref('')
 
+function goBack() {
+  router.push({ name: 'feedback' })
+}
+
 onMounted(async () => {
   try {
-    const res = await axios.get('http://localhost:8080/api/feedback', {
-      withCredentials: true,
-    })
-    feedbackList.value = Array.isArray(res.data) ? res.data : [res.data]
-  } catch (error) {
+    const res = await fetchFeedbackList()
+    feedbackList.value = Array.isArray(res) ? res : [res]
+  } catch (err) {
     error.value = '피드백 목록을 불러오지 못했습니다.'
   } finally {
     loading.value = false

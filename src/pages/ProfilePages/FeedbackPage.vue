@@ -38,21 +38,22 @@
 <script setup>
 import FeedbackCard from '@/components/FeedbackCard.vue'
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
 import { useRouter } from 'vue-router'
+import { fetchAiFeedback } from '@/services/feedback.js'
+
 const router = useRouter()
 const rawFeedback = ref(null)
 const loading = ref(true)
 const error = ref('')
+
 function goBack() {
   router.push({ name: 'journal' })
 }
 
 onMounted(async () => {
   try {
-    const res = await axios.get('http://localhost:8080/api/gpt')
-    rawFeedback.value = res.data // feedback만 저장!
-  } catch (error) {
+    rawFeedback.value = await fetchAiFeedback()
+  } catch (err) {
     error.value = '피드백을 불러오지 못했습니다.'
   } finally {
     loading.value = false

@@ -73,6 +73,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { computed } from 'vue'
 import SuccessModal from '@/components/SuccessModal.vue'
+import { createJournal, updateJournal } from '@/services/journal.js'
 
 const formattedDateTitle = computed(() => {
   if (!form.value.journalDate) return '오늘'
@@ -129,13 +130,13 @@ onMounted(async () => {
     console.error('❌ 거래 내역 불러오기 실패:', error)
   }
 })
-const submitJournal = async () => {
+async function submitJournal() {
   try {
     if (route.query.id) {
-      await axios.put(`http://localhost:8080/api/journals/${route.query.id}`, form.value)
+      await updateJournal(route.query.id, form.value)
       successMessage.value = '수정'
     } else {
-      await axios.post('http://localhost:8080/api/journals', form.value)
+      await createJournal(form.value)
       successMessage.value = '저장'
     }
     showSuccess.value = true
