@@ -15,7 +15,7 @@
         </svg>
       </button>
       <span class="ml-3 flex-1 text-left text-base font-semibold text-gray-900"
-      >나의 자산 현황</span
+        >나의 자산 현황</span
       >
       <button
         class="bg-none border-none text-xl text-gray-800 cursor-pointer p-2 rounded-full hover:bg-gray-100"
@@ -90,14 +90,14 @@
           />
           <span
             class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 text-lg font-bold pointer-events-none"
-          >P</span
+            >P</span
           >
         </div>
         <div class="my-6 text-center text-gray-700">
           내 계좌에
           <span class="font-bold text-blue-600">{{
-              (chargeCreditInput * 1000).toLocaleString()
-            }}</span>
+            (chargeCreditInput * 1000).toLocaleString()
+          }}</span>
           원이 추가됩니다.
         </div>
         <button
@@ -171,7 +171,11 @@
         <span
           class="font-bold text-lg ml-2"
           :class="
-            calculatedProfitRate > 0 ? 'text-red-600' : calculatedProfitRate < 0 ? 'text-blue-600' : 'text-gray-500'
+            calculatedProfitRate > 0
+              ? 'text-red-600'
+              : calculatedProfitRate < 0
+                ? 'text-blue-600'
+                : 'text-gray-500'
           "
         >
           {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
@@ -486,7 +490,6 @@ const loadUserData = async () => {
   dataLoaded.value = false
 
   try {
-
     // ===== 1단계: 계좌 정보 먼저 로드 (가장 중요한 기본 데이터) =====
     const accountResponse = await axios.get('/api/mocktrading/account')
 
@@ -542,19 +545,16 @@ const loadUserData = async () => {
 
     // ===== 4단계: 모든 데이터 로드 완료 후 상태 업데이트 =====
     dataLoaded.value = true
-
     // nextTick을 사용하여 DOM 업데이트 후 차트 그리기
     await nextTick()
     updatePortfolioChart()
   } catch (error) {
     console.error('❌ 사용자 데이터 로드 실패:', error)
-
     if (error.response?.status === 401) {
       alert('로그인이 필요합니다.')
       router.push('/login-form')
       return
     }
-
     // ===== Fallback: Dashboard API 사용 =====
     console.log('🔄 Dashboard API로 재시도')
     try {
@@ -605,8 +605,6 @@ const loadUserData = async () => {
           userCredit.value = 0
         }
 
-        userAccount.value.totalAssetValue = userAccount.value.currentBalance + stockValue.value;
-
         dataLoaded.value = true
         await nextTick()
         updatePortfolioChart()
@@ -618,6 +616,7 @@ const loadUserData = async () => {
       alert('데이터를 불러오는 중 오류가 발생했습니다. 페이지를 새로고침해주세요.')
     }
   } finally {
+    userAccount.value.totalAssetValue = userAccount.value.currentBalance + stockValue.value
     loading.value = false
   }
 }
@@ -630,7 +629,6 @@ const refreshData = async () => {
 
 // ===== 라이프사이클 =====
 onMounted(async () => {
-
   // Canvas 크기 설정
   await nextTick()
   if (portfolioChart.value) {
