@@ -205,6 +205,14 @@ const goToTransactions = () => {
   router.push('/mock-trading/transactions')
 }
 
+import { useUserStore } from '@/stores/user'
+const userStore = useUserStore()
+
+const handleLogout = () => {
+  userStore.clearUser()
+  router.push('/login-form')
+}
+
 // 로컬 스토리지 및 API로 데이터 세팅
 // 세션 기반 사용자 정보 로딩
 onMounted(async () => {
@@ -222,20 +230,34 @@ onMounted(async () => {
 
     //모의투자 내역
     try {
-      console.log('🔍 모의투자 내역 조회 시작:', data.userId)
-      const response = await axios.get(`/api/trading/transactions/${data.userId}`)
+      console.log('🔍 모의투자 내역 조회 시작')
+      const response = await axios.get('/api/mocktrading/transactions', { withCredentials: true })
       console.log('📊 받은 거래 데이터:', response.data)
 
       if (response.data && response.data.length > 0) {
-        // Holdings 데이터도 함께 가져오기
-        const holdingsResponse = await axios.get('/api/mocktrading/holdings')
-        const holdings = holdingsResponse.data || []
+        // Holdings 데이터도 함께 가져오기 (에러 처리 개선)
+        let holdings = []
+        try {
+          const holdingsResponse = await axios.get('/api/mocktrading/holdings')
+          holdings = holdingsResponse.data || []
+          console.log('📊 Holdings 데이터 로드 성공:', holdings.length)
+          console.log('📊 Holdings 데이터 상세:', holdings)
+        } catch (holdingsError) {
+          console.error('❌ Holdings 데이터 로드 실패:', holdingsError)
+          console.log('📝 Holdings 없이 거래 내역만 표시')
+          holdings = []
+        }
 
         const buyTransactions = response.data.filter((t) => t.transactionType === 'BUY')
         const sellTransactions = response.data.filter((t) => t.transactionType === 'SELL')
 
         buyHistory.value = buyTransactions.slice(0, 2).map((transaction) => {
           const holding = holdings.find((h) => h.stockCode === transaction.stockCode)
+          console.log('🔍 매수 거래 매칭:', {
+            transaction: transaction.stockCode,
+            holding: holding ? holding.stockCode : '없음',
+            profitRate: holding ? holding.profitRate : '없음',
+          })
           return {
             name: transaction.stockName,
             desc: `매수 ${transaction.quantity}주`,
@@ -245,6 +267,11 @@ onMounted(async () => {
         })
         sellHistory.value = sellTransactions.slice(0, 2).map((transaction) => {
           const holding = holdings.find((h) => h.stockCode === transaction.stockCode)
+          console.log('🔍 매도 거래 매칭:', {
+            transaction: transaction.stockCode,
+            holding: holding ? holding.stockCode : '없음',
+            profitRate: holding ? holding.profitRate : '없음',
+          })
           return {
             name: transaction.stockName,
             desc: `매도 ${transaction.quantity}주`,
@@ -293,14 +320,23 @@ onMounted(async () => {
 
     const userId = Number(localStorage.getItem('userId') || 1)
     try {
-      console.log('🔍 fallback 모의투자 내역 조회 시작:', userId)
-      const response = await axios.get(`/api/trading/transactions/${userId}`)
+      console.log('🔍 fallback 모의투자 내역 조회 시작')
+      const response = await axios.get('/api/mocktrading/transactions', { withCredentials: true })
       console.log('📊 fallback 받은 거래 데이터:', response.data)
 
       if (response.data && response.data.length > 0) {
-        // Holdings 데이터도 함께 가져오기
-        const holdingsResponse = await axios.get('/api/mocktrading/holdings')
-        const holdings = holdingsResponse.data || []
+        // Holdings 데이터도 함께 가져오기 (에러 처리 개선)
+        let holdings = []
+        try {
+          const holdingsResponse = await axios.get('/api/mocktrading/holdings')
+          holdings = holdingsResponse.data || []
+          console.log('📊 fallback Holdings 데이터 로드 성공:', holdings.length)
+          console.log('📊 fallback Holdings 데이터 상세:', holdings)
+        } catch (holdingsError) {
+          console.error('❌ fallback Holdings 데이터 로드 실패:', holdingsError)
+          console.log('📝 fallback Holdings 없이 거래 내역만 표시')
+          holdings = []
+        }
 
         // 백엔드 데이터를 프론트엔드 형식으로 변환
         const buyTransactions = response.data.filter((t) => t.transactionType === 'BUY')
@@ -308,6 +344,11 @@ onMounted(async () => {
 
         buyHistory.value = buyTransactions.slice(0, 2).map((transaction) => {
           const holding = holdings.find((h) => h.stockCode === transaction.stockCode)
+          console.log('🔍 fallback 매수 거래 매칭:', {
+            transaction: transaction.stockCode,
+            holding: holding ? holding.stockCode : '없음',
+            profitRate: holding ? holding.profitRate : '없음',
+          })
           return {
             name: transaction.stockName,
             desc: `매수 ${transaction.quantity}주`,
@@ -317,6 +358,11 @@ onMounted(async () => {
         })
         sellHistory.value = sellTransactions.slice(0, 2).map((transaction) => {
           const holding = holdings.find((h) => h.stockCode === transaction.stockCode)
+          console.log('🔍 fallback 매도 거래 매칭:', {
+            transaction: transaction.stockCode,
+            holding: holding ? holding.stockCode : '없음',
+            profitRate: holding ? holding.profitRate : '없음',
+          })
           return {
             name: transaction.stockName,
             desc: `매도 ${transaction.quantity}주`,
