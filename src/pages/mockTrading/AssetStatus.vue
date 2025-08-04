@@ -233,7 +233,6 @@ const loading = ref(false)
 const showChargeModal = ref(false)
 const chargeCreditInput = ref(0)
 const dataLoaded = ref(false)
-const showDebugInfo = ref(false) // 개발 환경에서만 true로 설정
 
 // ===== 사용자 데이터 =====
 const userAccount = ref({
@@ -247,7 +246,6 @@ const userAccount = ref({
 
 const userCredit = ref(0)
 const holdingsData = ref([])
-const recentTransactions = ref([])
 
 // ===== 포트폴리오 차트 관련 =====
 const portfolioChart = ref(null)
@@ -269,7 +267,6 @@ const stockValue = computed(() => {
   }, 0)
 })
 
-// Holdings.vue와 동일한 방식으로 계산
 const totalInvestment = computed(() => {
   return holdingsData.value.reduce((sum, holding) => {
     return sum + (holding.averagePrice || 0) * (holding.quantity || 0)
@@ -282,18 +279,11 @@ const totalProfitLoss = computed(() => {
   }, 0)
 })
 
-// Holdings.vue와 동일한 수익률 계산 방식
 const calculatedProfitRate = computed(() => {
   if (totalInvestment.value === 0) return 0
   return Number(((totalProfitLoss.value / totalInvestment.value) * 100).toFixed(2))
 })
 
-// 백엔드에서 내려온 수익률 (기존 방식)
-const profitRate = computed(() => {
-  return userAccount.value.profitRate || 0
-})
-
-// 정확한 비율 계산 - 항상 100% 보장
 const portfolioPercentages = computed(() => {
   if (!dataLoaded.value || userAccount.value.totalAssetValue === 0) {
     return {
@@ -303,23 +293,19 @@ const portfolioPercentages = computed(() => {
   }
 
   const totalAsset = userAccount.value.totalAssetValue
-  const cash = userAccount.value.currentBalance
 
-  // 각 종목의 정확한 비율 계산
   const holdingPercentages = holdingsData.value.map((holding) => {
     const exactPercentage = (holding.currentValue / totalAsset) * 100
     return {
       ...holding,
-      exactPercentage, // 정확한 비율 보관
-      percentage: Math.round(exactPercentage), // 화면 표시용
+      exactPercentage,
+      percentage: Math.round(exactPercentage),
     }
   })
 
-  // 현금 비율 계산
   const stockTotalExact = holdingPercentages.reduce((sum, h) => sum + h.exactPercentage, 0)
   let cashDisplayPercentage = Math.round(100 - stockTotalExact)
 
-  // 반올림으로 인한 오차 보정
   const totalDisplayPercentage =
     holdingPercentages.reduce((sum, h) => sum + h.percentage, 0) + cashDisplayPercentage
 
@@ -327,13 +313,11 @@ const portfolioPercentages = computed(() => {
     const difference = 100 - totalDisplayPercentage
 
     if (holdingPercentages.length > 0) {
-      // 가장 큰 비중을 가진 종목에서 오차 조정
       const largestHolding = holdingPercentages.reduce((max, current) =>
         current.exactPercentage > max.exactPercentage ? current : max,
       )
       largestHolding.percentage += difference
     } else {
-      // 보유 종목이 없으면 현금에서 조정
       cashDisplayPercentage += difference
     }
   }
@@ -349,7 +333,6 @@ watch(chargeCreditInput, (val) => {
   if (val > userCredit.value) chargeCreditInput.value = userCredit.value
 })
 
-// 데이터가 로드된 후 차트 업데이트 보장
 watch(
   [dataLoaded, portfolioPercentages],
   ([loaded]) => {
@@ -414,7 +397,7 @@ const onChargeNext = async () => {
   }
 }
 
-// 차트 업데이트 함수 - 개선된 버전
+// 차트 업데이트 함수
 const updatePortfolioChart = () => {
   if (!portfolioChart.value) {
     console.log('❌ 차트 캔버스가 없음')
@@ -440,7 +423,6 @@ const updatePortfolioChart = () => {
     ctx.strokeStyle = '#ffffff'
     ctx.lineWidth = 2
     ctx.stroke()
-    console.log('💰 현금 100% 차트 완료')
     return
   }
 
@@ -484,7 +466,7 @@ const updatePortfolioChart = () => {
   }
 }
 
-// 수정된 데이터 로딩 함수 - 순차적 로딩으로 문제 해결
+// 데이터 로딩 함수
 const loadUserData = async () => {
   loading.value = true
   dataLoaded.value = false
@@ -510,7 +492,6 @@ const loadUserData = async () => {
     const holdingsResponse = await axios.get('/api/mocktrading/holdings')
 
     if (holdingsResponse.data && Array.isArray(holdingsResponse.data)) {
-      // 백엔드에서 계산된 percentage는 무시하고 프론트엔드에서 정확하게 계산
       holdingsData.value = holdingsResponse.data.map((holding) => ({
         stockCode: holding.stockCode,
         stockName: holding.stockName,
@@ -520,27 +501,18 @@ const loadUserData = async () => {
         currentValue: holding.currentValue || 0,
         profitLoss: holding.profitLoss || 0,
         profitRate: holding.profitRate || 0,
-        // percentage는 computed에서 계산하므로 여기서는 설정하지 않음
       }))
     } else {
       holdingsData.value = []
       console.log('📝 보유 종목 없음')
     }
 
-    // ===== 3단계: 병렬로 나머지 데이터 로드 (크레딧, 거래내역) =====
-    const [creditResponse, transactionsResponse] = await Promise.all([
-      axios.get('/api/mocktrading/user/credit'),
-      axios.get('/api/mocktrading/transactions?limit=5'),
-    ])
+    // ===== 3단계: 크레딧 로드
+    const creditResponse = await axios.get('/api/mocktrading/user/credit')
 
     // 크레딧 정보 설정
     if (creditResponse.data) {
       userCredit.value = creditResponse.data.totalCredit || 0
-    }
-
-    // 거래 내역 설정
-    if (transactionsResponse.data && Array.isArray(transactionsResponse.data)) {
-      recentTransactions.value = transactionsResponse.data
     }
 
     // ===== 4단계: 모든 데이터 로드 완료 후 상태 업데이트 =====
@@ -548,6 +520,7 @@ const loadUserData = async () => {
     // nextTick을 사용하여 DOM 업데이트 후 차트 그리기
     await nextTick()
     updatePortfolioChart()
+    userAccount.value.totalAssetValue = userAccount.value.currentBalance + stockValue.value
   } catch (error) {
     console.error('❌ 사용자 데이터 로드 실패:', error)
     if (error.response?.status === 401) {
@@ -555,68 +528,7 @@ const loadUserData = async () => {
       router.push('/login-form')
       return
     }
-    // ===== Fallback: Dashboard API 사용 =====
-    console.log('🔄 Dashboard API로 재시도')
-    try {
-      const dashboardResponse = await axios.get('/api/mocktrading/dashboard')
-
-      if (dashboardResponse.data) {
-        const dashboard = dashboardResponse.data
-
-        // 계좌 정보 설정
-        if (dashboard.account) {
-          userAccount.value = {
-            accountId: dashboard.account.accountId,
-            accountNumber: dashboard.account.accountNumber || '',
-            currentBalance: dashboard.account.currentBalance || 0,
-            totalAssetValue: dashboard.account.totalAssetValue || 0,
-            totalProfitLoss: dashboard.account.totalProfitLoss || 0,
-            profitRate: dashboard.account.profitRate || 0,
-          }
-        }
-
-        // 보유 종목 정보 설정 (백엔드 percentage 무시)
-        if (dashboard.holdings && Array.isArray(dashboard.holdings)) {
-          holdingsData.value = dashboard.holdings.map((holding) => ({
-            stockCode: holding.stockCode,
-            stockName: holding.stockName,
-            quantity: holding.quantity || 0,
-            averagePrice: holding.averagePrice || 0,
-            currentPrice: holding.currentPrice || 0,
-            currentValue: holding.currentValue || 0,
-            profitLoss: holding.profitLoss || 0,
-            profitRate: holding.profitRate || 0,
-          }))
-        }
-
-        // 거래 내역 설정
-        if (dashboard.recentTransactions && Array.isArray(dashboard.recentTransactions)) {
-          recentTransactions.value = dashboard.recentTransactions
-        }
-
-        // 크레딧은 별도 API로 로드
-        try {
-          const creditResponse = await axios.get('/api/mocktrading/user/credit')
-          if (creditResponse.data) {
-            userCredit.value = creditResponse.data.totalCredit || 0
-          }
-        } catch (creditError) {
-          console.error('크레딧 로드 실패:', creditError)
-          userCredit.value = 0
-        }
-
-        dataLoaded.value = true
-        await nextTick()
-        updatePortfolioChart()
-      } else {
-        throw new Error('Dashboard API에서 데이터를 가져올 수 없습니다.')
-      }
-    } catch (fallbackError) {
-      console.error('❌ Dashboard API로도 실패:', fallbackError)
-      alert('데이터를 불러오는 중 오류가 발생했습니다. 페이지를 새로고침해주세요.')
-    }
   } finally {
-    userAccount.value.totalAssetValue = userAccount.value.currentBalance + stockValue.value
     loading.value = false
   }
 }
@@ -635,13 +547,6 @@ onMounted(async () => {
     portfolioChart.value.width = 180
     portfolioChart.value.height = 180
   }
-
-  // 개발 환경에서 디버그 정보 표시
-  if (import.meta.env.MODE === 'development') {
-    showDebugInfo.value = true
-  }
-
-  // 데이터 로드
   await loadUserData()
 })
 </script>

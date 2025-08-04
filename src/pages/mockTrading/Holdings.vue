@@ -305,10 +305,10 @@ const sortOptions = [
   { key: 'profitLoss', label: '평가손익' },
 ]
 
-// 보유 종목 데이터 (API에서 가져옴)
+// 보유 종목 데이터
 const holdingsData = ref([])
 
-// 실제 API에서 데이터 불러오기
+// 데이터 불러오기
 async function fetchHoldings() {
   loading.value = true
   try {
@@ -320,9 +320,7 @@ async function fetchHoldings() {
       quantity: h.quantity,
       averagePrice: h.averagePrice,
       currentPrice: h.currentPrice,
-      priceChange: 0, // API에 변동률 없으면 0
       totalValue: h.currentValue,
-      percentage: h.percentage ?? 0,
       profitLoss: h.profitLoss,
       profitRate: h.profitRate,
       imageUrl: h.imageUrl,
@@ -367,10 +365,6 @@ const sortedHoldings = computed(() => {
       return sorted.sort((a, b) => b.profitRate - a.profitRate)
     case 'profitLoss':
       return sorted.sort((a, b) => b.profitLoss - a.profitLoss)
-    case 'totalValue':
-      return sorted.sort((a, b) => b.totalValue - a.totalValue)
-    case 'percentage':
-      return sorted.sort((a, b) => b.percentage - a.percentage)
     default:
       return sorted
   }
@@ -389,32 +383,13 @@ const goToStockDetail = (stockCode, stockName) => {
   router.push(`/mock-trading/${stockCode}/chart?stockName=${encodeURIComponent(stockName)}`)
 }
 
-const goToTradingPage = (stockCode, stockName, type) => {
-  router.push({
-    path: '/trading',
-    query: {
-      stockCode,
-      stockName,
-      tab: type,
-    },
-  })
-}
-
 const goToMockTrading = () => {
   router.push('/mock-trading')
 }
 
 const refreshData = async () => {
-  loading.value = true
-  try {
-    // 여기에 API 호출 로직 추가 예정
-    console.log('보유 종목 데이터 새로고침')
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-  } catch (error) {
-    console.error('보유 종목 데이터 새로고침 실패:', error)
-  } finally {
-    loading.value = false
-  }
+  console.log('보유 종목 데이터 새로고침')
+  await fetchHoldings()
 }
 
 // 종목 이미지 에러 추적
