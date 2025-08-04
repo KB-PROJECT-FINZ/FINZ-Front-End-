@@ -520,7 +520,10 @@ const loadUserData = async () => {
     // nextTick을 사용하여 DOM 업데이트 후 차트 그리기
     await nextTick()
     updatePortfolioChart()
+
+    // 일단
     userAccount.value.totalAssetValue = userAccount.value.currentBalance + stockValue.value
+
   } catch (error) {
     console.error('❌ 사용자 데이터 로드 실패:', error)
     if (error.response?.status === 401) {
