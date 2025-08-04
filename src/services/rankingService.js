@@ -4,7 +4,10 @@ axios.defaults.withCredentials = true
 // 내 랭킹 조회 (userId 쿼리 제거, baseDate만 전달)
 export async function fetchMyRanking(baseDate) {
   try {
-    const res = await axios.get('/api/ranking/my', { params: { baseDate } })
+    const res = await axios.get('/api/ranking/my', {
+      params: { baseDate },
+      withCredentials: true,
+    })
     const data = res.data
 
     return {
@@ -19,11 +22,12 @@ export async function fetchMyRanking(baseDate) {
   }
 }
 
-// 인기 종목 Top5 조회 (baseDate 유지, 필요하면 백엔드 맞게 조정)
+// 인기 종목 Top5 조회 (baseDate 유지)
 export async function fetchTop5Stocks(baseDate) {
   try {
     const res = await axios.get('/api/ranking/popular-stocks', {
       params: { baseDate },
+      withCredentials: true,
     })
 
     return res.data.map((stock) => ({
@@ -39,10 +43,15 @@ export async function fetchTop5Stocks(baseDate) {
   }
 }
 
-// 주간 전체 랭킹 조회 (baseDate 제거, API가 쿼리 없이 작동 시)
-export async function fetchWeeklyRanking() {
+// 주간 전체 랭킹 조회 (baseDate 반영)
+export async function fetchWeeklyRanking(baseDate) {
   try {
-    const res = await axios.get('/api/ranking/weekly')
+    const res = await axios.get('/api/ranking/weekly', {
+      params: { baseDate },
+      withCredentials: true,
+    })
+    console.log('fetchWeeklyRanking 응답:', res.data)
+
     if (!Array.isArray(res.data)) {
       console.error('Weekly ranking 응답이 배열이 아닙니다:', res.data)
       return []
@@ -62,10 +71,13 @@ export async function fetchWeeklyRanking() {
   }
 }
 
-// 성향 그룹별 랭킹 조회 (baseDate 제거)
-export async function fetchGroupedWeeklyRanking() {
+// 성향 그룹별 랭킹 조회 (baseDate 반영)
+export async function fetchGroupedWeeklyRanking(baseDate) {
   try {
-    const res = await axios.get('/api/ranking/weekly/grouped')
+    const res = await axios.get('/api/ranking/weekly/grouped', {
+      params: { baseDate },
+      withCredentials: true,
+    })
 
     const rawGrouped = res.data
     const transformed = {}
@@ -87,14 +99,15 @@ export async function fetchGroupedWeeklyRanking() {
     return {}
   }
 }
-//                     종목 분석 페이지
+
+// ======================= 종목 분석 (항상 최신 데이터 기준) =======================
 
 // (1) 성향별 보유 비중
 export async function fetchTraitStockAnalysis(userId) {
-  console.log('[DEBUG] fetchTraitStockAnalysis userId:', userId)
   try {
     const res = await axios.get('/api/ranking/analysis/trait-stock', {
       params: { userId },
+      withCredentials: true,
     })
 
     return res.data.map((item) => ({
@@ -119,6 +132,7 @@ export async function fetchMyStockDistribution(userId) {
   try {
     const res = await axios.get('/api/ranking/analysis/my-distribution', {
       params: { userId },
+      withCredentials: true,
     })
 
     return res.data.map((stock) => ({
@@ -127,7 +141,7 @@ export async function fetchMyStockDistribution(userId) {
       positionIndex: stock.positionIndex,
       positionLabel: stock.positionLabel,
       distribution: stock.distributionBins,
-      color: '#3b82f6', // 기본 파란색
+      color: '#3b82f6',
     }))
   } catch (error) {
     console.error('fetchMyStockDistribution error:', error)
@@ -135,11 +149,12 @@ export async function fetchMyStockDistribution(userId) {
   }
 }
 
-// (3) 유사 성향 투자자 인기 종목
+// (3) 유사 성향 투자자 인기 종목 (항상 최신 기준)
 export async function fetchPopularStocksByTrait(traitGroup) {
   try {
     const res = await axios.get('/api/ranking/analysis/popular-stocks', {
       params: { traitGroup },
+      withCredentials: true,
     })
 
     return res.data.map((stock) => ({
@@ -148,7 +163,7 @@ export async function fetchPopularStocksByTrait(traitGroup) {
       logo: stock.stockCode
         ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
         : '/images/stocks/default.png',
-      trait: `${stock.ranking}위`, // 예: "1위", "2위"
+      trait: `${stock.ranking}위`,
     }))
   } catch (error) {
     console.error('fetchPopularStocksByTrait error:', error)
