@@ -220,43 +220,17 @@ onMounted(async () => {
           }
         })
       } else {
-        // 데이터가 없으면 더미데이터 사용
-        console.log('📝 더미데이터 사용')
-        //investHistory.value = dummyInvestHistory
-        buyHistory.value = dummyInvestHistory
-          .filter((item) => item.desc.includes('매수'))
-          .slice(0, 2)
-          .map((item) => ({
-            ...item,
-            profitRate: Math.random() * 20 - 10, // -10% ~ +10% 랜덤 수익률
-          }))
-        sellHistory.value = dummyInvestHistory
-          .filter((item) => item.desc.includes('매도'))
-          .slice(0, 2)
-          .map((item) => ({
-            ...item,
-            profitRate: Math.random() * 20 - 10, // -10% ~ +10% 랜덤 수익률
-          }))
+        // 데이터가 없으면 빈 배열로 설정
+        console.log('📝 거래 내역 없음')
+        buyHistory.value = []
+        sellHistory.value = []
       }
     } catch (e) {
       console.error('❌ 모의투자 내역 로딩 실패:', e)
-      // 에러 시 더미데이터 사용
-      console.log('📝 에러로 인해 더미데이터 사용')
-      //investHistory.value = dummyInvestHistory
-      buyHistory.value = dummyInvestHistory
-        .filter((item) => item.desc.includes('매수'))
-        .slice(0, 2)
-        .map((item) => ({
-          ...item,
-          profitRate: Math.random() * 20 - 10, // -10% ~ +10% 랜덤 수익률
-        }))
-      sellHistory.value = dummyInvestHistory
-        .filter((item) => item.desc.includes('매도'))
-        .slice(0, 2)
-        .map((item) => ({
-          ...item,
-          profitRate: Math.random() * 20 - 10, // -10% ~ +10% 랜덤 수익률
-        }))
+      // 에러 시 빈 배열로 설정
+      console.log('📝 에러로 인해 빈 배열 설정')
+      buyHistory.value = []
+      sellHistory.value = []
     }
 
     // 크레딧 조회 및 보유자산 계산
