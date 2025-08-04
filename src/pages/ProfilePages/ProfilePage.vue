@@ -197,19 +197,9 @@ onMounted(async () => {
 
     //모의투자 내역
     try {
-      console.log('🔍 모의투자 내역 조회 시작:', data.userId)
-      const response = await axios.get(`/api/trading/transactions/${data.userId}`)
-      console.log('📊 받은 거래 데이터:', response.data)
+      const response = await axios.get(`/api/trading/transactions`, { withCredentials: true })
 
       if (response.data && response.data.length > 0) {
-        // 백엔드 데이터를 프론트엔드 형식으로 변환
-        // investHistory.value = response.data.map((transaction) => ({
-        //   name: transaction.stockName,
-        //   desc: `${transaction.transactionType === 'BUY' ? '매수' : '매도'} ${transaction.quantity}주`,
-        //   amount: transaction.totalAmount,
-        //   change: 0, // 거래 내역에는 수익률 정보가 없으므로 0으로 설정
-        // }))
-        // console.log('✅ 변환된 투자 내역:', investHistory.value)
         const buyTransactions = response.data.filter(
           (t) => t.transactionType === 'BUY' || t.transactionType === 'HOLDING',
         )
