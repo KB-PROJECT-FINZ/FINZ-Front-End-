@@ -73,7 +73,7 @@
         <!-- 호가창 메인 영역 -->
         <div class="flex-1 overflow-hidden relative">
           <!-- 스크롤 가능한 호가 영역만 -->
-          <div class="h-full overflow-y-auto">
+          <div ref="orderBookScroll" class="h-full overflow-y-auto">
             <!-- 상한가 -->
             <div class="px-3 py-1 bg-red-50 border-b border-red-100">
               <div
@@ -474,7 +474,6 @@
                   >대기중 {{ pendingOrdersCount }}건</span
                 >
                 <div class="flex items-center">
-                  <span class="text-sm text-gray-500">{{ lastRefreshMinutes }}분 전</span>
                   <button @click="loadPendings" class="p-1.5 hover:bg-gray-100 rounded">
                     <svg
                       class="w-4 h-4 text-gray-400"
@@ -642,11 +641,47 @@
         </div>
       </div>
     </footer>
+    <!-- 안내 모달 컴포넌트 추가 위치 -->
+    <!-- filepath: c:\KB_Fullstack\FINZ-Front-End-\src\pages\mockTrading\TradingPage.vue -->
+    <!-- filepath: c:\KB_Fullstack\FINZ-Front-End-\src\pages\mockTrading\TradingPage.vue -->
+    <!-- filepath: c:\KB_Fullstack\FINZ-Front-End-\src\pages\mockTrading\TradingPage.vue -->
+    <transition>
+      <div v-if="showMarketOrderModal" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-lg px-8 py-6 text-center w-[320px]">
+          <div class="text-lg font-bold mb-2 text-gray-900">시장가 주문 체결 안내</div>
+          <div class="space-y-2 mb-4">
+            <div>
+              <span class="text-base font-bold text-gray-900">가격:</span>
+              <span class="text-base ml-2">{{ formatPrice(marketOrderModalPrice) }}원</span>
+            </div>
+            <div>
+              <span class="text-base font-bold text-gray-900">수량:</span>
+              <span class="text-base ml-2">{{ marketOrderModalQuantity }}주</span>
+            </div>
+            <div>
+              <span
+                class="text-base font-bold"
+                :class="marketOrderModalType === 'BUY' ? 'text-red-600' : 'text-blue-600'"
+              >
+                {{ marketOrderModalType === 'BUY' ? '매수' : '매도' }}
+              </span>
+              <span class="text-base ml-1">주문이 체결되었습니다.</span>
+            </div>
+          </div>
+          <button
+            @click="closeMarketOrderModal"
+            class="mt-2 px-4 py-2 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition"
+          >
+            확인
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getStockInfo } from '@/services/stockApi.js'
 import axios from 'axios'
@@ -671,7 +706,16 @@ let isUnmounted = false
 const latestExecutionData = ref(null) // 최신 체결 데이터
 const executionHistory = ref([]) // 체결 이력 (최근 50개)
 const showExecutionAlert = ref(false) // 체결 알림 표시 여부
-const executionAlertTimer = ref(null) // 알림 타이머
+
+const showMarketOrderModal = ref(false)
+const marketOrderModalPrice = ref(0)
+const marketOrderModalQuantity = ref(0)
+const marketOrderModalType = ref('BUY')
+const marketOrderModalText = ref('') // 기존 변수는 사용하지 않아도 됨
+
+const closeMarketOrderModal = () => {
+  showMarketOrderModal.value = false
+}
 
 // API로부터 종목 정보 로드
 const loadStockInfo = async () => {
@@ -900,7 +944,7 @@ const loadHoldings = async () => {
         userInfo.value = {
           ...userInfo.value, // 기존 값 유지
           avgPrice: 0,
-          holdings: 0,
+          quantity: 0,
         }
         console.log('현재 종목을 보유하지 않음:', STOCK_CODE)
       }
@@ -985,12 +1029,13 @@ const askPrices = ref([])
 const bidPrices = ref([])
 
 // 호가 데이터 생성 함수
-const generateOrderBookData = (currentPrice) => {
+const generateOrderBookData = async (currentPrice) => {
   if (currentPrice === 0) return
 
   const tick = getTickSize(currentPrice)
   askPrices.value = []
-  for (let i = 1; i <= 10; i++) {
+  // 가장 비싼 가격부터 가장 싼 가격 순서로 push
+  for (let i = 10; i >= 1; i--) {
     askPrices.value.push({
       price: currentPrice + i * tick,
       volume: Math.floor(Math.random() * 500000) + 50000,
@@ -1004,7 +1049,15 @@ const generateOrderBookData = (currentPrice) => {
       volume: Math.floor(Math.random() * 600000) + 100000,
     })
   }
+
+  // 호가창 렌더링 직후 스크롤 위치 조정
+  await nextTick()
+  if (orderBookScroll.value) {
+    orderBookScroll.value.scrollTop = orderBookScroll.value.scrollHeight / 4
+  }
 }
+
+const orderBookScroll = ref(null)
 
 // 체결 강도
 const volumePower = ref(0)
@@ -1341,9 +1394,6 @@ const waitingInfo = ref({
 // 대기중인 거래 목록
 const pendingOrders = ref([])
 
-// 새로고침 시점 (분 단위)
-const lastRefreshMinutes = ref(2)
-
 // 장 상태 (시간에 따라 동적 변경)
 const marketStatus = computed(() => {
   currentTime.value
@@ -1405,13 +1455,21 @@ const totalOrderAmount = computed(() => {
   return orderPrice.value * orderQuantity.value
 })
 
+const getSellPrice = computed(() => {
+  if (orderType.value === 'market') {
+    // 시장가 판매 시, 매수호가 배열에서 가장 비싼 가격 사용
+    const sortedBid = [...bidPrices.value].sort((a, b) => b.price - a.price)
+    return sortedBid.length > 0 ? sortedBid[0].price : stockInfo.value.currentPrice
+  }
+  return orderPrice.value
+})
+
 const expectedReturnRate = computed(() => {
   if (activeTab.value !== 'sell') return '0.00%'
 
   const avgPrice = userInfo.value.avgPrice
-  const sellPrice = orderPrice.value
+  const sellPrice = getSellPrice.value
 
-  // 보유수량이 없거나 평균단가가 0이면 0%로 표시
   if (!avgPrice || avgPrice === 0) {
     return '0.00%'
   }
@@ -1427,12 +1485,11 @@ const expectedReturnRate = computed(() => {
   }
 })
 
-// 예상 손익 계산 (판매 시)
 const expectedProfit = computed(() => {
   if (activeTab.value !== 'sell') return '0원'
 
   const avgPrice = userInfo.value.avgPrice
-  const sellPrice = orderPrice.value
+  const sellPrice = getSellPrice.value
   const quantity = orderQuantity.value || 0
   const profit = (sellPrice - avgPrice) * quantity
 
@@ -1682,6 +1739,46 @@ const submitOrder = async () => {
     return
   }
 
+  // 시장가 주문 처리
+  if (orderType.value === 'market') {
+    // 시장가 가격 결정: 매수는 askPrices, 매도는 bidPrices
+    let marketPrice = 0
+    if (activeTab.value === 'buy') {
+      // 매도호가 배열을 오름차순 정렬해서 가장 싼 가격 사용
+      const sortedAsk = [...askPrices.value].sort((a, b) => a.price - b.price)
+      marketPrice = sortedAsk.length > 0 ? sortedAsk[0].price : stockInfo.value.currentPrice
+    } else if (activeTab.value === 'sell') {
+      // 매수호가 배열을 내림차순 정렬해서 가장 비싼 가격 사용
+      const sortedBid = [...bidPrices.value].sort((a, b) => b.price - a.price)
+      marketPrice = sortedBid.length > 0 ? sortedBid[0].price : stockInfo.value.currentPrice
+    }
+
+    const params = {
+      marketPrice,
+      quantity: orderQuantity.value,
+      stockCode: STOCK_CODE,
+      stockName: stockInfo.value.name,
+      transactionType: activeTab.value === 'buy' ? 'BUY' : 'SELL',
+    }
+
+    try {
+      await axios.post('/api/stock/order/market', params)
+      orderQuantity.value = 0
+      await loadUserAccount()
+      await loadHoldings()
+      // 안내 모달 정보 설정
+      marketOrderModalPrice.value = marketPrice
+      marketOrderModalQuantity.value = params.quantity
+      marketOrderModalType.value = params.transactionType
+      showMarketOrderModal.value = true
+    } catch (error) {
+      console.error('시장가 주문 제출 실패:', error)
+      alert('시장가 주문 제출에 실패했습니다.')
+    }
+    return
+  }
+
+  // 기존 지정가 주문 처리
   if (activeTab.value === 'buy' && totalOrderAmount.value > userInfo.value.availableAmount) {
     alert('구매 가능 금액을 초과했습니다.')
     return
@@ -1692,7 +1789,7 @@ const submitOrder = async () => {
     return
   }
 
-  // 요청 파라미터 구성
+  // 지정가 주문 파라미터
   const params = {
     orderType: activeTab.value === 'buy' ? 'BUY' : 'SELL',
     quantity: orderQuantity.value,
@@ -1718,14 +1815,6 @@ const submitOrder = async () => {
     alert('주문 제출에 실패했습니다.')
   }
 }
-
-// // ✅ 디버깅용 메서드
-// const logExecutionData = () => {
-//   console.log('📊 최신 체결 데이터:', latestExecutionData.value)
-//   console.log('📈 체결 이력 (최근 10개):', executionHistory.value.slice(0, 10))
-//   console.log('📊 체결 통계:', executionStats.value)
-//   console.log('📈 실시간 거래 내역 (최근 10개):', recentTrades.value.slice(0, 10))
-// }
 
 // API 테스트 함수
 const testApiCall = async () => {
