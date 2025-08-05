@@ -246,7 +246,7 @@ function getStatusClass(status, type) {
   if (status === 'PENDING') return 'text-yellow-600'
   return 'text-gray-600'
 }
-// ChartPage.vue 스타일: 드래그 다운 슬라이드 닫기 로직
+// 드래그 다운 슬라이드 닫기 로직
 const modalDragOffset = vueRef(0)
 const isModalDragging = vueRef(false)
 let dragStartY = null
@@ -289,10 +289,10 @@ function onModalDragEnd() {
     modalDragOffset.value = 0
   }, 200)
 }
-// ChartPage.vue 스타일 기간 선택 모달용 상태
+// 기간 선택 모달용 상태
 import { ref as vueRef } from 'vue'
 const showPeriodModal = vueRef(false)
-// ChartPage.vue 스타일: 기간 라벨 반환
+// 기간 라벨 반환
 function getSelectedPeriodLabel() {
   const period = periodOptions.find((p) => p.key === currentPeriod.value)
   return period ? period.label : '기간 선택'
@@ -312,7 +312,6 @@ const itemsPerPage = 10
 const showAll = ref(false)
 const imageErrors = ref({})
 
-// 거래 데이터의 imageUrl 필드 우선 사용
 const getStockImageUrl = (transaction) => {
   if (transaction.imageUrl) return transaction.imageUrl
   return null
@@ -339,24 +338,11 @@ const periodOptions = [
 // 실제 거래 내역 데이터
 const transactionsData = ref([])
 
-// 사용자 ID 가져오기 (세션 기반)
-async function getUserId() {
-  try {
-    const res = await axios.get('/api/auth/me', { withCredentials: true })
-    return res.data.userId
-  } catch (e) {
-    // 세션 실패 시 로컬스토리지 fallback
-    return Number(localStorage.getItem('userId') || 1)
-  }
-}
-
 // 거래 내역 불러오기
 async function fetchTransactions() {
   loading.value = true
   try {
-    // 엔드포인트 변경: /api/mocktrading/transactions
     const response = await axios.get('/api/mocktrading/transactions')
-    console.log('🔍 거래내역 API response:', response)
     // 날짜 변환 및 id 보정
     transactionsData.value = (response.data || []).map((t, idx) => {
       // 날짜: executedAt > orderCreatedAt > 현재시간
@@ -382,7 +368,6 @@ async function fetchTransactions() {
         imageUrl: t.imageUrl,
       }
     })
-    console.log('📊 받은 거래 데이터:', transactionsData.value)
   } catch (e) {
     console.error('❌ 거래 내역 로딩 실패:', e)
     transactionsData.value = []
