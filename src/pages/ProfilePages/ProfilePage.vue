@@ -45,9 +45,22 @@
     <!-- 모의투자 금액 카드 -->
     <section class="bg-white rounded-xl mx-4 mb-5 px-5 py-5 shadow">
       <div class="text-gray-500 text-sm mb-1">총 보유자산</div>
-      <div class="flex items-center justify-between mb-1">
+      
+      <!-- 로딩 중일 때 스켈레톤 UI -->
+      <div v-if="!dataLoaded" class="flex items-center justify-between mb-1">
+        <div class="w-32 h-8 bg-gray-200 rounded animate-pulse"></div>
+        <button
+          class="bg-gray-300 text-gray-500 rounded px-4 py-2 text-sm font-bold cursor-not-allowed"
+          disabled
+        >
+          내 자산 현황 바로가기
+        </button>
+      </div>
+      
+      <!-- 실제 데이터 -->
+      <div v-else class="flex items-center justify-between mb-1">
         <span class="text-2xl font-bold text-gray-900"
-          >₩{{ mockTradingAmount.toLocaleString() }}</span
+          >₩{{ calculatedTotalAssetValue.toLocaleString() }}</span
         >
         <button
           class="bg-blue-600 text-white rounded px-4 py-2 text-sm font-bold hover:bg-blue-800 transition"
@@ -56,7 +69,9 @@
           내 자산 현황 바로가기
         </button>
       </div>
-      <div
+      
+      <!-- 수익률 표시 -->
+      <div v-if="dataLoaded"
         :class="
           calculatedProfitRate > 0
             ? 'text-green-500'
@@ -68,6 +83,7 @@
       >
         {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
       </div>
+      <div v-else class="w-16 h-4 bg-gray-200 rounded animate-pulse ml-1"></div>
     </section>
 
     <!-- 메뉴 카드 -->
@@ -190,11 +206,6 @@ const asset = ref({
   change: 2.3,
 })
 
-// 모의투자 금액 관련
-const mockTradingAmount = ref(0)
-const mockTradingProfitRate = ref(0)
-const holdingsData = ref([])
-
 // AssetStatus.vue와 동일한 userAccount 구조
 const userAccount = ref({
   accountId: null,
@@ -205,16 +216,43 @@ const userAccount = ref({
   profitRate: 0,
 })
 
-// AssetStatus.vue와 동일한 수익률 계산 방식
+// AssetStatus.vue와 동일한 holdingsData 구조
+const holdingsData = ref([])
+
+// 로딩 상태 관리 (AssetStatus.vue와 동일)
+const dataLoaded = ref(false)
+
+// 모의투자 금액 관련 (기존 변수들 유지)
+const mockTradingAmount = ref(0)
+const mockTradingProfitRate = ref(0)
+
+const buyHistory = ref([]) // 매수
+const sellHistory = ref([]) // 매도
+
+// AssetStatus.vue와 동일한 safeNumber 함수
+const safeNumber = (value, defaultValue = 0) => {
+  if (value === null || value === undefined || isNaN(value)) {
+    return defaultValue
+  }
+  return Number(value)
+}
+
+// AssetStatus.vue와 동일한 계산 로직들
+const stockValue = computed(() => {
+  return holdingsData.value.reduce((total, holding) => {
+    return total + safeNumber(holding.currentValue, 0)
+  }, 0)
+})
+
 const totalInvestment = computed(() => {
   return holdingsData.value.reduce((sum, holding) => {
-    return sum + (holding.averagePrice || 0) * (holding.quantity || 0)
+    return sum + safeNumber(holding.averagePrice, 0) * safeNumber(holding.quantity, 0)
   }, 0)
 })
 
 const totalProfitLoss = computed(() => {
   return holdingsData.value.reduce((sum, holding) => {
-    return sum + (holding.profitLoss || 0)
+    return sum + safeNumber(holding.profitLoss, 0)
   }, 0)
 })
 
@@ -223,19 +261,82 @@ const calculatedProfitRate = computed(() => {
   return Number(((totalProfitLoss.value / totalInvestment.value) * 100).toFixed(2))
 })
 
-// AssetStatus.vue와 동일한 총 보유자산 계산
-const stockValue = computed(() => {
-  return holdingsData.value.reduce((total, holding) => {
-    return total + (holding.currentValue || 0)
-  }, 0)
-})
-
 const calculatedTotalAssetValue = computed(() => {
-  return (userAccount.value?.currentBalance || 0) + stockValue.value
+  return safeNumber(userAccount.value?.currentBalance, 0) + stockValue.value
 })
 
-const buyHistory = ref([]) // 매수
-const sellHistory = ref([]) // 매도
+// AssetStatus.vue와 동일한 배치 가격 조회 함수
+const fetchMultipleStockPrices = async (stockCodes) => {
+  try {
+    const codesString = stockCodes.join(',')
+    const response = await axios.get(`/api/stock/prices/${codesString}`)
+
+    if (response.data && response.data.success) {
+      console.log(
+        `배치 가격 조회 완료: ${response.data.successCount}/${response.data.requestedCount} 성공`,
+      )
+
+      if (response.data.errors && response.data.errors.length > 0) {
+        console.warn('⚠️ 일부 종목 조회 실패:', response.data.errors)
+      }
+
+      return response.data.data
+    }
+
+    throw new Error('Invalid response format')
+  } catch (error) {
+    console.error('❌ 배치 주식 가격 조회 실패:', error)
+    return null
+  }
+}
+
+// AssetStatus.vue와 동일한 보유 종목 실시간 가격 업데이트 함수
+const updateHoldingsWithRealTimePrice = async (holdings) => {
+  if (holdings.length === 0) return holdings
+
+  // 모든 종목코드 추출
+  const stockCodes = holdings.map((holding) => holding.stockCode)
+
+  // 배치로 모든 종목의 가격을 한번에 조회
+  const pricesData = await fetchMultipleStockPrices(stockCodes)
+
+  if (!pricesData) {
+    console.warn('⚠️ 배치 가격 조회 실패, 기존 데이터 유지')
+    return holdings
+  }
+
+  const updatedHoldings = holdings.map((holding) => {
+    const priceInfo = pricesData[holding.stockCode]
+
+    if (priceInfo && priceInfo.output) {
+      const output = priceInfo.output
+      const currentPrice = parseInt(output.stck_prpr)
+
+      // 현재 시세로 현재 가치 및 손익 재계산
+      const totalValue = holding.quantity * currentPrice
+      const totalInvestment = holding.quantity * holding.averagePrice
+      const profitLoss = totalValue - totalInvestment
+      const profitRate = totalInvestment > 0 ? (profitLoss / totalInvestment) * 100 : 0
+
+      return {
+        ...holding,
+        currentPrice: currentPrice,
+        currentValue: totalValue,
+        profitLoss: profitLoss,
+        profitRate: Number(profitRate.toFixed(2)),
+        priceChange: parseInt(output.prdy_vrss),
+        changeRate: parseFloat(output.prdy_ctrt),
+        changeSign: output.prdy_vrss_sign,
+      }
+    } else {
+      // 해당 종목의 가격 조회 실패 시 기존 데이터 유지
+      console.warn(`⚠️ ${holding.stockCode} 가격 조회 실패, 기존 데이터 유지`)
+      return holding
+    }
+  })
+
+  return updatedHoldings
+}
 
 const goToAssetStatus = () => {
   router.push('/mock-trading/asset-status')
@@ -283,17 +384,21 @@ onMounted(async () => {
           console.log('📊 Holdings 데이터 로드 성공:', holdings.length)
           console.log('📊 Holdings 데이터 상세:', holdings)
           
-          // Holdings 데이터 설정 (수익률 계산용)
-          holdingsData.value = holdings.map((holding) => ({
+          // AssetStatus.vue와 동일한 방식으로 holdingsData 설정
+          const basicHoldings = holdings.map((holding) => ({
             stockCode: holding.stockCode,
             stockName: holding.stockName,
-            quantity: holding.quantity || 0,
-            averagePrice: holding.averagePrice || 0,
-            currentPrice: holding.currentPrice || 0,
-            currentValue: holding.currentValue || 0,
-            profitLoss: holding.profitLoss || 0,
-            profitRate: holding.profitRate || 0,
+            quantity: safeNumber(holding.quantity, 0),
+            averagePrice: safeNumber(holding.averagePrice, 0),
+            currentPrice: safeNumber(holding.currentPrice, 0),
+            currentValue: safeNumber(holding.currentValue, 0),
+            profitLoss: safeNumber(holding.profitLoss, 0),
+            profitRate: safeNumber(holding.profitRate, 0),
           }))
+
+          // 배치로 실시간 가격 업데이트
+          holdingsData.value = await updateHoldingsWithRealTimePrice(basicHoldings)
+          console.log('배치 실시간 가격 업데이트 완료')
         } catch (holdingsError) {
           console.error('❌ Holdings 데이터 로드 실패:', holdingsError)
           console.log('📝 Holdings 없이 거래 내역만 표시')
@@ -304,22 +409,13 @@ onMounted(async () => {
         const buyTransactions = response.data.filter((t) => t.transactionType === 'BUY')
         const sellTransactions = response.data.filter((t) => t.transactionType === 'SELL')
 
+        // 실시간 가격 업데이트 후 holdingsData를 사용하여 수익률 계산
         buyHistory.value = buyTransactions.slice(0, 2).map((transaction) => {
-          // 종목코드로 먼저 매칭 시도
-          let holding = holdings.find((h) => h.stockCode === transaction.stockCode)
-          
-          // 종목코드로 매칭 안 되면 종목명으로 매칭 시도
-          if (!holding) {
-            holding = holdings.find((h) => h.stockName === transaction.stockName)
-          }
-          
+          const holding = holdingsData.value.find((h) => h.stockCode === transaction.stockCode)
           console.log('🔍 매수 거래 매칭:', {
             transaction: transaction.stockCode,
-            transactionName: transaction.stockName,
             holding: holding ? holding.stockCode : '없음',
-            holdingName: holding ? holding.stockName : '없음',
             profitRate: holding ? holding.profitRate : '없음',
-            allHoldings: holdings.map(h => ({ code: h.stockCode, name: h.stockName }))
           })
           return {
             name: transaction.stockName,
@@ -329,21 +425,11 @@ onMounted(async () => {
           }
         })
         sellHistory.value = sellTransactions.slice(0, 2).map((transaction) => {
-          // 종목코드로 먼저 매칭 시도
-          let holding = holdings.find((h) => h.stockCode === transaction.stockCode)
-          
-          // 종목코드로 매칭 안 되면 종목명으로 매칭 시도
-          if (!holding) {
-            holding = holdings.find((h) => h.stockName === transaction.stockName)
-          }
-          
+          const holding = holdingsData.value.find((h) => h.stockCode === transaction.stockCode)
           console.log('🔍 매도 거래 매칭:', {
             transaction: transaction.stockCode,
-            transactionName: transaction.stockName,
             holding: holding ? holding.stockCode : '없음',
-            holdingName: holding ? holding.stockName : '없음',
             profitRate: holding ? holding.profitRate : '없음',
-            allHoldings: holdings.map(h => ({ code: h.stockCode, name: h.stockName }))
           })
           return {
             name: transaction.stockName,
@@ -370,26 +456,29 @@ onMounted(async () => {
     const totalCredit = await getUserCredit(data.userId)
     asset.value.amount = totalCredit // 크레딧 그대로 사용
 
-    // 모의투자 금액 조회
+    // AssetStatus.vue와 동일한 모의투자 계좌 정보 로드
     try {
       const mockTradingResponse = await axios.get('/api/mocktrading/account', {
         withCredentials: true,
       })
       console.log('📊 모의투자 계좌 데이터:', mockTradingResponse.data)
       if (mockTradingResponse.data) {
-        // userAccount 데이터 설정
+        // userAccount 데이터 설정 (AssetStatus.vue와 동일)
         userAccount.value = {
           accountId: mockTradingResponse.data.accountId,
           accountNumber: mockTradingResponse.data.accountNumber || '',
-          currentBalance: mockTradingResponse.data.currentBalance || 0,
-          totalAssetValue: mockTradingResponse.data.totalAssetValue || 0,
-          totalProfitLoss: mockTradingResponse.data.totalProfitLoss || 0,
-          profitRate: mockTradingResponse.data.profitRate || 0,
+          currentBalance: safeNumber(mockTradingResponse.data.currentBalance, 0),
+          totalAssetValue: safeNumber(mockTradingResponse.data.totalAssetValue, 0),
+          totalProfitLoss: safeNumber(mockTradingResponse.data.totalProfitLoss, 0),
+          profitRate: safeNumber(mockTradingResponse.data.profitRate, 0),
         }
         
-        // 계산된 값들 사용
+        // 계산된 값들 사용 (기존 변수들도 유지)
         mockTradingAmount.value = calculatedTotalAssetValue.value
         mockTradingProfitRate.value = calculatedProfitRate.value
+        
+        // 데이터 로딩 완료
+        dataLoaded.value = true
         
         console.log('💰 설정된 값들:', {
           currentBalance: userAccount.value.currentBalance,
@@ -425,17 +514,18 @@ onMounted(async () => {
           console.log('📊 fallback Holdings 데이터 로드 성공:', holdings.length)
           console.log('📊 fallback Holdings 데이터 상세:', holdings)
           
-          // Holdings 데이터 설정 (수익률 계산용)
+          // 기본 holdings 데이터만 설정 (실시간 가격 업데이트 제거)
           holdingsData.value = holdings.map((holding) => ({
             stockCode: holding.stockCode,
             stockName: holding.stockName,
-            quantity: holding.quantity || 0,
-            averagePrice: holding.averagePrice || 0,
-            currentPrice: holding.currentPrice || 0,
-            currentValue: holding.currentValue || 0,
-            profitLoss: holding.profitLoss || 0,
-            profitRate: holding.profitRate || 0,
+            quantity: safeNumber(holding.quantity, 0),
+            averagePrice: safeNumber(holding.averagePrice, 0),
+            currentPrice: safeNumber(holding.currentPrice, 0),
+            currentValue: safeNumber(holding.currentValue, 0),
+            profitLoss: safeNumber(holding.profitLoss, 0),
+            profitRate: safeNumber(holding.profitRate, 0),
           }))
+          console.log('fallback 기본 holdings 데이터 설정 완료')
         } catch (holdingsError) {
           console.error('❌ fallback Holdings 데이터 로드 실패:', holdingsError)
           console.log('📝 fallback Holdings 없이 거래 내역만 표시')
@@ -447,22 +537,13 @@ onMounted(async () => {
         const buyTransactions = response.data.filter((t) => t.transactionType === 'BUY')
         const sellTransactions = response.data.filter((t) => t.transactionType === 'SELL')
 
+        // 실시간 가격 업데이트 후 holdingsData를 사용하여 수익률 계산
         buyHistory.value = buyTransactions.slice(0, 2).map((transaction) => {
-          // 종목코드로 먼저 매칭 시도
-          let holding = holdings.find((h) => h.stockCode === transaction.stockCode)
-          
-          // 종목코드로 매칭 안 되면 종목명으로 매칭 시도
-          if (!holding) {
-            holding = holdings.find((h) => h.stockName === transaction.stockName)
-          }
-          
+          const holding = holdingsData.value.find((h) => h.stockCode === transaction.stockCode)
           console.log('🔍 fallback 매수 거래 매칭:', {
             transaction: transaction.stockCode,
-            transactionName: transaction.stockName,
             holding: holding ? holding.stockCode : '없음',
-            holdingName: holding ? holding.stockName : '없음',
             profitRate: holding ? holding.profitRate : '없음',
-            allHoldings: holdings.map(h => ({ code: h.stockCode, name: h.stockName }))
           })
           return {
             name: transaction.stockName,
@@ -472,21 +553,11 @@ onMounted(async () => {
           }
         })
         sellHistory.value = sellTransactions.slice(0, 2).map((transaction) => {
-          // 종목코드로 먼저 매칭 시도
-          let holding = holdings.find((h) => h.stockCode === transaction.stockCode)
-          
-          // 종목코드로 매칭 안 되면 종목명으로 매칭 시도
-          if (!holding) {
-            holding = holdings.find((h) => h.stockName === transaction.stockName)
-          }
-          
+          const holding = holdingsData.value.find((h) => h.stockCode === transaction.stockCode)
           console.log('🔍 fallback 매도 거래 매칭:', {
             transaction: transaction.stockCode,
-            transactionName: transaction.stockName,
             holding: holding ? holding.stockCode : '없음',
-            holdingName: holding ? holding.stockName : '없음',
             profitRate: holding ? holding.profitRate : '없음',
-            allHoldings: holdings.map(h => ({ code: h.stockCode, name: h.stockName }))
           })
           return {
             name: transaction.stockName,
@@ -519,26 +590,28 @@ onMounted(async () => {
       asset.value.amount = 0
     }
 
-    // fallback 모의투자 금액 조회
+    // fallback 모의투자 금액 조회 (AssetStatus.vue와 동일한 방식)
     try {
       const mockTradingResponse = await axios.get('/api/mocktrading/account', {
         withCredentials: true,
       })
-      console.log('📊 fallback 모의투자 계좌 데이터:', mockTradingResponse.data)
       if (mockTradingResponse.data) {
-        // userAccount 데이터 설정
+        // userAccount 데이터 설정 (AssetStatus.vue와 동일)
         userAccount.value = {
           accountId: mockTradingResponse.data.accountId,
           accountNumber: mockTradingResponse.data.accountNumber || '',
-          currentBalance: mockTradingResponse.data.currentBalance || 0,
-          totalAssetValue: mockTradingResponse.data.totalAssetValue || 0,
-          totalProfitLoss: mockTradingResponse.data.totalProfitLoss || 0,
-          profitRate: mockTradingResponse.data.profitRate || 0,
+          currentBalance: safeNumber(mockTradingResponse.data.currentBalance, 0),
+          totalAssetValue: safeNumber(mockTradingResponse.data.totalAssetValue, 0),
+          totalProfitLoss: safeNumber(mockTradingResponse.data.totalProfitLoss, 0),
+          profitRate: safeNumber(mockTradingResponse.data.profitRate, 0),
         }
         
-        // 계산된 값들 사용
+        // 계산된 값들 사용 (기존 변수들도 유지)
         mockTradingAmount.value = calculatedTotalAssetValue.value
         mockTradingProfitRate.value = calculatedProfitRate.value
+        
+        // 데이터 로딩 완료
+        dataLoaded.value = true
         
         console.log('💰 fallback 설정된 값들:', {
           currentBalance: userAccount.value.currentBalance,
