@@ -110,7 +110,7 @@ const activeTab = ref('market_cap') // 기본값: 시가총액순
 
 let updateInterval = null
 
-// 탭 정의 - 시가총액/거래대금/거래량 (순서 변경)
+// 탭 정의 - 시가총액/거래대금/거래량
 const tabs = [
   { code: 'market_cap', name: '시가총액', description: '시가총액순' },
   { code: '3', name: '거래대금', description: '거래금액순' },
@@ -162,7 +162,6 @@ const fetchVolumeRanking = async () => {
       const result = await response.json()
 
       if (result.success && result.data && result.data.output2) {
-        // API 응답 데이터를 UI 형식으로 변환
         stockRanking.value = result.data.output2.map((stock) => ({
           code: stock.code,
           name: stock.name,
@@ -186,7 +185,6 @@ const fetchVolumeRanking = async () => {
         setFallbackData()
       }
     } else {
-      // 기존 거래대금/거래량 API 호출
       const response = await getVolumeRanking(20, activeTab.value)
       if (response.success && response.data) {
         stockRanking.value = response.data

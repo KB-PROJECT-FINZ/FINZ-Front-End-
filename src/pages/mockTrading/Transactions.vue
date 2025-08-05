@@ -28,7 +28,7 @@
         <span class="text-sm text-gray-500">총 {{ filteredTransactions.length }}건</span>
       </div>
 
-      <!-- 기간 선택: ChartPage.vue 스타일(드롭다운 모달) -->
+      <!-- 기간 선택 -->
       <div class="mb-3">
         <button
           @click="showPeriodModal = true"
@@ -84,12 +84,7 @@
           </div>
         </div>
       </div>
-
-      <!-- 거래 타입 필터 제거 -->
     </section>
-
-    <!-- 거래 통계(이번 달 거래 요약) 섹션 제거 -->
-
     <!-- 거래 내역 리스트 -->
     <section class="mx-4 mt-4 space-y-3">
       <div v-for="transaction in visibleTransactions" :key="transaction.id" class="bg-white p-4">
@@ -211,6 +206,8 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { ref, computed, onMounted } from 'vue'
 const router = useRouter()
 function goBack() {
   router.back()
@@ -239,7 +236,7 @@ function getTransactionStatusText(transaction) {
   return `${n}주 ${getStatusText(transaction.status)}`
 }
 
-// 상태별 텍스트 색상(구매/판매 실패 등 강조)
+// 상태별 텍스트 색상
 function getStatusClass(status, type) {
   if (status === 'COMPLETED') return type === 'BUY' ? 'text-green-700' : 'text-blue-700'
   if (status === 'CANCELLED') return 'text-red-600'
@@ -303,8 +300,6 @@ function selectPeriod(key) {
   showPeriodModal.value = false
   showAll.value = false
 }
-import axios from 'axios'
-import { ref, computed, onMounted } from 'vue'
 
 const loading = ref(false)
 const currentPeriod = ref('1month') // 기본 기간: 1개월

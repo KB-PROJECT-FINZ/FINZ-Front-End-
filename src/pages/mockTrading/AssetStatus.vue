@@ -60,7 +60,7 @@
       </button>
     </section>
 
-    <!-- 크레딧 충전 모달 (기존과 동일) -->
+    <!-- 크레딧 충전 모달-->
     <div
       v-if="showChargeModal"
       class="fixed inset-0 z-[1000] flex items-end justify-center bg-black/30 backdrop-blur-sm"
@@ -125,7 +125,7 @@
     <!-- 포트폴리오 차트 -->
     <section class="mt-5 px-5">
       <div class="flex flex-col items-center px-5 py-6">
-        <!-- 차트 로딩 중일 때 스켈레톤 (v-show 사용) -->
+        <!-- 차트 로딩 중일 때 스켈레톤 -->
         <div
           v-show="!dataLoaded"
           class="w-[320px] h-[180px] mb-5 bg-gray-200 rounded-full animate-pulse flex items-center justify-center"
@@ -134,7 +134,7 @@
           <div class="bg-white rounded-full" style="width: 192px; height: 108px"></div>
         </div>
 
-        <!-- 실제 차트 (항상 DOM에 존재하지만 v-show로 표시 제어) -->
+        <!-- 실제 차트 -->
         <div v-show="dataLoaded" class="flex flex-col items-center">
           <canvas
             ref="portfolioChart"
@@ -142,7 +142,7 @@
             style="max-width: 320px; width: 320px; height: 180px"
           ></canvas>
 
-          <!-- 차트 툴팁 (기존과 동일) -->
+          <!-- 차트 툴팁 -->
           <div
             v-if="chartTooltip && chartTooltip.show"
             :style="{
@@ -172,7 +172,7 @@
             </div>
           </div>
 
-          <!-- 범례 (기존과 동일) -->
+          <!-- 범례 -->
           <div class="w-full">
             <!-- 보유 종목들 -->
             <div
@@ -291,11 +291,11 @@ import axios from 'axios'
 
 const router = useRouter()
 
-// ===== 상태 관리 (단순화된 로딩 상태) =====
+// ===== 상태 관리 =====
 const showChargeModal = ref(false)
 const chargeCreditInput = ref(0)
 const dataLoaded = ref(false)
-const chargingLoading = ref(false) // 충전 중 로딩만 별도 관리
+const chargingLoading = ref(false)
 
 // ===== 사용자 데이터 =====
 const userAccount = ref({
@@ -328,20 +328,14 @@ const chartColors = [
 // Canvas 이벤트 리스너 설정 함수
 const setupCanvasEvents = () => {
   if (portfolioChart.value) {
-    // 기존 이벤트 리스너 제거 (중복 방지)
     portfolioChart.value.removeEventListener('mousemove', handleChartMouseMove)
     portfolioChart.value.removeEventListener('mouseleave', handleChartMouseLeave)
 
-    // 새 이벤트 리스너 등록
     portfolioChart.value.addEventListener('mousemove', handleChartMouseMove)
     portfolioChart.value.addEventListener('mouseleave', handleChartMouseLeave)
 
     console.log('Canvas 이벤트 리스너 등록 완료')
 
-    // 테스트용 클릭 이벤트
-    portfolioChart.value.addEventListener('click', () => {
-      console.log('Canvas 클릭 이벤트 작동')
-    })
   } else {
     console.error('❌ Canvas 요소를 찾을 수 없음')
   }
@@ -387,7 +381,7 @@ const portfolioPercentages = computed(() => {
     }
   }
 
-  // 유효한 보유 종목들만 필터링 (currentValue가 0보다 큰 것들)
+  // 유효한 보유 종목들만 필터링
   const validHoldings = holdingsData.value.filter(
     (holding) => safeNumber(holding.currentValue, 0) > 0,
   )
@@ -415,7 +409,7 @@ const portfolioPercentages = computed(() => {
     }
   })
 
-  // 0% 종목들을 제거 (반올림 후에도 0%인 것들)
+  // 0% 종목들을 제거
   const nonZeroHoldings = holdingPercentages.filter((holding) => holding.percentage > 0)
 
   const stockTotalExact = nonZeroHoldings.reduce((sum, h) => sum + h.exactPercentage, 0)
@@ -595,7 +589,7 @@ const handleChartMouseLeave = () => {
   chartTooltip.value.show = false
 }
 
-// 차트 업데이트 함수 (수정된 각도 정규화 포함)
+// 차트 업데이트 함수
 const updatePortfolioChart = () => {
   if (!portfolioChart.value) {
     console.log('❌ 차트 캔버스가 없음')
@@ -648,7 +642,7 @@ const updatePortfolioChart = () => {
     return
   }
 
-  let currentAngle = -Math.PI / 2 // 12시 방향부터 시작
+  let currentAngle = -Math.PI / 2
 
   // 보유 종목들 그리기
   holdings.forEach((holding, index) => {
@@ -816,7 +810,7 @@ const updateHoldingsWithRealTimePrice = async (holdings) => {
   return updatedHoldings
 }
 
-// 데이터 로딩 함수 (단순화된 로딩 상태)
+// 데이터 로딩 함수
 const loadUserData = async () => {
   dataLoaded.value = false // 로딩 시작
 

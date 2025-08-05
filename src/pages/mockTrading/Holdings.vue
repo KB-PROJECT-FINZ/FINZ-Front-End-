@@ -438,7 +438,7 @@ const updateHoldingsWithRealTimePrice = async (holdings) => {
   return updatedHoldings
 }
 
-// 수정된 데이터 불러오기 함수
+// 데이터 불러오기 함수
 async function fetchHoldings() {
   loading.value = true
   try {
