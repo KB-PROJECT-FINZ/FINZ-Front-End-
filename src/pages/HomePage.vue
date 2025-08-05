@@ -72,19 +72,24 @@
       <div class="flex gap-3 overflow-x-auto pb-1">
         <div
           v-for="(item, index) in recommendedContents"
-            :key="item.id"
-              class="min-w-[160px] bg-white p-3 rounded-xl shadow-sm shrink-0 cursor-pointer"
-              @click="openContentModal(item)">
-            <p  :class="index % 2 === 0
-            ? 'text-purple-600 text-base font-bold'
-            : 'text-blue-600 text-base font-bold'"
-            class="mb-1">
-              {{ item.label }}
-             </p>
-            <p class="text-sm font-semibold">{{ item.title }}</p>
-                </div>
-            </div>
+          :key="item.id"
+          class="min-w-[160px] bg-white p-3 rounded-xl shadow-sm shrink-0 cursor-pointer"
+          @click="openContentModal(item)"
+        >
+          <p
+            :class="
+              index % 2 === 0
+                ? 'text-purple-600 text-base font-bold'
+                : 'text-blue-600 text-base font-bold'
+            "
+            class="mb-1"
+          >
+            {{ item.label }}
+          </p>
+          <p class="text-sm font-semibold">{{ item.title }}</p>
         </div>
+      </div>
+    </div>
 
     <!-- 빠른 실행 -->
     <div class="px-5 mt-6">
@@ -112,30 +117,30 @@
     </div>
   </div>
   <transition name="fade-scale">
-  <div
-    v-if="selectedContent"
-    class="fixed inset-0 bg-gray-300/40 z-50 flex items-center justify-center"
-  >
     <div
-      class="bg-white p-6 rounded-xl w-[90%] max-w-md relative shadow-2xl ring-1 ring-gray-200 transition-all duration-300 ease-in-out"
+      v-if="selectedContent"
+      class="fixed inset-0 bg-gray-300/40 z-50 flex items-center justify-center"
     >
-      <p v-if="selectedContent.label" class="text-xs text-gray-500 mb-1 uppercase tracking-wide">
-        {{ selectedContent.label }}
-      </p>
-      <h2 class="text-lg font-bold mb-1" :class="selectedContent.titleColor">
-        {{ selectedContent.title }}
-      </h2>
-      <div class="border-b border-gray-300 my-3"></div>
-      <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ selectedContent.content }}</p>
-      <button
-        class="absolute top-3 right-4 text-gray-500 hover:text-black"
-        @click="selectedContent = null"
+      <div
+        class="bg-white p-6 rounded-xl w-[90%] max-w-md relative shadow-2xl ring-1 ring-gray-200 transition-all duration-300 ease-in-out"
       >
-        ✕
-      </button>
+        <p v-if="selectedContent.label" class="text-xs text-gray-500 mb-1 uppercase tracking-wide">
+          {{ selectedContent.label }}
+        </p>
+        <h2 class="text-lg font-bold mb-1" :class="selectedContent.titleColor">
+          {{ selectedContent.title }}
+        </h2>
+        <div class="border-b border-gray-300 my-3"></div>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ selectedContent.content }}</p>
+        <button
+          class="absolute top-3 right-4 text-gray-500 hover:text-black"
+          @click="selectedContent = null"
+        >
+          ✕
+        </button>
+      </div>
     </div>
-  </div>
-</transition>
+  </transition>
 </template>
 
 <script setup>
@@ -159,7 +164,6 @@ onMounted(async () => {
     // 사용자 정보 요청
     const response = await axios.get('http://localhost:8080/api/auth/me', {
       withCredentials: true,
-
     })
 
     const user = response.data
@@ -177,7 +181,7 @@ onMounted(async () => {
     try {
       const creditResponse = await axios.get(
         'http://localhost:8080/api/learning/user/total-earned-credit',
-        { withCredentials: true }
+        { withCredentials: true },
       )
       totalEarnedCredit.value = creditResponse.data
     } catch (error) {
@@ -191,12 +195,11 @@ onMounted(async () => {
         `http://localhost:8080/api/contents/recommend?riskType=${user.riskType}`,
         { withCredentials: true },
       )
-              console.log('추천 콘텐츠:', contentRes.data)
+      console.log('추천 콘텐츠:', contentRes.data)
       recommendedContents.value = contentRes.data
     } catch (error) {
       console.error('추천 콘텐츠 조회 실패:', error)
     }
-
   } catch (e) {
     console.error('세션 정보 불러오기 실패:', e)
     router.push('/login-form')

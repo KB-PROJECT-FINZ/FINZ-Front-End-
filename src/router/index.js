@@ -30,6 +30,7 @@ import Transactions from '@/pages/mockTrading/Transactions.vue'
 import RiskProfile from '@/pages/ProfilePages/RiskProfile.vue'
 import RiskTypesList from '@/pages/ProfilePages/RiskTypesList.vue'
 import KakaoSignupPage from '@/pages/LoginPages/KakaoSignupPage.vue'
+import ProtfolioAnalysis from '@/pages/mockTrading/ProtfolioAnalysis.vue'
 const routes = [
   {
     path: '/',
@@ -151,7 +152,7 @@ const routes = [
     path: '/mock-trading/:stockCode/chart',
     name: 'ChartPage',
     component: () => import('@/pages/mockTrading/ChartPage.vue'),
-    props: true, // route params를 props로 전달
+    props: true,
   },
   // 새로 추가할 자산 현황 경로
   {
@@ -191,6 +192,11 @@ const routes = [
     component: RiskProfile,
   },
   { path: '/risk-types-list', name: 'RiskTypesList', component: RiskTypesList },
+  {
+    path: '/mock-trading/ai-report',
+    name:'AiReport',
+    component: ProtfolioAnalysis
+  }
 ]
 
 const router = createRouter({
