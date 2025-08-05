@@ -4,7 +4,7 @@
     <!-- 대화 내용 -->
     <div class="bg-gray-100 rounded-xl p-4 h-[400px] overflow-y-auto space-y-3" ref="chatContainer">
       <p v-if="loading" class="text-sm text-gray-500 italic text-left">
-        ⏳ 답변을 보르고 있어요...
+        ⏳ 답변을 부르고 있어요...
       </p>
       <div
         v-for="(msg, i) in chatStore.messages"
@@ -143,18 +143,20 @@ async function fetchGPT(prompt, explicitIntent = null) {
     console.log('🧾 최종 intentType 전송값:', intentType, typeof intentType)
 
     const res = await axios.post('/api/chatbot/message', {
-      userId: this.userId.value,
-      sessionId: this.sessionId,
+      userId: userId.value,
+      sessionId: chatStore.sessionId,
       message: prompt,
-      intentType: intentType ?? this.intentType,
+      intentType: intentType ?? chatStore.intentType,
     })
 
     if (res?.data?.content) {
       chatStore.messages.push({ role: 'bot', content: res.data.content })
       chatStore.sessionId = res.data.sessionId
       chatStore.intentType = res.data.intentType
+    } else {
+      chatStore.messages.push({ role: 'bot', content: '❌ GPT 응답이 비어 있습니다.' })
     }
-  } catch (error) {
+  } catch (err) {
     console.log(userId)
     chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
     console.error('❌ GPT fetch 실패:', err)
