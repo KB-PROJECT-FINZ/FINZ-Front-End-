@@ -42,15 +42,7 @@
         </div>
 
         <!-- 오른쪽 여백 (대칭을 위한) -->
-        <div class="w-10">
-          <!-- 디버깅 버튼 (개발 중에만 사용)
-          <button
-            @click="logExecutionData"
-            class="p-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            체결
-          </button> -->
-        </div>
+        <div class="w-10"></div>
       </div>
     </header>
 
@@ -593,9 +585,10 @@
 
               <!-- 주문 버튼 -->
               <button
-                @click="submitOrder"
+                @click="openOrderConfirmModal"
                 class="w-full py-3 rounded-lg font-bold text-white transition-colors"
                 :class="orderButtonClass"
+                :disabled="orderQuantity <= 0"
               >
                 {{ orderButtonText }}
               </button>
@@ -603,8 +596,9 @@
 
             <!-- 대기 모드의 취소하기 버튼 -->
             <div v-else>
+              <!-- 기존 취소 버튼 -->
               <button
-                @click="cancelSelectedOrders"
+                @click="openCancelConfirmModal"
                 class="w-full py-3 rounded-lg font-bold transition-colors"
                 :class="
                   isCancelButtonActive
@@ -642,37 +636,141 @@
       </div>
     </footer>
     <!-- 안내 모달 컴포넌트 추가 위치 -->
-    <!-- filepath: c:\KB_Fullstack\FINZ-Front-End-\src\pages\mockTrading\TradingPage.vue -->
-    <!-- filepath: c:\KB_Fullstack\FINZ-Front-End-\src\pages\mockTrading\TradingPage.vue -->
-    <!-- filepath: c:\KB_Fullstack\FINZ-Front-End-\src\pages\mockTrading\TradingPage.vue -->
-    <transition>
-      <div v-if="showMarketOrderModal" class="fixed inset-0 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-xl shadow-lg px-8 py-6 text-center w-[320px]">
-          <div class="text-lg font-bold mb-2 text-gray-900">시장가 주문 체결 안내</div>
-          <div class="space-y-2 mb-4">
-            <div>
-              <span class="text-base font-bold text-gray-900">가격:</span>
-              <span class="text-base ml-2">{{ formatPrice(marketOrderModalPrice) }}원</span>
-            </div>
-            <div>
-              <span class="text-base font-bold text-gray-900">수량:</span>
-              <span class="text-base ml-2">{{ marketOrderModalQuantity }}주</span>
-            </div>
-            <div>
+    <transition
+      enter-active-class="transition-opacity duration-300"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-300"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="showOrderConfirmModal || showCancelConfirmModal"
+        class="fixed inset-0 z-50 flex items-center justify-center"
+      >
+        <div class="bg-white rounded-xl shadow-lg px-8 py-6 text-center w-[360px]">
+          <!-- 주문 확인 모달 내용 -->
+          <template v-if="showOrderConfirmModal">
+            <div class="text-base font-normal text-gray-900">{{ orderConfirmStockName }}</div>
+            <div class="mb-4 flex items-center justify-center text-2xl font-bold">
+              <span class="text-gray-900">{{ orderConfirmQuantity }}주 </span>
               <span
-                class="text-base font-bold"
-                :class="marketOrderModalType === 'BUY' ? 'text-red-600' : 'text-blue-600'"
+                :class="orderConfirmType === 'BUY' ? 'text-red-600' : 'text-blue-600'"
+                class="ml-1"
               >
-                {{ marketOrderModalType === 'BUY' ? '매수' : '매도' }}
+                {{ orderConfirmType === 'BUY' ? '구매' : '판매' }}
               </span>
-              <span class="text-base ml-1">주문이 체결되었습니다.</span>
+            </div>
+            <div class="flex justify-between items-center mb-4 gap-4">
+              <div class="flex-1 text-left text-base text-gray-900">
+                {{ orderConfirmQuantity }}주 희망 가격
+              </div>
+              <div class="flex-1 text-right text-base text-gray-900 font-bold">
+                <template v-if="orderType === 'market'"> 시장가 </template>
+                <template v-else> {{ formatPrice(orderPrice) }}원 </template>
+              </div>
+            </div>
+            <div class="flex justify-between mb-4 gap-4">
+              <div class="flex-1 text-left text-base text-gray-900">예상 주문 금액</div>
+              <div class="flex-1 text-right font-bold text-gray-900">
+                {{ formatPrice(orderConfirmPrice * orderConfirmQuantity) }}원
+              </div>
+            </div>
+            <div class="flex justify-between gap-4 mt-2">
+              <button
+                @click="closeOrderConfirmModal"
+                class="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition"
+              >
+                닫기
+              </button>
+              <button
+                @click="handleOrderConfirm"
+                class="flex-1 py-2 rounded-lg font-semibold text-white transition"
+                :class="
+                  orderConfirmType === 'BUY'
+                    ? 'bg-red-500 hover:bg-red-600'
+                    : 'bg-blue-500 hover:bg-blue-600'
+                "
+              >
+                {{ orderConfirmType === 'BUY' ? '구매' : '판매' }}
+              </button>
+            </div>
+          </template>
+          <!-- 주문 취소 확인 모달 내용 -->
+          <template v-else-if="showCancelConfirmModal">
+            <div class="text-base font-normal text-gray-900 mb-4">
+              주문 {{ cancelOrderCount }}건을 취소하시겠습니까?
+            </div>
+            <div class="flex justify-between gap-4 mt-2">
+              <button
+                @click="closeCancelConfirmModal"
+                class="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition"
+              >
+                닫기
+              </button>
+              <button
+                @click="handleCancelConfirm"
+                class="flex-1 py-2 rounded-lg font-semibold text-white bg-blue-500 hover:bg-blue-600 transition"
+              >
+                취소
+              </button>
+            </div>
+          </template>
+        </div>
+      </div>
+    </transition>
+    <transition
+      enter-active-class="transition-opacity duration-300"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-300"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="showTradeResultModal"
+        class="fixed left-0 right-0 bottom-0 z-50 flex items-center justify-center pointer-events-none"
+        style="overflow: hidden"
+      >
+        <div
+          class="pointer-events-auto max-w-108 w-full mx-auto rounded-full px-6 py-3 flex items-center justify-between shadow-xl mx-4"
+          style="background-color: #7f8286"
+        >
+          <!-- 왼쪽: 체크 아이콘 + 주문 완료 텍스트 -->
+          <div class="flex items-center">
+            <div
+              class="rounded-full w-6 h-6 flex items-center justify-center mr-3"
+              style="background-color: #59bd83"
+            >
+              <svg
+                class="w-4 h-4 text-white"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div class="text-white flex items-center font-normal">
+              <template v-if="tradeResultType === 'CANCEL'">
+                {{ tradeResultStockName }}
+              </template>
+              <template v-else>
+                {{ tradeResultStockName }}
+                <span class="ml-2 text-white font-normal">
+                  {{ tradeResultType === 'BUY' ? '구매 주문 완료' : '판매 주문 완료' }}
+                </span>
+              </template>
             </div>
           </div>
+          <!-- 오른쪽: 내역 보기 버튼 -->
           <button
-            @click="closeMarketOrderModal"
-            class="mt-2 px-4 py-2 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition"
+            @click="goToTransactionHistory"
+            class="ml-4 rounded-full px-3 py-2 text-white text-sm font-normal hover:opacity-80 transition"
+            style="height: 36px; background-color: #505866"
           >
-            확인
+            내역 보기
           </button>
         </div>
       </div>
@@ -705,16 +803,56 @@ let isUnmounted = false
 // ✅ 실시간 체결 관련 데이터 추가
 const latestExecutionData = ref(null) // 최신 체결 데이터
 const executionHistory = ref([]) // 체결 이력 (최근 50개)
-const showExecutionAlert = ref(false) // 체결 알림 표시 여부
 
-const showMarketOrderModal = ref(false)
-const marketOrderModalPrice = ref(0)
-const marketOrderModalQuantity = ref(0)
-const marketOrderModalType = ref('BUY')
-const marketOrderModalText = ref('') // 기존 변수는 사용하지 않아도 됨
+const showOrderConfirmModal = ref(false)
+const orderConfirmType = ref('BUY')
+const orderConfirmQuantity = ref(0)
+const orderConfirmPrice = ref(0)
+const orderConfirmStockName = ref('')
 
-const closeMarketOrderModal = () => {
-  showMarketOrderModal.value = false
+const openOrderConfirmModal = () => {
+  orderConfirmType.value = activeTab.value === 'buy' ? 'BUY' : 'SELL'
+  orderConfirmQuantity.value = orderQuantity.value
+  // 시장가 가격 계산 로직을 submitOrder와 동일하게!
+  if (orderType.value === 'market') {
+    if (orderConfirmType.value === 'BUY') {
+      // 매수 시장가: askPrices에서 가장 싼 가격
+      const sortedAsk = [...askPrices.value].sort((a, b) => a.price - b.price)
+      orderConfirmPrice.value =
+        sortedAsk.length > 0 ? sortedAsk[0].price : stockInfo.value.currentPrice
+    } else {
+      // 매도 시장가: bidPrices에서 가장 비싼 가격
+      const sortedBid = [...bidPrices.value].sort((a, b) => b.price - a.price)
+      orderConfirmPrice.value =
+        sortedBid.length > 0 ? sortedBid[0].price : stockInfo.value.currentPrice
+    }
+  } else {
+    orderConfirmPrice.value = orderPrice.value
+  }
+  orderConfirmStockName.value = stockInfo.value.name
+  showOrderConfirmModal.value = true
+}
+const closeOrderConfirmModal = () => {
+  showOrderConfirmModal.value = false
+}
+const handleOrderConfirm = async () => {
+  showOrderConfirmModal.value = false
+  await submitOrder()
+}
+
+const showTradeResultModal = ref(false)
+const tradeResultType = ref('BUY') // 'BUY' or 'SELL'
+const tradeResultStockName = ref('')
+let tradeResultTimer = null
+
+const openTradeResultModal = (type, stockName) => {
+  tradeResultType.value = type
+  tradeResultStockName.value = stockName
+  showTradeResultModal.value = true
+  if (tradeResultTimer) clearTimeout(tradeResultTimer)
+  tradeResultTimer = setTimeout(() => {
+    showTradeResultModal.value = false
+  }, 5000)
 }
 
 // API로부터 종목 정보 로드
@@ -911,7 +1049,6 @@ const loadUserAccount = async () => {
         accountId: response.data.accountId,
         availableAmount: response.data.currentBalance,
       }
-      console.log('계좌 정보 로드 성공:', response.data)
     }
   } catch (error) {
     console.error('계좌 정보 로드 실패:', error)
@@ -1094,12 +1231,6 @@ const processExecutionData = (executionData) => {
 
     // 실시간 거래 내역 업데이트
     updateRecentTrades(executionData)
-
-    // 체결 알림 표시 (큰 거래량일 때만)
-    const volume = parseInt(executionData.contractVolume || 0)
-    if (volume > 1000) {
-      showTradeAlert()
-    }
   } catch (error) {
     console.error('체결 데이터 처리 오류:', error)
   }
@@ -1219,19 +1350,6 @@ const updateRecentTrades = (data) => {
 const formatTime = (timeStr) => {
   if (!timeStr || timeStr.length !== 6) return timeStr
   return `${timeStr.slice(0, 2)}:${timeStr.slice(2, 4)}:${timeStr.slice(4, 6)}`
-}
-
-// ✅ 체결 알림 표시 함수
-const showTradeAlert = () => {
-  showExecutionAlert.value = true
-
-  if (executionAlertTimer.value) {
-    clearTimeout(executionAlertTimer.value)
-  }
-
-  executionAlertTimer.value = setTimeout(() => {
-    showExecutionAlert.value = false
-  }, 2000)
 }
 
 // 통합 호가 데이터 처리 함수 (KRX와 NXT 형식 모두 지원)
@@ -1716,20 +1834,38 @@ const cancelSelectedOrders = async () => {
   }
 
   const orderIds = checkedOrders.map((order) => order.id)
-  console.log('취소할 주문 ID 목록:', orderIds)
   try {
     await axios.delete('/api/stock/orders', {
       data: orderIds, // ← 객체가 아니라 배열만!
       headers: { 'Content-Type': 'application/json' },
     })
-    alert('선택한 주문이 취소되었습니다.')
     await loadPendings()
     await loadUserAccount()
     await loadHoldings()
+    // ✅ TradeResultModal 표시
+    openTradeResultModal(
+      'CANCEL',
+      `${stockInfo.value.name} 주문 ${checkedOrders.length}건 취소 완료`,
+    )
   } catch (error) {
     console.error('주문 취소 실패:', error)
     alert('주문 취소에 실패했습니다.')
   }
+}
+
+const showCancelConfirmModal = ref(false)
+const cancelOrderCount = ref(0)
+
+const openCancelConfirmModal = () => {
+  cancelOrderCount.value = checkedOrdersCount.value
+  showCancelConfirmModal.value = true
+}
+const closeCancelConfirmModal = () => {
+  showCancelConfirmModal.value = false
+}
+const handleCancelConfirm = async () => {
+  showCancelConfirmModal.value = false
+  await cancelSelectedOrders()
 }
 
 const submitOrder = async () => {
@@ -1742,7 +1878,7 @@ const submitOrder = async () => {
   // 시장가 주문 처리
   if (orderType.value === 'market') {
     // 시장가 가격 결정: 매수는 askPrices, 매도는 bidPrices
-    let marketPrice = 0
+    let marketPrice = orderConfirmPrice.value // 모달에서 계산한 값 그대로 사용
     if (activeTab.value === 'buy') {
       // 매도호가 배열을 오름차순 정렬해서 가장 싼 가격 사용
       const sortedAsk = [...askPrices.value].sort((a, b) => a.price - b.price)
@@ -1766,15 +1902,11 @@ const submitOrder = async () => {
       orderQuantity.value = 0
       await loadUserAccount()
       await loadHoldings()
-      // 안내 모달 정보 설정
-      marketOrderModalPrice.value = marketPrice
-      marketOrderModalQuantity.value = params.quantity
-      marketOrderModalType.value = params.transactionType
-      showMarketOrderModal.value = true
     } catch (error) {
       console.error('시장가 주문 제출 실패:', error)
       alert('시장가 주문 제출에 실패했습니다.')
     }
+    openTradeResultModal(params.transactionType, params.stockName)
     return
   }
 
@@ -1800,7 +1932,6 @@ const submitOrder = async () => {
 
   try {
     await axios.post('/api/stock/order', params)
-    alert('주문이 정상적으로 접수되었습니다.')
     // 주문 완료 후 초기화
     orderQuantity.value = 0
     // 주문 후 계좌/보유수량 정보 갱신
@@ -1810,6 +1941,7 @@ const submitOrder = async () => {
     if (activeTab.value === 'waiting') {
       loadPendings()
     }
+    openTradeResultModal(params.orderType, params.stockName)
   } catch (error) {
     console.error('주문 제출 실패:', error)
     alert('주문 제출에 실패했습니다.')
@@ -1823,6 +1955,11 @@ const testApiCall = async () => {
 
 // 시간 업데이트를 위한 타이머
 const timeUpdateTimer = ref(null)
+
+const goToTransactionHistory = () => {
+  showTradeResultModal.value = false
+  router.push('/mock-trading/transactions')
+}
 
 // 컴포넌트 마운트 시 API 호출 및 웹소켓 연결
 onMounted(() => {
@@ -1854,45 +1991,7 @@ onUnmounted(() => {
     clearInterval(timeUpdateTimer.value)
     timeUpdateTimer.value = null
   }
-
-  // 알림 타이머 정리
-  if (executionAlertTimer.value) {
-    clearTimeout(executionAlertTimer.value)
-    executionAlertTimer.value = null
-  }
 })
 </script>
 
-<style scoped>
-@keyframes fadeInOut {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  10% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  90% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-}
-
-.animate-fadeInOut {
-  animation: fadeInOut 2s ease-in-out;
-}
-
-/* 체결 데이터 하이라이팅 */
-.trade-highlight {
-  transition: background-color 0.3s ease;
-}
-
-.trade-highlight.new-trade {
-  background-color: #fef3c7; /* 노란색 하이라이트 */
-}
-</style>
+<style scoped></style>
