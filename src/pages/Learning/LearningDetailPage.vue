@@ -188,14 +188,24 @@ async function awardQuizCreditLocal() {
 
     if (result.value) {
       // 정답일 때만 크레딧 지급
-      const response = await giveCredit(userId.value, Number(route.params.id), selected.value)
+      console.log('크레딧 지급 시도:', {
+        userId: userId.value,
+        quizId: quiz.value?.quizId,
+        selectedAnswer: selected.value
+      })
+      const response = await giveCredit(userId.value, quiz.value.quizId, selected.value)
       creditAwarded.value = true
       alert(`정답입니다! ${quiz.value.creditReward}크레딧이 지급되었습니다!`)
     } else {
       // 오답일 때는 결과만 저장 (크레딧 지급 안함)
+      console.log('퀴즈 결과 저장:', {
+        userId: userId.value,
+        quizId: quiz.value?.quizId,
+        selectedAnswer: selected.value
+      })
       await axios.post('/api/learning/quiz/result/save', {
         userId: userId.value,
-        quizId: Number(route.params.id),
+        quizId: quiz.value.quizId,
         selectedAnswer: selected.value,
         isCorrect: false,
       })
