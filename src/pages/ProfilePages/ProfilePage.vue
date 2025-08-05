@@ -18,30 +18,37 @@
     <section class="flex items-center bg-[#f3f6fb] rounded-2xl mx-4 my-5 px-5 py-6 shadow">
       <img
         v-if="profile.image"
-        class="w-[60px] h-[60px] rounded-full object-cover mr-5"
+        class="w-[50px] h-[50px] rounded-full object-cover mr-4"
         :src="profile.image"
         alt="프로필"
       />
       <div
         v-else
-        class="w-[60px] h-[60px] rounded-full bg-gray-200 flex items-center justify-center text-3xl text-gray-400 mr-5"
+        class="w-[50px] h-[50px] rounded-full bg-gray-200 flex items-center justify-center text-2xl text-gray-400 mr-4"
       >
         <span>👤</span>
       </div>
-      <div>
+      <div class="flex-1">
         <div class="text-base font-bold text-gray-900">{{ profile.name }}</div>
         <div class="text-sm text-gray-500 my-1">{{ profile.type }}</div>
-        <span class="bg-indigo-100 text-indigo-800 rounded px-3 py-0.5 text-xs mt-1 inline-block"
-          >Level {{ profile.level }}</span
-        >
+        <div class="flex gap-2 mt-1">
+          <span class="bg-indigo-100 text-indigo-800 rounded px-3 py-0.5 text-xs mt-1 inline-block"
+            >Level {{ profile.level }}</span
+          >
+          <span class="bg-yellow-100 text-yellow-800 rounded px-3 py-0.5 text-xs mt-1 inline-block"
+            >{{ asset.amount }}크레딧</span
+          >
+        </div>
       </div>
     </section>
 
-    <!-- 자산 카드 -->
+    <!-- 모의투자 금액 카드 -->
     <section class="bg-white rounded-xl mx-4 mb-5 px-5 py-5 shadow">
       <div class="text-gray-500 text-sm mb-1">총 보유자산</div>
       <div class="flex items-center justify-between mb-1">
-        <span class="text-2xl font-bold text-gray-900">₩{{ asset.amount.toLocaleString() }}</span>
+        <span class="text-2xl font-bold text-gray-900"
+          >₩{{ mockTradingAmount.toLocaleString() }}</span
+        >
         <button
           class="bg-blue-600 text-white rounded px-4 py-2 text-sm font-bold hover:bg-blue-800 transition"
           @click="goToAssetStatus"
@@ -51,11 +58,15 @@
       </div>
       <div
         :class="
-          asset.change > 0 ? 'text-green-500' : asset.change < 0 ? 'text-red-500' : 'text-gray-500'
+          mockTradingProfitRate > 0
+            ? 'text-green-500'
+            : mockTradingProfitRate < 0
+              ? 'text-red-500'
+              : 'text-gray-500'
         "
         class="text-sm font-bold ml-1"
       >
-        {{ asset.change > 0 ? '+' : '' }}{{ asset.change }}% (이번 달)
+        {{ mockTradingProfitRate > 0 ? '+' : '' }}{{ mockTradingProfitRate }}%
       </div>
     </section>
 
@@ -73,7 +84,7 @@
         <span class="text-xl text-gray-300 ml-2">&#8250;</span>
       </router-link>
       <router-link
-        to="/risk-profile"
+        to="/investment-test/retest"
         class="flex items-center bg-white rounded-xl shadow px-4 py-4 hover:shadow-lg transition text-inherit no-underline"
       >
         <span class="text-xl mr-4">📝</span>
@@ -85,10 +96,16 @@
       </router-link>
     </section>
 
-    <!-- 모의투자 내역 카드 -->
+    <!-- 내 투자내역 카드 -->
     <section class="bg-white rounded-xl mx-4 mb-5 shadow overflow-hidden">
-      <div class="bg-gray-50 px-5 py-4 border-b border-gray-200">
-        <div class="text-base font-bold text-gray-900">모의투자 내역</div>
+      <div class="flex items-center justify-between bg-gray-50 px-5 py-4 border-b border-gray-200">
+        <div class="text-base font-bold text-gray-900">내 투자내역</div>
+        <button
+          class="bg-blue-600 text-white rounded px-4 py-2 text-sm font-bold hover:bg-blue-800 transition"
+          @click="goToTransactions"
+        >
+          최근 투자 내역 바로가기
+        </button>
       </div>
       <div class="px-5 py-4">
         <!-- 매수 내역 -->
@@ -108,8 +125,11 @@
                 <div class="text-sm font-bold text-gray-900 mb-0.5">
                   ₩{{ item.amount.toLocaleString() }}
                 </div>
-                <div class="text-xs font-bold text-red-600">
-                  {{ item.change > 0 ? '+' : '' }}{{ item.change }}%
+                <div
+                  class="text-xs font-bold"
+                  :class="item.profitRate >= 0 ? 'text-red-600' : 'text-blue-600'"
+                >
+                  {{ item.profitRate >= 0 ? '+' : '' }}{{ item.profitRate }}%
                 </div>
               </div>
             </div>
@@ -132,8 +152,11 @@
                 <div class="text-sm font-bold text-gray-900 mb-0.5">
                   ₩{{ item.amount.toLocaleString() }}
                 </div>
-                <div class="text-xs font-bold text-blue-600">
-                  {{ item.change > 0 ? '+' : '' }}{{ item.change }}%
+                <div
+                  class="text-xs font-bold"
+                  :class="item.profitRate >= 0 ? 'text-red-600' : 'text-blue-600'"
+                >
+                  {{ item.profitRate >= 0 ? '+' : '' }}{{ item.profitRate }}%
                 </div>
               </div>
             </div>
@@ -145,6 +168,7 @@
     <FooterNavigation />
   </div>
 </template>
+
 <script setup>
 import FooterNavigation from '../../components/FooterNavigation.vue'
 import { ref, onMounted } from 'vue'
@@ -166,11 +190,19 @@ const asset = ref({
   change: 2.3,
 })
 
-//const investHistory = ref([])
+// 모의투자 금액 관련
+const mockTradingAmount = ref(0)
+const mockTradingProfitRate = ref(0)
+
 const buyHistory = ref([]) // 매수
 const sellHistory = ref([]) // 매도
+
 const goToAssetStatus = () => {
   router.push('/mock-trading/asset-status')
+}
+
+const goToTransactions = () => {
+  router.push('/mock-trading/transactions')
 }
 
 import { useUserStore } from '@/stores/user'
@@ -180,6 +212,7 @@ const handleLogout = () => {
   userStore.clearUser()
   router.push('/login-form')
 }
+
 // 로컬 스토리지 및 API로 데이터 세팅
 // 세션 기반 사용자 정보 로딩
 onMounted(async () => {
@@ -197,47 +230,60 @@ onMounted(async () => {
 
     //모의투자 내역
     try {
-      console.log('🔍 모의투자 내역 조회 시작:', data.userId)
-      const response = await axios.get(`/api/trading/transactions/${data.userId}`)
+      console.log('🔍 모의투자 내역 조회 시작')
+      const response = await axios.get('/api/mocktrading/transactions', { withCredentials: true })
       console.log('📊 받은 거래 데이터:', response.data)
 
       if (response.data && response.data.length > 0) {
-        // 백엔드 데이터를 프론트엔드 형식으로 변환
-        // investHistory.value = response.data.map((transaction) => ({
-        //   name: transaction.stockName,
-        //   desc: `${transaction.transactionType === 'BUY' ? '매수' : '매도'} ${transaction.quantity}주`,
-        //   amount: transaction.totalAmount,
-        //   change: 0, // 거래 내역에는 수익률 정보가 없으므로 0으로 설정
-        // }))
-        // console.log('✅ 변환된 투자 내역:', investHistory.value)
-        const buyTransactions = response.data.filter(
-          (t) => t.transactionType === 'BUY' || t.transactionType === 'HOLDING',
-        )
+        // Holdings 데이터도 함께 가져오기 (에러 처리 개선)
+        let holdings = []
+        try {
+          const holdingsResponse = await axios.get('/api/mocktrading/holdings')
+          holdings = holdingsResponse.data || []
+          console.log('📊 Holdings 데이터 로드 성공:', holdings.length)
+          console.log('📊 Holdings 데이터 상세:', holdings)
+        } catch (holdingsError) {
+          console.error('❌ Holdings 데이터 로드 실패:', holdingsError)
+          console.log('📝 Holdings 없이 거래 내역만 표시')
+          holdings = []
+        }
+
+        const buyTransactions = response.data.filter((t) => t.transactionType === 'BUY')
         const sellTransactions = response.data.filter((t) => t.transactionType === 'SELL')
 
-        buyHistory.value = buyTransactions.slice(0, 2).map((transaction) => ({
-          name: transaction.stockName,
-          desc: `매수 ${transaction.quantity}주`,
-          amount: transaction.totalAmount,
-          change: 0,
-        }))
-        sellHistory.value = sellTransactions.slice(0, 2).map((transaction) => ({
-          name: transaction.stockName,
-          desc: `매도 ${transaction.quantity}주`,
-          amount: transaction.totalAmount,
-          change: 0,
-        }))
-
-        console.log('✅ 매수 내역:', buyHistory.value)
-        console.log('✅ 매도 내역:', sellHistory.value)
+        buyHistory.value = buyTransactions.slice(0, 2).map((transaction) => {
+          const holding = holdings.find((h) => h.stockCode === transaction.stockCode)
+          console.log('🔍 매수 거래 매칭:', {
+            transaction: transaction.stockCode,
+            holding: holding ? holding.stockCode : '없음',
+            profitRate: holding ? holding.profitRate : '없음',
+          })
+          return {
+            name: transaction.stockName,
+            desc: `매수 ${transaction.quantity}주`,
+            amount: transaction.totalAmount,
+            profitRate: holding ? holding.profitRate : 0,
+          }
+        })
+        sellHistory.value = sellTransactions.slice(0, 2).map((transaction) => {
+          const holding = holdings.find((h) => h.stockCode === transaction.stockCode)
+          console.log('🔍 매도 거래 매칭:', {
+            transaction: transaction.stockCode,
+            holding: holding ? holding.stockCode : '없음',
+            profitRate: holding ? holding.profitRate : '없음',
+          })
+          return {
+            name: transaction.stockName,
+            desc: `매도 ${transaction.quantity}주`,
+            amount: transaction.totalAmount,
+            profitRate: holding ? holding.profitRate : 0,
+          }
+        })
       } else {
         // 데이터가 없으면 빈 배열로 설정
         console.log('📝 거래 내역 없음')
         buyHistory.value = []
         sellHistory.value = []
-
-        console.log('✅ 매수 내역:', buyHistory.value)
-        console.log('✅ 매도 내역:', sellHistory.value)
       }
     } catch (e) {
       console.error('❌ 모의투자 내역 로딩 실패:', e)
@@ -249,7 +295,22 @@ onMounted(async () => {
 
     // 크레딧 조회 및 보유자산 계산
     const totalCredit = await getUserCredit(data.userId)
-    asset.value.amount = totalCredit * 1000 // 1크레딧 = 1,000원
+    asset.value.amount = totalCredit // 크레딧 그대로 사용
+
+    // 모의투자 금액 조회
+    try {
+      const mockTradingResponse = await axios.get('/api/mocktrading/account', {
+        withCredentials: true,
+      })
+      if (mockTradingResponse.data) {
+        mockTradingAmount.value = mockTradingResponse.data.totalAssetValue || 0
+        mockTradingProfitRate.value = mockTradingResponse.data.profitRate || 0
+      }
+    } catch (error) {
+      console.log('모의투자 금액 조회 실패:', error)
+      mockTradingAmount.value = 0
+      mockTradingProfitRate.value = 0
+    }
   } catch (e) {
     console.error('❌ 세션 기반 사용자 정보 로딩 실패:', e)
 
@@ -259,29 +320,56 @@ onMounted(async () => {
 
     const userId = Number(localStorage.getItem('userId') || 1)
     try {
-      console.log('🔍 fallback 모의투자 내역 조회 시작:', userId)
-      const response = await axios.get(`/api/trading/transactions/${userId}`)
+      console.log('🔍 fallback 모의투자 내역 조회 시작')
+      const response = await axios.get('/api/mocktrading/transactions', { withCredentials: true })
       console.log('📊 fallback 받은 거래 데이터:', response.data)
 
       if (response.data && response.data.length > 0) {
+        // Holdings 데이터도 함께 가져오기 (에러 처리 개선)
+        let holdings = []
+        try {
+          const holdingsResponse = await axios.get('/api/mocktrading/holdings')
+          holdings = holdingsResponse.data || []
+          console.log('📊 fallback Holdings 데이터 로드 성공:', holdings.length)
+          console.log('📊 fallback Holdings 데이터 상세:', holdings)
+        } catch (holdingsError) {
+          console.error('❌ fallback Holdings 데이터 로드 실패:', holdingsError)
+          console.log('📝 fallback Holdings 없이 거래 내역만 표시')
+          holdings = []
+        }
+
         // 백엔드 데이터를 프론트엔드 형식으로 변환
-        const buyTransactions = response.data.filter(
-          (t) => t.transactionType === 'BUY' || t.transactionType === 'HOLDING',
-        )
+        const buyTransactions = response.data.filter((t) => t.transactionType === 'BUY')
         const sellTransactions = response.data.filter((t) => t.transactionType === 'SELL')
 
-        buyHistory.value = buyTransactions.slice(0, 2).map((transaction) => ({
-          name: transaction.stockName,
-          desc: `매수 ${transaction.quantity}주`,
-          amount: transaction.totalAmount,
-          change: 0,
-        }))
-        sellHistory.value = sellTransactions.slice(0, 2).map((transaction) => ({
-          name: transaction.stockName,
-          desc: `매도 ${transaction.quantity}주`,
-          amount: transaction.totalAmount,
-          change: 0,
-        }))
+        buyHistory.value = buyTransactions.slice(0, 2).map((transaction) => {
+          const holding = holdings.find((h) => h.stockCode === transaction.stockCode)
+          console.log('🔍 fallback 매수 거래 매칭:', {
+            transaction: transaction.stockCode,
+            holding: holding ? holding.stockCode : '없음',
+            profitRate: holding ? holding.profitRate : '없음',
+          })
+          return {
+            name: transaction.stockName,
+            desc: `매수 ${transaction.quantity}주`,
+            amount: transaction.totalAmount,
+            profitRate: holding ? holding.profitRate : 0,
+          }
+        })
+        sellHistory.value = sellTransactions.slice(0, 2).map((transaction) => {
+          const holding = holdings.find((h) => h.stockCode === transaction.stockCode)
+          console.log('🔍 fallback 매도 거래 매칭:', {
+            transaction: transaction.stockCode,
+            holding: holding ? holding.stockCode : '없음',
+            profitRate: holding ? holding.profitRate : '없음',
+          })
+          return {
+            name: transaction.stockName,
+            desc: `매도 ${transaction.quantity}주`,
+            amount: transaction.totalAmount,
+            profitRate: holding ? holding.profitRate : 0,
+          }
+        })
         console.log('✅ fallback 변환된 투자 내역:', buyHistory.value, sellHistory.value)
       } else {
         // 데이터가 없으면 빈 배열로 설정
@@ -300,10 +388,25 @@ onMounted(async () => {
     // 세션 실패 시에도 크레딧 조회 시도
     try {
       const totalCredit = await getUserCredit(userId) // fallback의 userId 사용
-      asset.value.amount = totalCredit * 1000
+      asset.value.amount = totalCredit // 크레딧 그대로 사용
     } catch (err) {
       console.error('❌ 크레딧 조회 에러:', err)
       asset.value.amount = 0
+    }
+
+    // fallback 모의투자 금액 조회
+    try {
+      const mockTradingResponse = await axios.get('/api/mocktrading/account', {
+        withCredentials: true,
+      })
+      if (mockTradingResponse.data) {
+        mockTradingAmount.value = mockTradingResponse.data.totalAssetValue || 0
+        mockTradingProfitRate.value = mockTradingResponse.data.profitRate || 0
+      }
+    } catch (error) {
+      console.log('fallback 모의투자 금액 조회 실패:', error)
+      mockTradingAmount.value = 0
+      mockTradingProfitRate.value = 0
     }
   }
 })

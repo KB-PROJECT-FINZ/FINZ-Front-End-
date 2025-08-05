@@ -21,12 +21,12 @@
     </section>
 
     <!-- 추천 학습 콘텐츠 -->
-    <section class="mb-8">
+    <section class="mb-4">
       <h2 class="text-lg font-bold mb-3 ml-2 text-gray-900">추천 학습 콘텐츠</h2>
       <div v-if="recommendedContents.length === 0" class="text-center text-gray-400 py-8">
         콘텐츠를 불러오는 중입니다...
       </div>
-      <div v-else class="flex flex-col gap-4 mx-2">
+      <div v-else class="flex flex-col mx-2">
         <div
           v-for="(item, index) in recommendedContents.slice(0, recommendedViewCount)"
           :key="item.contentId"
@@ -63,7 +63,7 @@
       <div v-if="completedContents.length === 0" class="text-center text-gray-400 py-8">
         완료한 콘텐츠가 없습니다.
       </div>
-      <div v-else class="flex flex-col gap-4 mx-2">
+      <div v-else class="flex flex-col mx-2">
         <div
           v-for="(item, index) in completedContents.slice(0, completedViewCount)"
           :key="item.contentId"
