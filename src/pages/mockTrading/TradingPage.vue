@@ -101,7 +101,7 @@
                 class="relative flex justify-between items-center py-2 px-3 text-sm hover:bg-gray-50 cursor-pointer"
                 @click="selectPrice(ask.price)"
               >
-                <!-- 잔량 시각화 배경 막대 (오른쪽부터 그려짐, 패딩 추가) -->
+                <!-- 잔량 시각화 배경 막대 (오른쪽부터 그려짐, 패딩 추가)-->
                 <div
                   class="absolute top-2 bottom-2 right-0 bg-blue-100 opacity-50 rounded-l-md"
                   :style="{ width: getVolumeRatio(ask.volume) + '%' }"
