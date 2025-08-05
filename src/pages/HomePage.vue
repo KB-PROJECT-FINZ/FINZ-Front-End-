@@ -238,7 +238,7 @@ function openContentModal(item) {
 // 페이지 이동용
 const goToStudy = () => router.push('/learning')
 const goToContents = () => router.push('/recommend')
-const goToQuiz = () => router.push('/quiz')
+const goToQuiz = () => router.push('/learning')
 const goToPortfolio = () => router.push('/mock-trading/asset-status')
 </script>
 
