@@ -27,6 +27,40 @@ export function useAssetDataStore() {
     return Number(value)
   }
 
+  // ===== 가격 데이터 파싱 헬퍼 함수 =====
+  const parseStockPriceData = (priceInfo) => {
+    if (priceInfo && typeof priceInfo === 'object') {
+      const fields = {
+        currentPrice: priceInfo.inter2_prpr,           // 관심2 현재가
+        priceChange: priceInfo.inter2_prdy_vrss,       // 관심2 전일 대비
+        changeRate: priceInfo.prdy_ctrt,               // 전일 대비율
+        changeSign: priceInfo.prdy_vrss_sign,          // 전일 대비 부호
+        openPrice: priceInfo.inter2_oprc,              // 관심2 시가
+        highPrice: priceInfo.inter2_hgpr,              // 관심2 고가
+        lowPrice: priceInfo.inter2_lwpr,               // 관심2 저가
+        volume: priceInfo.acml_vol,                    // 누적 거래량
+        stockName: priceInfo.inter_kor_isnm,           // 관심 한글 종목명
+      }
+
+      // 필수 필드들이 있는지 확인
+      if (fields.currentPrice) {
+        return {
+          currentPrice: parseInt(fields.currentPrice),
+          priceChange: parseInt(fields.priceChange || 0),
+          changeRate: parseFloat(fields.changeRate || 0),
+          changeSign: fields.changeSign || '3', // 3: 보합
+          openPrice: parseInt(fields.openPrice || 0),
+          highPrice: parseInt(fields.highPrice || 0),
+          lowPrice: parseInt(fields.lowPrice || 0),
+          volume: parseInt(fields.volume || 0),
+          stockName: fields.stockName || '',
+        }
+      }
+    }
+
+    return null
+  }
+
   // ===== Computed Properties =====
   const stockValue = computed(() => {
     return holdingsData.value.reduce((total, holding) => {
@@ -119,21 +153,44 @@ export function useAssetDataStore() {
   const fetchMultipleStockPrices = async (stockCodes) => {
     try {
       const codesString = stockCodes.join(',')
+
       const response = await axios.get(`/api/stock/prices/${codesString}`)
 
-      if (response.data && response.data.success) {
+      if (response.status === 200 && response.data) {
         console.log(`배치 가격 조회 완료`)
 
-        if (response.data.errors && response.data.errors.length > 0) {
-          console.warn('⚠️ 일부 종목 조회 실패:', response.data.errors)
+        if (response.data.fallbackMode) {
+          console.info('단일 조회 모드로 처리됨')
         }
 
-        return response.data.data
-      }
+        if (response.data.errors && response.data.errors.length > 0) {
+          console.warn('일부 종목 조회 실패:', response.data.errors)
+        }
 
-      throw new Error('Invalid response format')
+        // success 필드가 있고 true인지 확인
+        if (response.data.success !== false) {
+          return response.data.data
+        } else {
+          console.error('❌ API에서 success: false 응답')
+          console.error('응답 내용:', response.data)
+          return null
+        }
+      } else {
+        throw new Error(`HTTP 상태 오류: ${response.status}`)
+      }
     } catch (error) {
       console.error('❌ 배치 주식 가격 조회 실패:', error)
+
+      // axios 에러의 경우 더 자세한 정보 로깅
+      if (error.response) {
+        console.error('📋 에러 응답 상태:', error.response.status)
+        console.error('📋 에러 응답 데이터:', error.response.data)
+      } else if (error.request) {
+        console.error('📋 요청은 전송됐으나 응답을 받지 못함')
+      } else {
+        console.error('📋 요청 설정 중 오류:', error.message)
+      }
+
       return null
     }
   }
@@ -152,24 +209,54 @@ export function useAssetDataStore() {
     const updatedHoldings = holdings.map((holding) => {
       const priceInfo = pricesData[holding.stockCode]
 
-      if (priceInfo && priceInfo.output) {
-        const output = priceInfo.output
-        const currentPrice = parseInt(output.stck_prpr)
+      if (priceInfo) {
+        // 다중 조회 API 응답 구조 처리
+        let parsedData = null
 
-        const totalValue = holding.quantity * currentPrice
-        const totalInvestment = holding.quantity * holding.averagePrice
-        const profitLoss = totalValue - totalInvestment
-        const profitRate = totalInvestment > 0 ? (profitLoss / totalInvestment) * 100 : 0
+        // 다중 조회 API 응답인 경우 (직접 데이터)
+        if (priceInfo.inter2_prpr) {
+          parsedData = parseStockPriceData(priceInfo)
+        }
+        // 단일 조회 API 응답인 경우 (폴백 모드)
+        else if (priceInfo.output && priceInfo.output.stck_prpr) {
+          const output = priceInfo.output
+          parsedData = {
+            currentPrice: parseInt(output.stck_prpr),
+            priceChange: parseInt(output.prdy_vrss || 0),
+            changeRate: parseFloat(output.prdy_ctrt || 0),
+            changeSign: output.prdy_vrss_sign || '3',
+            openPrice: parseInt(output.stck_oprc || 0),
+            highPrice: parseInt(output.stck_hgpr || 0),
+            lowPrice: parseInt(output.stck_lwpr || 0),
+            volume: parseInt(output.acml_vol || 0),
+            stockName: output.hts_kor_isnm || holding.stockName,
+          }
+        }
 
-        return {
-          ...holding,
-          currentPrice: currentPrice,
-          currentValue: totalValue,
-          profitLoss: profitLoss,
-          profitRate: Number(profitRate.toFixed(2)),
-          priceChange: parseInt(output.prdy_vrss),
-          changeRate: parseFloat(output.prdy_ctrt),
-          changeSign: output.prdy_vrss_sign,
+        if (parsedData && parsedData.currentPrice > 0) {
+          const totalValue = holding.quantity * parsedData.currentPrice
+          const totalInvestment = holding.quantity * holding.averagePrice
+          const profitLoss = totalValue - totalInvestment
+          const profitRate = totalInvestment > 0 ? (profitLoss / totalInvestment) * 100 : 0
+
+          return {
+            ...holding,
+            currentPrice: parsedData.currentPrice,
+            currentValue: totalValue,
+            profitLoss: profitLoss,
+            profitRate: Number(profitRate.toFixed(2)),
+            priceChange: parsedData.priceChange,
+            changeRate: parsedData.changeRate,
+            changeSign: parsedData.changeSign,
+            openPrice: parsedData.openPrice,
+            highPrice: parsedData.highPrice,
+            lowPrice: parsedData.lowPrice,
+            volume: parsedData.volume,
+            stockName: parsedData.stockName || holding.stockName,
+          }
+        } else {
+          console.warn(`⚠️ ${holding.stockCode} 가격 데이터 파싱 실패`)
+          return holding
         }
       } else {
         console.warn(`⚠️ ${holding.stockCode} 가격 조회 실패, 기존 데이터 유지`)
@@ -261,5 +348,6 @@ export function useAssetDataStore() {
     // 메서드
     loadUserData,
     safeNumber,
+    parseStockPriceData, // 헬퍼 함수도 export
   }
 }

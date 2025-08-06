@@ -197,7 +197,7 @@
                 <div class="flex flex-col gap-0 text-right">
                   <div class="text-base font-bold text-gray-900 leading-tight">
                     <span v-if="holding.currentPrice > 0"
-                      >{{ holding.currentPrice.toLocaleString() }}원</span
+                    >{{ holding.currentPrice.toLocaleString() }}원</span
                     >
                     <span v-else class="text-gray-400">가격 업데이트 중...</span>
                   </div>
@@ -210,7 +210,7 @@
                     {{ holding.profitRate >= 0 ? '+' : '' }}{{ holding.profitRate }}%
                   </span>
                   <span v-else class="text-sm text-gray-400 leading-tight" style="margin-top: 2px"
-                    >-%</span
+                  >-%</span
                   >
                 </div>
               </div>
@@ -223,14 +223,14 @@
               <div>
                 <span class="text-gray-500">평균단가</span>
                 <span class="ml-2 font-medium text-gray-900"
-                  >{{ holding.averagePrice.toLocaleString() }}원</span
+                >{{ holding.averagePrice.toLocaleString() }}원</span
                 >
               </div>
               <div>
                 <span class="text-gray-500">평가금액</span>
                 <span class="ml-2 font-medium text-gray-900">
                   <span v-if="holding.totalValue > 0"
-                    >{{ holding.totalValue.toLocaleString() }}원</span
+                  >{{ holding.totalValue.toLocaleString() }}원</span
                   >
                   <span v-else class="text-gray-400">계산 중...</span>
                 </span>
@@ -281,7 +281,7 @@
               <div class="flex flex-col items-end justify-center min-w-[110px]">
                 <span class="text-base text-gray-900 font-semibold mb-0.5">
                   <span v-if="holding.currentPrice > 0"
-                    >{{ holding.currentPrice.toLocaleString() }}원</span
+                  >{{ holding.currentPrice.toLocaleString() }}원</span
                   >
                   <span v-else class="text-gray-400 text-sm">업데이트 중...</span>
                 </span>
@@ -294,7 +294,7 @@
                   "
                   :class="holding.profitLoss >= 0 ? 'text-red-600' : 'text-blue-600'"
                   class="text-xs"
-                  >{{ holding.profitRate >= 0 ? '+' : '-'
+                >{{ holding.profitRate >= 0 ? '+' : '-'
                   }}{{ Math.abs(holding.profitLoss).toLocaleString() }}원 ({{
                     holding.profitRate >= 0 ? '+' : ''
                   }}{{ holding.profitRate }}%)
@@ -365,27 +365,86 @@ const safeNumber = (value, defaultValue = 0) => {
   return Number(value)
 }
 
+// 가격 데이터 파싱 헬퍼 함수
+const parseStockPriceData = (priceInfo) => {
+  // 다중 조회 API 응답 구조 확인
+  if (priceInfo && typeof priceInfo === 'object') {
+    // 새로운 다중 조회 API 응답 필드들
+    const fields = {
+      currentPrice: priceInfo.inter2_prpr,           // 관심2 현재가
+      priceChange: priceInfo.inter2_prdy_vrss,       // 관심2 전일 대비
+      changeRate: priceInfo.prdy_ctrt,               // 전일 대비율
+      changeSign: priceInfo.prdy_vrss_sign,          // 전일 대비 부호
+      openPrice: priceInfo.inter2_oprc,              // 관심2 시가
+      highPrice: priceInfo.inter2_hgpr,              // 관심2 고가
+      lowPrice: priceInfo.inter2_lwpr,               // 관심2 저가
+      volume: priceInfo.acml_vol,                    // 누적 거래량
+      stockName: priceInfo.inter_kor_isnm,           // 관심 한글 종목명
+    }
+
+    // 필수 필드들이 있는지 확인
+    if (fields.currentPrice) {
+      return {
+        currentPrice: parseInt(fields.currentPrice),
+        priceChange: parseInt(fields.priceChange || 0),
+        changeRate: parseFloat(fields.changeRate || 0),
+        changeSign: fields.changeSign || '3', // 3: 보합
+        openPrice: parseInt(fields.openPrice || 0),
+        highPrice: parseInt(fields.highPrice || 0),
+        lowPrice: parseInt(fields.lowPrice || 0),
+        volume: parseInt(fields.volume || 0),
+        stockName: fields.stockName || '',
+      }
+    }
+  }
+
+  // 파싱 실패 시 null 반환
+  return null
+}
+
 // 배치로 여러 종목의 실시간 가격을 한번에 조회하는 함수
 const fetchMultipleStockPrices = async (stockCodes) => {
   try {
     const codesString = stockCodes.join(',')
+
     const response = await axios.get(`/api/stock/prices/${codesString}`)
 
-    if (response.data && response.data.success) {
-      console.log(
-        `배치 가격 조회 완료: ${response.data.successCount}/${response.data.requestedCount} 성공`,
-      )
+    if (response.status === 200 && response.data) {
+      console.log(`배치 가격 조회 완료 (${response.data.successCount}/${response.data.requestedCount})`)
+
+      // 폴백 모드 표시
+      if (response.data.fallbackMode) {
+        console.info('ℹ️ 단일 조회 모드로 처리됨')
+      }
 
       if (response.data.errors && response.data.errors.length > 0) {
         console.warn('⚠️ 일부 종목 조회 실패:', response.data.errors)
       }
 
-      return response.data.data
+      // success 필드가 있고 true인지 확인 (optional)
+      if (response.data.success !== false) {
+        return response.data.data
+      } else {
+        console.error('❌ API에서 success: false 응답')
+        console.error('응답 내용:', response.data)
+        return null
+      }
+    } else {
+      throw new Error(`HTTP 상태 오류: ${response.status}`)
     }
-
-    throw new Error('Invalid response format')
   } catch (error) {
     console.error('❌ 배치 주식 가격 조회 실패:', error)
+
+    // axios 에러의 경우 더 자세한 정보 로깅
+    if (error.response) {
+      console.error('📋 에러 응답 상태:', error.response.status)
+      console.error('📋 에러 응답 데이터:', error.response.data)
+    } else if (error.request) {
+      console.error('📋 요청은 전송됐으나 응답을 받지 못함')
+    } else {
+      console.error('📋 요청 설정 중 오류:', error.message)
+    }
+
     return null
   }
 }
@@ -408,25 +467,57 @@ const updateHoldingsWithRealTimePrice = async (holdings) => {
   const updatedHoldings = holdings.map((holding) => {
     const priceInfo = pricesData[holding.stockCode]
 
-    if (priceInfo && priceInfo.output) {
-      const output = priceInfo.output
-      const currentPrice = parseInt(output.stck_prpr)
+    if (priceInfo) {
+      // 다중 조회 API 응답 구조 처리
+      let parsedData = null
 
-      // 현재 시세로 현재 가치 및 손익 재계산
-      const totalValue = holding.quantity * currentPrice
-      const totalInvestment = holding.quantity * holding.averagePrice
-      const profitLoss = totalValue - totalInvestment
-      const profitRate = totalInvestment > 0 ? (profitLoss / totalInvestment) * 100 : 0
+      // 다중 조회 API 응답인 경우 (직접 데이터)
+      if (priceInfo.inter2_prpr) {
+        parsedData = parseStockPriceData(priceInfo)
+      }
+      // 단일 조회 API 응답인 경우 (폴백 모드)
+      else if (priceInfo.output && priceInfo.output.stck_prpr) {
+        const output = priceInfo.output
+        parsedData = {
+          currentPrice: parseInt(output.stck_prpr),
+          priceChange: parseInt(output.prdy_vrss || 0),
+          changeRate: parseFloat(output.prdy_ctrt || 0),
+          changeSign: output.prdy_vrss_sign || '3',
+          openPrice: parseInt(output.stck_oprc || 0),
+          highPrice: parseInt(output.stck_hgpr || 0),
+          lowPrice: parseInt(output.stck_lwpr || 0),
+          volume: parseInt(output.acml_vol || 0),
+          stockName: output.hts_kor_isnm || holding.stockName,
+        }
+      }
 
-      return {
-        ...holding,
-        currentPrice: currentPrice,
-        totalValue: totalValue,
-        profitLoss: profitLoss,
-        profitRate: Number(profitRate.toFixed(2)),
-        priceChange: parseInt(output.prdy_vrss),
-        changeRate: parseFloat(output.prdy_ctrt),
-        changeSign: output.prdy_vrss_sign,
+      if (parsedData && parsedData.currentPrice > 0) {
+        // 현재 시세로 현재 가치 및 손익 재계산
+        const totalValue = holding.quantity * parsedData.currentPrice
+        const totalInvestment = holding.quantity * holding.averagePrice
+        const profitLoss = totalValue - totalInvestment
+        const profitRate = totalInvestment > 0 ? (profitLoss / totalInvestment) * 100 : 0
+
+        return {
+          ...holding,
+          currentPrice: parsedData.currentPrice,
+          totalValue: totalValue,
+          profitLoss: profitLoss,
+          profitRate: Number(profitRate.toFixed(2)),
+          priceChange: parsedData.priceChange,
+          changeRate: parsedData.changeRate,
+          changeSign: parsedData.changeSign,
+          // 추가 정보
+          openPrice: parsedData.openPrice,
+          highPrice: parsedData.highPrice,
+          lowPrice: parsedData.lowPrice,
+          volume: parsedData.volume,
+          // 종목명 업데이트 (API에서 제공되는 경우)
+          stockName: parsedData.stockName || holding.stockName,
+        }
+      } else {
+        console.warn(`⚠️ ${holding.stockCode} 가격 데이터 파싱 실패`)
+        return holding
       }
     } else {
       // 해당 종목의 가격 조회 실패 시 기존 데이터 유지

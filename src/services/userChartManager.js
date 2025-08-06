@@ -1,4 +1,3 @@
-// composables/useChartManager.js
 import { ref, nextTick } from 'vue'
 
 export function useChartManager() {
