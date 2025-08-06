@@ -344,6 +344,7 @@ import FooterNavigation from '@/components/FooterNavigation.vue'
 
 const router = useRouter()
 
+// ===== Composables 사용 =====
 const {
   holdingsData,
   loading,
