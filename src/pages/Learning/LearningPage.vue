@@ -1,107 +1,138 @@
 <template>
-  <div class="min-h-screen pb-20">
-    <!-- 상단 헤더 -->
-    <header class="flex items-center justify-center bg-white py-5 shadow-sm mb-2">
-      <h1 class="text-xl font-bold text-gray-800 tracking-tight">개념 학습</h1>
+  <div class="min-h-screen bg-gray-50">
+    <!-- 헤더 -->
+    <header class="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
+      <div class="flex items-center justify-center">
+        <h1 class="text-lg font-semibold text-gray-900">개념 학습</h1>
+      </div>
     </header>
 
-    <!-- 프로필 박스 -->
-    <section
-      class="flex items-center bg-gradient-to-r from-indigo-400 via-blue-300 to-teal-200 rounded-2xl mx-4 my-5 px-5 py-6 shadow"
-    >
-      <div
-        class="w-[54px] h-[54px] rounded-full bg-white/30 flex items-center justify-center text-3xl mr-4"
-      >
-        <span>👤</span>
-      </div>
-      <div class="text-white">
-        <div class="text-base font-bold">{{ user.name }}님은</div>
-        <div class="text-sm mt-1">{{ user.riskType }} 사고 유형입니다.</div>
-      </div>
-    </section>
-
-    <!-- 추천 학습 콘텐츠 -->
-    <section class="mb-4">
-      <h2 class="text-lg font-bold mb-3 ml-2 text-gray-900">추천 학습 콘텐츠</h2>
-      <div v-if="recommendedContents.length === 0" class="text-center text-gray-400 py-8">
-        콘텐츠를 불러오는 중입니다...
-      </div>
-      <div v-else class="flex flex-col mx-2">
-        <div
-          v-for="(item, index) in recommendedContents.slice(0, recommendedViewCount)"
-          :key="item.contentId"
-          class="bg-white rounded-2xl flex items-center shadow px-5 py-6 cursor-pointer transition hover:-translate-y-1 hover:shadow-lg min-h-[110px] mb-4"
-          @click="goToDetail(item.contentId)"
-        >
-          <div class="flex-1 min-w-0">
-            <span
-              v-if="item.creditReward"
-              class="inline-block text-[0.92rem] text-yellow-700 bg-yellow-50 rounded px-2 py-1 mr-2 font-bold"
-              >{{ item.creditReward }}크레딧</span
-            >
-            <div class="text-base font-bold text-gray-900 mt-1">{{ item.title }}</div>
-          </div>
-          <span class="text-2xl text-gray-300 ml-4">&#8250;</span>
-        </div>
-        <div
-          v-if="recommendedViewCount < recommendedContents.length"
-          class="flex justify-center mt-2"
-        >
-          <button
-            class="w-full bg-white text-black border border-gray-300 rounded-lg px-5 py-2 hover:bg-gray-50 transition"
-            @click="recommendedViewCount += 3"
-          >
-            더보기
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 완료한 학습 콘텐츠 -->
-    <section>
-      <h2 class="text-lg font-bold mb-3 ml-2 text-gray-900">완료한 학습 콘텐츠</h2>
-      <div v-if="completedContents.length === 0" class="text-center text-gray-400 py-8">
-        완료한 콘텐츠가 없습니다.
-      </div>
-      <div v-else class="flex flex-col mx-2">
-        <div
-          v-for="(item, index) in completedContents.slice(0, completedViewCount)"
-          :key="item.contentId"
-          class="bg-gray-100 rounded-2xl flex items-center shadow px-4 py-5 cursor-pointer opacity-90 min-h-[20px] mb-4"
-          @click="goToDetail(item.contentId)"
-        >
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center">
-              <img :src="ticketIcon" alt="티켓 아이콘" class="w-5 h-5 mr-2" />
-              <div class="text-base font-bold text-gray-900 truncate max-w-full">
-                {{ item.title }}
-              </div>
+    <!-- 프로필 카드 -->
+    <div class="px-4 py-6 pb-20">
+      <div class="bg-gradient-to-r from-indigo-400 via-blue-300 to-teal-200 rounded-2xl p-6 shadow-lg mb-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <div class="w-[54px] h-[54px] bg-white/30 rounded-full flex items-center justify-center text-3xl mr-4">
+              <span>👤</span>
+            </div>
+            <div class="text-white">
+              <div class="text-base font-bold">{{ user.name }}님은</div>
+              <div class="text-sm mt-1">{{ user.riskType }} 사고 유형입니다.</div>
             </div>
           </div>
-
-          <span class="text-2xl text-gray-300 ml-4">&#8250;</span>
-        </div>
-        <div v-if="completedViewCount < completedContents.length" class="flex justify-center mt-2">
           <button
-            class="w-full bg-white text-black border border-gray-300 rounded-lg px-5 py-2 hover:bg-gray-50 transition"
-            @click="completedViewCount += 3"
+            class="bg-white/20 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition"
+            @click="goToProfile"
           >
-            더보기
+            내 정보 확인
           </button>
         </div>
       </div>
-    </section>
+
+      <!-- 추천 학습 콘텐츠 -->
+      <div class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">추천 학습 콘텐츠</h2>
+        <div v-if="recommendedContents.length === 0" class="text-center py-12">
+          <div class="w-12 h-12 border-3 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="text-gray-600">콘텐츠를 불러오는 중입니다...</p>
+        </div>
+        <div v-else class="space-y-3">
+          <div
+            v-for="(item, index) in formattedRecommendedContents.slice(0, recommendedViewCount)"
+            :key="item.contentId"
+            class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 cursor-pointer transition hover:shadow-md hover:-translate-y-0.5"
+            @click="goToDetail(item.contentId)"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-2">
+                  <span
+                    v-if="item.creditReward"
+                    class="inline-block text-xs font-semibold text-yellow-700 bg-yellow-50 rounded-full px-3 py-1"
+                  >
+                    {{ item.creditReward }}크레딧
+                  </span>
+                  <span class="text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-1">추천</span>
+                </div>
+                <h3 class="text-base font-semibold text-gray-900 leading-relaxed">{{ item.title }}</h3>
+              </div>
+              <svg class="w-5 h-5 text-gray-400 ml-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+          <div
+            v-if="recommendedViewCount < formattedRecommendedContents.length"
+            class="flex justify-center pt-2"
+          >
+            <button
+              class="w-full text-gray-600 font-medium border border-gray-200 rounded-lg px-6 py-3 hover:text-gray-800 hover:bg-gray-50 transition"
+              @click="recommendedViewCount += 3"
+            >
+              더보기
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 완료한 학습 콘텐츠 -->
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">완료한 학습 콘텐츠</h2>
+        <div v-if="completedContents.length === 0" class="text-center py-12">
+          <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p class="text-gray-600">완료한 콘텐츠가 없습니다.</p>
+        </div>
+        <div v-else class="space-y-3">
+          <div
+            v-for="(item, index) in formattedCompletedContents.slice(0, completedViewCount)"
+            :key="item.contentId"
+            class="bg-gray-50 rounded-xl border border-gray-200 p-5 cursor-pointer transition hover:bg-gray-100"
+            @click="goToDetail(item.contentId)"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center flex-1 min-w-0">
+                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-base font-medium text-gray-900 truncate">{{ item.title }}</h3>
+                  <p class="text-sm text-gray-500 mt-1">학습 완료</p>
+                </div>
+              </div>
+              <svg class="w-5 h-5 text-gray-400 ml-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+          <div v-if="completedViewCount < formattedCompletedContents.length" class="flex justify-center pt-2">
+            <button
+              class="w-full text-gray-600 font-medium border border-gray-200 rounded-lg px-6 py-3 hover:text-gray-800 hover:bg-gray-50 transition"
+              @click="completedViewCount += 3"
+            >
+              더보기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <FooterNavigation />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '../../components/FooterNavigation.vue'
 import axios from 'axios'
 import ticketIcon from '../../components/icons/ticket-box.svg'
+
 const router = useRouter()
 const recommendedContents = ref([])
 const completedContents = ref([])
@@ -115,6 +146,22 @@ const recommendedCount = ref(0)
 const completedViewCount = ref(3)
 
 const recommendedViewCount = ref(3)
+
+// 제목에서 \n 문자 제거하는 computed 속성들
+const formattedRecommendedContents = computed(() => {
+  return recommendedContents.value.map(content => ({
+    ...content,
+    title: content.title?.replace(/\\n|\n/g, '') || ''
+  }))
+})
+
+const formattedCompletedContents = computed(() => {
+  return completedContents.value.map(content => ({
+    ...content,
+    title: content.title?.replace(/\\n|\n/g, '') || ''
+  }))
+})
+
 const fetchCreditRewards = async (contents) => {
   await Promise.all(
     contents.map(async (content) => {
@@ -204,5 +251,10 @@ onMounted(async () => {
 // 👉 상세 페이지로 이동
 function goToDetail(id) {
   router.push(`/learning/${id}`)
+}
+
+// 👉 프로필 페이지로 이동
+function goToProfile() {
+  router.push('/profile')
 }
 </script>
