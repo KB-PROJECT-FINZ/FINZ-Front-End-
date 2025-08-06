@@ -697,7 +697,6 @@ function convertApiDataTo1MinChartData(apiResponse) {
   const today = new Date()
   const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
 
-  // 오늘 날짜에 해당하는 데이터만 추출 (stck_cntg_hour는 "HHMMSS"만 있으므로, 모두 오늘 데이터로 간주)
   // 만약 날짜 정보가 추가되면, 그에 맞게 필터링 필요
   // 시간 역순(15:30~09:00)이면 오름차순 정렬 필요
   const converted = chartDataArray.map((item, idx) => {
