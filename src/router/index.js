@@ -155,12 +155,10 @@ const routes = [
     component: () => import('@/pages/mockTrading/ChartPage.vue'),
     props: true,
   },
-  // 새로 추가할 자산 현황 경로
   {
     path: '/mock-trading/asset-status',
     name: 'AssetStatus',
     component: AssetStatus,
-    //meta: { requiresAuth: true } // 로그인 필요
   },
   {
     path: '/mock-trading/holdings',

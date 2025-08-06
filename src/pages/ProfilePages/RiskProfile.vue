@@ -1,19 +1,21 @@
 <template>
-  <header class="flex items-center justify-center relative bg-white py-4 pb-3 shadow-sm mb-2">
-    <button
-      class="absolute left-4 top-1/2 -translate-y-1/2 bg-white border-none text-2xl text-black cursor-pointer"
-      @click="goBack"
-    >
-      &#8592;
+  <header class="flex items-center justify-between bg-white px-4 pt-4 pb-3 sticky top-0 z-10">
+    <button @click="goBack" class="p-2 hover:bg-gray-100 rounded-lg text-black">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
     </button>
-    <h1 class="text-xl font-bold text-gray-800 tracking-tight">나의 투자 성향</h1>
+    <span class="ml-3 flex-1 text-left text-base font-semibold text-gray-900">나의 투자 성향</span>
   </header>
 
   <div class="flex justify-center px-4 py-6">
     <div class="w-full max-w-xl">
       <div v-if="loading" class="text-center text-gray-500 py-8">로딩 중...</div>
       <div v-else-if="error" class="text-center text-red-500 py-8">{{ error }}</div>
-      <div v-else class="bg-white rounded-2xl shadow-lg px-6 py-8 flex flex-col items-center">
+      <div
+        v-else
+        class="bg-white rounded-2xl px-6 py-8 flex flex-col items-center border border-gray-200"
+      >
         <!-- 그룹/성향 카드 -->
         <div class="flex flex-col items-center gap-2 mb-6 w-full">
           <div class="flex items-center gap-2">
