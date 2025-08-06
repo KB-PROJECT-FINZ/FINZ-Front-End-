@@ -1,46 +1,28 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-white">
     <!-- 헤더 -->
     <header class="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
       <div class="flex items-center justify-center">
         <h1 class="text-lg font-semibold text-gray-900">개념 학습</h1>
       </div>
     </header>
-
-    <!-- 프로필 카드 -->
     <div class="px-4 py-6 pb-20">
-      <div class="bg-gradient-to-r from-indigo-400 via-blue-300 to-teal-200 rounded-2xl p-6 shadow-lg mb-6">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <div class="w-[54px] h-[54px] bg-white/30 rounded-full flex items-center justify-center text-3xl mr-4">
-              <span>👤</span>
-            </div>
-            <div class="text-white">
-              <div class="text-base font-bold">{{ user.name }}님은</div>
-              <div class="text-sm mt-1">{{ user.riskType }} 사고 유형입니다.</div>
-            </div>
-          </div>
-          <button
-            class="bg-white/20 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition"
-            @click="goToProfile"
-          >
-            내 정보 확인
-          </button>
-        </div>
-      </div>
-
+      <!-- 사용자 맞춤 추천 타이틀 -->
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ user.name }}님을 위한</h2>
       <!-- 추천 학습 콘텐츠 -->
       <div class="mb-8">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">추천 학습 콘텐츠</h2>
         <div v-if="recommendedContents.length === 0" class="text-center py-12">
-          <div class="w-12 h-12 border-3 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <div
+            class="w-12 h-12 border-3 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"
+          ></div>
           <p class="text-gray-600">콘텐츠를 불러오는 중입니다...</p>
         </div>
         <div v-else class="space-y-3">
           <div
             v-for="(item, index) in formattedRecommendedContents.slice(0, recommendedViewCount)"
             :key="item.contentId"
-            class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 cursor-pointer transition hover:shadow-md hover:-translate-y-0.5"
+            class="bg-white rounded-xl p-5 cursor-pointer hover:shadow-md transition border-t border-b border-r border-gray-200 border-l-4 border-indigo-300"
             @click="goToDetail(item.contentId)"
           >
             <div class="flex items-center justify-between">
@@ -54,13 +36,26 @@
                   </span>
                   <span class="text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-1">추천</span>
                 </div>
-                <h3 class="text-base font-semibold text-gray-900 leading-relaxed">{{ item.title }}</h3>
+                <h3 class="text-base font-medium text-gray-900 truncate">
+                  {{ item.title }}
+                </h3>
               </div>
-              <svg class="w-5 h-5 text-gray-400 ml-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              <svg
+                class="w-5 h-5 text-gray-400 ml-3 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </div>
           </div>
+
           <div
             v-if="recommendedViewCount < formattedRecommendedContents.length"
             class="flex justify-center pt-2"
@@ -79,9 +74,21 @@
       <div>
         <h2 class="text-lg font-semibold text-gray-900 mb-4">완료한 학습 콘텐츠</h2>
         <div v-if="completedContents.length === 0" class="text-center py-12">
-          <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div
+            class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
+            <svg
+              class="w-8 h-8 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
           <p class="text-gray-600">완료한 콘텐츠가 없습니다.</p>
@@ -95,9 +102,21 @@
           >
             <div class="flex items-center justify-between">
               <div class="flex items-center flex-1 min-w-0">
-                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                  <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                <div
+                  class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0"
+                >
+                  <svg
+                    class="w-4 h-4 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 </div>
                 <div class="flex-1 min-w-0">
@@ -105,12 +124,25 @@
                   <p class="text-sm text-gray-500 mt-1">학습 완료</p>
                 </div>
               </div>
-              <svg class="w-5 h-5 text-gray-400 ml-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              <svg
+                class="w-5 h-5 text-gray-400 ml-3 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </div>
           </div>
-          <div v-if="completedViewCount < formattedCompletedContents.length" class="flex justify-center pt-2">
+          <div
+            v-if="completedViewCount < formattedCompletedContents.length"
+            class="flex justify-center pt-2"
+          >
             <button
               class="w-full text-gray-600 font-medium border border-gray-200 rounded-lg px-6 py-3 hover:text-gray-800 hover:bg-gray-50 transition"
               @click="completedViewCount += 3"
@@ -149,16 +181,16 @@ const recommendedViewCount = ref(3)
 
 // 제목에서 \n 문자 제거하는 computed 속성들
 const formattedRecommendedContents = computed(() => {
-  return recommendedContents.value.map(content => ({
+  return recommendedContents.value.map((content) => ({
     ...content,
-    title: content.title?.replace(/\\n|\n/g, '') || ''
+    title: content.title?.replace(/\\n|\n/g, '') || '',
   }))
 })
 
 const formattedCompletedContents = computed(() => {
-  return completedContents.value.map(content => ({
+  return completedContents.value.map((content) => ({
     ...content,
-    title: content.title?.replace(/\\n|\n/g, '') || ''
+    title: content.title?.replace(/\\n|\n/g, '') || '',
   }))
 })
 

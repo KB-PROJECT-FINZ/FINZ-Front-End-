@@ -1,12 +1,11 @@
 <template>
-  <header class="flex items-center justify-center relative bg-white py-4 pb-3 shadow-sm mb-2">
-    <button
-      class="absolute left-4 top-1/2 -translate-y-1/2 bg-white border-none text-2xl text-black cursor-pointer"
-      @click="goBack"
-    >
-      &#8592;
+  <header class="flex items-center justify-between bg-white px-4 pt-4 pb-3 sticky top-0 z-10">
+    <button @click="goBack" class="p-2 hover:bg-gray-100 rounded-lg text-black">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
     </button>
-    <h1 class="text-xl font-bold text-gray-800 tracking-tight">투자 일지</h1>
+    <span class="ml-3 flex-1 text-left text-base font-semibold text-gray-900">투자 일지</span>
   </header>
 
   <div class="journal-write-page px-4 py-6">
