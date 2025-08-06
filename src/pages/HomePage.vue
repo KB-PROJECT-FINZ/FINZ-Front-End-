@@ -33,7 +33,6 @@
     <!-- 오늘의 할 일 -->
     <div class="px-5 mt-6">
       <h2 class="text-md font-bold mb-2">오늘의 할 일</h2>
-
       <div class="bg-gradient-to-r from-purple-400 to-blue-400 text-white rounded-xl p-4 mb-4">
         <div class="flex justify-between items-center mb-1">
           <p class="font-semibold">오늘의 학습 목표</p>
@@ -44,10 +43,18 @@
             시작하기
           </button>
         </div>
-        <p class="text-sm">투자 기초 개념 2개 학습하기</p>
-        <div class="h-2 bg-white/30 rounded-full mt-3">
-          <div class="h-full bg-white rounded-full w-1/2"></div>
-        </div>
+        <ul class="mt-2 space-y-1 text-sm list-disc list-inside">
+          <li
+            v-for="(item, index) in recommendedLearningContents.slice(0, 2)"
+            :key="item.contentId"
+            class="text-white"
+          >
+            {{ item.title }}
+          </li>
+          <li v-if="recommendedLearningContents.length === 0" class="text-white">
+            학습 콘텐츠 없음
+          </li>
+        </ul>
       </div>
 
       <div class="grid grid-cols-2 gap-3">
@@ -69,22 +76,29 @@
         <button class="text-xs text-gray-400 underline" @click="goToContents">전체보기</button>
       </div>
 
-      <div class="flex gap-3 overflow-x-auto pb-1">
+      <div class="grid grid-cols-2 gap-3 place-items-center">
         <div
-          v-for="(item, index) in recommendedContents"
-            :key="item.id"
-              class="min-w-[160px] bg-white p-3 rounded-xl shadow-sm shrink-0 cursor-pointer"
-              @click="openContentModal(item)">
-            <p  :class="index % 2 === 0
-            ? 'text-purple-600 text-base font-bold'
-            : 'text-blue-600 text-base font-bold'"
-            class="mb-1">
-              {{ item.label }}
-             </p>
-            <p class="text-sm font-semibold">{{ item.title }}</p>
-                </div>
-            </div>
+          v-for="(item, index) in recommendedContentsByRisk.filter(
+            (item) => !item.quizId && !item.hasQuiz,
+          )"
+          :key="item.contentId"
+          class="min-w-[160px] bg-white p-3 rounded-xl shadow-sm shrink-0 cursor-pointer"
+          @click="openContentModal(item)"
+        >
+          <p
+            :class="
+              index % 2 === 0
+                ? 'text-purple-600 text-base font-bold'
+                : 'text-blue-600 text-base font-bold'
+            "
+            class="mb-1"
+          >
+            {{ item.label || '추천' }}
+          </p>
+          <p class="text-sm font-semibold">{{ item.title }}</p>
         </div>
+      </div>
+    </div>
 
     <!-- 빠른 실행 -->
     <div class="px-5 mt-6">
@@ -104,38 +118,42 @@
       </div>
     </div>
 
-    <!-- 하단 네비게이션 -->
     <div>
       <router-view />
+      <transition name="fade-scale">
+        <div
+          v-if="selectedContent"
+          class="fixed inset-0 bg-gray-300/40 z-50 flex items-center justify-center"
+        >
+          <div
+            class="bg-white p-6 rounded-xl w-[90%] max-w-md relative shadow-2xl ring-1 ring-gray-200 transition-all duration-300 ease-in-out"
+          >
+            <p
+              v-if="selectedContent.label"
+              class="text-xs text-gray-500 mb-1 uppercase tracking-wide"
+            >
+              {{ selectedContent.label }}
+            </p>
+            <h2 class="text-lg font-bold mb-1 text-gray-800">
+              {{ selectedContent.title }}
+            </h2>
+            <div class="border-b border-gray-300 my-3"></div>
+            <p class="text-sm text-gray-700 whitespace-pre-wrap">
+              {{ selectedContent.content }}
+            </p>
+            <button
+              class="absolute top-3 right-4 text-gray-500 hover:text-black"
+              @click="selectedContent = null"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      </transition>
+
       <BottomNav />
-      <!-- 하단 고정 바 -->
     </div>
   </div>
-  <transition name="fade-scale">
-  <div
-    v-if="selectedContent"
-    class="fixed inset-0 bg-gray-300/40 z-50 flex items-center justify-center"
-  >
-    <div
-      class="bg-white p-6 rounded-xl w-[90%] max-w-md relative shadow-2xl ring-1 ring-gray-200 transition-all duration-300 ease-in-out"
-    >
-      <p v-if="selectedContent.label" class="text-xs text-gray-500 mb-1 uppercase tracking-wide">
-        {{ selectedContent.label }}
-      </p>
-      <h2 class="text-lg font-bold mb-1" :class="selectedContent.titleColor">
-        {{ selectedContent.title }}
-      </h2>
-      <div class="border-b border-gray-300 my-3"></div>
-      <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ selectedContent.content }}</p>
-      <button
-        class="absolute top-3 right-4 text-gray-500 hover:text-black"
-        @click="selectedContent = null"
-      >
-        ✕
-      </button>
-    </div>
-  </div>
-</transition>
 </template>
 
 <script setup>
@@ -143,66 +161,24 @@ import BottomNav from '@/components/FooterNavigation.vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { ref, onMounted } from 'vue'
+const selectedContent = ref(null)
+
+const openContentModal = (item) => {
+  selectedContent.value = item
+}
 
 const router = useRouter()
 
-// 사용자 데이터
+// 상태 변수
 const name = ref('')
-const userName = ref('')
 const riskTypeName = ref('')
-const totalEarnedCredit = ref(0) // 누적 크레딧 추가
+const totalEarnedCredit = ref(0)
 const completedLearningCount = ref(0)
 
-// 세션 기반 사용자 정보 불러오기
-onMounted(async () => {
-  try {
-    // 사용자 정보 요청
-    const response = await axios.get('http://localhost:8080/api/auth/me', {
-      withCredentials: true,
+const recommendedLearningContents = ref([]) // 퀴즈 없는 콘텐츠 → 학습 목표
+const recommendedContentsByRisk = ref([]) // 성향 기반 콘텐츠 (추천용)
 
-    })
-
-    const user = response.data
-    name.value = user.name
-    userName.value = user.username
-    riskTypeName.value = convertRiskTypeToName(user.riskType)
-
-    // 학습 완료 수 조회
-    const countRes = await axios.get('http://localhost:8080/api/learning/history/count', {
-      withCredentials: true,
-    })
-    completedLearningCount.value = countRes.data
-
-    // 누적 크레딧 조회
-    try {
-      const creditResponse = await axios.get(
-        'http://localhost:8080/api/learning/user/total-earned-credit',
-        { withCredentials: true }
-      )
-      totalEarnedCredit.value = creditResponse.data
-    } catch (error) {
-      console.log('누적 크레딧 조회 실패:', error)
-      totalEarnedCredit.value = 0
-    }
-
-    // 추천 콘텐츠 조회
-    try {
-      const contentRes = await axios.get(
-        `http://localhost:8080/api/contents/recommend?riskType=${user.riskType}`,
-        { withCredentials: true },
-      )
-              console.log('추천 콘텐츠:', contentRes.data)
-      recommendedContents.value = contentRes.data
-    } catch (error) {
-      console.error('추천 콘텐츠 조회 실패:', error)
-    }
-
-  } catch (e) {
-    console.error('세션 정보 불러오기 실패:', e)
-    router.push('/login-form')
-  }
-})
-
+// 투자 성향 코드 → 이름 변환
 function convertRiskTypeToName(code) {
   const map = {
     AGR: '적극적 성장형',
@@ -224,19 +200,93 @@ function convertRiskTypeToName(code) {
   return map[code] || '미분류'
 }
 
-const selectedContent = ref(null)
-
-const recommendedContents = ref([])
-
-function openContentModal(item) {
-  selectedContent.value = item
-}
-
-// 페이지 이동용
+// 페이지 이동
 const goToStudy = () => router.push('/learning')
 const goToContents = () => router.push('/recommend')
-const goToQuiz = () => router.push('/quiz')
+const goToQuiz = () => router.push('/learning')
 const goToPortfolio = () => router.push('/mock-trading/asset-status')
+
+// 초기 실행
+onMounted(async () => {
+  try {
+    const riskType = await fetchUserInfo() // ← 여기서 riskType 반환
+    await fetchRecommendedContentsByRiskType(riskType)
+    await fetchAllRecommendedContents()
+    await fetchCompletedLearningCount()
+    await fetchTotalCredit()
+  } catch (e) {
+    console.error('❌ 초기 로딩 실패:', e)
+    router.push('/login-form')
+  }
+})
+
+// 사용자 정보 조회
+const fetchUserInfo = async () => {
+  try {
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    const user = res.data
+    name.value = user.name
+    riskTypeName.value = convertRiskTypeToName(user.riskType)
+    return user.riskType // riskType 코드 (예: 'TEC') 반환
+  } catch (e) {
+    throw new Error('사용자 정보 조회 실패')
+  }
+}
+
+// 추천 콘텐츠 조회
+const fetchRecommendedContentsByRiskType = async (riskType) => {
+  try {
+    const res = await axios.get(`/api/contents/recommend?riskType=${riskType}`, {
+      withCredentials: true,
+    })
+    recommendedContentsByRisk.value = res.data
+    console.log('✅ 성향 기반 추천 콘텐츠:', res.data)
+  } catch (e) {
+    console.error('❌ 추천 콘텐츠 조회 실패:', e)
+    recommendedContentsByRisk.value = []
+  }
+}
+
+const fetchAllRecommendedContents = async () => {
+  try {
+    const res = await axios.get('/api/learning/recommend/list', {
+      withCredentials: true,
+    })
+
+    const noQuiz = res.data.filter((item) => !item.quizId && !item.hasQuiz)
+    recommendedLearningContents.value = noQuiz.slice(0, 2)
+    console.log('✅ 퀴즈 없는 콘텐츠 수:', noQuiz.length)
+  } catch (e) {
+    console.error('❌ 학습 목표 콘텐츠 조회 실패:', e)
+    recommendedLearningContents.value = []
+  }
+}
+
+// 학습 완료 수
+const fetchCompletedLearningCount = async () => {
+  try {
+    const res = await axios.get('/api/learning/history/count', {
+      withCredentials: true,
+    })
+    completedLearningCount.value = res.data
+  } catch (e) {
+    console.error('❌ 학습 완료 수 조회 실패:', e)
+    completedLearningCount.value = 0
+  }
+}
+
+// 누적 크레딧 조회
+const fetchTotalCredit = async () => {
+  try {
+    const res = await axios.get('/api/learning/user/total-earned-credit', {
+      withCredentials: true,
+    })
+    totalEarnedCredit.value = res.data
+  } catch (e) {
+    console.error('❌ 누적 크레딧 조회 실패:', e)
+    totalEarnedCredit.value = 0
+  }
+}
 </script>
 
 <style scoped>
