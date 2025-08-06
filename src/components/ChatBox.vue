@@ -1,56 +1,89 @@
-<!-- chatbox.vue -->
 <template>
-  <div class="flex flex-col gap-3">
+  <div class="flex flex-col h-full">
     <!-- 대화 내용 -->
-    <div class="bg-gray-100 rounded-xl p-4 h-[400px] overflow-y-auto space-y-3" ref="chatContainer">
-      <p v-if="loading" class="text-sm text-gray-500 italic text-left">
-        ⏳ 답변을 부르고 있어요...
-      </p>
+    <div class="flex-1 overflow-y-auto space-y-4 p-4 pb-24">
+      <!-- 챗봇 아바타와 인사말 (첫 로드 시) -->
+      <div v-if="chatStore.messages.length === 0" class="flex items-start space-x-3">
+        <div class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden">
+          <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
+        </div>
+        <div class="flex-1">
+          <div class="bg-gray-100 rounded-2xl p-4 max-w-xs">
+            <p class="font-semibold text-gray-800">안녕하세요 {{ userStore.name || '사용자' }}님!</p>
+            <p class="text-gray-600 text-sm mt-1">무엇을 도와드릴까요?</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 로딩 메시지 -->
+      <div v-if="loading" class="flex items-start space-x-3">
+        <div class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden">
+          <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
+        </div>
+        <div class="bg-gray-100 rounded-2xl p-4">
+          <p class="text-sm text-gray-500 italic">⏳ 답변을 불러오고 있어요...</p>
+        </div>
+      </div>
+
+      <!-- 메시지들 -->
       <div
         v-for="(msg, i) in chatStore.messages"
         :key="i"
-        :class="msg.role === 'user' ? 'text-right' : 'text-left'"
+        :class="msg.role === 'user' ? 'flex justify-end' : 'flex items-start space-x-3'"
       >
-        <!-- 일반 메시지 -->
-        <p
-          v-if="!msg.type"
-          :class="msg.role === 'user' ? 'bg-blue-200' : 'bg-gray-200'"
-          class="inline-block p-2 rounded m-1"
-        >
-          {{ msg.content }}
-        </p>
-
-        <!-- 버튼 메시지 -->
-        <div v-else-if="msg.type === 'buttons'" class="mb-2 text-left">
-          <p class="mb-2 text-sm text-gray-700">{{ msg.text }}</p>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="(btn, idx) in msg.buttons"
-              :key="idx"
-              @click="handleButtonIntent(btn)"
-              class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
-            >
-              {{ btn.label }}
-            </button>
-          </div>
+        <!-- 사용자 메시지 -->
+        <div v-if="msg.role === 'user'" class="bg-blue-500 text-white rounded-2xl p-4 max-w-xs">
+          <p>{{ msg.content }}</p>
         </div>
+
+        <!-- 봇 메시지 -->
+        <template v-else>
+          <div class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden">
+            <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
+          </div>
+          <div class="flex-1">
+            <!-- 일반 메시지 -->
+            <div v-if="!msg.type" class="bg-gray-100 rounded-2xl p-4 max-w-xs">
+              <p>{{ msg.content }}</p>
+            </div>
+
+            <!-- 버튼 메시지 -->
+            <div v-else-if="msg.type === 'buttons'" class="space-y-3">
+              <div v-if="msg.text" class="bg-gray-100 rounded-2xl p-4 max-w-xs">
+                <p>{{ msg.text }}</p>
+              </div>
+              <div class="space-y-2">
+                <button
+                  v-for="(btn, idx) in msg.buttons"
+                  :key="idx"
+                  @click="handleButtonIntent(btn)"
+                  class="w-full bg-white border border-gray-200 rounded-xl p-4 text-left hover:bg-gray-50 transition-colors shadow-sm"
+                >
+                  <span class="text-gray-800 font-medium">{{ btn.label }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
 
     <!-- 입력창 -->
-    <form @submit.prevent="submit" class="flex gap-2 mt-2">
-      <input
-        v-model="input"
-        placeholder="메시지를 입력하세요"
-        class="flex-1 border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring focus:border-purple-300"
-      />
-      <button
-        type="submit"
-        class="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-purple-700"
-      >
-        전송
-      </button>
-    </form>
+    <div class="border-t border-gray-200 p-4 bg-white fixed bottom-2 left-0 right-0 max-w-[430px] mx-auto">
+      <form @submit.prevent="submit" class="flex gap-2">
+        <input
+          v-model="input"
+          placeholder="궁금한 종목이나 투자 질문을 입력해보세요"
+          class="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        <button
+          type="submit"
+          class="bg-blue-500 text-white px-4 py-3 rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors"
+        >
+          전송
+        </button>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -159,7 +192,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
   } catch (err) {
     console.log(userId)
     chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
-    console.error('❌ GPT fetch 실패:', err)
+    console.error('❌ GPT fetch 실패:', error)
   } finally {
     loading.value = false
   }

@@ -595,11 +595,11 @@ const goBack = () => {
   router.push('/mock-trading')
 }
 
-// 분봉 차트 데이터 조회 (기존)
+// 분봉 차트 데이터 조회 (키움)
 const fetchStockChartData = async (stockCode) => {
   try {
-    const url = `/api/chart/minute/${stockCode}/fullday`
-    console.log(`[API 요청] ${stockCode} fullday 차트 데이터 조회 시작`)
+    const url = `/api/chart/minute/${stockCode}`
+    console.log(`[API 요청] ${stockCode} kiwoom 차트 데이터 조회 시작`)
 
     const response = await fetch(url, {
       method: 'GET',
@@ -621,12 +621,12 @@ const fetchStockChartData = async (stockCode) => {
       throw new Error(`API 오류: ${result.msg1 || 'Unknown error'}`)
     }
 
-    if (!result.output2 || !Array.isArray(result.output2)) {
+    if (!result || !Array.isArray(result)) {
       console.error('[API 오류] 차트 데이터가 없습니다')
       throw new Error(`API 오류: 차트 데이터가 없습니다`)
     }
 
-    console.log(`[API 성공] ${result.output2.length}개 데이터 수신`)
+    console.log(`[API 성공] ${result.length}개 데이터 수신`)
     return result
   } catch (error) {
     console.error('[API 오류] 주식 차트 데이터 조회 실패:', error.message)
@@ -634,7 +634,7 @@ const fetchStockChartData = async (stockCode) => {
   }
 }
 
-// 일/주/월/년봉 차트 데이터 조회 (신규)
+// 일/주/월/년봉 차트 데이터 조회 (한투)
 const fetchVariousChartData = async (stockCode, periodCode) => {
   try {
     const startDate = '20150101' // 2015년 1월 1일부터 최대 가능한 갯수 호출
@@ -683,75 +683,50 @@ const fetchVariousChartData = async (stockCode, periodCode) => {
   }
 }
 
-// 1분봉 데이터를 Chart.js 형식으로 변환
 function convertApiDataTo1MinChartData(apiResponse) {
-  const chartDataArray = apiResponse.output2 || apiResponse.data || []
-  if (!chartDataArray || !Array.isArray(chartDataArray)) {
+  // apiResponse가 배열이면 그대로 사용, 객체면 배열로 변환
+  const chartDataArray = Array.isArray(apiResponse)
+    ? apiResponse
+    : apiResponse?.stk_min_pole_chart_qry || []
+  if (!Array.isArray(chartDataArray) || chartDataArray.length === 0) {
     console.warn('[데이터 변환] API 응답에 차트 데이터가 없습니다')
     return []
   }
 
-  // 15:20~15:29 데이터 제외, 15:19 이전 모든 데이터와 마지막 15:30 데이터만 남김
-  let filteredData = chartDataArray.filter((item) => {
-    const time = item.stck_cntg_hour
-    if (time >= '152000' && time < '153000') {
-      return false
+  // 오늘 날짜(YYYYMMDD) 구하기
+  const today = new Date()
+  const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
+
+  // 만약 날짜 정보가 추가되면, 그에 맞게 필터링 필요
+  // 시간 역순(15:30~09:00)이면 오름차순 정렬 필요
+  const converted = chartDataArray.map((item, idx) => {
+    // 시간 문자열 조합 (오늘 날짜 + stck_cntg_hour)
+    const timeStr = todayStr + item.stck_cntg_hour // "YYYYMMDDHHMMSS"
+    const year = parseInt(timeStr.substr(0, 4))
+    const month = parseInt(timeStr.substr(4, 2)) - 1
+    const day = parseInt(timeStr.substr(6, 2))
+    const hour = parseInt(timeStr.substr(8, 2))
+    const minute = parseInt(timeStr.substr(10, 2))
+    const second = parseInt(timeStr.substr(12, 2))
+    const dateTime = new Date(year, month, day, hour, minute, second)
+
+    return {
+      x: idx,
+      dateTime: dateTime.getTime(),
+      dateString: timeStr,
+      o: parseInt(item.stck_oprc),
+      h: parseInt(item.stck_hgpr),
+      l: parseInt(item.stck_lwpr),
+      c: parseInt(item.stck_prpr),
+      volume: parseInt(item.cntg_vol),
     }
-    return true
   })
 
-  const before1519 = filteredData.filter((item) => item.stck_cntg_hour <= '151900')
-  const idx1530 = filteredData.findLastIndex((item) => item.stck_cntg_hour === '153000')
-  let last1530 = []
-  if (idx1530 !== -1) {
-    const last1519 = before1519[before1519.length - 1]
-    if (last1519) {
-      const fake1530 = { ...filteredData[idx1530] }
-      fake1530.stck_cntg_hour = '152000'
-      last1530 = [fake1530]
-    } else {
-      last1530 = [filteredData[idx1530]]
-    }
-  }
-  filteredData = [...before1519, ...last1530]
+  // 시간 오름차순(09:00~15:30)으로 정렬
+  converted.sort((a, b) => a.dateTime - b.dateTime)
 
-  // 오늘 오전 9시 이전 데이터는 모두 제외
-  const now = new Date()
-  const today9am = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0, 0).getTime()
-
-  const convertedData = filteredData
-    .map((item, index) => {
-      try {
-        const date = item.stck_bsop_date
-        const time = item.stck_cntg_hour
-        const year = parseInt(date.substr(0, 4))
-        const month = parseInt(date.substr(4, 2)) - 1
-        const day = parseInt(date.substr(6, 2))
-        const hour = parseInt(time.substr(0, 2))
-        const minute = parseInt(time.substr(2, 2))
-        const second = parseInt(time.substr(4, 2))
-        const dateTime = new Date(year, month, day, hour, minute, second)
-
-        return {
-          x: index, // 인덱스 기반으로 변경
-          dateTime: dateTime.getTime(), // 실제 시간은 별도 저장
-          dateString: `${date}${time}`,
-          o: parseInt(item.stck_oprc),
-          h: parseInt(item.stck_hgpr),
-          l: parseInt(item.stck_lwpr),
-          c: parseInt(item.stck_prpr),
-          volume: parseInt(item.cntg_vol || item.acml_vol || 0),
-        }
-      } catch (error) {
-        console.error(`[데이터 변환] 항목 ${index} 변환 실패:`, error.message)
-        return null
-      }
-    })
-    .filter((item) => item !== null && item.dateTime >= today9am)
-    // 인덱스 재할당 (필터 후)
-    .map((item, idx) => ({ ...item, x: idx }))
-
-  return convertedData
+  // 인덱스 재할당
+  return converted.map((item, idx) => ({ ...item, x: idx }))
 }
 
 // 일/주/월/년봉 데이터를 Chart.js 형식으로 변환
@@ -1414,7 +1389,7 @@ onMounted(() => {
       const mockPriceUrl = `/api/stock/price/${stockInfo.stockCode}`
       const mockPriceRes = await fetch(mockPriceUrl, { method: 'GET' })
       const mockPriceRaw = await mockPriceRes.json()
-      console.log('[RAW MOCK PRICE]', mockPriceRaw)
+      // console.log('[RAW MOCK PRICE]', mockPriceRaw)
       if (mockPriceRaw && typeof mockPriceRaw === 'object' && mockPriceRaw.output) {
         stockInfo.currentPrice = Number(mockPriceRaw.output.stck_prpr) || 0
         stockInfo.changeAmount = Number(mockPriceRaw.output.prdy_vrss) || 0
