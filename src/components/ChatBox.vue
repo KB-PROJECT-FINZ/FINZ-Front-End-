@@ -42,8 +42,13 @@
             <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
           </div>
           <div class="flex-1">
+            <!-- 🆕 키워드 기반 주식 추천 카드 -->
+            <div v-if="isStockRecommendationResponse(msg.content)">
+              <StockRecommendationCards :content="msg.content" />
+            </div>
+
             <!-- 일반 메시지 -->
-            <div v-if="!msg.type" class="bg-gray-100 rounded-2xl p-4 max-w-xs">
+            <div v-else-if="!msg.type" class="bg-gray-100 rounded-2xl p-4 max-w-xs">
               <p>{{ msg.content }}</p>
             </div>
 
@@ -92,6 +97,7 @@ import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useChatStore } from '@/stores/counter.js'
 import { useUserStore } from '@/stores/user.js'
+import StockRecommendationCards from './StockRecommendationCards.vue'
 
 const chatStore = useChatStore()
 const userStore = useUserStore()
@@ -106,6 +112,39 @@ const loading = ref(false)
 const awaitingKeyword = ref(false)
 const awaitingStockAnalyze = ref(false)
 const awaitingTermExplain = ref(false)
+
+// 🆕 키워드 기반 주식 추천 응답 감지 함수
+const isStockRecommendationResponse = (content) => {
+  // content가 없거나 문자열이 아닌 경우 false 반환
+  if (!content || typeof content !== 'string') {
+    return false
+  }
+
+  // 1. JSON 형태 응답 감지
+  try {
+    const parsed = JSON.parse(content)
+    if (Array.isArray(parsed) && 
+        parsed.length > 0 &&
+        parsed.every(item => 
+          item.ticker && 
+          item.reason && 
+          item.riskLevel &&
+          item.timingComment &&
+          item.futureOutlook
+        )) {
+      return true
+    }
+  } catch {
+    // JSON이 아닌 경우 계속 진행
+  }
+  
+  // 2. 텍스트 형태 주식 추천 감지
+  const stockKeywords = ['CJ제일제당', '삼양식품', '오뚜기', '롯데제과', '농심', '삼성전자', 'SK하이닉스', 'NAVER', '카카오', '현대차', '기아']
+  const hasMultipleStocks = stockKeywords.filter(keyword => content.includes(keyword)).length >= 2
+  const hasRecommendationText = content.includes('투자') && (content.includes('추천') || content.includes('매력') || content.includes('가능성'))
+  
+  return hasMultipleStocks && hasRecommendationText
+}
 
 // ✅ intent 상태 초기화 함수
 function resetAwaitingState() {
