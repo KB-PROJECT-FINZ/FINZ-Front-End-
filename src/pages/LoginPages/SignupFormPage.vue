@@ -46,14 +46,29 @@
         </div>
 
         <!-- 이메일 -->
-        <div>
+        <!-- 이메일 + 중복확인 -->
+        <div class="flex gap-2">
           <input
             v-model="email"
             type="email"
             placeholder="이메일을 입력해주세요"
             class="w-full px-4 py-2 rounded-full border border-gray-300 bg-white placeholder-gray-400"
           />
+          <button
+            class="px-2 w-25 text-sm bg-purple-100 rounded-full text-purple-600 font-medium"
+            @click="checkEmail"
+          >
+            중복확인
+          </button>
         </div>
+
+        <!-- 이메일 상태 메시지 -->
+        <p v-if="emailStatus === 'available'" class="text-sm text-blue-600 mt-1">
+          ✔ 사용 가능한 이메일입니다.
+        </p>
+        <p v-else-if="emailStatus === 'unavailable'" class="text-sm text-red-500 mt-1">
+          ✖ 이미 사용 중인 이메일입니다.
+        </p>
 
         <!-- 닉네임 + 중복확인 -->
         <div class="flex gap-2">
@@ -70,6 +85,14 @@
             중복확인
           </button>
         </div>
+
+        <!-- 닉네임 상태 메시지 -->
+        <p v-if="nicknameStatus === 'available'" class="text-sm text-blue-600 mt-1">
+          ✔ 사용 가능한 닉네임입니다.
+        </p>
+        <p v-else-if="nicknameStatus === 'unavailable'" class="text-sm text-red-500 mt-1">
+          ✖ 이미 사용 중인 닉네임입니다.
+        </p>
 
         <!-- 비밀번호 -->
         <div class="relative">
@@ -143,9 +166,32 @@ const password = ref('')
 const passwordConfirm = ref('')
 const agree = ref(false)
 const showPassword = ref(false)
+const emailStatus = ref(null)
 
 const togglePassword = () => {
   showPassword.value = !showPassword.value
+}
+
+const checkEmail = async () => {
+  if (!email.value) {
+    emailStatus.value = null
+    alert('이메일을 입력해주세요')
+    return
+  }
+
+  try {
+    emailStatus.value = 'checking'
+    const res = await axios.get(`/api/auth/check-email?email=${email.value}`)
+
+    if (res.data.available) {
+      emailStatus.value = 'available'
+    } else {
+      emailStatus.value = 'unavailable'
+    }
+  } catch (err) {
+    console.error('오류:', err.response?.data || err.message)
+    emailStatus.value = null
+  }
 }
 
 const canSubmit = computed(() => {
@@ -155,29 +201,31 @@ const canSubmit = computed(() => {
     nickname.value &&
     password.value.length >= 6 &&
     password.value === passwordConfirm.value &&
-    agree.value
+    agree.value &&
+    emailStatus.value === 'available' &&
+    nicknameStatus.value === 'available'
   )
 })
-
+const nicknameStatus = ref(null)
 const checkNickname = async () => {
   if (!nickname.value) {
+    nicknameStatus.value = null
     alert('닉네임을 입력해주세요')
     return
   }
 
   try {
+    nicknameStatus.value = 'checking'
     const res = await axios.get(`/api/auth/check-nickname?nickname=${nickname.value}`)
-    console.log('요청 닉네임:', nickname.value)
-    console.log('응답 데이터:', res.data)
-    console.log('닉네임 중복확인 응답:', res.data) // 디버깅용 로그
 
     if (res.data.available) {
-      alert('사용 가능한 닉네임입니다')
+      nicknameStatus.value = 'available'
     } else {
-      alert('이미 사용 중인 닉네임입니다')
+      nicknameStatus.value = 'unavailable'
     }
   } catch (err) {
     console.error('오류:', err.response?.data || err.message)
+    nicknameStatus.value = null
   }
 }
 
@@ -196,8 +244,6 @@ const handleSignup = async () => {
 
     if (res.data) {
       alert('회원가입 성공! 투자 성향 테스트로 이동합니다.')
-      localStorage.setItem('username', email.value)
-      localStorage.setItem('name', name.value)
       router.push({
         path: '/investment-test',
         query: { username: email.value },

@@ -25,16 +25,28 @@
         <button
           class="bg-none border-none text-xl text-gray-800 cursor-pointer p-2 rounded-full hover:bg-gray-100"
           @click="refreshData"
+          :disabled="loading"
         >
-          &#8635;
+          <span :class="{ 'animate-spin': loading }">&#8635;</span>
         </button>
       </header>
+
       <!-- 보유 종목 요약 -->
       <section class="pt-4 px-0">
         <div class="flex justify-between items-center px-6 pt-2">
           <h3 class="text-lg font-semibold text-gray-900">내 투자</h3>
         </div>
-        <div class="flex flex-col gap-3 p-5">
+
+        <!-- 요약 정보 로딩 상태 -->
+        <div v-if="loading && holdingsData.length === 0" class="flex flex-col gap-3 p-5">
+          <div v-for="i in 4" :key="i" class="flex justify-between items-center px-2">
+            <div class="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+            <div class="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        </div>
+
+        <!-- 요약 정보 -->
+        <div v-else class="flex flex-col gap-3 p-5">
           <div class="flex justify-between items-center px-2">
             <span class="text-xs text-gray-500">원금</span>
             <span class="text-base text-gray-900">{{ totalInvestment.toLocaleString() }}원</span>
@@ -127,132 +139,179 @@
 
     <!-- 보유 종목 리스트 -->
     <section class="bg-white rounded-xl px-4">
-      <div
-        v-for="holding in sortedHoldings"
-        :key="holding.stockCode"
-        class="p-4 cursor-pointer transition-colors"
-        @click="goToStockDetail(holding.stockCode, holding.stockName)"
-      >
-        <template v-if="showDetail">
-          <!-- 상세 카드: 종목명 옆에 이미지 -->
-          <div class="flex justify-between items-start mb-3">
-            <div class="flex items-center gap-2">
-              <span
-                class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden"
-              >
-                <img
-                  v-if="holding.imageUrl && !imageErrors[holding.stockCode]"
-                  :src="holding.imageUrl"
-                  :alt="`${holding.stockName} 로고`"
-                  class="w-full h-full object-cover rounded-full"
-                  @error="handleImageError(holding.stockCode)"
-                />
-                <span
-                  v-else
-                  class="w-full h-full rounded-full flex items-center justify-center text-[13px] font-bold border-2 text-center flex-shrink-0"
-                  style="border-color: #2272eb; color: #2272eb; background: #fff"
-                >
-                  {{ getStockInitial(holding.stockName) }}
-                </span>
-              </span>
-              <div>
-                <h4 class="text-base font-semibold text-gray-900">{{ holding.stockName }}</h4>
-                <p class="text-sm text-gray-500">{{ holding.stockCode }}</p>
-              </div>
-            </div>
-            <div class="text-right">
-              <div class="flex flex-col gap-0 text-right">
-                <div class="text-base font-bold text-gray-900 leading-tight">
-                  {{ holding.currentPrice.toLocaleString() }}원
-                </div>
-                <span
-                  class="text-sm leading-tight"
-                  :class="holding.profitRate >= 0 ? 'text-red-600' : 'text-blue-600'"
-                  style="margin-top: 2px"
-                >
-                  {{ holding.profitRate >= 0 ? '+' : '' }}{{ holding.profitRate }}%
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span class="text-gray-500">보유수량</span>
-              <span class="ml-2 font-medium text-gray-900">{{ holding.quantity }}주</span>
-            </div>
-            <div>
-              <span class="text-gray-500">평균단가</span>
-              <span class="ml-2 font-medium text-gray-900"
-                >{{ holding.averagePrice.toLocaleString() }}원</span
-              >
-            </div>
-            <div>
-              <span class="text-gray-500">평가금액</span>
-              <span class="ml-2 font-medium text-gray-900"
-                >{{ holding.totalValue.toLocaleString() }}원</span
-              >
-            </div>
-            <div>
-              <span class="text-gray-500">평가손익</span>
-              <span
-                class="ml-2 font-medium"
-                :class="holding.profitLoss >= 0 ? 'text-red-600' : 'text-blue-600'"
-              >
-                {{ holding.profitLoss >= 0 ? '+' : ''
-                }}{{ Math.abs(holding.profitLoss).toLocaleString() }}원
-              </span>
-            </div>
-          </div>
-        </template>
-        <template v-else>
-          <!-- 간단 카드: 종목명 옆에 이미지, 보유수량(아래), 오른쪽에 현재가/평가손익(수익률%) -->
+      <!-- 로딩 중 스켈레톤 UI -->
+      <div v-if="loading && holdingsData.length === 0">
+        <div v-for="i in 3" :key="i" class="p-4 animate-pulse">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0 flex-1">
-              <span
-                class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden"
-              >
-                <img
-                  v-if="holding.imageUrl && !imageErrors[holding.stockCode]"
-                  :src="holding.imageUrl"
-                  :alt="`${holding.stockName} 로고`"
-                  class="w-full h-full object-cover rounded-full"
-                  @error="handleImageError(holding.stockCode)"
-                />
-                <span
-                  v-else
-                  class="w-full h-full rounded-full flex items-center justify-center text-[13px] font-bold border-2 text-center flex-shrink-0"
-                  style="border-color: #2272eb; color: #2272eb; background: #fff"
-                >
-                  {{ getStockInitial(holding.stockName) }}
-                </span>
-              </span>
+              <div class="w-8 h-8 bg-gray-200 rounded-full"></div>
               <div class="flex flex-col min-w-0">
-                <div class="text-base font-semibold text-gray-900 truncate">
-                  {{ holding.stockName }}
-                </div>
-                <div class="text-xs text-gray-500 mt-0.5">{{ holding.quantity }}주</div>
+                <div class="w-24 h-4 bg-gray-200 rounded mb-1"></div>
+                <div class="w-16 h-3 bg-gray-200 rounded"></div>
               </div>
             </div>
             <div class="flex flex-col items-end justify-center min-w-[110px]">
-              <span class="text-base text-gray-900 font-semibold mb-0.5">
-                {{ holding.currentPrice.toLocaleString() }}원
-              </span>
-              <span
-                :class="holding.profitLoss >= 0 ? 'text-red-600' : 'text-blue-600'"
-                class="text-xs"
-                >{{ holding.profitRate >= 0 ? '+' : '-'
-                }}{{ Math.abs(holding.profitLoss).toLocaleString() }}원 ({{
-                  holding.profitRate >= 0 ? '+' : ''
-                }}{{ holding.profitRate }}%)
-              </span>
+              <div class="w-20 h-4 bg-gray-200 rounded mb-1"></div>
+              <div class="w-24 h-3 bg-gray-200 rounded"></div>
             </div>
           </div>
-        </template>
+        </div>
+      </div>
+
+      <!-- 실제 데이터 -->
+      <div v-else>
+        <div
+          v-for="holding in sortedHoldings"
+          :key="holding.stockCode"
+          class="p-4 cursor-pointer transition-colors hover:bg-gray-50"
+          @click="goToStockDetail(holding.stockCode, holding.stockName)"
+        >
+          <template v-if="showDetail">
+            <!-- 상세 카드: 종목명 옆에 이미지 -->
+            <div class="flex justify-between items-start mb-3">
+              <div class="flex items-center gap-2">
+                <span
+                  class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden"
+                >
+                  <img
+                    v-if="holding.imageUrl && !imageErrors[holding.stockCode]"
+                    :src="holding.imageUrl"
+                    :alt="`${holding.stockName} 로고`"
+                    class="w-full h-full object-cover rounded-full"
+                    @error="handleImageError(holding.stockCode)"
+                  />
+                  <span
+                    v-else
+                    class="w-full h-full rounded-full flex items-center justify-center text-[13px] font-bold border-2 text-center flex-shrink-0"
+                    style="border-color: #2272eb; color: #2272eb; background: #fff"
+                  >
+                    {{ getStockInitial(holding.stockName) }}
+                  </span>
+                </span>
+                <div>
+                  <h4 class="text-base font-semibold text-gray-900">{{ holding.stockName }}</h4>
+                  <p class="text-sm text-gray-500">{{ holding.stockCode }}</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="flex flex-col gap-0 text-right">
+                  <div class="text-base font-bold text-gray-900 leading-tight">
+                    <span v-if="holding.currentPrice > 0"
+                      >{{ holding.currentPrice.toLocaleString() }}원</span
+                    >
+                    <span v-else class="text-gray-400">가격 업데이트 중...</span>
+                  </div>
+                  <span
+                    v-if="holding.profitRate !== null && holding.profitRate !== undefined"
+                    class="text-sm leading-tight"
+                    :class="holding.profitRate >= 0 ? 'text-red-600' : 'text-blue-600'"
+                    style="margin-top: 2px"
+                  >
+                    {{ holding.profitRate >= 0 ? '+' : '' }}{{ holding.profitRate }}%
+                  </span>
+                  <span v-else class="text-sm text-gray-400 leading-tight" style="margin-top: 2px"
+                    >-%</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span class="text-gray-500">보유수량</span>
+                <span class="ml-2 font-medium text-gray-900">{{ holding.quantity }}주</span>
+              </div>
+              <div>
+                <span class="text-gray-500">평균단가</span>
+                <span class="ml-2 font-medium text-gray-900"
+                  >{{ holding.averagePrice.toLocaleString() }}원</span
+                >
+              </div>
+              <div>
+                <span class="text-gray-500">평가금액</span>
+                <span class="ml-2 font-medium text-gray-900">
+                  <span v-if="holding.totalValue > 0"
+                    >{{ holding.totalValue.toLocaleString() }}원</span
+                  >
+                  <span v-else class="text-gray-400">계산 중...</span>
+                </span>
+              </div>
+              <div>
+                <span class="text-gray-500">평가손익</span>
+                <span
+                  v-if="holding.profitLoss !== null && holding.profitLoss !== undefined"
+                  class="ml-2 font-medium"
+                  :class="holding.profitLoss >= 0 ? 'text-red-600' : 'text-blue-600'"
+                >
+                  {{ holding.profitLoss >= 0 ? '+' : ''
+                  }}{{ Math.abs(holding.profitLoss).toLocaleString() }}원
+                </span>
+                <span v-else class="ml-2 font-medium text-gray-400">계산 중...</span>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <!-- 간단 카드: 종목명 옆에 이미지, 보유수량(아래), 오른쪽에 현재가/평가손익(수익률%) -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0 flex-1">
+                <span
+                  class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden"
+                >
+                  <img
+                    v-if="holding.imageUrl && !imageErrors[holding.stockCode]"
+                    :src="holding.imageUrl"
+                    :alt="`${holding.stockName} 로고`"
+                    class="w-full h-full object-cover rounded-full"
+                    @error="handleImageError(holding.stockCode)"
+                  />
+                  <span
+                    v-else
+                    class="w-full h-full rounded-full flex items-center justify-center text-[13px] font-bold border-2 text-center flex-shrink-0"
+                    style="border-color: #2272eb; color: #2272eb; background: #fff"
+                  >
+                    {{ getStockInitial(holding.stockName) }}
+                  </span>
+                </span>
+                <div class="flex flex-col min-w-0">
+                  <div class="text-base font-semibold text-gray-900 truncate">
+                    {{ holding.stockName }}
+                  </div>
+                  <div class="text-xs text-gray-500 mt-0.5">{{ holding.quantity }}주</div>
+                </div>
+              </div>
+              <div class="flex flex-col items-end justify-center min-w-[110px]">
+                <span class="text-base text-gray-900 font-semibold mb-0.5">
+                  <span v-if="holding.currentPrice > 0"
+                    >{{ holding.currentPrice.toLocaleString() }}원</span
+                  >
+                  <span v-else class="text-gray-400 text-sm">업데이트 중...</span>
+                </span>
+                <span
+                  v-if="
+                    holding.profitLoss !== null &&
+                    holding.profitLoss !== undefined &&
+                    holding.profitRate !== null &&
+                    holding.profitRate !== undefined
+                  "
+                  :class="holding.profitLoss >= 0 ? 'text-red-600' : 'text-blue-600'"
+                  class="text-xs"
+                  >{{ holding.profitRate >= 0 ? '+' : '-'
+                  }}{{ Math.abs(holding.profitLoss).toLocaleString() }}원 ({{
+                    holding.profitRate >= 0 ? '+' : ''
+                  }}{{ holding.profitRate }}%)
+                </span>
+                <span v-else class="text-xs text-gray-400">계산 중...</span>
+              </div>
+            </div>
+          </template>
+        </div>
       </div>
     </section>
 
     <!-- 빈 상태 -->
-    <div v-if="holdingsData.length === 0" class="flex flex-col items-center justify-center py-16">
+    <div
+      v-if="holdingsData.length === 0 && !loading"
+      class="flex flex-col items-center justify-center py-16"
+    >
       <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
         <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -272,17 +331,6 @@
       </button>
     </div>
 
-    <!-- 로딩 상태 -->
-    <div
-      v-if="loading"
-      class="fixed inset-0 bg-black/30 backdrop-blur-sm flex flex-col items-center justify-center z-[1000] text-white"
-    >
-      <div
-        class="w-10 h-10 border-4 border-white border-opacity-30 border-t-white rounded-full animate-spin mb-4"
-      ></div>
-      <p>보유 종목을 불러오는 중...</p>
-    </div>
-
     <FooterNavigation />
   </div>
 </template>
@@ -290,6 +338,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import FooterNavigation from '../../components/FooterNavigation.vue'
 
 const showDetail = ref(false)
@@ -305,50 +354,147 @@ const sortOptions = [
   { key: 'profitLoss', label: '평가손익' },
 ]
 
-// 보유 종목 데이터 (API에서 가져옴)
+// 보유 종목 데이터
 const holdingsData = ref([])
 
-// 실제 API에서 데이터 불러오기
+// null 값을 안전하게 처리하는 헬퍼 함수
+const safeNumber = (value, defaultValue = 0) => {
+  if (value === null || value === undefined || isNaN(value)) {
+    return defaultValue
+  }
+  return Number(value)
+}
+
+// 배치로 여러 종목의 실시간 가격을 한번에 조회하는 함수
+const fetchMultipleStockPrices = async (stockCodes) => {
+  try {
+    const codesString = stockCodes.join(',')
+    const response = await axios.get(`/api/stock/prices/${codesString}`)
+
+    if (response.data && response.data.success) {
+      console.log(
+        `배치 가격 조회 완료: ${response.data.successCount}/${response.data.requestedCount} 성공`,
+      )
+
+      if (response.data.errors && response.data.errors.length > 0) {
+        console.warn('⚠️ 일부 종목 조회 실패:', response.data.errors)
+      }
+
+      return response.data.data
+    }
+
+    throw new Error('Invalid response format')
+  } catch (error) {
+    console.error('❌ 배치 주식 가격 조회 실패:', error)
+    return null
+  }
+}
+
+// 보유 종목 실시간 가격 업데이트 함수
+const updateHoldingsWithRealTimePrice = async (holdings) => {
+  if (holdings.length === 0) return holdings
+
+  // 모든 종목코드 추출
+  const stockCodes = holdings.map((holding) => holding.stockCode)
+
+  // 배치로 모든 종목의 가격을 한번에 조회
+  const pricesData = await fetchMultipleStockPrices(stockCodes)
+
+  if (!pricesData) {
+    console.warn('⚠️ 배치 가격 조회 실패, 기존 데이터 유지')
+    return holdings
+  }
+
+  const updatedHoldings = holdings.map((holding) => {
+    const priceInfo = pricesData[holding.stockCode]
+
+    if (priceInfo && priceInfo.output) {
+      const output = priceInfo.output
+      const currentPrice = parseInt(output.stck_prpr)
+
+      // 현재 시세로 현재 가치 및 손익 재계산
+      const totalValue = holding.quantity * currentPrice
+      const totalInvestment = holding.quantity * holding.averagePrice
+      const profitLoss = totalValue - totalInvestment
+      const profitRate = totalInvestment > 0 ? (profitLoss / totalInvestment) * 100 : 0
+
+      return {
+        ...holding,
+        currentPrice: currentPrice,
+        totalValue: totalValue,
+        profitLoss: profitLoss,
+        profitRate: Number(profitRate.toFixed(2)),
+        priceChange: parseInt(output.prdy_vrss),
+        changeRate: parseFloat(output.prdy_ctrt),
+        changeSign: output.prdy_vrss_sign,
+      }
+    } else {
+      // 해당 종목의 가격 조회 실패 시 기존 데이터 유지
+      console.warn(`⚠️ ${holding.stockCode} 가격 조회 실패, 기존 데이터 유지`)
+      return holding
+    }
+  })
+
+  return updatedHoldings
+}
+
+// 수정된 데이터 불러오기 함수
 async function fetchHoldings() {
   loading.value = true
   try {
-    const response = await fetch('/api/mocktrading/holdings')
-    const data = await response.json()
-    holdingsData.value = (data || []).map((h) => ({
-      stockCode: h.stockCode,
-      stockName: h.stockName,
-      quantity: h.quantity,
-      averagePrice: h.averagePrice,
-      currentPrice: h.currentPrice,
-      priceChange: 0, // API에 변동률 없으면 0
-      totalValue: h.currentValue,
-      percentage: h.percentage ?? 0,
-      profitLoss: h.profitLoss,
-      profitRate: h.profitRate,
-      imageUrl: h.imageUrl,
-    }))
+    const response = await axios.get('/api/mocktrading/holdings')
+
+    if (response.data && Array.isArray(response.data)) {
+      console.log('보유 종목 데이터 로드 완료')
+
+      // 기본 보유 종목 데이터 정리 - null 값 안전 처리
+      const basicHoldings = response.data.map((h) => ({
+        stockCode: h.stockCode,
+        stockName: h.stockName,
+        quantity: safeNumber(h.quantity, 0),
+        averagePrice: safeNumber(h.averagePrice, 0),
+        currentPrice: safeNumber(h.currentPrice, 0),
+        totalValue: safeNumber(h.currentValue, 0),
+        profitLoss: safeNumber(h.profitLoss, 0),
+        profitRate: safeNumber(h.profitRate, 0),
+        imageUrl: h.imageUrl,
+      }))
+
+      // 배치로 실시간 가격 업데이트
+      holdingsData.value = await updateHoldingsWithRealTimePrice(basicHoldings)
+      console.log('배치 실시간 가격 업데이트 완료')
+    } else {
+      holdingsData.value = []
+      console.log('📝 보유 종목 없음')
+    }
   } catch (error) {
-    console.error('보유 종목 데이터 불러오기 실패:', error)
+    console.error('❌ 보유 종목 데이터 불러오기 실패:', error)
+    if (error.response?.status === 401) {
+      alert('로그인이 필요합니다.')
+      router.push('/login-form')
+      return
+    }
     holdingsData.value = []
+    alert('보유 종목 데이터를 불러오는 중 오류가 발생했습니다.')
   } finally {
     loading.value = false
   }
 }
 
-// 계산된 속성들
+// 계산된 속성들 - null 값 안전 처리
 const totalInvestment = computed(() => {
   return holdingsData.value.reduce(
-    (sum, holding) => sum + holding.averagePrice * holding.quantity,
+    (sum, holding) => sum + safeNumber(holding.averagePrice, 0) * safeNumber(holding.quantity, 0),
     0,
   )
 })
 
 const totalCurrentValue = computed(() => {
-  return holdingsData.value.reduce((sum, holding) => sum + holding.totalValue, 0)
+  return holdingsData.value.reduce((sum, holding) => sum + safeNumber(holding.totalValue, 0), 0)
 })
 
 const totalProfitLoss = computed(() => {
-  return holdingsData.value.reduce((sum, holding) => sum + holding.profitLoss, 0)
+  return holdingsData.value.reduce((sum, holding) => sum + safeNumber(holding.profitLoss, 0), 0)
 })
 
 const totalProfitRate = computed(() => {
@@ -356,7 +502,7 @@ const totalProfitRate = computed(() => {
   return Number(((totalProfitLoss.value / totalInvestment.value) * 100).toFixed(2))
 })
 
-// 정렬된 보유 종목
+// 정렬된 보유 종목 - null 값 안전 처리
 const sortedHoldings = computed(() => {
   const sorted = [...holdingsData.value]
 
@@ -364,13 +510,9 @@ const sortedHoldings = computed(() => {
     case 'name':
       return sorted.sort((a, b) => a.stockName.localeCompare(b.stockName))
     case 'profitRate':
-      return sorted.sort((a, b) => b.profitRate - a.profitRate)
+      return sorted.sort((a, b) => safeNumber(b.profitRate, 0) - safeNumber(a.profitRate, 0))
     case 'profitLoss':
-      return sorted.sort((a, b) => b.profitLoss - a.profitLoss)
-    case 'totalValue':
-      return sorted.sort((a, b) => b.totalValue - a.totalValue)
-    case 'percentage':
-      return sorted.sort((a, b) => b.percentage - a.percentage)
+      return sorted.sort((a, b) => safeNumber(b.profitLoss, 0) - safeNumber(a.profitLoss, 0))
     default:
       return sorted
   }
@@ -389,32 +531,13 @@ const goToStockDetail = (stockCode, stockName) => {
   router.push(`/mock-trading/${stockCode}/chart?stockName=${encodeURIComponent(stockName)}`)
 }
 
-const goToTradingPage = (stockCode, stockName, type) => {
-  router.push({
-    path: '/trading',
-    query: {
-      stockCode,
-      stockName,
-      tab: type,
-    },
-  })
-}
-
 const goToMockTrading = () => {
   router.push('/mock-trading')
 }
 
 const refreshData = async () => {
-  loading.value = true
-  try {
-    // 여기에 API 호출 로직 추가 예정
-    console.log('보유 종목 데이터 새로고침')
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-  } catch (error) {
-    console.error('보유 종목 데이터 새로고침 실패:', error)
-  } finally {
-    loading.value = false
-  }
+  console.log('🔄 보유 종목 데이터 새로고침')
+  await fetchHoldings()
 }
 
 // 종목 이미지 에러 추적
@@ -441,3 +564,32 @@ onMounted(() => {
   console.log('보유 종목 페이지 마운트됨')
 })
 </script>
+
+<style scoped>
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+</style>
