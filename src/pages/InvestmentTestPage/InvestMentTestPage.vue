@@ -180,7 +180,7 @@ const determineType = (score) => {
   if (score === 11) return 'DTA'
   if (score === 12) {
     // 추가 질문을 통해 분기할 수도 있음
-    return 'TEC' // or 'THE'
+    return 'TEC'
   }
   return 'UNKNOWN'
 }
