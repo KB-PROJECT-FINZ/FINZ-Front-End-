@@ -18,9 +18,11 @@
         <button
           @click="exportToPDF"
           class="p-2 cursor-pointer rounded-full mr-1 hover:bg-gray-100 bg-transparent border-0"
-          title="PDF로 내보내기"
+          title="PDF 내보내기"
+          :disabled="pdfLoading"
         >
-          <span>📄</span>
+          <span v-if="pdfLoading">⏳</span>
+          <span v-else>📄</span>
         </button>
         <button
           class="bg-none border-none text-xl text-gray-800 cursor-pointer p-2 rounded-full hover:bg-gray-100"
@@ -59,7 +61,7 @@
     </div>
 
     <!-- 분석 결과 -->
-    <div v-else-if="analysisData">
+    <div v-else-if="analysisData" ref="pdfContent">
       <!-- 통계 요약 카드들 -->
       <section class="bg-white px-0 pt-6 mx-0 mb-0">
         <h2 class="text-xl font-bold text-gray-900 px-6">투자 성과 요약</h2>
@@ -155,14 +157,18 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '@/components/FooterNavigation.vue'
+
 const router = useRouter()
 const analysisData = ref(null)
 const loading = ref(false)
 const error = ref(null)
+const pdfLoading = ref(false)
+const pdfContent = ref(null)
 
 const goBack = () => {
   router.back()
 }
+
 const formatContent = (content) => {
   if (!content) return ''
   return content
@@ -172,6 +178,7 @@ const formatContent = (content) => {
     .replace(/- (.*?)(?=\n|$)/g, '<li>$1</li>')
     .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
 }
+
 const getMockData = () => {
   return {
     stats: {
@@ -189,6 +196,7 @@ const getMockData = () => {
     },
   }
 }
+
 const fetchAnalysis = async () => {
   loading.value = true
   error.value = null
@@ -202,25 +210,194 @@ const fetchAnalysis = async () => {
     loading.value = false
   }
 }
-const exportToPDF = () => {
-  alert('PDF 내보내기 기능은 준비 중입니다.')
+
+// 브라우저 네이티브 인쇄 API를 사용한 PDF 생성
+const exportToPDF = async () => {
+  if (!analysisData.value || !pdfContent.value) {
+    alert('분석 데이터가 없습니다.')
+    return
+  }
+
+  pdfLoading.value = true
+
+  try {
+    // 새 창 생성
+    const printWindow = window.open('', '_blank', 'width=800,height=600')
+
+    if (!printWindow) {
+      alert('팝업이 차단되었습니다. 팝업을 허용해주세요.')
+      return
+    }
+
+    // Footer 숨기기
+    const footer = document.querySelector('footer')
+    const footerDisplay = footer ? footer.style.display : null
+    if (footer) footer.style.display = 'none'
+
+    // 현재 페이지의 스타일 가져오기
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((el) => el.outerHTML)
+      .join('\n')
+
+    // 콘텐츠 추출 및 정리
+    const content = pdfContent.value.innerHTML
+
+    // PDF용 HTML 문서 생성
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="ko">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>AI 포트폴리오 분석리포트</title>
+          ${styles}
+          <style>
+            @page {
+              margin: 15mm;
+              size: A4;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              line-height: 1.6;
+              color: #111827;
+              background: white;
+              margin: 0;
+              padding: 0;
+              overflow: visible !important;
+            }
+            .pdf-container {
+              width: 100%;
+              margin: 0;
+              padding: 0;
+            }
+            .text-blue-600 { color: #2563eb !important; }
+            .text-red-600 { color: #dc2626 !important; }
+            .text-green-700 { color: #15803d !important; }
+            .text-blue-700 { color: #1d4ed8 !important; }
+            .text-gray-900 { color: #111827 !important; }
+            .text-gray-700 { color: #374151 !important; }
+            .text-gray-500 { color: #6b7280 !important; }
+            .text-gray-400 { color: #9ca3af !important; }
+            .bg-white { background-color: #ffffff !important; }
+            .bg-gray-50 { background-color: #f9fafb !important; }
+            .bg-blue-50 { background-color: #eff6ff !important; }
+            .bg-red-50 { background-color: #fef2f2 !important; }
+            .bg-green-50 { background-color: #f0fdf4 !important; }
+            .border-blue-400 { border-color: #60a5fa !important; }
+            .border-red-400 { border-color: #f87171 !important; }
+            .border-green-400 { border-color: #4ade80 !important; }
+            .border-red-200 { border-color: #fecaca !important; }
+            .border-gray-200 { border-color: #e5e7eb !important; }
+            .report-title {
+              text-align: center;
+              font-size: 2rem;
+              font-weight: bold;
+              margin-bottom: 1.5rem;
+              color: #1f2937;
+              padding-bottom: 0.5rem;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 0.5rem;
+            }
+            .finz-logo {
+              width: 90px;
+              margin-bottom: 0.5rem;
+              display: block;
+            }
+            .section-divider {
+              height: 3px;
+              background: #e5e7eb;
+              border-radius: 2px;
+              margin: 1.5rem 0 2rem 0;
+              border: none;
+            }
+            .flex { display: flex !important; }
+            .justify-between { justify-content: space-between !important; }
+            .items-center { align-items: center !important; }
+            .items-end { align-items: flex-end !important; }
+            .flex-col { flex-direction: column !important; }
+            .gap-3 { gap: 0.75rem !important; }
+            @media print {
+              .no-print, footer, .footer-navigation { display: none !important; }
+              .sticky { position: static !important; }
+              body { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="pdf-container">
+            <div class="report-title">
+              <img src="/src/assets/finz.png" alt="Finz Logo" class="finz-logo" />
+              <span>AI 포트폴리오 분석리포트</span>
+            </div>
+            <div class="report-date" style="text-align: center; margin-bottom: 2rem; color: #6b7280; font-size: 0.875rem;">
+              생성일: ${new Date().toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </div>
+            <hr class="section-divider" style="border: none; border-top: 3px solid #e5e7eb; margin: 0 0 2rem 0; width: 100%;" />
+            ${content}
+          </div>
+        </body>
+      </html>
+    `
+
+    // 새 창에 HTML 작성
+    printWindow.document.write(htmlContent)
+    printWindow.document.close()
+
+    // Footer 스타일 복원
+    if (footer) footer.style.display = footerDisplay || ''
+
+    // 인쇄 대화상자 열기
+    printWindow.focus()
+
+    setTimeout(() => {
+      printWindow.print()
+
+      // 인쇄 완료 후 창 닫기
+      setTimeout(() => {
+        printWindow.close()
+      }, 1000)
+    }, 1500)
+  } catch (error) {
+    console.error('PDF 생성 중 오류:', error)
+    alert('PDF 생성 중 오류가 발생했습니다. 다시 시도해주세요.')
+  } finally {
+    pdfLoading.value = false
+  }
 }
+
 onMounted(() => {
   fetchAnalysis()
 })
-
 </script>
 
 <style scoped>
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+/* PDF 전용 스타일 */
+@media print {
+  .sticky {
+    position: static !important;
+  }
+
+  footer {
+    display: none !important;
   }
 }
 </style>

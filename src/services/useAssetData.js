@@ -1,5 +1,4 @@
-// composables/useAssetData.js
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import axios from 'axios'
 
 export function useAssetDataStore() {
@@ -31,15 +30,15 @@ export function useAssetDataStore() {
   const parseStockPriceData = (priceInfo) => {
     if (priceInfo && typeof priceInfo === 'object') {
       const fields = {
-        currentPrice: priceInfo.inter2_prpr,           // 관심2 현재가
-        priceChange: priceInfo.inter2_prdy_vrss,       // 관심2 전일 대비
-        changeRate: priceInfo.prdy_ctrt,               // 전일 대비율
-        changeSign: priceInfo.prdy_vrss_sign,          // 전일 대비 부호
-        openPrice: priceInfo.inter2_oprc,              // 관심2 시가
-        highPrice: priceInfo.inter2_hgpr,              // 관심2 고가
-        lowPrice: priceInfo.inter2_lwpr,               // 관심2 저가
-        volume: priceInfo.acml_vol,                    // 누적 거래량
-        stockName: priceInfo.inter_kor_isnm,           // 관심 한글 종목명
+        currentPrice: priceInfo.inter2_prpr,
+        priceChange: priceInfo.inter2_prdy_vrss,
+        changeRate: priceInfo.prdy_ctrt,
+        changeSign: priceInfo.prdy_vrss_sign,
+        openPrice: priceInfo.inter2_oprc,
+        highPrice: priceInfo.inter2_hgpr,
+        lowPrice: priceInfo.inter2_lwpr,
+        volume: priceInfo.acml_vol,
+        stockName: priceInfo.inter_kor_isnm,
       }
 
       // 필수 필드들이 있는지 확인
@@ -48,7 +47,7 @@ export function useAssetDataStore() {
           currentPrice: parseInt(fields.currentPrice),
           priceChange: parseInt(fields.priceChange || 0),
           changeRate: parseFloat(fields.changeRate || 0),
-          changeSign: fields.changeSign || '3', // 3: 보합
+          changeSign: fields.changeSign || '3',
           openPrice: parseInt(fields.openPrice || 0),
           highPrice: parseInt(fields.highPrice || 0),
           lowPrice: parseInt(fields.lowPrice || 0),
@@ -63,9 +62,7 @@ export function useAssetDataStore() {
 
   // ===== Computed Properties =====
   const stockValue = computed(() => {
-    return holdingsData.value.reduce((total, holding) => {
-      return total + safeNumber(holding.currentValue, 0)
-    }, 0)
+    return holdingsData.value.reduce((sum, holding) => sum + safeNumber(holding.totalValue, 0), 0)
   })
 
   const totalInvestment = computed(() => {
@@ -157,7 +154,7 @@ export function useAssetDataStore() {
       const response = await axios.get(`/api/stock/prices/${codesString}`)
 
       if (response.status === 200 && response.data) {
-        console.log(`배치 가격 조회 완료`)
+        console.log(`가격 조회 완료`)
 
         if (response.data.fallbackMode) {
           console.info('단일 조회 모드로 처리됨')
@@ -206,19 +203,15 @@ export function useAssetDataStore() {
       return holdings
     }
 
-    const updatedHoldings = holdings.map((holding) => {
+    return holdings.map((holding) => {
       const priceInfo = pricesData[holding.stockCode]
 
       if (priceInfo) {
-        // 다중 조회 API 응답 구조 처리
         let parsedData = null
 
-        // 다중 조회 API 응답인 경우 (직접 데이터)
         if (priceInfo.inter2_prpr) {
           parsedData = parseStockPriceData(priceInfo)
-        }
-        // 단일 조회 API 응답인 경우 (폴백 모드)
-        else if (priceInfo.output && priceInfo.output.stck_prpr) {
+        } else if (priceInfo.output && priceInfo.output.stck_prpr) {
           const output = priceInfo.output
           parsedData = {
             currentPrice: parseInt(output.stck_prpr),
@@ -243,6 +236,7 @@ export function useAssetDataStore() {
             ...holding,
             currentPrice: parsedData.currentPrice,
             currentValue: totalValue,
+            totalValue: totalValue,
             profitLoss: profitLoss,
             profitRate: Number(profitRate.toFixed(2)),
             priceChange: parsedData.priceChange,
@@ -263,8 +257,6 @@ export function useAssetDataStore() {
         return holding
       }
     })
-
-    return updatedHoldings
   }
 
   // 데이터 로딩 함수
@@ -304,7 +296,7 @@ export function useAssetDataStore() {
         }))
 
         holdingsData.value = await updateHoldingsWithRealTimePrice(basicHoldings)
-        console.log('배치 실시간 가격 업데이트 완료')
+        console.log('실시간 가격 업데이트 완료')
       } else {
         holdingsData.value = []
         console.log('📝 보유 종목 없음')
@@ -348,6 +340,6 @@ export function useAssetDataStore() {
     // 메서드
     loadUserData,
     safeNumber,
-    parseStockPriceData, // 헬퍼 함수도 export
+    parseStockPriceData,
   }
 }
