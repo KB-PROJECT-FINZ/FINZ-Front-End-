@@ -4,7 +4,7 @@
     <!-- 대화 내용 -->
     <div class="bg-gray-100 rounded-xl p-4 h-[400px] overflow-y-auto space-y-3" ref="chatContainer">
       <p v-if="loading" class="text-sm text-gray-500 italic text-left">
-        ⏳ 답변을 보르고 있어요...
+        ⏳ 답변을 부르고 있어요...
       </p>
       <div
         v-for="(msg, i) in chatStore.messages"
@@ -91,6 +91,8 @@ onMounted(async () => {
         name: res.data.name,
         riskType: res.data.riskType,
       })
+      chatStore.setUserId(res.data.userId)
+
       console.log('✅ 사용자 정보 동기화 완료:', userStore.$state)
     } catch (err) {
       console.error('❌ 사용자 정보 조회 실패:', err)
@@ -105,7 +107,7 @@ onMounted(async () => {
         { label: '📈 종목 추천', intent: 'RECOMMEND_SELECT' },
         { label: '📊 종목 분석', intent: 'STOCK_ANALYZE' },
         { label: '📚 용어 설명', intent: 'TERM_EXPLAIN' },
-        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘' },
+        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE' },
       ],
     })
   }
@@ -144,15 +146,17 @@ async function fetchGPT(prompt, explicitIntent = null) {
       userId: userId.value,
       sessionId: chatStore.sessionId,
       message: prompt,
-      intentType: intentType, // 명시적으로 string or null
+      intentType: intentType ?? chatStore.intentType,
     })
 
     if (res?.data?.content) {
       chatStore.messages.push({ role: 'bot', content: res.data.content })
       chatStore.sessionId = res.data.sessionId
       chatStore.intentType = res.data.intentType
+    } else {
+      chatStore.messages.push({ role: 'bot', content: '❌ GPT 응답이 비어 있습니다.' })
     }
-  } catch (error) {
+  } catch (err) {
     console.log(userId)
     chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
     console.error('❌ GPT fetch 실패:', err)
@@ -177,6 +181,8 @@ function submit() {
 }
 
 async function handleButtonIntent(btn) {
+  console.log('👆 버튼 클릭됨:', btn) // 이게 콘솔에 안 찍히면 렌더링 문제
+
   resetAwaitingState()
 
   if (btn.intent === 'EXTERNAL_LINK' && btn.href) {
@@ -261,6 +267,31 @@ async function handleButtonIntent(btn) {
     return
   }
 
+  if (btn.intent === 'PORTFOLIO_ANALYZE') {
+    if (!btn.message) {
+      console.log('⚠️ PORTFOLIO_ANALYZE 초기 안내 단계') // ← 여기는 안내만
+      chatStore.clearMessages()
+      chatStore.messages.push({
+        role: 'bot',
+        type: 'buttons',
+        text: '모의투자 내역 기반 피드백을 드릴게요.\n확인하려면 아래 버튼을 눌러주세요.',
+        buttons: [
+          {
+            label: '🧠 피드백 요청하기',
+            intent: 'PORTFOLIO_ANALYZE',
+            message: '내 포트폴리오 피드백 줘',
+          },
+          { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
+        ],
+      })
+      return
+    }
+    console.log('🚀 피드백 요청 버튼 클릭됨', btn)
+    // 🔥 여기서 메시지가 없으면 보내지지 않음 → 방어 코드 추가
+    const message = btn.message ?? '내 포트폴리오 피드백 줘'
+    await chatStore.sendMessage(message, btn.intent, chatStore.userId)
+    return
+  }
   if (btn.intent === 'TERM_EXPLAIN') {
     awaitingTermExplain.value = true
     chatStore.clearMessages()
@@ -282,7 +313,7 @@ async function handleButtonIntent(btn) {
         { label: '📈 종목 추천', intent: 'RECOMMEND_SELECT' },
         { label: '📊 종목 분석', intent: 'STOCK_ANALYZE' },
         { label: '📚 용어 설명', intent: 'TERM_EXPLAIN' },
-        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE', message: '내 포트폴리오 피드백 줘' },
+        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE' },
       ],
     })
     return
