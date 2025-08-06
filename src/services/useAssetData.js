@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import axios from 'axios'
 
 export function useAssetDataStore() {
@@ -203,7 +203,7 @@ export function useAssetDataStore() {
       return holdings
     }
 
-    const updatedHoldings = holdings.map((holding) => {
+    return holdings.map((holding) => {
       const priceInfo = pricesData[holding.stockCode]
 
       if (priceInfo) {
@@ -257,8 +257,6 @@ export function useAssetDataStore() {
         return holding
       }
     })
-
-    return updatedHoldings
   }
 
   // 데이터 로딩 함수

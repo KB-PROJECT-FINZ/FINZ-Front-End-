@@ -285,7 +285,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch, onUnmounted } from 'vue'
+import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue'
 import ToastMessage from '@/components/ToastMessage.vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
@@ -382,13 +382,11 @@ const onChargeNext = async () => {
       showChargeModal.value = false
       chargeCreditInput.value = 0
       showToast(`${chargedPoint}P 충전이 완료되었습니다!`)
-      return
     } else {
       chargingLoading.value = false
       showChargeModal.value = false
       chargeCreditInput.value = 0
       showToast('충전에 실패했습니다. 다시 시도해주세요.')
-      return
     }
   } catch (error) {
     console.error('크레딧 충전 오류:', error)

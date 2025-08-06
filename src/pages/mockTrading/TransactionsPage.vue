@@ -1,3 +1,4 @@
+<!-- 템플릿 부분은 기존 그대로 유지 -->
 <template>
   <div class="min-h-[100vh] pb-20 bg-white">
     <!-- 상단 헤더 -->
@@ -86,6 +87,7 @@
         </div>
       </div>
     </section>
+
     <!-- 거래 내역 리스트 -->
     <section class="mx-4 mt-0 space-y-3">
       <div v-for="transaction in visibleTransactions" :key="transaction.id" class="bg-white p-4">
@@ -147,7 +149,6 @@
               주당 {{ transaction.price.toLocaleString() }}원
             </div>
             <div v-else class="text-sm text-gray-400">
-              <!-- 취소건은 연한 회색으로 빈 영역 유지 -->
               &nbsp;
             </div>
           </div>
@@ -206,226 +207,119 @@
 </template>
 
 <script setup>
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
-import { ref, computed, onMounted } from 'vue'
+import FooterNavigation from '@/components/FooterNavigation.vue'
+
+import { useTransactionsModal } from '@/services/useTranscationsModal.js'
+import { useTransactionsData } from '@/services/useTranscationsData.js'
+import { useTransactionsPeriod } from '@/services/useTranscationsPeriod.js'
+
+// ==================== 라우터 ====================
 const router = useRouter()
+
+// 데이터 관리
+const {
+  transactionsData,
+  loading,
+  imageErrors,
+  showAll,
+  itemsPerPage,
+  fetchTransactions,
+  getStockImageUrl,
+  getStockInitial,
+  handleImageError,
+  formatDateOnly,
+  getTransactionStatusText,
+  getStatusClass,
+  resetPagination
+} = useTransactionsData()
+
+// 기간 필터링
+const {
+  currentPeriod,
+  periodOptions,
+  currentPeriodLabel,
+  filteredTransactions,
+  selectPeriod: selectPeriodFromComposable,
+} = useTransactionsPeriod(transactionsData)
+
+// 모달 인터랙션
+const {
+  showPeriodModal,
+  modalDragOffset,
+  isDragging: isModalDragging,
+  onModalDragStart,
+  onModalDragMove,
+  onModalDragEnd,
+  onMounted: onModalMounted,
+  onUnmounted: onModalUnmounted
+} = useTransactionsModal()
+
+// ==================== 계산된 속성 ====================
+
+/**
+ * 실제로 화면에 표시될 거래 내역 (페이지네이션 적용)
+ */
+const visibleTransactions = computed(() => {
+  const maxItems = showAll.value ? filteredTransactions.value.length : itemsPerPage
+  return filteredTransactions.value.slice(0, maxItems)
+})
+
+// ==================== 템플릿에서 사용하는 메서드 ====================
+
+/**
+ * 선택된 기간 라벨 반환
+ */
+function getSelectedPeriodLabel() {
+  return currentPeriodLabel.value
+}
+
+/**
+ * 기간 선택 처리 (모달 닫기 포함)
+ */
+function selectPeriod(periodKey) {
+  selectPeriodFromComposable(periodKey)
+  showPeriodModal.value = false
+  resetPagination() // 기간 변경 시 페이지네이션 리셋
+}
+
+/**
+ * 데이터 새로고침
+ */
+async function refreshData() {
+  await fetchTransactions()
+  resetPagination() // 새로고침 시 페이지네이션 리셋
+}
+
+// ==================== UI 이벤트 핸들러 ====================
+
+/**
+ * 뒤로가기 버튼 클릭
+ */
 function goBack() {
   router.back()
 }
-import FooterNavigation from '../../components/FooterNavigation.vue'
-// 날짜(월/일)만 포맷 (7.20 형식, 앞자리 0 제거)
-function formatDateOnly(date) {
-  const d = new Date(date)
-  return `${d.getMonth() + 1}.${d.getDate()}`
+
+/**
+ * 모의투자 홈으로 이동
+ */
+function goToMockTrading() {
+  router.push({ name: 'MockTradingHome' })
 }
 
-// 거래 상태 텍스트 (n주 구매 완료/취소/판매 실패 등)
-function getTransactionStatusText(transaction) {
-  const n = transaction.quantity
-  if (transaction.type === 'BUY') {
-    if (transaction.status === 'COMPLETED') return `${n}주 구매 완료`
-    if (transaction.status === 'CANCELLED') return `${n}주 구매 취소`
-    if (transaction.status === 'PENDING') return `${n}주 구매 대기중`
-    return `${n}주 구매 ${getStatusText(transaction.status)}`
-  } else if (transaction.type === 'SELL') {
-    if (transaction.status === 'COMPLETED') return `${n}주 판매 완료`
-    if (transaction.status === 'CANCELLED') return `${n}주 판매 취소`
-    if (transaction.status === 'PENDING') return `${n}주 판매 대기중`
-    return `${n}주 판매 ${getStatusText(transaction.status)}`
-  }
-  return `${n}주 ${getStatusText(transaction.status)}`
-}
+// ==================== 생명주기 ====================
 
-// 상태별 텍스트 색상
-function getStatusClass(status, type) {
-  if (status === 'COMPLETED') return type === 'BUY' ? 'text-green-700' : 'text-blue-700'
-  if (status === 'CANCELLED') return 'text-red-600'
-  if (status === 'PENDING') return 'text-yellow-600'
-  return 'text-gray-600'
-}
-// 드래그 다운 슬라이드 닫기 로직
-const modalDragOffset = vueRef(0)
-const isModalDragging = vueRef(false)
-let dragStartY = null
-let dragging = false
-
-function getEventY(e) {
-  if (e.touches && e.touches.length) return e.touches[0].clientY
-  return e.clientY
-}
-
-function onModalDragStart(e) {
-  dragging = true
-  isModalDragging.value = true
-  dragStartY = getEventY(e)
-  document.body.style.userSelect = 'none'
-}
-
-function onModalDragMove(e) {
-  if (!dragging) return
-  const currentY = getEventY(e)
-  const offset = currentY - dragStartY
-  modalDragOffset.value = offset > 0 ? offset : 0
-}
-
-function onModalDragEnd() {
-  if (!dragging) return
-  dragging = false
-  document.body.style.userSelect = ''
-  if (modalDragOffset.value > 60) {
-    showPeriodModal.value = false
-    // 닫힐 때 트랜지션 적용
-    isModalDragging.value = false
-    modalDragOffset.value = 0
-    return
-  }
-  // 복귀 애니메이션 적용
-  isModalDragging.value = false
-  // 복귀 트랜지션 후 위치 초기화
-  setTimeout(() => {
-    modalDragOffset.value = 0
-  }, 200)
-}
-// 기간 선택 모달용 상태
-import { ref as vueRef } from 'vue'
-const showPeriodModal = vueRef(false)
-// 기간 라벨 반환
-function getSelectedPeriodLabel() {
-  const period = periodOptions.find((p) => p.key === currentPeriod.value)
-  return period ? period.label : '기간 선택'
-}
-
-function selectPeriod(key) {
-  currentPeriod.value = key
-  showPeriodModal.value = false
-  showAll.value = false
-}
-
-const loading = ref(false)
-const currentPeriod = ref('1month') // 기본 기간: 1개월
-const itemsPerPage = 10
-const showAll = ref(false)
-const imageErrors = ref({})
-
-const getStockImageUrl = (transaction) => {
-  if (transaction.imageUrl) return transaction.imageUrl
-  return null
-}
-
-const getStockInitial = (stockName) => {
-  if (!stockName) return '?'
-  if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(stockName.charAt(0))) {
-    return stockName.charAt(0)
-  }
-  return stockName.substring(0, 1).toUpperCase()
-}
-const handleImageError = (stockCode) => {
-  imageErrors.value[stockCode] = true
-}
-const periodOptions = [
-  { key: '1week', label: '1주일' },
-  { key: '1month', label: '1개월' },
-  { key: '3month', label: '3개월' },
-  { key: '6month', label: '6개월' },
-  { key: '1year', label: '1년' },
-]
-
-// 실제 거래 내역 데이터
-const transactionsData = ref([])
-
-// 거래 내역 불러오기
-async function fetchTransactions() {
-  loading.value = true
-  try {
-    const response = await axios.get('/api/mocktrading/transactions')
-    // 날짜 변환 및 id 보정
-    transactionsData.value = (response.data || []).map((t, idx) => {
-      // 날짜: executedAt > orderCreatedAt > 현재시간
-      let execDate = t.executedAt || t.orderCreatedAt
-      // 가격: price > orderPrice > totalAmount/quantity > 0
-      let price = t.price
-      if (!price || price === 0) {
-        if (t.orderPrice && t.orderPrice > 0) price = t.orderPrice
-        else if (t.totalAmount && t.quantity) price = Math.floor(t.totalAmount / t.quantity)
-        else price = 0
-      }
-      return {
-        id: t.transactionId || idx + 1,
-        stockCode: t.stockCode,
-        stockName: t.stockName,
-        type: t.transactionType, // BUY/SELL
-        quantity: t.quantity,
-        price,
-        orderType: t.orderType,
-        totalAmount: t.totalAmount,
-        executedAt: execDate ? new Date(execDate) : new Date(),
-        status: t.status || 'COMPLETED', // 백엔드 status 없으면 기본값
-        imageUrl: t.imageUrl,
-      }
-    })
-  } catch (e) {
-    console.error('❌ 거래 내역 로딩 실패:', e)
-    transactionsData.value = []
-  } finally {
-    loading.value = false
-  }
-}
-
-const filteredTransactions = computed(() => {
-  let filtered = [...transactionsData.value]
-  const now = new Date()
-  let startDate = new Date()
-  switch (currentPeriod.value) {
-    case '1week':
-      startDate.setDate(now.getDate() - 7)
-      break
-    case '1month':
-      startDate.setMonth(now.getMonth() - 1)
-      break
-    case '3month':
-      startDate.setMonth(now.getMonth() - 3)
-      break
-    case '6month':
-      startDate.setMonth(now.getMonth() - 6)
-      break
-    case '1year':
-      startDate.setFullYear(now.getFullYear() - 1)
-      break
-  }
-  filtered = filtered.filter((transaction) => new Date(transaction.executedAt) >= startDate)
-  return filtered.sort((a, b) => new Date(b.executedAt) - new Date(a.executedAt))
-})
-
-const visibleTransactions = computed(() => {
-  return showAll.value
-    ? filteredTransactions.value
-    : filteredTransactions.value.slice(0, itemsPerPage)
-})
-
-const getStatusText = (status) => {
-  switch (status) {
-    case 'COMPLETED':
-      return '체결완료'
-    case 'CANCELLED':
-      return '취소됨'
-    case 'PENDING':
-      return '대기중'
-    default:
-      return status
-  }
-}
-
-const goToMockTrading = () => {
-  router.push('/mock-trading')
-}
-
-const refreshData = async () => {
+onMounted(async () => {
+  // 거래 내역 데이터 로드
   await fetchTransactions()
-}
 
-onMounted(() => {
-  fetchTransactions()
-  console.log('거래 내역 페이지 마운트됨')
+  // 모달 이벤트 리스너 등록
+  onModalMounted()
+})
+
+onUnmounted(() => {
+  // 모달 이벤트 리스너 제거
+  onModalUnmounted()
 })
 </script>

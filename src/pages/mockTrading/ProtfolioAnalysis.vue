@@ -18,7 +18,7 @@
         <button
           @click="exportToPDF"
           class="p-2 cursor-pointer rounded-full mr-1 hover:bg-gray-100 bg-transparent border-0"
-          title="PDF로 내보내기"
+          title="PDF 내보내기"
         >
           <span>📄</span>
         </button>

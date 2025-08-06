@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import axios from 'axios'
 
 export function useHoldingsData() {
@@ -51,7 +51,7 @@ export function useHoldingsData() {
   // 종목명에서 이니셜 추출 (이미지 대체용)
   const getStockInitial = (stockName) => {
     if (!stockName) return '?'
-    if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(stockName.charAt(0))) {
+    if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(stockName.charAt(0))) {
       return stockName.charAt(0)
     }
     return stockName.substring(0, 1).toUpperCase()
@@ -110,7 +110,7 @@ export function useHoldingsData() {
       const priceResponse = await axios.get(`/api/stock/prices/${stockCodesParam}`)
 
       // 4. 데이터 결합 및 계산
-      const enrichedHoldings = response.data.map((holding) => {
+      holdingsData.value = response.data.map((holding) => {
         // 해당 종목의 가격 정보 찾기
         const priceInfo = priceResponse.data?.data?.[holding.stockCode]
 
@@ -137,8 +137,6 @@ export function useHoldingsData() {
           imageUrl: holding.imageUrl,
         }
       })
-
-      holdingsData.value = enrichedHoldings
     } catch (error) {
       console.error('❌ 보유 종목 데이터 로딩 실패:', error)
 
