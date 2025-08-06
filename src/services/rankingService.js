@@ -215,6 +215,7 @@ export async function fetchPopularStocksByTrait(traitGroup) {
       logo: stock.stockCode
         ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
         : '/images/stocks/default.png',
+      trait: traitGroup,
     }))
   } catch (error) {
     console.error('fetchPopularStocksByTrait error:', error)

@@ -4,10 +4,10 @@
       {{ isRealtime ? '오늘의 인기 종목 Top10' : '지난주 인기 종목 Top10' }}
     </h2>
 
-    <!-- 무한 슬라이드 -->
+    <!-- 무한 스크롤 (JS로 제어) -->
     <div
       ref="ticker"
-      class="flex whitespace-nowrap animate-scroll gap-6"
+      class="flex overflow-hidden whitespace-nowrap gap-6"
       @mouseenter="pauseScroll"
       @mouseleave="resumeScroll"
     >
@@ -38,7 +38,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
   stocks: {
@@ -52,31 +52,42 @@ const props = defineProps({
 })
 
 const ticker = ref(null)
+const animationFrameId = ref(null)
+const speed = 0.5 // px per frame
 
-// ✅ 무한 슬라이드를 위해 stocks를 2배로 복제
+// stocks 2배 복제
 const duplicatedStocks = computed(() => [...props.stocks, ...props.stocks])
 
+// 스크롤 이동 함수
+function step() {
+  if (!ticker.value) return
+
+  const el = ticker.value
+  el.scrollLeft += speed
+
+  // 절반 위치 도달하면 scrollLeft 초기화 (끊김 최소화)
+  if (el.scrollLeft >= el.scrollWidth / 2) {
+    el.scrollLeft = 0
+  }
+
+  animationFrameId.value = requestAnimationFrame(step)
+}
+
 function pauseScroll() {
-  if (ticker.value) ticker.value.style.animationPlayState = 'paused'
+  if (animationFrameId.value) cancelAnimationFrame(animationFrameId.value)
 }
 
 function resumeScroll() {
-  if (ticker.value) ticker.value.style.animationPlayState = 'running'
+  animationFrameId.value = requestAnimationFrame(step)
 }
+
+onMounted(() => {
+  animationFrameId.value = requestAnimationFrame(step)
+})
+
+onBeforeUnmount(() => {
+  if (animationFrameId.value) cancelAnimationFrame(animationFrameId.value)
+})
 </script>
 
-<style scoped>
-@keyframes scroll {
-  0% {
-    transform: translateX(0%);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-scroll {
-  animation: scroll 10s linear infinite;
-  animation-play-state: running;
-}
-</style>
+<style scoped></style>
