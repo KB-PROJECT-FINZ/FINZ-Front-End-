@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-[#f7f8fa] min-h-screen pb-20">
+  <div class="min-h-screen pb-20">
     <!-- 상단 헤더 -->
     <header class="flex items-center justify-center bg-white py-5 shadow-sm mb-2">
       <h1 class="text-xl font-bold text-gray-800 tracking-tight">개념 학습</h1>
@@ -16,7 +16,7 @@
       </div>
       <div class="text-white">
         <div class="text-base font-bold">{{ user.name }}님은</div>
-        <div class="text-sm mt-1">{{ user.riskType }} 사고 유형입니다</div>
+        <div class="text-sm mt-1">{{ user.riskType }} 사고 유형입니다.</div>
       </div>
     </section>
 
@@ -48,7 +48,7 @@
           class="flex justify-center mt-2"
         >
           <button
-            class="bg-indigo-100 text-indigo-700 font-bold rounded-lg px-5 py-2 hover:bg-indigo-200 transition"
+            class="w-full bg-white text-black border border-gray-300 rounded-lg px-5 py-2 hover:bg-gray-50 transition"
             @click="recommendedViewCount += 3"
           >
             더보기
@@ -67,22 +67,23 @@
         <div
           v-for="(item, index) in completedContents.slice(0, completedViewCount)"
           :key="item.contentId"
-          class="bg-gray-100 rounded-2xl flex items-center shadow px-5 py-6 cursor-pointer opacity-90 min-h-[110px] mb-4"
+          class="bg-gray-100 rounded-2xl flex items-center shadow px-4 py-5 cursor-pointer opacity-90 min-h-[20px] mb-4"
           @click="goToDetail(item.contentId)"
         >
           <div class="flex-1 min-w-0">
-            <span
-              v-if="item.creditReward"
-              class="inline-block text-[0.92rem] text-yellow-700 bg-yellow-50 rounded px-2 py-1 mr-2 font-bold"
-              >{{ item.creditReward }}크레딧</span
-            >
-            <div class="text-base font-bold text-gray-900 mt-1">{{ item.title }}</div>
+            <div class="flex items-center">
+              <img :src="ticketIcon" alt="티켓 아이콘" class="w-5 h-5 mr-2" />
+              <div class="text-base font-bold text-gray-900 truncate max-w-full">
+                {{ item.title }}
+              </div>
+            </div>
           </div>
+
           <span class="text-2xl text-gray-300 ml-4">&#8250;</span>
         </div>
         <div v-if="completedViewCount < completedContents.length" class="flex justify-center mt-2">
           <button
-            class="bg-indigo-100 text-indigo-700 font-bold rounded-lg px-5 py-2 hover:bg-indigo-200 transition"
+            class="w-full bg-white text-black border border-gray-300 rounded-lg px-5 py-2 hover:bg-gray-50 transition"
             @click="completedViewCount += 3"
           >
             더보기
@@ -100,7 +101,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '../../components/FooterNavigation.vue'
 import axios from 'axios'
-
+import ticketIcon from '../../components/icons/ticket-box.svg'
 const router = useRouter()
 const recommendedContents = ref([])
 const completedContents = ref([])
