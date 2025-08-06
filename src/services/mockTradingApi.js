@@ -129,54 +129,7 @@ export const getVolumeRanking = async (limit = 10, blngClsCode = '3') => {
   }
 }
 
-// 시장 전체 현황 조회 (통합 API)
-export const getMarketOverview = async () => {
-  try {
-    console.log('🔍 시장 현황 API 호출:', `${API_BASE_URL}/market/overview`)
-
-    const response = await fetch(`${API_BASE_URL}/market/overview`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-
-    const data = await handleApiResponse(response)
-    console.log('✅ 시장 현황 API 응답:', data)
-
-    return {
-      success: true,
-      data: {
-        indices: data.indices,
-        topVolume: data.topVolume,
-        updateTime: new Date().toISOString(),
-      },
-      message: 'success',
-      timestamp: new Date().toISOString(),
-    }
-  } catch (error) {
-    console.error('❌ 시장 현황 조회 오류:', error)
-
-    // 개별 API 호출로 fallback
-    const [indicesResult, volumeResult] = await Promise.all([
-      getMarketIndices(),
-      getVolumeRanking(10),
-    ])
-
-    return {
-      success: false,
-      data: {
-        indices: indicesResult.data,
-        topVolume: volumeResult.data,
-        updateTime: new Date().toISOString(),
-      },
-      message: '통합 API 실패, 개별 호출로 대체',
-      timestamp: new Date().toISOString(),
-    }
-  }
-}
-
-// 더미 데이터 생성 함수 (fallback용) - 탭별 특성 반영
+// 더미 데이터 생성 함수 (fallback용)
 const generateDummyVolumeRanking = (limit, blngClsCode = '3') => {
   const stockNames = [
     '삼성전자',
@@ -224,17 +177,8 @@ const generateDummyVolumeRanking = (limit, blngClsCode = '3') => {
       case '0': // 거래량
         specialValue = volume * (1.5 + Math.random() * 2) // 평균거래량 대비
         break
-      case '1': // 증가율
-        specialValue = Math.random() * 300 + 50 // 50~350% 증가율
-        break
-      case '2': // 회전율
-        specialValue = Math.random() * 80 + 10 // 10~90% 회전율
-        break
       case '3': // 거래대금
         specialValue = volume * currentPrice
-        break
-      case '4': // 대금회전율
-        specialValue = Math.random() * 50 + 5 // 5~55% 대금회전율
         break
       default:
         specialValue = volume * currentPrice
@@ -309,36 +253,4 @@ export const searchStocks = async (query, limit = 10) => {
       timestamp: new Date().toISOString(),
     }
   }
-}
-
-// API 연결 상태 확인
-export const checkApiHealth = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/market/health`, {
-      method: 'GET',
-      // 타임아웃 설정 (fetch API는 기본적으로 타임아웃이 없음)
-      signal: AbortSignal.timeout(5000),
-    })
-
-    return response.ok
-  } catch (error) {
-    console.error('API 헬스체크 실패:', error)
-    return false
-  }
-}
-
-// 에러 로깅 및 사용자 알림
-export const logApiError = (endpoint, error, context = {}) => {
-  const errorInfo = {
-    timestamp: new Date().toISOString(),
-    endpoint,
-    error: error.message,
-    context,
-    environment: import.meta.env.MODE,
-  }
-
-  console.error('API 에러:', errorInfo)
-
-  // 추후 에러 리포팅 서비스 연동 가능
-  // errorReportingService.log(errorInfo)
 }
