@@ -20,10 +20,11 @@
         &#8635;
       </button>
     </header>
+    <div class="w-full h-px bg-gray-200 shadow-sm mx-0" />
 
     <!-- 필터 및 기간 선택 -->
-    <section class="bg-white mx-4 mt-4 p-4">
-      <div class="flex justify-between items-center mb-4">
+    <section class="bg-white mx-4 mt-2 pt-4 px-4">
+      <div class="flex justify-between items-center mb-6">
         <h3 class="text-base font-semibold text-gray-900">거래 내역 조회</h3>
         <span class="text-sm text-gray-500">총 {{ filteredTransactions.length }}건</span>
       </div>
@@ -86,7 +87,7 @@
       </div>
     </section>
     <!-- 거래 내역 리스트 -->
-    <section class="mx-4 mt-4 space-y-3">
+    <section class="mx-4 mt-0 space-y-3">
       <div v-for="transaction in visibleTransactions" :key="transaction.id" class="bg-white p-4">
         <!-- 새 카드 레이아웃: 왼쪽 날짜, 가운데 종목명, 오른쪽 체결단가 -->
         <div class="flex items-center justify-between mb-1">
