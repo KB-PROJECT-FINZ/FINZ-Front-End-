@@ -209,7 +209,6 @@ onMounted(() => {
   fetchAnalysis()
 })
 
-// ...탭 관련 코드 제거...
 </script>
 
 <style scoped>
@@ -223,8 +222,5 @@ onMounted(() => {
   100% {
     transform: rotate(360deg);
   }
-}
-.pdf-hover:hover {
-  background-color: #f3f4f6;
 }
 </style>
