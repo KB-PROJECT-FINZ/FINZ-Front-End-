@@ -43,7 +43,7 @@
         <div class="w-full h-px bg-gray-200 my-0"></div>
         <div class="flex items-baseline gap-2">
           <div class="text-xl font-bold text-gray-900">
-            ₩ {{ safeNumber(userAccount.totalAssetValue).toLocaleString() }}
+            {{ safeNumber(userAccount.totalAssetValue).toLocaleString() }}원
           </div>
         </div>
       </div>
@@ -125,26 +125,24 @@
     <!-- 포트폴리오 차트 -->
     <section class="mt-5 px-5">
       <div class="flex flex-col items-center px-5 py-6">
-        <!-- 차트 로딩 중일 때 -->
-        <div v-if="!dataLoaded" class="flex flex-col items-center">
-          <!-- 차트 스켈레톤 -->
-          <div
-            class="w-[320px] h-[180px] mb-5 bg-gray-200 rounded-full animate-pulse flex items-center justify-center"
-            style="max-width: 320px; width: 320px; height: 180px"
-          >
-            <div class="bg-white rounded-full" style="width: 192px; height: 108px"></div>
-          </div>
+        <!-- 차트 로딩 중일 때 스켈레톤 (v-show 사용) -->
+        <div
+          v-show="!dataLoaded"
+          class="w-[320px] h-[180px] mb-5 bg-gray-200 rounded-full animate-pulse flex items-center justify-center"
+          style="max-width: 320px; width: 320px; height: 180px"
+        >
+          <div class="bg-white rounded-full" style="width: 192px; height: 108px"></div>
         </div>
 
-        <!-- 실제 차트 -->
-        <div v-else class="flex flex-col items-center">
+        <!-- 실제 차트 (항상 DOM에 존재하지만 v-show로 표시 제어) -->
+        <div v-show="dataLoaded" class="flex flex-col items-center">
           <canvas
             ref="portfolioChart"
             class="w-[320px] h-[180px] mb-5"
             style="max-width: 320px; width: 320px; height: 180px"
           ></canvas>
 
-          <!-- 차트 툴팁 -->
+          <!-- 차트 툴팁 (기존과 동일) -->
           <div
             v-if="chartTooltip && chartTooltip.show"
             :style="{
@@ -174,7 +172,7 @@
             </div>
           </div>
 
-          <!-- 범례 -->
+          <!-- 범례 (기존과 동일) -->
           <div class="w-full">
             <!-- 보유 종목들 -->
             <div
@@ -212,8 +210,8 @@
     <section class="flex flex-col items-start w-full mt-4 mb-0 px-6">
       <div class="text-base text-gray-500 font-normal">주문 가능 금액</div>
       <div v-if="!dataLoaded" class="w-32 h-6 bg-gray-200 rounded animate-pulse ml-1 mt-1"></div>
-      <div v-else class="text-lg font-bold text-gray-900 ml-1 mt-1">
-        ₩ {{ safeNumber(userAccount.currentBalance).toLocaleString() }}
+      <div v-else class="text-lg font-bold text-gray-900 mt-1">
+        {{ safeNumber(userAccount.currentBalance).toLocaleString() }}원
       </div>
     </section>
 
@@ -224,8 +222,8 @@
         <div class="w-28 h-6 bg-gray-200 rounded animate-pulse"></div>
         <div class="w-16 h-6 bg-gray-200 rounded animate-pulse"></div>
       </div>
-      <div v-else class="flex items-center gap-2 mt-1 ml-1">
-        <div class="text-lg font-bold text-gray-900">₩ {{ stockValue.toLocaleString() }}</div>
+      <div v-else class="flex items-center gap-2 mt-1">
+        <div class="text-lg font-bold text-gray-900">{{ stockValue.toLocaleString() }}원</div>
         <span
           v-if="
             calculatedProfitRate !== null &&
@@ -327,6 +325,28 @@ const chartColors = [
   '#45B7D1',
 ]
 
+// Canvas 이벤트 리스너 설정 함수
+const setupCanvasEvents = () => {
+  if (portfolioChart.value) {
+    // 기존 이벤트 리스너 제거 (중복 방지)
+    portfolioChart.value.removeEventListener('mousemove', handleChartMouseMove)
+    portfolioChart.value.removeEventListener('mouseleave', handleChartMouseLeave)
+
+    // 새 이벤트 리스너 등록
+    portfolioChart.value.addEventListener('mousemove', handleChartMouseMove)
+    portfolioChart.value.addEventListener('mouseleave', handleChartMouseLeave)
+
+    console.log('Canvas 이벤트 리스너 등록 완료')
+
+    // 테스트용 클릭 이벤트
+    portfolioChart.value.addEventListener('click', () => {
+      console.log('Canvas 클릭 이벤트 작동')
+    })
+  } else {
+    console.error('❌ Canvas 요소를 찾을 수 없음')
+  }
+}
+
 // null 값을 안전하게 처리하는 헬퍼 함수
 const safeNumber = (value, defaultValue = 0) => {
   if (value === null || value === undefined || isNaN(value)) {
@@ -395,17 +415,20 @@ const portfolioPercentages = computed(() => {
     }
   })
 
-  const stockTotalExact = holdingPercentages.reduce((sum, h) => sum + h.exactPercentage, 0)
+  // 0% 종목들을 제거 (반올림 후에도 0%인 것들)
+  const nonZeroHoldings = holdingPercentages.filter((holding) => holding.percentage > 0)
+
+  const stockTotalExact = nonZeroHoldings.reduce((sum, h) => sum + h.exactPercentage, 0)
   let cashDisplayPercentage = Math.round(100 - stockTotalExact)
 
   const totalDisplayPercentage =
-    holdingPercentages.reduce((sum, h) => sum + h.percentage, 0) + cashDisplayPercentage
+    nonZeroHoldings.reduce((sum, h) => sum + h.percentage, 0) + cashDisplayPercentage
 
   if (totalDisplayPercentage !== 100) {
     const difference = 100 - totalDisplayPercentage
 
-    if (holdingPercentages.length > 0) {
-      const largestHolding = holdingPercentages.reduce((max, current) =>
+    if (nonZeroHoldings.length > 0) {
+      const largestHolding = nonZeroHoldings.reduce((max, current) =>
         current.exactPercentage > max.exactPercentage ? current : max,
       )
       largestHolding.percentage += difference
@@ -415,7 +438,7 @@ const portfolioPercentages = computed(() => {
   }
 
   return {
-    holdings: holdingPercentages,
+    holdings: nonZeroHoldings, // 0%가 아닌 종목들만 반환
     cash: cashDisplayPercentage,
   }
 })
@@ -489,9 +512,16 @@ const onChargeNext = async () => {
   }
 }
 
-// 차트 마우스 이벤트 핸들러 (수정된 버전)
 const handleChartMouseMove = (e) => {
-  if (!portfolioChart.value || chartSegments.length === 0) return
+  if (!portfolioChart.value) {
+    console.log('❌ Canvas 요소 없음')
+    return
+  }
+
+  if (chartSegments.length === 0) {
+    console.log('❌ 차트 세그먼트 없음')
+    return
+  }
 
   const rect = portfolioChart.value.getBoundingClientRect()
   const x = e.clientX - rect.left
@@ -510,10 +540,8 @@ const handleChartMouseMove = (e) => {
     return
   }
 
-  // 각도 계산 및 정규화 (수정된 부분)
+  // 각도 계산 및 정규화
   let angle = Math.atan2(dy, dx)
-
-  // 각도를 0 ~ 2π 범위로 정규화하고, 차트 시작점(-π/2)에 맞춰 조정
   angle = angle + Math.PI / 2
   if (angle < 0) {
     angle += 2 * Math.PI
@@ -523,7 +551,8 @@ const handleChartMouseMove = (e) => {
   }
 
   // 각 영역 확인
-  for (const seg of chartSegments) {
+  for (let i = 0; i < chartSegments.length; i++) {
+    const seg = chartSegments[i]
     let segStart = seg.start
     let segEnd = seg.end
 
@@ -558,6 +587,7 @@ const handleChartMouseMove = (e) => {
     }
   }
 
+  console.log('❌ 매치되는 세그먼트 없음')
   chartTooltip.value.show = false
 }
 
@@ -571,6 +601,10 @@ const updatePortfolioChart = () => {
     console.log('❌ 차트 캔버스가 없음')
     return
   }
+
+  // Canvas 크기 설정
+  portfolioChart.value.width = 320
+  portfolioChart.value.height = 180
 
   const ctx = portfolioChart.value.getContext('2d')
   const centerX = portfolioChart.value.width / 2
@@ -599,7 +633,7 @@ const updatePortfolioChart = () => {
     ctx.fillStyle = '#fff'
     ctx.fill()
 
-    // 현금 100% 영역 정보 저장 (정규화된 각도)
+    // 현금 100% 영역 정보 저장
     chartSegments.push({
       start: 0,
       end: 2 * Math.PI,
@@ -608,6 +642,9 @@ const updatePortfolioChart = () => {
       percent: 100,
       color: '#E5E7EB',
     })
+
+    // 이벤트 리스너 설정
+    setupCanvasEvents()
     return
   }
 
@@ -669,7 +706,7 @@ const updatePortfolioChart = () => {
     ctx.lineWidth = 2
     ctx.stroke()
 
-    // 현금 영역 정보 저장 (정규화된 각도로 저장)
+    // 현금 영역 정보 저장
     let normalizedStart = currentAngle + Math.PI / 2
     let normalizedEnd = currentAngle + cashAngle + Math.PI / 2
 
@@ -694,7 +731,19 @@ const updatePortfolioChart = () => {
   ctx.arc(centerX, centerY, holeRadius, 0, 2 * Math.PI)
   ctx.fillStyle = '#fff'
   ctx.fill()
+
+  // 차트 그리기 완료 후 이벤트 리스너 설정
+  setupCanvasEvents()
 }
+
+// dataLoaded가 true가 될 때 Canvas 이벤트 설정
+watch(dataLoaded, (newValue) => {
+  if (newValue) {
+    nextTick(() => {
+      setupCanvasEvents()
+    })
+  }
+})
 
 // 배치로 여러 종목의 실시간 가격을 한번에 조회하는 함수
 const fetchMultipleStockPrices = async (stockCodes) => {
@@ -703,9 +752,7 @@ const fetchMultipleStockPrices = async (stockCodes) => {
     const response = await axios.get(`/api/stock/prices/${codesString}`)
 
     if (response.data && response.data.success) {
-      console.log(
-        `배치 가격 조회 완료: ${response.data.successCount}/${response.data.requestedCount} 성공`,
-      )
+      console.log(`배치 가격 조회 완료`)
 
       if (response.data.errors && response.data.errors.length > 0) {
         console.warn('⚠️ 일부 종목 조회 실패:', response.data.errors)
@@ -842,20 +889,10 @@ const loadUserData = async () => {
 
 // 데이터 새로고침
 const refreshData = async () => {
-  console.log('🔄 수동 새로고침 시작')
   await loadUserData()
 }
 
-// ===== 라이프사이클 =====
 onMounted(async () => {
-  // Canvas 크기 설정
-  await nextTick()
-  if (portfolioChart.value) {
-    portfolioChart.value.width = 320
-    portfolioChart.value.height = 180
-    portfolioChart.value.addEventListener('mousemove', handleChartMouseMove)
-    portfolioChart.value.addEventListener('mouseleave', handleChartMouseLeave)
-  }
   await loadUserData()
 })
 
