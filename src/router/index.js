@@ -31,6 +31,7 @@ import RiskProfile from '@/pages/ProfilePages/RiskProfile.vue'
 import RiskTypesList from '@/pages/ProfilePages/RiskTypesList.vue'
 import KakaoSignupPage from '@/pages/LoginPages/KakaoSignupPage.vue'
 import ProtfolioAnalysis from '@/pages/mockTrading/ProtfolioAnalysis.vue'
+import DailyQuizePage from '@/pages/Learning/DailyQuizePage.vue'
 const routes = [
   {
     path: '/',
@@ -194,9 +195,14 @@ const routes = [
   { path: '/risk-types-list', name: 'RiskTypesList', component: RiskTypesList },
   {
     path: '/mock-trading/ai-report',
-    name:'AiReport',
-    component: ProtfolioAnalysis
-  }
+    name: 'AiReport',
+    component: ProtfolioAnalysis,
+  },
+  {
+    path: '/daily-quiz',
+    name: 'DailyQuizPage',
+    component: DailyQuizePage,
+  },
 ]
 
 const router = createRouter({

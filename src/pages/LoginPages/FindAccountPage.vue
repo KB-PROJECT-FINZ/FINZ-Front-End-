@@ -125,6 +125,18 @@ const handleResetPw = async () => {
     alert('이메일을 입력해주세요.')
     return
   }
+
+  try {
+    const res = await axios.post('http://localhost:8080/api/auth/find-password', {
+      email: findEmail.value,
+    })
+
+    console.log('비밀번호 재설정 메일 발송 성공:', res.data)
+    pwSent.value = true
+  } catch (err) {
+    console.error('비밀번호 재설정 메일 발송 실패:', err)
+    alert('비밀번호 재설정에 실패했습니다. 이메일을 확인해주세요.')
+  }
 }
 
 const goBack = () => router.push('/login-form')
