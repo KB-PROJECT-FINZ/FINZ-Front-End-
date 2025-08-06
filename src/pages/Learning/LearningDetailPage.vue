@@ -2,7 +2,12 @@
   <div class="bg-gray-50 min-h-screen pb-6">
     <!-- 상단 헤더 -->
     <header class="flex items-center justify-center relative bg-white py-4 px-4 shadow-sm mb-2">
-      <button class="absolute left-4 top-1/2 -translate-y-1/2 bg-none border-none text-2xl text-gray-800 cursor-pointer" @click="goBack">&#8592;</button>
+      <button
+        class="absolute left-4 top-1/2 -translate-y-1/2 bg-none border-none text-2xl text-gray-800 cursor-pointer"
+        @click="goBack"
+      >
+        &#8592;
+      </button>
       <h1 class="text-xl font-bold text-gray-800 tracking-tight">개념 학습</h1>
     </header>
 
@@ -17,24 +22,32 @@
           loading="lazy"
         ></iframe>
       </div>
-      <img v-else-if="content?.imageUrl" :src="content.imageUrl" class="w-full max-w-md h-auto rounded-xl mx-auto mb-4 shadow-md" />
+      <img
+        v-else-if="content?.imageUrl"
+        :src="content.imageUrl"
+        class="w-full max-w-md h-auto rounded-xl mx-auto mb-4 shadow-md"
+      />
       <h2 class="text-xl font-bold text-gray-800 mb-3">{{ content?.title }}</h2>
       <div class="text-gray-600 text-base leading-relaxed" v-html="formattedBody"></div>
     </div>
-    
+
     <!-- 퀴즈 카드 -->
     <div v-if="quiz" class="bg-white rounded-2xl mx-4 mt-4 p-5 shadow-sm">
-      <div class="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-1 mb-3 font-bold inline-block">{{ quiz.creditReward }}크레딧</div>
+      <div
+        class="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-1 mb-3 font-bold inline-block"
+      >
+        {{ quiz.creditReward }}크레딧
+      </div>
       <div class="text-lg font-bold text-gray-800 mb-4">{{ removeOX(quiz.question) }}</div>
-      
+
       <div class="flex gap-4 mb-3 justify-center">
         <button
           class="flex-1 text-lg font-bold border-none rounded-lg py-3 cursor-pointer transition-all duration-150 shadow-sm"
           :class="[
-            selected === 'O' 
-              ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-700 shadow-md' 
+            selected === 'O'
+              ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-700 shadow-md'
               : 'bg-green-50 text-green-600',
-            result !== null ? 'opacity-60 cursor-not-allowed' : ''
+            result !== null ? 'opacity-60 cursor-not-allowed' : '',
           ]"
           :disabled="result !== null"
           @click="selectOX('O')"
@@ -44,10 +57,10 @@
         <button
           class="flex-1 text-lg font-bold border-none rounded-lg py-3 cursor-pointer transition-all duration-150 shadow-sm"
           :class="[
-            selected === 'X' 
-              ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-700 shadow-md' 
+            selected === 'X'
+              ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-700 shadow-md'
               : 'bg-red-50 text-red-600',
-            result !== null ? 'opacity-60 cursor-not-allowed' : ''
+            result !== null ? 'opacity-60 cursor-not-allowed' : '',
           ]"
           :disabled="result !== null"
           @click="selectOX('X')"
@@ -55,28 +68,38 @@
           X (틀림)
         </button>
       </div>
-      
+
       <div v-if="result !== null" class="mt-3">
         <div v-if="result" class="text-green-600 font-bold text-lg mb-3">
           ✅ 정답입니다!
-          <span v-if="creditAwarded" class="text-red-600 font-bold animate-pulse">+{{ quiz.creditReward }}크레딧 획득!</span>
+          <span v-if="creditAwarded" class="text-red-600 font-bold animate-pulse"
+            >+{{ quiz.creditReward }}크레딧 획득!</span
+          >
         </div>
         <div v-else class="text-red-600 font-bold text-lg mb-3">❌ 오답입니다.</div>
       </div>
-      
+
       <div v-if="result !== null && !showExplainBtnClicked">
-        <button class="bg-gray-100 text-indigo-700 border-none rounded-lg px-4 py-2 text-base font-bold mt-3 cursor-pointer transition-all duration-150 hover:bg-indigo-50" @click="showExplainBtnClicked = true">해설 보기</button>
+        <button
+          class="bg-gray-100 text-indigo-700 border-none rounded-lg px-4 py-2 text-base font-bold mt-3 cursor-pointer transition-all duration-150 hover:bg-indigo-50"
+          @click="showExplainBtnClicked = true"
+        >
+          해설 보기
+        </button>
       </div>
-      
-      <div v-if="result !== null && showExplainBtnClicked" class="bg-gray-50 rounded-xl p-4 mt-4 text-gray-600">
+
+      <div
+        v-if="result !== null && showExplainBtnClicked"
+        class="bg-gray-50 rounded-xl p-4 mt-4 text-gray-600"
+      >
         <div class="font-bold mb-2 text-amber-700">💡 해설</div>
         <div class="text-sm">{{ quiz.comment }}</div>
       </div>
 
       <div v-if="result !== null" class="w-full mt-4 flex justify-center">
-        <button 
-          class="bg-indigo-700 text-white text-lg font-bold border-none rounded-lg py-3 px-6 cursor-pointer transition-all duration-200 shadow-md hover:bg-indigo-800 disabled:bg-gray-400 disabled:cursor-not-allowed" 
-          :disabled="isCompleted" 
+        <button
+          class="bg-indigo-700 text-white text-lg font-bold border-none rounded-lg py-3 px-6 cursor-pointer transition-all duration-200 shadow-md hover:bg-indigo-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          :disabled="isCompleted"
           @click="handleComplete"
         >
           {{ isCompleted ? '✅ 완료됨' : '학습 완료' }}
@@ -208,7 +231,7 @@ async function awardQuizCreditLocal() {
       console.log('크레딧 지급 시도:', {
         userId: userId.value,
         quizId: quiz.value?.quizId,
-        selectedAnswer: selected.value
+        selectedAnswer: selected.value,
       })
       const response = await giveCredit(userId.value, quiz.value.quizId, selected.value)
       creditAwarded.value = true
@@ -218,7 +241,7 @@ async function awardQuizCreditLocal() {
       console.log('퀴즈 결과 저장:', {
         userId: userId.value,
         quizId: quiz.value?.quizId,
-        selectedAnswer: selected.value
+        selectedAnswer: selected.value,
       })
       await axios.post('/api/learning/quiz/result/save', {
         userId: userId.value,
@@ -281,4 +304,3 @@ async function handleComplete() {
   }
 }
 </script>
-
