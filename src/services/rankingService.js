@@ -1,6 +1,23 @@
 import axios from 'axios'
 axios.defaults.withCredentials = true
 
+export function getRankingWeekLabel(baseDateString) {
+  const baseDate = new Date(baseDateString)
+  const start = new Date(baseDate)
+  const end = new Date(baseDate)
+  end.setDate(end.getDate() + 6)
+
+  // 월, 주차 계산
+  const month = start.getMonth() + 1
+  const weekNumber = Math.ceil(start.getDate() / 7)
+
+  const label = `${month}월 ${['첫째', '둘째', '셋째', '넷째', '다섯째'][weekNumber - 1]} 주`
+
+  const format = (date) => `${date.getMonth() + 1}/${String(date.getDate()).padStart(2, '0')}`
+
+  return `🔥 ${label} 랭킹 (${format(start)}~${format(end)})`
+}
+
 // 내 랭킹 조회 (userId 쿼리 제거, baseDate만 전달)
 export async function fetchMyRanking(baseDate) {
   try {
