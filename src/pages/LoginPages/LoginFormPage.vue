@@ -81,14 +81,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useUserStore } from '@/stores/user'
-
-onMounted(() => {
-  checkSession()
-})
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -127,20 +123,6 @@ const handleLogin = async () => {
     const message = err.response?.data || '로그인 실패: 아이디 또는 비밀번호 확인'
     alert(message)
     console.error(err)
-  }
-}
-
-// 세션 로그인 상태 확인 (자동 로그인 용도)
-const checkSession = async () => {
-  try {
-    const res = await axios.get('http://localhost:8080/api/auth/me', {
-      withCredentials: true,
-    })
-    userStore.setUser(res.data)
-  } catch (e) {
-    console.error('세션 확인 실패:', e)
-    userStore.clearUser()
-    router.push('/login-form')
   }
 }
 

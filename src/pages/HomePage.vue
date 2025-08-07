@@ -107,9 +107,10 @@
         <!-- 오늘의 퀴즈 모달 트리거 버튼 -->
         <button
           @click="showQuizModal = true"
-          class="text-sm bg-purple-600 text-white px-4 py-2 rounded-full font-bold mt-4"
+          class="bg-white p-4 rounded-xl shadow-sm text-center cursor-pointer"
         >
-          오늘의 퀴즈 보기
+          <p class="font-bold">오늘의 퀴즈 보기</p>
+          <p class="text-sm text-gray-400">5개</p>
         </button>
 
         <!-- 퀴즈 모달창 -->
@@ -215,17 +216,6 @@ function goToDetail(id) {
   router.push(`/learning/${id}`)
 }
 
-onMounted(async () => {
-  try {
-    const res = await axios.get('/api/quiz/today', {
-      withCredentials: true,
-    })
-    quizList.value = res.data
-  } catch (e) {
-    console.error('퀴즈 목록 조회 실패:', e)
-  }
-})
-
 const openContentModal = (item) => {
   selectedContent.value = item
 }
@@ -272,7 +262,7 @@ const goToPortfolio = () => router.push('/mock-trading/asset-status')
 // 초기 실행
 onMounted(async () => {
   try {
-    const riskType = await fetchUserInfo() // ← 여기서 riskType 반환
+    const riskType = await fetchUserInfo() //
     await fetchRecommendedContentsByRiskType(riskType)
     await fetchAllRecommendedContents()
     await fetchCompletedLearningCount()
