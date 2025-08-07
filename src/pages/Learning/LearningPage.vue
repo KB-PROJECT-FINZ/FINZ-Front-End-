@@ -20,7 +20,7 @@
         </div>
         <div v-else class="space-y-3">
           <div
-            v-for="(item, index) in formattedRecommendedContents.slice(0, recommendedViewCount)"
+            v-for="item in formattedRecommendedContents.slice(0, recommendedViewCount)"
             :key="item.contentId"
             class="bg-white rounded-xl p-5 cursor-pointer hover:shadow-md transition border-t border-b border-r border-gray-200 border-l-4 border-indigo-300"
             @click="goToDetail(item.contentId)"
@@ -97,7 +97,7 @@
           <div
             v-for="(item, index) in formattedCompletedContents.slice(0, completedViewCount)"
             :key="item.contentId"
-            class="bg-gray-50 rounded-xl border border-gray-200 p-5 cursor-pointer transition hover:bg-gray-100"
+            class="bg-gray-50 rounded-xl border border-gray-200 p-5 cursor-pointer transition hover:bg-gray-100 border-l-4 border-gray-300"
             @click="goToDetail(item.contentId)"
           >
             <div class="flex items-center justify-between">
