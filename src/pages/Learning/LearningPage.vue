@@ -8,7 +8,8 @@
     </header>
     <div class="px-4 py-6 pb-20">
       <!-- 사용자 맞춤 추천 타이틀 -->
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ user.name }}님을 위한</h2>
+      <!-- <h2 class="text-lg font-semibold text-indigo-900 mb-4">{{ user.name }}님</h2> -->
+
       <!-- 추천 학습 콘텐츠 -->
       <div class="mb-8">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">추천 학습 콘텐츠</h2>

@@ -13,30 +13,27 @@
     </header>
 
     <!-- 프로필 박스 -->
-    <section class="flex items-center bg-gray-50 rounded-2xl mx-4 my-5 px-5 py-6">
-      <img
-        v-if="profile.image"
-        class="w-[60px] h-[60px] rounded-full object-cover mr-4"
-        :src="profile.image"
-        alt="프로필"
-      />
-      <div
-        v-else
-        class="w-[60px] h-[60px] rounded-full bg-gray-200 flex items-center justify-center text-2xl text-gray-400 mr-4"
-      >
-        <span>👤</span>
-      </div>
-      <div class="flex-1">
+    <section class="rounded-2xl mt-5 px-5 py-5 bg-white">
+      <!-- 이모지 + 이름 -->
+      <div class="flex items-center mb-3">
+        <div
+          class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-lg text-gray-400 mr-2"
+        >
+          👤
+        </div>
         <div class="text-base font-bold text-gray-900">{{ profile.name }}</div>
-        <div class="text-sm text-gray-500 my-1">{{ profile.type }}</div>
+      </div>
 
-        <div class="flex gap-2 mt-1">
-          <span class="bg-indigo-100 text-indigo-800 rounded px-3 py-0.5 text-xs mt-1 inline-block">
-            Level {{ profile.level }}
-          </span>
-          <span class="bg-yellow-100 text-yellow-800 rounded px-3 py-1 text-xs mt-1 inline-block">
-            {{ asset.amount }}크레딧
-          </span>
+      <!-- 투자 성향 & 포인트 박스 (줄바꿈 없이, 여백 좁게) -->
+      <div class="flex flex-nowrap gap-2">
+        <div class="w-1/2 bg-white shadow rounded-lg px-4 py-2 text-sm text-gray-700">
+          <div class="text-gray-500 text-xs mb-0.5">투자 성향</div>
+          <div class="font-semibold text-indigo-600 truncate">{{ profile.type }} 신중한 안정형</div>
+        </div>
+
+        <div class="w-1/2 bg-white shadow rounded-lg px-4 py-2 text-sm text-gray-700">
+          <div class="text-gray-500 text-xs mb-0.5">포인트</div>
+          <div class="font-semibold text-yellow-600 truncate">{{ asset.amount }}P</div>
         </div>
       </div>
     </section>
@@ -114,7 +111,7 @@
     </section>
 
     <!-- 내 투자내역 카드 -->
-    <section class="bg-white rounded-xl mx-4 mb-5 overflow-hidden">
+    <section class="bg-white rounded-xl mx-4 mb-5 overflow-hidden border border-gray-200">
       <div class="flex items-center justify-between bg-gray-50 px-5 py-4 border-b border-gray-200">
         <div class="text-base font-bold text-gray-900">내 투자내역</div>
         <button
