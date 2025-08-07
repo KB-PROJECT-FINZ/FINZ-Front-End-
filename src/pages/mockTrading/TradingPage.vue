@@ -103,7 +103,11 @@
               >
                 <!-- 잔량 시각화 배경 막대 (오른쪽부터 그려짐, 패딩 추가)-->
                 <div
-                  class="absolute top-2 bottom-2 right-0 bg-blue-100 opacity-50 rounded-l-md"
+                  class="absolute top-2 bottom-2 right-0 opacity-50 rounded-l-md transition-all duration-500"
+                  :class="[
+                    'bg-blue-100',
+                    askHighlightIndexes.includes(index) ? 'animate-ask-highlight' : '',
+                  ]"
                   :style="{ width: getVolumeRatio(ask.volume) + '%' }"
                 ></div>
                 <!-- 호가 및 잔량 텍스트 -->
@@ -151,7 +155,11 @@
               >
                 <!-- 잔량 시각화 배경 막대 (오른쪽부터 그려짐, 패딩 추가) -->
                 <div
-                  class="absolute top-2 bottom-2 right-0 bg-red-100 opacity-50 rounded-l-md"
+                  class="absolute top-2 bottom-2 right-0 opacity-50 rounded-l-md transition-all duration-500"
+                  :class="[
+                    'bg-red-100',
+                    bidHighlightIndexes.includes(index) ? 'animate-bid-highlight' : '',
+                  ]"
                   :style="{ width: getVolumeRatio(bid.volume) + '%' }"
                 ></div>
                 <!-- 호가 및 잔량 텍스트 -->
@@ -391,9 +399,26 @@
           <div v-if="activeTab !== 'waiting'" class="mb-4 p-3 bg-gray-50 rounded-lg">
             <!-- 수량 표시 및 조절 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="text-lg font-bold">
-                <span v-if="orderQuantity > 0" class="text-gray-900">{{ orderQuantity }}주</span>
-                <span v-else class="text-gray-400">최대 {{ maxOrderQuantity }}주</span>
+              <div class="text-lg font-bold flex items-center gap-2">
+                <!-- input을 visually hidden으로 두고, 숫자만 입력받고, 화면에는 기존 텍스트만 노출 -->
+                <input
+                  type="number"
+                  v-model.number="orderQuantity"
+                  min="0"
+                  :max="maxOrderQuantity"
+                  class="absolute opacity-0 pointer-events-none w-0 h-0"
+                  tabindex="-1"
+                  @keydown.stop
+                />
+                <span
+                  tabindex="0"
+                  @keydown="onOrderQuantityKeydown"
+                  style="outline: none"
+                  class="focus:ring-2 focus:ring-blue-300 rounded"
+                >
+                  <span v-if="orderQuantity > 0" class="text-gray-900">{{ orderQuantity }}주</span>
+                  <span v-else class="text-gray-400">최대 {{ maxOrderQuantity }}주</span>
+                </span>
               </div>
               <div class="flex gap-1">
                 <button
@@ -818,6 +843,14 @@ const orderConfirmQuantity = ref(0)
 const orderConfirmPrice = ref(0)
 const orderConfirmStockName = ref('')
 
+const askHighlightIndexes = ref([])
+const bidHighlightIndexes = ref([])
+
+const askLastHighlightTime = ref({})
+const bidLastHighlightTime = ref({})
+// 호가 하이라이트 애니메이션 쿨타임 필요시 설정
+const HIGHLIGHT_COOLDOWN = 0 // ms
+
 const openOrderConfirmModal = () => {
   orderConfirmType.value = activeTab.value === 'buy' ? 'BUY' : 'SELL'
   orderConfirmQuantity.value = orderQuantity.value
@@ -1225,6 +1258,52 @@ const generateOrderBookData = async (currentPrice) => {
   }
 }
 
+// 2. 호가 데이터가 바뀔 때마다 변화 감지 및 애니메이션 트리거
+watch(askPrices, (newVal, oldVal) => {
+  if (!oldVal.length) return
+  const now = Date.now()
+  askHighlightIndexes.value = []
+  newVal.forEach((ask, idx) => {
+    if (!oldVal[idx] || ask.volume !== oldVal[idx].volume) {
+      // 쿨타임 체크
+      if (
+        !askLastHighlightTime.value[idx] ||
+        now - askLastHighlightTime.value[idx] > HIGHLIGHT_COOLDOWN
+      ) {
+        askHighlightIndexes.value.push(idx)
+        askLastHighlightTime.value[idx] = now
+      }
+    }
+  })
+  if (askHighlightIndexes.value.length > 0) {
+    setTimeout(() => {
+      askHighlightIndexes.value = []
+    }, 500)
+  }
+})
+
+watch(bidPrices, (newVal, oldVal) => {
+  if (!oldVal.length) return
+  const now = Date.now()
+  bidHighlightIndexes.value = []
+  newVal.forEach((bid, idx) => {
+    if (!oldVal[idx] || bid.volume !== oldVal[idx].volume) {
+      if (
+        !bidLastHighlightTime.value[idx] ||
+        now - bidLastHighlightTime.value[idx] > HIGHLIGHT_COOLDOWN
+      ) {
+        bidHighlightIndexes.value.push(idx)
+        bidLastHighlightTime.value[idx] = now
+      }
+    }
+  })
+  if (bidHighlightIndexes.value.length > 0) {
+    setTimeout(() => {
+      bidHighlightIndexes.value = []
+    }, 500)
+  }
+})
+
 const orderBookScroll = ref(null)
 
 // 체결 강도
@@ -1433,6 +1512,37 @@ const processOrderBookData = (data) => {
     waitingInfo.value.buyOrders = parseInt(data.totalBidQty)
   } else if (data.TOTAL_BIDP_RSQN) {
     waitingInfo.value.buyOrders = parseInt(data.TOTAL_BIDP_RSQN)
+  }
+}
+
+// 키보드 입력으로 수량 입력 지원
+const onOrderQuantityKeydown = (e) => {
+  // 숫자 키, 백스페이스, 딜리트, 방향키만 허용
+  if (
+    (e.key >= '0' && e.key <= '9') ||
+    e.key === 'Backspace' ||
+    e.key === 'Delete' ||
+    e.key === 'ArrowLeft' ||
+    e.key === 'ArrowRight' ||
+    e.key === 'Tab'
+  ) {
+    e.preventDefault()
+    let newVal = String(orderQuantity.value)
+    if (e.key >= '0' && e.key <= '9') {
+      newVal += e.key
+    } else if (e.key === 'Backspace') {
+      newVal = newVal.slice(0, -1)
+    } else if (e.key === 'Delete') {
+      newVal = ''
+    }
+    let num = Number(newVal)
+    if (isNaN(num) || num < 0) num = 0
+    if (activeTab.value === 'buy') {
+      num = Math.min(num, maxOrderQuantity.value)
+    } else if (activeTab.value === 'sell') {
+      num = Math.min(num, userInfo.value.quantity)
+    }
+    orderQuantity.value = num
   }
 }
 
@@ -2078,4 +2188,32 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+/* 4. 애니메이션 효과 정의 */
+@keyframes askHighlight {
+  0% {
+    background-color: #bfdbfe; /* blue-600 */
+    opacity: 0.8;
+  }
+  100% {
+    background-color: #dbeafe; /* blue-100 */
+    opacity: 0.5;
+  }
+}
+@keyframes bidHighlight {
+  0% {
+    background-color: #fecaca; /* red-600 */
+    opacity: 0.8;
+  }
+  100% {
+    background-color: #fee2e2; /* red-100 */
+    opacity: 0.5;
+  }
+}
+.animate-ask-highlight {
+  animation: askHighlight 0.5s;
+}
+.animate-bid-highlight {
+  animation: bidHighlight 0.5s;
+}
+</style>
