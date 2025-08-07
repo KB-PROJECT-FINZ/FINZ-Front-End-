@@ -47,13 +47,8 @@
 
       <!-- 로딩 중일 때 -->
       <div v-if="!dataLoaded" class="flex items-center justify-between mb-1">
-        <div class="w-32 h-8 bg-gray-200 rounded animate-pulse"></div>
-        <button
-          class="bg-gray-300 text-gray-500 rounded px-4 py-2 text-sm font-bold cursor-not-allowed"
-          disabled
-        >
-          내 자산 현황 바로가기
-        </button>
+        <div class="w-40 h-8 bg-gray-200 rounded animate-pulse"></div>
+        <div class="w-32 h-9 bg-gray-200 rounded animate-pulse"></div>
       </div>
 
       <!-- 실제 자산 데이터 -->
@@ -84,6 +79,21 @@
         >
           내 자산 현황 바로가기
         </button>
+      </div>
+      <!-- 수익률 표시 -->
+      <div v-if="!dataLoaded" class="w-20 h-4 bg-gray-200 rounded animate-pulse ml-1"></div>
+      <div
+        v-else
+        :class="
+          calculatedProfitRate > 0
+            ? 'text-red-500'
+            : calculatedProfitRate < 0
+              ? 'text-blue-500'
+              : 'text-gray-500'
+        "
+        class="text-sm font-bold ml-1"
+      >
+        {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
       </div>
     </section>
 
@@ -124,6 +134,25 @@
           최근 투자 내역 바로가기
         </button>
       </div>
+      <div class="px-5 py-4">
+        <!-- 로딩 중일 때 스켈레톤 UI -->
+        <div v-if="!dataLoaded">
+          <!-- 매수 내역 스켈레톤 -->
+          <div class="mb-4">
+            <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
+            <div class="flex flex-col gap-2">
+              <div
+                v-for="i in 2"
+                :key="`buy-skeleton-${i}`"
+                class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-red-600"
+              >
+                <div class="flex flex-col flex-1">
+                  <div class="w-20 h-4 bg-gray-200 rounded animate-pulse mb-1"></div>
+                  <div class="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div class="text-right">
+                  <div class="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
       <div class="px-4 py-4">
         <!-- 매수 내역 -->
         <div class="mb-4">
@@ -157,15 +186,39 @@
                 <div class="text-sm font-bold text-gray-900 mb-0.5">{{ item.name }}</div>
                 <div class="text-xs text-gray-500">{{ item.desc }}</div>
               </div>
-              <div class="text-right">
-                <div class="text-sm font-bold text-gray-900">
-                  {{ item.amount.toLocaleString() }}원
+            </div>
+          </div>
+          <!-- 매도 내역 스켈레톤 -->
+          <div>
+            <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
+            <div class="flex flex-col gap-2">
+              <div
+                v-for="i in 2"
+                :key="`sell-skeleton-${i}`"
+                class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-blue-600"
+              >
+                <div class="flex flex-col flex-1">
+                  <div class="w-20 h-4 bg-gray-200 rounded animate-pulse mb-1"></div>
+                  <div class="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div class="text-right">
+                  <div class="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
+        <!-- 실제 데이터 -->
+        <div v-else>
+          <!-- 매수 내역 -->
+          <div class="mb-4">
+            <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
+            <div class="flex flex-col gap-2">
+              <div
+                v-if="buyHistory.length === 0"
+                class="text-sm text-gray-500 text-center py-4"
+              >
+                매수 내역이 없습니다
         <!-- 매도 내역 -->
         <div>
           <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
@@ -198,9 +251,46 @@
                 <div class="text-sm font-bold text-gray-900 mb-0.5">{{ item.name }}</div>
                 <div class="text-xs text-gray-500">{{ item.desc }}</div>
               </div>
-              <div class="text-right">
-                <div class="text-sm font-bold text-gray-900">
-                  {{ item.amount.toLocaleString() }}원
+              <div
+                v-for="(item, index) in buyHistory"
+                :key="`buy-${index}`"
+                class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-red-600 hover:shadow-md transition"
+              >
+                <div class="flex flex-col flex-1">
+                  <div class="text-sm font-bold text-gray-900 mb-0.5">{{ item.name }}</div>
+                  <div class="text-xs text-gray-500">{{ item.desc }}</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-sm font-bold text-gray-900">
+                    {{ item.amount.toLocaleString() }}원
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 매도 내역 -->
+          <div>
+            <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
+            <div class="flex flex-col gap-2">
+              <div
+                v-if="sellHistory.length === 0"
+                class="text-sm text-gray-500 text-center py-4"
+              >
+                매도 내역이 없습니다
+              </div>
+              <div
+                v-for="(item, index) in sellHistory"
+                :key="`sell-${index}`"
+                class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-blue-600 hover:shadow-md transition"
+              >
+                <div class="flex flex-col flex-1">
+                  <div class="text-sm font-bold text-gray-900 mb-0.5">{{ item.name }}</div>
+                  <div class="text-xs text-gray-500">{{ item.desc }}</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-sm font-bold text-gray-900">
+                    {{ item.amount.toLocaleString() }}원
+                  </div>
                 </div>
               </div>
             </div>
@@ -220,74 +310,30 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { getUserCredit } from '../../services/learning'
 import { useUserStore } from '@/stores/user'
+import { useAssetDataStore } from '@/services/useAssetData.js'
 
 const router = useRouter()
 const userStore = useUserStore()
 const imageErrors = ref({})
 
+// AssetDataStore 컴포저블 사용
+const {
+  dataLoaded,
+  userAccount,
+  calculatedProfitRate,
+  loadUserData,
+  safeNumber,
+} = useAssetDataStore()
+
 const profile = ref({ image: '', name: '', type: '', level: 3 })
 const asset = ref({ amount: 0 })
-const userAccount = ref({
-  accountId: null,
-  accountNumber: '',
-  currentBalance: 0,
-  totalAssetValue: 0,
-  totalProfitLoss: 0,
-  profitRate: 0,
-})
-const holdingsData = ref([])
-const dataLoaded = ref(false)
 const buyHistory = ref([])
 const sellHistory = ref([])
 
-const safeNumber = (v, d = 0) => (isNaN(v) || v == null ? d : Number(v))
-
-const stockValue = computed(() =>
-  holdingsData.value.reduce((t, h) => t + safeNumber(h.currentValue), 0),
+// 총 자산 계산 (AssetStatus와 동일한 방식)
+const calculatedTotalAssetValue = computed(() => 
+  safeNumber(userAccount.value.totalAssetValue, 0)
 )
-const totalInvestment = computed(() =>
-  holdingsData.value.reduce((s, h) => s + safeNumber(h.averagePrice) * safeNumber(h.quantity), 0),
-)
-const totalProfitLoss = computed(() =>
-  holdingsData.value.reduce((s, h) => s + safeNumber(h.profitLoss), 0),
-)
-const calculatedProfitRate = computed(() =>
-  totalInvestment.value === 0
-    ? 0
-    : Number(((totalProfitLoss.value / totalInvestment.value) * 100).toFixed(2)),
-)
-const calculatedTotalAssetValue = computed(
-  () => safeNumber(userAccount.value.currentBalance) + stockValue.value,
-)
-
-const fetchMultipleStockPrices = async (codes) => {
-  try {
-    const res = await axios.get(`/api/stock/prices/${codes.join(',')}`)
-    return res.data?.data || null
-  } catch (e) {
-    console.error('주식 가격 조회 실패:', e)
-    return null
-  }
-}
-
-const updateHoldingsWithRealTimePrice = async (holdings) => {
-  const prices = await fetchMultipleStockPrices(holdings.map((h) => h.stockCode))
-  return holdings.map((h) => {
-    const p = prices?.[h.stockCode]?.output
-    if (!p) return h
-    const cur = parseInt(p.stck_prpr)
-    const total = cur * h.quantity
-    const invest = h.averagePrice * h.quantity
-    const loss = total - invest
-    return {
-      ...h,
-      currentPrice: cur,
-      currentValue: total,
-      profitLoss: loss,
-      profitRate: invest ? Number(((loss / invest) * 100).toFixed(2)) : 0,
-    }
-  })
-}
 
 const goToAssetStatus = () => router.push('/mock-trading/asset-status')
 const goToTransactions = () => router.push('/mock-trading/transactions')
@@ -305,6 +351,7 @@ const handleLogout = async () => {
 
 onMounted(async () => {
   try {
+    // 사용자 정보 로드
     const me = await axios.get('/api/auth/me', { withCredentials: true })
     profile.value = {
       name: me.data.name,
@@ -313,42 +360,35 @@ onMounted(async () => {
       image: me.data.profileImage || '',
     }
 
-    const [credit, accountRes, txRes, holdingsRes] = await Promise.all([
-      getUserCredit(me.data.userId),
-      axios.get('/api/mocktrading/account', { withCredentials: true }),
-      axios.get('/api/mocktrading/transactions', { withCredentials: true }),
-      axios.get('/api/mocktrading/holdings'),
-    ])
-
+    // 크레딧 정보 로드
+    const credit = await getUserCredit(me.data.userId)
     asset.value.amount = credit
-    userAccount.value = {
-      ...accountRes.data,
-      currentBalance: safeNumber(accountRes.data.currentBalance),
-      totalAssetValue: safeNumber(accountRes.data.totalAssetValue),
-      totalProfitLoss: safeNumber(accountRes.data.totalProfitLoss),
-      profitRate: safeNumber(accountRes.data.profitRate),
-    }
 
-    const processed = holdingsRes.data.map((h) => ({
-      stockCode: h.stockCode,
-      stockName: h.stockName,
-      quantity: safeNumber(h.quantity),
-      averagePrice: safeNumber(h.averagePrice),
-      currentPrice: safeNumber(h.currentPrice),
-      currentValue: safeNumber(h.currentValue),
-      profitLoss: safeNumber(h.profitLoss),
-      profitRate: safeNumber(h.profitRate),
-    }))
-    holdingsData.value = await updateHoldingsWithRealTimePrice(processed)
+    // AssetDataStore를 통해 자산 데이터 로드 (실시간 가격 포함)
+    await loadUserData()
 
-    const buyTx = txRes.data.filter((t) => t.transactionType === 'BUY')
-    const sellTx = txRes.data.filter((t) => t.transactionType === 'SELL')
+    // 거래 내역 로드
+    const txRes = await axios.get('/api/mocktrading/transactions', { withCredentials: true })
+    
+    if (txRes.data && txRes.data.length > 0) {
+      const buyTx = txRes.data.filter((t) => t.transactionType === 'BUY')
+      const sellTx = txRes.data.filter((t) => t.transactionType === 'SELL')
 
-    buyHistory.value = buyTx.slice(0, 2).map((tx) => {
-      return {
+      buyHistory.value = buyTx.slice(0, 2).map((tx) => ({
         name: tx.stockName,
         desc: `매수 ${tx.quantity}주`,
         amount: tx.totalAmount,
+      }))
+      
+      sellHistory.value = sellTx.slice(0, 2).map((tx) => ({
+        name: tx.stockName,
+        desc: `매도 ${tx.quantity}주`,
+        amount: tx.totalAmount,
+      }))
+    } else {
+      buyHistory.value = []
+      sellHistory.value = []
+    }
         stockCode: tx.stockCode,
         imageUrl: tx.imageUrl,
       }
@@ -363,9 +403,38 @@ onMounted(async () => {
       }
     })
 
-    dataLoaded.value = true
   } catch (e) {
     console.error('로딩 실패:', e)
+    // 세션 실패 시 로컬스토리지 fallback
+    try {
+      profile.value.name = localStorage.getItem('name') || '사용자'
+      profile.value.type = localStorage.getItem('riskType') || '정보 없음'
+      
+      const userId = Number(localStorage.getItem('userId') || 1)
+      const credit = await getUserCredit(userId)
+      asset.value.amount = credit
+      
+      // 자산 데이터 로드 시도
+      await loadUserData()
+    } catch (fallbackError) {
+      console.error('Fallback 로딩도 실패:', fallbackError)
+    }
   }
 })
 </script>
+
+<style scoped>
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+</style>
