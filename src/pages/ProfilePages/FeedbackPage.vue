@@ -1,5 +1,7 @@
 <template>
-  <header class="flex items-center justify-between bg-white px-4 pt-4 pb-3 sticky top-0 z-10">
+  <header
+    class="flex items-center justify-between bg-white px-4 pt-4 pb-3 sticky top-0 z-10 border-b border-gray-200"
+  >
     <button @click="goBack" class="p-2 hover:bg-gray-100 rounded-lg text-black">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
