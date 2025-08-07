@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-full">
     <!-- 대화 내용 -->
-    <div class="flex-1 overflow-y-auto space-y-6 p-4 pb-28">
+    <div ref="messageContainer" class="flex-1 overflow-y-auto space-y-6 p-4 pb-28">
       <!-- 챗봇 아바타와 인사말 (첫 로드 시) -->
       <div v-if="chatStore.messages.length === 0" class="flex items-start space-x-4">
         <div class="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
@@ -36,8 +36,13 @@
             <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
           </div>
           <div class="flex-1 max-w-xs">
+            <!-- 🆕 용어 설명 카드 -->
+            <div v-if="isTermExplanationResponse(msg.content)">
+              <TermExplanationCard :content="msg.content" />
+            </div>
+
             <!-- 🆕 키워드 기반 주식 추천 카드 -->
-            <div v-if="isStockRecommendationResponse(msg.content)">
+            <div v-else-if="isStockRecommendationResponse(msg.content)">
               <StockRecommendationCards :content="msg.content" />
             </div>
 
@@ -106,11 +111,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import axios from 'axios'
 import { useChatStore } from '@/stores/counter.js'
 import { useUserStore } from '@/stores/user.js'
 import StockRecommendationCards from './StockRecommendationCards.vue'
+import TermExplanationCard from './TermExplanationCard.vue'
 
 const chatStore = useChatStore()
 const userStore = useUserStore()
@@ -125,6 +131,26 @@ const loading = ref(false)
 const awaitingKeyword = ref(false)
 const awaitingStockAnalyze = ref(false)
 const awaitingTermExplain = ref(false)
+const messageContainer = ref(null)
+
+// 🆕 용어 설명 응답 감지 함수
+const isTermExplanationResponse = (content) => {
+  if (!content || typeof content !== 'string') {
+    return false
+  }
+
+  try {
+    const parsed = JSON.parse(content)
+    if (parsed && parsed.term && parsed.definition && parsed.meaning && parsed.beginnerTip) {
+      console.log('✅ 용어 설명 응답 감지됨:', parsed)
+      return true
+    }
+  } catch (error) {
+    console.log('❌ 용어 설명 JSON 파싱 실패:', error)
+  }
+
+  return false
+}
 
 // 🆕 키워드 기반 주식 추천 응답 감지 함수 (개선된 버전)
 const isStockRecommendationResponse = (content) => {
@@ -185,6 +211,27 @@ function resetAwaitingState() {
   awaitingStockAnalyze.value = false
   awaitingTermExplain.value = false
 }
+
+// 자동 스크롤 함수
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (messageContainer.value) {
+      messageContainer.value.scrollTop = messageContainer.value.scrollHeight
+    }
+  })
+}
+
+// 메시지 변경 감지하여 자동 스크롤
+watch(() => chatStore.messages.length, () => {
+  scrollToBottom()
+})
+
+// 로딩 상태 변경 감지하여 자동 스크롤
+watch(loading, (newLoading) => {
+  if (newLoading) {
+    scrollToBottom()
+  }
+})
 
 onMounted(async () => {
   if (!userStore.userId) {
@@ -347,7 +394,6 @@ async function handleButtonIntent(btn) {
 
   if (btn.intent === 'RECOMMEND_KEYWORD') {
     awaitingKeyword.value = true
-    chatStore.clearMessages()
     chatStore.messages.push({
       role: 'bot',
       type: 'buttons',
@@ -359,7 +405,6 @@ async function handleButtonIntent(btn) {
 
   if (btn.intent === 'STOCK_ANALYZE') {
     awaitingStockAnalyze.value = true
-    chatStore.clearMessages()
     chatStore.messages.push({
       role: 'bot',
       type: 'buttons',
@@ -372,7 +417,6 @@ async function handleButtonIntent(btn) {
   if (btn.intent === 'PORTFOLIO_ANALYZE') {
     if (!btn.message) {
       console.log('⚠️ PORTFOLIO_ANALYZE 초기 안내 단계') // ← 여기는 안내만
-      chatStore.clearMessages()
       chatStore.messages.push({
         role: 'bot',
         type: 'buttons',
@@ -396,7 +440,6 @@ async function handleButtonIntent(btn) {
   }
   if (btn.intent === 'TERM_EXPLAIN') {
     awaitingTermExplain.value = true
-    chatStore.clearMessages()
     chatStore.messages.push({
       role: 'bot',
       type: 'buttons',
