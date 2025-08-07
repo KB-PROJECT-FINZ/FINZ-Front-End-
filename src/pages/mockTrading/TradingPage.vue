@@ -103,7 +103,11 @@
               >
                 <!-- 잔량 시각화 배경 막대 (오른쪽부터 그려짐, 패딩 추가)-->
                 <div
-                  class="absolute top-2 bottom-2 right-0 bg-blue-100 opacity-50 rounded-l-md"
+                  class="absolute top-2 bottom-2 right-0 opacity-50 rounded-l-md transition-all duration-500"
+                  :class="[
+                    'bg-blue-100',
+                    askHighlightIndexes.includes(index) ? 'animate-ask-highlight' : '',
+                  ]"
                   :style="{ width: getVolumeRatio(ask.volume) + '%' }"
                 ></div>
                 <!-- 호가 및 잔량 텍스트 -->
@@ -151,7 +155,11 @@
               >
                 <!-- 잔량 시각화 배경 막대 (오른쪽부터 그려짐, 패딩 추가) -->
                 <div
-                  class="absolute top-2 bottom-2 right-0 bg-red-100 opacity-50 rounded-l-md"
+                  class="absolute top-2 bottom-2 right-0 opacity-50 rounded-l-md transition-all duration-500"
+                  :class="[
+                    'bg-red-100',
+                    bidHighlightIndexes.includes(index) ? 'animate-bid-highlight' : '',
+                  ]"
                   :style="{ width: getVolumeRatio(bid.volume) + '%' }"
                 ></div>
                 <!-- 호가 및 잔량 텍스트 -->
@@ -352,8 +360,33 @@
 
             <!-- 가격 입력 -->
             <div v-if="orderType === 'limit'" class="flex items-center">
-              <div class="flex-1 text-left">
-                <div class="text-lg font-bold text-gray-900">{{ formatPrice(orderPrice) }}원</div>
+              <div class="flex-1 text-left relative">
+                <!-- 실제 입력은 키보드로만, 후보정은 blur에서 처리 -->
+                <input
+                  type="number"
+                  v-model.number="orderPrice"
+                  min="0"
+                  class="absolute opacity-0 pointer-events-none w-0 h-0"
+                  tabindex="-1"
+                  @keydown.stop
+                />
+                <span
+                  tabindex="0"
+                  @keydown="onOrderPriceKeydown"
+                  @focus="isOrderPriceFocused = true"
+                  @blur="
+                    () => {
+                      isOrderPriceFocused = false
+                      onOrderPriceBlur()
+                    }
+                  "
+                  style="outline: none"
+                  class="focus:ring-2 focus:ring-blue-300 rounded"
+                >
+                  <span class="text-lg font-bold text-gray-900">
+                    {{ formatPrice(orderPrice) }}원
+                  </span>
+                </span>
               </div>
               <div class="flex gap-1">
                 <button
@@ -384,16 +417,32 @@
                 </button>
               </div>
             </div>
-            <div v-else class="text-lg font-bold text-gray-900">시장가</div>
+            <div v-else class="text-lg font-bold text-gray-900 mb-1">시장가</div>
           </div>
 
           <!-- 수량 입력 -->
           <div v-if="activeTab !== 'waiting'" class="mb-4 p-3 bg-gray-50 rounded-lg">
             <!-- 수량 표시 및 조절 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="text-lg font-bold">
-                <span v-if="orderQuantity > 0" class="text-gray-900">{{ orderQuantity }}주</span>
-                <span v-else class="text-gray-400">최대 {{ maxOrderQuantity }}주</span>
+              <div class="text-lg font-bold flex items-center gap-2">
+                <input
+                  type="number"
+                  v-model.number="orderQuantity"
+                  min="0"
+                  :max="maxOrderQuantity"
+                  class="absolute opacity-0 pointer-events-none w-0 h-0"
+                  tabindex="-1"
+                  @keydown.stop
+                />
+                <span
+                  tabindex="0"
+                  @keydown="onOrderQuantityKeydown"
+                  style="outline: none"
+                  class="focus:ring-2 focus:ring-blue-300 rounded"
+                >
+                  <span v-if="orderQuantity > 0" class="text-gray-900">{{ orderQuantity }}주</span>
+                  <span v-else class="text-gray-400">최대 {{ maxOrderQuantity }}주</span>
+                </span>
               </div>
               <div class="flex gap-1">
                 <button
@@ -466,6 +515,29 @@
                   >대기중 {{ pendingOrdersCount }}건</span
                 >
                 <div class="flex items-center">
+                  <!-- 로딩 스피너 -->
+                  <span v-if="isPendingLoading" class="mr-2 flex items-center">
+                    <svg
+                      class="animate-spin h-4 w-4 text-gray-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      />
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
+                    </svg>
+                  </span>
                   <button @click="loadPendings" class="p-1.5 hover:bg-gray-100 rounded">
                     <svg
                       class="w-4 h-4 text-gray-400"
@@ -485,7 +557,7 @@
               </div>
             </div>
 
-            <!-- 하단 영역: 대기중인 거래 목록 -->
+            <!-- 하단 영역: 대기중 거래 목록 -->
             <div class="flex-1 space-y-2">
               <div
                 v-for="order in pendingOrders"
@@ -528,6 +600,13 @@
                     />
                   </svg>
                 </button>
+              </div>
+              <!-- 대기 주문 없을 때 안내 -->
+              <div
+                v-if="!isPendingLoading && pendingOrders.length === 0"
+                class="text-center text-gray-400 py-8 text-sm"
+              >
+                대기중인 주문이 없습니다.
               </div>
             </div>
           </div>
@@ -762,11 +841,11 @@
                   {{
                     tradeResultIsFilled
                       ? tradeResultType === 'BUY'
-                        ? '구매 주문 체결 완료'
-                        : '판매 주문 체결 완료'
+                        ? '구매 체결 완료'
+                        : '판매 체결 완료'
                       : tradeResultType === 'BUY'
-                        ? '구매 주문 신청 완료'
-                        : '판매 주문 신청 완료'
+                        ? '구매 신청 완료'
+                        : '판매 신청 완료'
                   }}
                 </span>
               </template>
@@ -796,7 +875,7 @@ import axios from 'axios'
 const route = useRoute()
 const router = useRouter()
 
-// 종목 코드 (초기값: 삼성전자, 실제 값은 route.query에서 받아옴)
+// 종목 코드 (실제 값은 route.query에서 받아옴)
 let STOCK_CODE = ''
 
 // 로딩 상태
@@ -817,6 +896,16 @@ const orderConfirmType = ref('BUY')
 const orderConfirmQuantity = ref(0)
 const orderConfirmPrice = ref(0)
 const orderConfirmStockName = ref('')
+
+const askHighlightIndexes = ref([])
+const bidHighlightIndexes = ref([])
+
+const askLastHighlightTime = ref({})
+const bidLastHighlightTime = ref({})
+// 호가 하이라이트 애니메이션 쿨타임 필요시 설정
+const HIGHLIGHT_COOLDOWN = 0 // ms
+
+const isOrderPriceFocused = ref(false)
 
 const openOrderConfirmModal = () => {
   orderConfirmType.value = activeTab.value === 'buy' ? 'BUY' : 'SELL'
@@ -1131,8 +1220,11 @@ const loadHoldings = async () => {
   }
 }
 
+const isPendingLoading = ref(false)
+
 // 사용자 계좌에서 거래 대기 목록 가져오기
 const loadPendings = async () => {
+  isPendingLoading.value = true
   try {
     await axios.post('/api/stock/orders/settle')
     const response = await axios.get('/api/stock/orders')
@@ -1155,6 +1247,8 @@ const loadPendings = async () => {
   } catch (error) {
     console.error('대기 주문 정보 로드 실패:', error)
     pendingOrders.value = []
+  } finally {
+    isPendingLoading.value = false
   }
 }
 
@@ -1224,6 +1318,52 @@ const generateOrderBookData = async (currentPrice) => {
     orderBookScroll.value.scrollTop = orderBookScroll.value.scrollHeight / 4
   }
 }
+
+// 2. 호가 데이터가 바뀔 때마다 변화 감지 및 애니메이션 트리거
+watch(askPrices, (newVal, oldVal) => {
+  if (!oldVal.length) return
+  const now = Date.now()
+  askHighlightIndexes.value = []
+  newVal.forEach((ask, idx) => {
+    if (!oldVal[idx] || ask.volume !== oldVal[idx].volume) {
+      // 쿨타임 체크
+      if (
+        !askLastHighlightTime.value[idx] ||
+        now - askLastHighlightTime.value[idx] > HIGHLIGHT_COOLDOWN
+      ) {
+        askHighlightIndexes.value.push(idx)
+        askLastHighlightTime.value[idx] = now
+      }
+    }
+  })
+  if (askHighlightIndexes.value.length > 0) {
+    setTimeout(() => {
+      askHighlightIndexes.value = []
+    }, 500)
+  }
+})
+
+watch(bidPrices, (newVal, oldVal) => {
+  if (!oldVal.length) return
+  const now = Date.now()
+  bidHighlightIndexes.value = []
+  newVal.forEach((bid, idx) => {
+    if (!oldVal[idx] || bid.volume !== oldVal[idx].volume) {
+      if (
+        !bidLastHighlightTime.value[idx] ||
+        now - bidLastHighlightTime.value[idx] > HIGHLIGHT_COOLDOWN
+      ) {
+        bidHighlightIndexes.value.push(idx)
+        bidLastHighlightTime.value[idx] = now
+      }
+    }
+  })
+  if (bidHighlightIndexes.value.length > 0) {
+    setTimeout(() => {
+      bidHighlightIndexes.value = []
+    }, 500)
+  }
+})
 
 const orderBookScroll = ref(null)
 
@@ -1436,6 +1576,95 @@ const processOrderBookData = (data) => {
   }
 }
 
+// 키보드 입력으로 가격 입력 지원 (호가단위 보정 X, 최대 주문 가능 수량 계산 X)
+const onOrderPriceKeydown = (e) => {
+  // 숫자 키, 백스페이스, 딜리트, 방향키, 탭만 허용
+  if (
+    (e.key >= '0' && e.key <= '9') ||
+    e.key === 'Backspace' ||
+    e.key === 'Delete' ||
+    e.key === 'ArrowLeft' ||
+    e.key === 'ArrowRight' ||
+    e.key === 'Tab'
+  ) {
+    e.preventDefault()
+    let newVal = String(orderPrice.value)
+    if (e.key >= '0' && e.key <= '9') {
+      newVal += e.key
+    } else if (e.key === 'Backspace') {
+      newVal = newVal.slice(0, -1)
+    } else if (e.key === 'Delete') {
+      newVal = ''
+    }
+    let num = Number(newVal)
+    if (isNaN(num) || num < 0) num = 0
+    orderPrice.value = num
+  }
+}
+
+// 가격 입력창에서 포커스 아웃 시 하한가~상한가, 호가단위 보정 및 최대 주문 가능 수량 계산
+const onOrderPriceBlur = () => {
+  let num = Number(orderPrice.value)
+  if (isNaN(num) || num < 0) num = 0
+
+  // 1. 하한가~상한가 범위로 보정
+  const lower = stockInfo.value.lowerLimit || 0
+  const upper = stockInfo.value.upperLimit || 0
+  if (upper > 0 && num > upper) num = upper
+  if (lower > 0 && num < lower) num = lower
+
+  // 2. 호가단위로 보정
+  const tick = getTickSize(stockInfo.value.currentPrice)
+  if (num % tick !== 0 && num !== 0) {
+    // 버림 처리
+    num = Math.floor(num / tick) * tick
+    // 상한가/하한가 범위 재확인
+    if (upper > 0 && num > upper) num = upper
+    if (lower > 0 && num < lower) num = lower
+  }
+
+  orderPrice.value = num
+
+  // 3. 최대 주문 가능 수량 보정 (수량 입력창도 blur 시 보정되지만, 가격이 바뀌면 추가로 보정)
+  if (activeTab.value === 'buy') {
+    const maxQty = Math.floor(userInfo.value.availableAmount / (orderPrice.value || 1))
+    if (orderQuantity.value > maxQty) {
+      orderQuantity.value = maxQty
+    }
+  }
+}
+
+// 키보드 입력으로 수량 입력 지원
+const onOrderQuantityKeydown = (e) => {
+  // 숫자 키, 백스페이스, 딜리트, 방향키만 허용
+  if (
+    (e.key >= '0' && e.key <= '9') ||
+    e.key === 'Backspace' ||
+    e.key === 'Delete' ||
+    e.key === 'ArrowLeft' ||
+    e.key === 'ArrowRight' ||
+    e.key === 'Tab'
+  ) {
+    e.preventDefault()
+    let newVal = String(orderQuantity.value)
+    if (e.key >= '0' && e.key <= '9') {
+      newVal += e.key
+    } else if (e.key === 'Backspace') {
+      newVal = newVal.slice(0, -1)
+    } else if (e.key === 'Delete') {
+      newVal = ''
+    }
+    let num = Number(newVal)
+    if (isNaN(num) || num < 0) num = 0
+    if (activeTab.value === 'buy') {
+      num = Math.min(num, maxOrderQuantity.value)
+    } else if (activeTab.value === 'sell') {
+      num = Math.min(num, userInfo.value.quantity)
+    }
+    orderQuantity.value = num
+  }
+}
+
 // 웹소켓 연결 초기화
 const initWebSocket = async () => {
   console.log('[체결] initWebSocket 호출됨')
@@ -1578,10 +1807,25 @@ const volumePowerClass = computed(() => {
   return volumePower.value > 100 ? 'text-red-600' : 'text-blue-600'
 })
 
-// 최대 주문 가능 수량 계산
+const lastMaxOrderQuantity = ref(0)
+watch(
+  [() => userInfo.value.availableAmount, () => orderPrice.value, isOrderPriceFocused],
+  ([available, price, focused]) => {
+    if (!focused && activeTab.value === 'buy') {
+      lastMaxOrderQuantity.value = Math.floor(available / price)
+    }
+    if (activeTab.value === 'sell') {
+      lastMaxOrderQuantity.value = userInfo.value.quantity
+    }
+  },
+  { immediate: true },
+)
+
 const maxOrderQuantity = computed(() => {
   if (activeTab.value === 'buy') {
-    return Math.floor(userInfo.value.availableAmount / orderPrice.value)
+    return isOrderPriceFocused.value
+      ? lastMaxOrderQuantity.value
+      : Math.floor(userInfo.value.availableAmount / orderPrice.value)
   } else if (activeTab.value === 'sell') {
     return userInfo.value.quantity
   }
@@ -2078,4 +2322,32 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+/* 4. 애니메이션 효과 정의 */
+@keyframes askHighlight {
+  0% {
+    background-color: #bfdbfe; /* blue-600 */
+    opacity: 0.8;
+  }
+  100% {
+    background-color: #dbeafe; /* blue-100 */
+    opacity: 0.5;
+  }
+}
+@keyframes bidHighlight {
+  0% {
+    background-color: #fecaca; /* red-600 */
+    opacity: 0.8;
+  }
+  100% {
+    background-color: #fee2e2; /* red-100 */
+    opacity: 0.5;
+  }
+}
+.animate-ask-highlight {
+  animation: askHighlight 0.5s;
+}
+.animate-bid-highlight {
+  animation: bidHighlight 0.5s;
+}
+</style>
