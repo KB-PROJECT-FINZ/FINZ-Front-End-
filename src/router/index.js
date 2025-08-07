@@ -3,7 +3,6 @@ import HomePage from '../pages/HomePage.vue'
 import LoginPage from '@/pages/LoginPages/LoginPage.vue'
 import ProfilePage from '@/pages//ProfilePages/ProfilePage.vue'
 import JournalPage from '@/pages/ProfilePages//JournalPage.vue'
-import JournalWritePage from '@/pages//ProfilePages/JournalWritePage.vue'
 import FeedbackPage from '@/pages/ProfilePages/FeedbackPage.vue'
 import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/LoginPages/SignupFormPage.vue'
@@ -83,11 +82,6 @@ const routes = [
     path: '/journal',
     name: 'journal',
     component: JournalPage,
-  },
-  {
-    path: '/journalwrite',
-    name: 'journalwrite',
-    component: JournalWritePage,
   },
   {
     path: '/feedback',

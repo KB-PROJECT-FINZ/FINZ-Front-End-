@@ -30,7 +30,7 @@
       <div class="flex flex-nowrap gap-2">
         <div class="w-1/2 bg-white shadow rounded-lg px-4 py-2 text-sm text-gray-700">
           <div class="text-gray-500 text-xs mb-0.5">투자 성향</div>
-          <div class="font-semibold text-indigo-600 truncate">{{ profile.type }} 신중한 안정형</div>
+          <div class="font-semibold text-indigo-600 truncate">{{ profile.type }} {{ nameKr }}</div>
         </div>
 
         <div class="w-1/2 bg-white shadow rounded-lg px-4 py-2 text-sm text-gray-700">
@@ -242,7 +242,7 @@ const profile = ref({ image: '', name: '', type: '', level: 3 })
 const asset = ref({ amount: 0 })
 const buyHistory = ref([])
 const sellHistory = ref([])
-
+const nameKr = ref('')
 const calculatedTotalAssetValue = computed(() => safeNumber(userAccount.value.totalAssetValue, 0))
 
 const goToAssetStatus = () => router.push('/mock-trading/asset-status')
@@ -282,6 +282,10 @@ onMounted(async () => {
     asset.value.amount = credit
 
     await loadUserData()
+    const detailRes = await axios.get(`/api/user/risk-type-detail/${profile.value.type}`, {
+      withCredentials: true,
+    })
+    nameKr.value = detailRes.data.nameKr
 
     const txRes = await axios.get('/api/mocktrading/transactions', { withCredentials: true })
     if (txRes.data && txRes.data.length > 0) {
