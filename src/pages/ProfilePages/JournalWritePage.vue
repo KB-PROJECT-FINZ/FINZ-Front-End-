@@ -10,10 +10,10 @@
 
   <div class="journal-write-page px-4 py-6">
     <h2 class="text-lg font-semibold mb-4">{{ formattedDateTitle }} 투자 일지 작성</h2>
-    <div v-if="matchedTransactions.length" class="mt-4 mb-4">
+    <div v-if="groupedTransactions.length" class="mt-4 mb-4">
       <div class="flex flex-wrap gap-2">
         <div
-          v-for="(t, index) in matchedTransactions"
+          v-for="(t, index) in groupedTransactions"
           :key="index"
           :class="[
             'px-3 py-1 rounded-full text-sm font-medium shadow-sm',
@@ -93,17 +93,37 @@ const formattedDateTitle = computed(() => {
   return `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`
 })
 
-const matchedTransactions = computed(() => {
+const groupedTransactions = computed(() => {
   if (!form.value.journalDate) return []
-  return transactionsData.value.filter((t) => {
-    if (!t.executedAt) return false
+
+  const grouped = {}
+
+  transactionsData.value.forEach((t) => {
+    if (!t.executedAt) return
+
     const date = new Date(t.executedAt)
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
     const dd = String(date.getDate()).padStart(2, '0')
     const formatted = `${yyyy}-${mm}-${dd}`
-    return formatted === form.value.journalDate
+
+    if (formatted !== form.value.journalDate) return
+
+    const key = `${t.stockCode}_${t.type}`
+
+    if (!grouped[key]) {
+      grouped[key] = {
+        stockName: t.stockName,
+        stockCode: t.stockCode,
+        type: t.type,
+        quantity: t.quantity,
+      }
+    } else {
+      grouped[key].quantity += t.quantity
+    }
   })
+
+  return Object.values(grouped)
 })
 
 function getTodayDate() {

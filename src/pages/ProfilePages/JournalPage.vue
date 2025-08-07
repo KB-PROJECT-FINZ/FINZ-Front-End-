@@ -45,7 +45,7 @@
           <p class="font-semibold text-sm text-gray-700">{{ journal.journalDate }}</p>
           <div class="flex flex-wrap gap-1">
             <div
-              v-for="(t, idx) in getTransactionsForDate(journal.journalDate)"
+              v-for="(t, idx) in getGroupedTransactionsForDate(journal.journalDate)"
               :key="idx"
               :class="[
                 'px-2 py-0.5 rounded-full text-xs font-medium shadow-sm',
@@ -120,6 +120,7 @@ onMounted(async () => {
   try {
     await fetchTransactions()
     transactions.value = transactionsData.value
+    console.log('✅ 거래내역 불러옴:', transactions.value[0])
     journals.value = await fetchJournals()
   } catch (err) {
     console.error('❌ 데이터 로딩 실패:', err)
@@ -150,16 +151,35 @@ const selectedDateJournals = computed(() =>
   journals.value.filter((j) => j.journalDate === selectedDate.value),
 )
 
-function getTransactionsForDate(date) {
-  return transactions.value.filter((t) => {
-    if (!t.executedAt) return false
+function getGroupedTransactionsForDate(date) {
+  const grouped = {}
+
+  transactions.value.forEach((t) => {
+    if (!t.executedAt) return
+
     const localDate = new Date(t.executedAt)
     const yyyy = localDate.getFullYear()
     const mm = String(localDate.getMonth() + 1).padStart(2, '0')
     const dd = String(localDate.getDate()).padStart(2, '0')
     const formattedDate = `${yyyy}-${mm}-${dd}`
-    return formattedDate === date
+
+    if (formattedDate !== date) return
+
+    const key = `${t.stockCode}_${t.type}`
+
+    if (!grouped[key]) {
+      grouped[key] = {
+        stockName: t.stockName,
+        stockCode: t.stockCode,
+        type: t.type,
+        quantity: t.quantity,
+      }
+    } else {
+      grouped[key].quantity += t.quantity
+    }
   })
+
+  return Object.values(grouped)
 }
 
 function onDayClick(day) {
