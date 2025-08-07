@@ -7,8 +7,8 @@
         <div class="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
           <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
         </div>
-        <div class="flex-1">
-          <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-xs shadow-lg border border-white/30">
+        <div class="flex-1 max-w-xs">
+          <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30">
             <p class="font-bold text-gray-800 text-lg">
               안녕하세요 {{ userStore.name || '사용자' }}님! 👋
             </p>
@@ -26,7 +26,7 @@
         :class="msg.role === 'user' ? 'flex justify-end' : 'flex items-start space-x-4'"
       >
         <!-- 사용자 메시지 -->
-        <div v-if="msg.role === 'user'" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-3xl p-4 max-w-xs shadow-lg">
+        <div v-if="msg.role === 'user'" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-3xl p-4 max-w-sm shadow-lg">
           <p class="font-medium">{{ msg.content }}</p>
         </div>
 
@@ -35,20 +35,20 @@
           <div class="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
             <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
           </div>
-          <div class="flex-1">
+          <div class="flex-1 max-w-xs">
             <!-- 🆕 키워드 기반 주식 추천 카드 -->
             <div v-if="isStockRecommendationResponse(msg.content)">
               <StockRecommendationCards :content="msg.content" />
             </div>
 
         <!-- 일반 메시지 -->
-            <div v-else-if="!msg.type" class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-xs shadow-lg border border-white/30">
+            <div v-else-if="!msg.type" class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30">
               <p class="text-gray-800">{{ msg.content }}</p>
             </div>
 
         <!-- 버튼 메시지 -->
             <div v-else-if="msg.type === 'buttons'" class="space-y-4">
-              <div v-if="msg.text" class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-xs shadow-lg border border-white/30">
+              <div v-if="msg.text" class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30">
                 <p class="text-gray-800">{{ msg.text }}</p>
               </div>
               <div class="grid grid-cols-2 gap-3">
@@ -71,14 +71,16 @@
         <div class="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
           <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
         </div>
-        <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-white/30">
-          <div class="flex items-center space-x-2">
-            <div class="flex space-x-1">
-              <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-              <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-              <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+        <div class="max-w-xs">
+          <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30">
+            <div class="flex items-center space-x-2">
+              <div class="flex space-x-1">
+                <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+              </div>
+              <p class="text-sm text-gray-600">답변을 준비하고 있어요...</p>
             </div>
-            <p class="text-sm text-gray-600">답변을 준비하고 있어요...</p>
           </div>
         </div>
       </div>
