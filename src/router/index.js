@@ -25,8 +25,8 @@ import TradingPage from '@/pages/mockTrading/TradingPage.vue'
 import { useUserStore } from '@/stores/user'
 import MockTradingHome from '@/pages/mockTrading/MockTradingHome.vue'
 import AssetStatus from '@/pages/mockTrading/AssetStatus.vue'
-import Holdings from '@/pages/mockTrading/Holdings.vue'
-import Transactions from '@/pages/mockTrading/Transactions.vue'
+import HoldingsPage from '@/pages/mockTrading/HoldingsPage.vue'
+import TransactionsPage from '@/pages/mockTrading/TransactionsPage.vue'
 import RiskProfile from '@/pages/ProfilePages/RiskProfile.vue'
 import RiskTypesList from '@/pages/ProfilePages/RiskTypesList.vue'
 import KakaoSignupPage from '@/pages/LoginPages/KakaoSignupPage.vue'
@@ -154,22 +154,20 @@ const routes = [
     component: () => import('@/pages/mockTrading/ChartPage.vue'),
     props: true,
   },
-  // 새로 추가할 자산 현황 경로
   {
     path: '/mock-trading/asset-status',
     name: 'AssetStatus',
     component: AssetStatus,
-    //meta: { requiresAuth: true } // 로그인 필요
   },
   {
     path: '/mock-trading/holdings',
     name: 'Holdings',
-    component: Holdings,
+    component: HoldingsPage,
   },
   {
     path: '/mock-trading/transactions',
     name: 'Transactions',
-    component: Transactions,
+    component: TransactionsPage,
   },
   {
     path: '/kakao-signup',

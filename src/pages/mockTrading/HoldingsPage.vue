@@ -163,7 +163,7 @@
         <div
           v-for="holding in sortedHoldings"
           :key="holding.stockCode"
-          class="p-4 cursor-pointer transition-colors hover:bg-gray-50"
+          class="p-4 cursor-pointer transition-colors hover:bg-gray-50 hover:rounded-xl"
           @click="goToStockDetail(holding.stockCode, holding.stockName)"
         >
           <template v-if="showDetail">
@@ -197,7 +197,7 @@
                 <div class="flex flex-col gap-0 text-right">
                   <div class="text-base font-bold text-gray-900 leading-tight">
                     <span v-if="holding.currentPrice > 0"
-                    >{{ holding.currentPrice.toLocaleString() }}원</span
+                      >{{ holding.currentPrice.toLocaleString() }}원</span
                     >
                     <span v-else class="text-gray-400">가격 업데이트 중...</span>
                   </div>
@@ -210,7 +210,7 @@
                     {{ holding.profitRate >= 0 ? '+' : '' }}{{ holding.profitRate }}%
                   </span>
                   <span v-else class="text-sm text-gray-400 leading-tight" style="margin-top: 2px"
-                  >-%</span
+                    >-%</span
                   >
                 </div>
               </div>
@@ -223,14 +223,14 @@
               <div>
                 <span class="text-gray-500">평균단가</span>
                 <span class="ml-2 font-medium text-gray-900"
-                >{{ holding.averagePrice.toLocaleString() }}원</span
+                  >{{ holding.averagePrice.toLocaleString() }}원</span
                 >
               </div>
               <div>
                 <span class="text-gray-500">평가금액</span>
                 <span class="ml-2 font-medium text-gray-900">
                   <span v-if="holding.totalValue > 0"
-                  >{{ holding.totalValue.toLocaleString() }}원</span
+                    >{{ holding.totalValue.toLocaleString() }}원</span
                   >
                   <span v-else class="text-gray-400">계산 중...</span>
                 </span>
@@ -281,7 +281,7 @@
               <div class="flex flex-col items-end justify-center min-w-[110px]">
                 <span class="text-base text-gray-900 font-semibold mb-0.5">
                   <span v-if="holding.currentPrice > 0"
-                  >{{ holding.currentPrice.toLocaleString() }}원</span
+                    >{{ holding.currentPrice.toLocaleString() }}원</span
                   >
                   <span v-else class="text-gray-400 text-sm">업데이트 중...</span>
                 </span>
@@ -294,7 +294,7 @@
                   "
                   :class="holding.profitLoss >= 0 ? 'text-red-600' : 'text-blue-600'"
                   class="text-xs"
-                >{{ holding.profitRate >= 0 ? '+' : '-'
+                  >{{ holding.profitRate >= 0 ? '+' : '-'
                   }}{{ Math.abs(holding.profitLoss).toLocaleString() }}원 ({{
                     holding.profitRate >= 0 ? '+' : ''
                   }}{{ holding.profitRate }}%)
@@ -336,286 +336,34 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
-import FooterNavigation from '../../components/FooterNavigation.vue'
-
-const showDetail = ref(false)
+import { useHoldingsData } from '@/services/useHoldingsData'
+import { useHoldingsSorting } from '@/services/useHoldingsSorting'
+import FooterNavigation from '@/components/FooterNavigation.vue'
 
 const router = useRouter()
-const loading = ref(false)
-const currentSort = ref('name') // 기본 정렬: 종목명
 
-// 정렬 옵션
-const sortOptions = [
-  { key: 'name', label: '종목명' },
-  { key: 'profitRate', label: '수익률' },
-  { key: 'profitLoss', label: '평가손익' },
-]
+const {
+  holdingsData,
+  loading,
+  imageErrors,
+  totalInvestment,
+  totalCurrentValue,
+  totalProfitLoss,
+  totalProfitRate,
+  fetchHoldings,
+  safeNumber,
+  getStockInitial,
+  handleImageError,
+} = useHoldingsData()
 
-// 보유 종목 데이터
-const holdingsData = ref([])
+const { currentSort, showDetail, sortOptions, sortedHoldings, changeSortOption } =
+  useHoldingsSorting(holdingsData, safeNumber, false)
 
-// null 값을 안전하게 처리하는 헬퍼 함수
-const safeNumber = (value, defaultValue = 0) => {
-  if (value === null || value === undefined || isNaN(value)) {
-    return defaultValue
-  }
-  return Number(value)
-}
-
-// 가격 데이터 파싱 헬퍼 함수
-const parseStockPriceData = (priceInfo) => {
-  // 다중 조회 API 응답 구조 확인
-  if (priceInfo && typeof priceInfo === 'object') {
-    // 새로운 다중 조회 API 응답 필드들
-    const fields = {
-      currentPrice: priceInfo.inter2_prpr,           // 관심2 현재가
-      priceChange: priceInfo.inter2_prdy_vrss,       // 관심2 전일 대비
-      changeRate: priceInfo.prdy_ctrt,               // 전일 대비율
-      changeSign: priceInfo.prdy_vrss_sign,          // 전일 대비 부호
-      openPrice: priceInfo.inter2_oprc,              // 관심2 시가
-      highPrice: priceInfo.inter2_hgpr,              // 관심2 고가
-      lowPrice: priceInfo.inter2_lwpr,               // 관심2 저가
-      volume: priceInfo.acml_vol,                    // 누적 거래량
-      stockName: priceInfo.inter_kor_isnm,           // 관심 한글 종목명
-    }
-
-    // 필수 필드들이 있는지 확인
-    if (fields.currentPrice) {
-      return {
-        currentPrice: parseInt(fields.currentPrice),
-        priceChange: parseInt(fields.priceChange || 0),
-        changeRate: parseFloat(fields.changeRate || 0),
-        changeSign: fields.changeSign || '3', // 3: 보합
-        openPrice: parseInt(fields.openPrice || 0),
-        highPrice: parseInt(fields.highPrice || 0),
-        lowPrice: parseInt(fields.lowPrice || 0),
-        volume: parseInt(fields.volume || 0),
-        stockName: fields.stockName || '',
-      }
-    }
-  }
-
-  // 파싱 실패 시 null 반환
-  return null
-}
-
-// 배치로 여러 종목의 실시간 가격을 한번에 조회하는 함수
-const fetchMultipleStockPrices = async (stockCodes) => {
-  try {
-    const codesString = stockCodes.join(',')
-
-    const response = await axios.get(`/api/stock/prices/${codesString}`)
-
-    if (response.status === 200 && response.data) {
-      console.log(`배치 가격 조회 완료 (${response.data.successCount}/${response.data.requestedCount})`)
-
-      // 폴백 모드 표시
-      if (response.data.fallbackMode) {
-        console.info('ℹ️ 단일 조회 모드로 처리됨')
-      }
-
-      if (response.data.errors && response.data.errors.length > 0) {
-        console.warn('⚠️ 일부 종목 조회 실패:', response.data.errors)
-      }
-
-      // success 필드가 있고 true인지 확인 (optional)
-      if (response.data.success !== false) {
-        return response.data.data
-      } else {
-        console.error('❌ API에서 success: false 응답')
-        console.error('응답 내용:', response.data)
-        return null
-      }
-    } else {
-      throw new Error(`HTTP 상태 오류: ${response.status}`)
-    }
-  } catch (error) {
-    console.error('❌ 배치 주식 가격 조회 실패:', error)
-
-    // axios 에러의 경우 더 자세한 정보 로깅
-    if (error.response) {
-      console.error('📋 에러 응답 상태:', error.response.status)
-      console.error('📋 에러 응답 데이터:', error.response.data)
-    } else if (error.request) {
-      console.error('📋 요청은 전송됐으나 응답을 받지 못함')
-    } else {
-      console.error('📋 요청 설정 중 오류:', error.message)
-    }
-
-    return null
-  }
-}
-
-// 보유 종목 실시간 가격 업데이트 함수
-const updateHoldingsWithRealTimePrice = async (holdings) => {
-  if (holdings.length === 0) return holdings
-
-  // 모든 종목코드 추출
-  const stockCodes = holdings.map((holding) => holding.stockCode)
-
-  // 배치로 모든 종목의 가격을 한번에 조회
-  const pricesData = await fetchMultipleStockPrices(stockCodes)
-
-  if (!pricesData) {
-    console.warn('⚠️ 배치 가격 조회 실패, 기존 데이터 유지')
-    return holdings
-  }
-
-  const updatedHoldings = holdings.map((holding) => {
-    const priceInfo = pricesData[holding.stockCode]
-
-    if (priceInfo) {
-      // 다중 조회 API 응답 구조 처리
-      let parsedData = null
-
-      // 다중 조회 API 응답인 경우 (직접 데이터)
-      if (priceInfo.inter2_prpr) {
-        parsedData = parseStockPriceData(priceInfo)
-      }
-      // 단일 조회 API 응답인 경우 (폴백 모드)
-      else if (priceInfo.output && priceInfo.output.stck_prpr) {
-        const output = priceInfo.output
-        parsedData = {
-          currentPrice: parseInt(output.stck_prpr),
-          priceChange: parseInt(output.prdy_vrss || 0),
-          changeRate: parseFloat(output.prdy_ctrt || 0),
-          changeSign: output.prdy_vrss_sign || '3',
-          openPrice: parseInt(output.stck_oprc || 0),
-          highPrice: parseInt(output.stck_hgpr || 0),
-          lowPrice: parseInt(output.stck_lwpr || 0),
-          volume: parseInt(output.acml_vol || 0),
-          stockName: output.hts_kor_isnm || holding.stockName,
-        }
-      }
-
-      if (parsedData && parsedData.currentPrice > 0) {
-        // 현재 시세로 현재 가치 및 손익 재계산
-        const totalValue = holding.quantity * parsedData.currentPrice
-        const totalInvestment = holding.quantity * holding.averagePrice
-        const profitLoss = totalValue - totalInvestment
-        const profitRate = totalInvestment > 0 ? (profitLoss / totalInvestment) * 100 : 0
-
-        return {
-          ...holding,
-          currentPrice: parsedData.currentPrice,
-          totalValue: totalValue,
-          profitLoss: profitLoss,
-          profitRate: Number(profitRate.toFixed(2)),
-          priceChange: parsedData.priceChange,
-          changeRate: parsedData.changeRate,
-          changeSign: parsedData.changeSign,
-          // 추가 정보
-          openPrice: parsedData.openPrice,
-          highPrice: parsedData.highPrice,
-          lowPrice: parsedData.lowPrice,
-          volume: parsedData.volume,
-          // 종목명 업데이트 (API에서 제공되는 경우)
-          stockName: parsedData.stockName || holding.stockName,
-        }
-      } else {
-        console.warn(`⚠️ ${holding.stockCode} 가격 데이터 파싱 실패`)
-        return holding
-      }
-    } else {
-      // 해당 종목의 가격 조회 실패 시 기존 데이터 유지
-      console.warn(`⚠️ ${holding.stockCode} 가격 조회 실패, 기존 데이터 유지`)
-      return holding
-    }
-  })
-
-  return updatedHoldings
-}
-
-// 데이터 불러오기 함수
-async function fetchHoldings() {
-  loading.value = true
-  try {
-    const response = await axios.get('/api/mocktrading/holdings')
-
-    if (response.data && Array.isArray(response.data)) {
-      console.log('보유 종목 데이터 로드 완료')
-
-      // 기본 보유 종목 데이터 정리 - null 값 안전 처리
-      const basicHoldings = response.data.map((h) => ({
-        stockCode: h.stockCode,
-        stockName: h.stockName,
-        quantity: safeNumber(h.quantity, 0),
-        averagePrice: safeNumber(h.averagePrice, 0),
-        currentPrice: safeNumber(h.currentPrice, 0),
-        totalValue: safeNumber(h.currentValue, 0),
-        profitLoss: safeNumber(h.profitLoss, 0),
-        profitRate: safeNumber(h.profitRate, 0),
-        imageUrl: h.imageUrl,
-      }))
-
-      // 배치로 실시간 가격 업데이트
-      holdingsData.value = await updateHoldingsWithRealTimePrice(basicHoldings)
-      console.log('배치 실시간 가격 업데이트 완료')
-    } else {
-      holdingsData.value = []
-      console.log('📝 보유 종목 없음')
-    }
-  } catch (error) {
-    console.error('❌ 보유 종목 데이터 불러오기 실패:', error)
-    if (error.response?.status === 401) {
-      alert('로그인이 필요합니다.')
-      router.push('/login-form')
-      return
-    }
-    holdingsData.value = []
-    alert('보유 종목 데이터를 불러오는 중 오류가 발생했습니다.')
-  } finally {
-    loading.value = false
-  }
-}
-
-// 계산된 속성들 - null 값 안전 처리
-const totalInvestment = computed(() => {
-  return holdingsData.value.reduce(
-    (sum, holding) => sum + safeNumber(holding.averagePrice, 0) * safeNumber(holding.quantity, 0),
-    0,
-  )
-})
-
-const totalCurrentValue = computed(() => {
-  return holdingsData.value.reduce((sum, holding) => sum + safeNumber(holding.totalValue, 0), 0)
-})
-
-const totalProfitLoss = computed(() => {
-  return holdingsData.value.reduce((sum, holding) => sum + safeNumber(holding.profitLoss, 0), 0)
-})
-
-const totalProfitRate = computed(() => {
-  if (totalInvestment.value === 0) return 0
-  return Number(((totalProfitLoss.value / totalInvestment.value) * 100).toFixed(2))
-})
-
-// 정렬된 보유 종목 - null 값 안전 처리
-const sortedHoldings = computed(() => {
-  const sorted = [...holdingsData.value]
-
-  switch (currentSort.value) {
-    case 'name':
-      return sorted.sort((a, b) => a.stockName.localeCompare(b.stockName))
-    case 'profitRate':
-      return sorted.sort((a, b) => safeNumber(b.profitRate, 0) - safeNumber(a.profitRate, 0))
-    case 'profitLoss':
-      return sorted.sort((a, b) => safeNumber(b.profitLoss, 0) - safeNumber(a.profitLoss, 0))
-    default:
-      return sorted
-  }
-})
-
-// 메서드들
+// ===== 네비게이션 메서드 =====
 const goBack = () => {
   router.back()
-}
-
-const changeSortOption = (sortKey) => {
-  currentSort.value = sortKey
 }
 
 const goToStockDetail = (stockCode, stockName) => {
@@ -631,28 +379,9 @@ const refreshData = async () => {
   await fetchHoldings()
 }
 
-// 종목 이미지 에러 추적
-const imageErrors = ref({})
-
-// 종목명에서 이니셜 추출 (이미지 대체용)
-const getStockInitial = (stockName) => {
-  if (!stockName) return '?'
-  // 한글 종목명의 경우 첫 글자 사용
-  if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(stockName.charAt(0))) {
-    return stockName.charAt(0)
-  }
-  // 영문의 경우도 첫 글자 사용
-  return stockName.substring(0, 1).toUpperCase()
-}
-
-// 이미지 로딩 에러 처리
-const handleImageError = (stockCode) => {
-  imageErrors.value[stockCode] = true
-}
-
+// ===== 컴포넌트 라이프사이클 =====
 onMounted(() => {
   fetchHoldings()
-  console.log('보유 종목 페이지 마운트됨')
 })
 </script>
 

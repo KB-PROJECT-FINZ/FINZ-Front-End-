@@ -353,7 +353,7 @@ const getStockInitial = (stockName) => {
   if (!stockName) return '?'
 
   // 한글 종목명의 경우 첫 글자 사용
-  if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(stockName.charAt(0))) {
+  if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(stockName.charAt(0))) {
     return stockName.charAt(0)
   }
 

@@ -10,11 +10,11 @@ export function useChartManager() {
     label: '',
     value: '',
     percent: '',
-    color: ''
+    color: '',
   })
 
-  let chartSegments = [] // 각 영역의 각도 범위와 정보 저장
-  let eventsSetup = false // 이벤트 리스너 중복 등록 방지
+  let chartSegments = []
+  let eventsSetup = false
 
   const chartColors = [
     '#4285F4',
@@ -176,7 +176,7 @@ export function useChartManager() {
     ctx.fillStyle = '#fff'
     ctx.fill()
 
-    // 이벤트 리스너 설정 (한 번만)
+    // 이벤트 리스너 설정
     setupCanvasEvents()
   }
 
@@ -200,7 +200,16 @@ export function useChartManager() {
     })
   }
 
-  const drawPortfolioChart = (ctx, centerX, centerY, radius, holeRadius, holdings, cash, currentBalance) => {
+  const drawPortfolioChart = (
+    ctx,
+    centerX,
+    centerY,
+    radius,
+    holeRadius,
+    holdings,
+    cash,
+    currentBalance,
+  ) => {
     let currentAngle = -Math.PI / 2
 
     // 보유 종목들 그리기
