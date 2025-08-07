@@ -510,7 +510,7 @@
               </div>
             </div>
 
-            <!-- 하단 영역: 대기중인 거래 목록 -->
+            <!-- 하단 영역: 대기중 거래 목록 -->
             <div class="flex-1 space-y-2">
               <div
                 v-for="order in pendingOrders"
