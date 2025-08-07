@@ -1,12 +1,12 @@
 <template>
   <div class="flex flex-col h-full">
     <!-- 상단 고정 버튼들 -->
-    <div class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-white/30 p-2">
+    <div class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-white/30 p-4">
       <!-- 토글 버튼 -->
-      <div v-show="!hasSubButtons" class="flex justify-center mb-2">
+      <div v-show="!hasSubButtons" class="flex justify-center mb-3">
         <button
           @click="toggleButtons"
-          class="w-6 h-6 rounded-full bg-gray-200/60 hover:bg-gray-300/80 transition-all duration-200 flex items-center justify-center"
+          class="w-6 h-6 rounded-2xl bg-white/60 hover:bg-white/80 transition-all duration-300 flex items-center justify-center shadow-sm hover:shadow-md backdrop-blur-sm"
         >
           <div v-if="showButtons" class="w-1.5 h-1.5 bg-gray-500 rounded-full"></div>
           <div v-else class="w-1.5 h-1.5 bg-gray-500 rounded-full"></div>
@@ -17,38 +17,46 @@
       <div v-show="showButtons && !hasSubButtons" class="grid grid-cols-2 gap-2">
         <button
           @click="handleButtonIntent({ intent: 'RECOMMEND_SELECT' })"
-          class="bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl p-3 text-center hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-2 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
         >
-          <div class="flex flex-col items-center space-y-2">
-            <RecommendIcon class="text-blue-600" />
-            <span class="text-gray-800 font-semibold text-sm">종목 추천</span>
+          <div class="flex flex-col items-center space-y-1">
+            <div class="w-6 h-6 bg-blue-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <RecommendIcon class="text-blue-600 w-3 h-3" />
+            </div>
+            <span class="text-gray-700 font-medium text-xs">종목 추천</span>
           </div>
         </button>
         <button
           @click="handleButtonIntent({ intent: 'STOCK_ANALYZE' })"
-          class="bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl p-3 text-center hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-2 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
         >
-          <div class="flex flex-col items-center space-y-2">
-            <AnalyzeIcon class="text-blue-600" />
-            <span class="text-gray-800 font-semibold text-sm">종목 분석</span>
+          <div class="flex flex-col items-center space-y-1">
+            <div class="w-6 h-6 bg-green-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <AnalyzeIcon class="text-green-600 w-3 h-3" />
+            </div>
+            <span class="text-gray-700 font-medium text-xs">종목 분석</span>
           </div>
         </button>
         <button
           @click="handleButtonIntent({ intent: 'TERM_EXPLAIN' })"
-          class="bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl p-3 text-center hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-2 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
         >
-          <div class="flex flex-col items-center space-y-2">
-            <TermIcon class="text-blue-600" />
-            <span class="text-gray-800 font-semibold text-sm">용어 설명</span>
+          <div class="flex flex-col items-center space-y-1">
+            <div class="w-6 h-6 bg-orange-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <TermIcon class="text-orange-600 w-3 h-3" />
+            </div>
+            <span class="text-gray-700 font-medium text-xs">용어 설명</span>
           </div>
         </button>
         <button
           @click="handleButtonIntent({ intent: 'PORTFOLIO_ANALYZE' })"
-          class="bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl p-3 text-center hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-2 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
         >
-          <div class="flex flex-col items-center space-y-2">
-            <PortfolioIcon class="text-blue-600" />
-            <span class="text-gray-800 font-semibold text-sm">포트폴리오</span>
+          <div class="flex flex-col items-center space-y-1">
+            <div class="w-6 h-6 bg-purple-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <PortfolioIcon class="text-purple-600 w-3 h-3" />
+            </div>
+            <span class="text-gray-700 font-medium text-xs">포트폴리오</span>
           </div>
         </button>
       </div>
@@ -59,15 +67,15 @@
       <!-- 챗봇 아바타와 인사말 (첫 로드 시) -->
       <div v-if="chatStore.messages.length === 0" class="flex items-start space-x-4">
         <div
-          class="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg border-2 border-blue-200"
+          class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-400/90 to-purple-500/90 shadow-lg border-2 border-white/40 backdrop-blur-sm"
         >
           <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
         </div>
         <div class="flex-1 max-w-xs">
           <div
-            class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30"
+            class="bg-white/90 backdrop-blur-md rounded-3xl p-4 max-w-sm shadow-lg border border-white/40"
           >
-            <p class="text-sm text-gray-600">원하는 기능을 선택해주세요</p>
+            <p class="text-gray-600 text-sm">원하는 기능을 선택해주세요</p>
           </div>
         </div>
       </div>
@@ -81,7 +89,7 @@
         <!-- 사용자 메시지 -->
         <div
           v-if="msg.role === 'user'"
-          class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-3xl p-4 max-w-sm shadow-lg"
+          class="bg-gradient-to-r from-blue-400/90 to-purple-500/90 text-white rounded-3xl p-4 max-w-sm shadow-lg backdrop-blur-sm"
         >
           <p class="font-medium">{{ msg.content }}</p>
         </div>
@@ -89,7 +97,7 @@
         <!-- 봇 메시지 -->
         <template v-else>
           <div
-            class="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg border-2 border-blue-200"
+            class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-400/90 to-purple-500/90 shadow-lg border-2 border-white/40 backdrop-blur-sm"
           >
             <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
           </div>
@@ -105,38 +113,45 @@
               <StockRecommendationCards :content="msg.content" />
             </div>
 
+            <!-- 피드백 분석 카드 -->
+            <div v-else-if="isFeedbackAnalysisResponse(msg.content)">
+              <FeedbackAnalysisCard :content="msg.content" />
+            </div>
+
             <!-- 일반 메시지 (PORTFOLIO_ANALYZE 등 포함) -->
             <div
               v-else-if="!msg.type"
-              class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30"
+              class="bg-white/90 backdrop-blur-md rounded-3xl p-4 max-w-sm shadow-lg border border-white/40"
             >
               <p
                 v-if="msg.requestedPeriod && msg.intentType === 'PORTFOLIO_ANALYZE'"
-                class="text-xs text-gray-500 mb-1"
+                class="text-xs text-purple-600 font-medium mb-2 bg-purple-50/80 px-2 py-1 rounded-full inline-block backdrop-blur-sm"
               >
                 📅 사용자 지정 분석 기간: {{ msg.requestedPeriod }}일
               </p>
-              <p class="text-gray-800">{{ msg.content }}</p>
+              <p class="text-gray-700 text-sm">{{ msg.content }}</p>
             </div>
 
             <!-- 버튼 메시지 -->
-            <div v-else-if="msg.type === 'buttons'" class="space-y-4">
+            <div v-else-if="msg.type === 'buttons'" class="space-y-3">
               <div
                 v-if="msg.text"
-                class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30"
+                class="bg-white/90 backdrop-blur-md rounded-3xl p-4 max-w-sm shadow-lg border border-white/40"
               >
-                <p class="text-gray-800">{{ msg.text }}</p>
+                <p class="text-gray-700 text-sm">{{ msg.text }}</p>
               </div>
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-2 gap-2">
                 <button
                   v-for="(btn, idx) in msg.buttons"
                   :key="idx"
                   @click="handleButtonIntent(btn)"
-                  class="bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl p-4 text-center hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                  class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-3 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
                 >
                   <div class="flex flex-col items-center space-y-2">
-                    <component :is="getButtonIcon(btn.intent)" class="text-blue-600" />
-                    <span class="text-gray-800 font-semibold text-sm">{{
+                    <div class="w-6 h-6 bg-blue-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                      <component :is="getButtonIcon(btn.intent)" class="text-blue-600 w-3 h-3" />
+                    </div>
+                    <span class="text-gray-700 font-medium text-xs">{{
                       btn.label.replace(/[🎯🔍🔙🧠🧪📊]/g, '').trim()
                     }}</span>
                   </div>
@@ -150,27 +165,27 @@
       <!-- 로딩 메시지 (마지막에 표시) -->
       <div v-if="loading" class="flex items-start space-x-4">
         <div
-          class="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg border-2 border-blue-200"
+          class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-400/90 to-purple-500/90 shadow-lg border-2 border-white/40 backdrop-blur-sm"
         >
           <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
         </div>
         <div class="max-w-xs">
           <div
-            class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30"
+            class="bg-white/90 backdrop-blur-md rounded-3xl p-4 max-w-sm shadow-lg border border-white/40"
           >
             <div class="flex items-center space-x-2">
               <div class="flex space-x-1">
-                <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-blue-400/80 rounded-full animate-bounce"></div>
                 <div
-                  class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                  class="w-2 h-2 bg-purple-400/80 rounded-full animate-bounce"
                   style="animation-delay: 0.1s"
                 ></div>
                 <div
-                  class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                  class="w-2 h-2 bg-blue-400/80 rounded-full animate-bounce"
                   style="animation-delay: 0.2s"
                 ></div>
               </div>
-              <p class="text-sm text-gray-600">답변을 준비하고 있어요...</p>
+              <p class="text-gray-600 text-sm">답변을 준비하고 있어요...</p>
             </div>
           </div>
         </div>
@@ -179,17 +194,17 @@
 
     <!-- 입력창 -->
     <div
-      class="absolute bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-white/30"
+      class="absolute bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-white/40"
     >
       <form @submit.prevent="submit" class="flex gap-3">
         <input
           v-model="input"
           placeholder="궁금한 종목이나 투자 질문을 입력해보세요"
-          class="flex-1 bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent shadow-lg"
+          class="flex-1 bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent shadow-sm transition-all duration-300"
         />
         <button
           type="submit"
-          class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-2xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          class="bg-gradient-to-r from-blue-400/90 to-purple-500/90 text-white px-5 py-3 rounded-2xl font-medium hover:from-blue-500/90 hover:to-purple-600/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1 backdrop-blur-sm"
         >
           전송
         </button>
@@ -205,6 +220,7 @@ import { useChatStore } from '@/stores/counter.js'
 import { useUserStore } from '@/stores/user.js'
 import StockRecommendationCards from './StockRecommendationCards.vue'
 import TermExplanationCard from './TermExplanationCard.vue'
+import FeedbackAnalysisCard from './FeedbackAnalysisCard.vue'
 import RecommendIcon from '../icons/RecommendIcon.vue'
 import AnalyzeIcon from '../icons/AnalyzeIcon.vue'
 import TermIcon from '../icons/TermIcon.vue'
@@ -213,6 +229,8 @@ import ProfileIcon from '../icons/ProfileIcon.vue'
 import KeywordIcon from '../icons/KeywordIcon.vue'
 import BackIcon from '../icons/BackIcon.vue'
 import ExternalLinkIcon from '../icons/ExternalLinkIcon.vue'
+import AnalysisIcon from '../icons/AnalysisIcon.vue'
+import RefreshIcon from '../icons/RefreshIcon.vue'
 
 const chatStore = useChatStore()
 const userStore = useUserStore()
@@ -287,6 +305,30 @@ const isStockRecommendationResponse = (content) => {
   return false
 }
 
+// 피드백 분석 응답 감지 함수
+const isFeedbackAnalysisResponse = (content) => {
+  if (!content || typeof content !== 'string') {
+    return false
+  }
+
+  // 피드백 분석 응답의 특징적인 패턴들 확인
+  const feedbackPatterns = [
+    '투자 전략의 특징:',
+    '리스크 및 개선점:',
+    '개인 맞춤 조언:',
+    '사용자 지정 분석 기간:'
+  ]
+
+  const hasFeedbackPatterns = feedbackPatterns.some(pattern => content.includes(pattern))
+  
+  if (hasFeedbackPatterns) {
+    console.log('✅ 피드백 분석 응답 감지됨')
+    return true
+  }
+
+  return false
+}
+
 // intent 상태 초기화 함수
 function resetAwaitingState() {
   awaitingKeyword.value = false
@@ -313,6 +355,10 @@ const getButtonIcon = (intent) => {
       return ExternalLinkIcon
     case 'BACK_TO_MAIN':
       return BackIcon
+    case 'REANALYZE_OPTIONS':
+      return RefreshIcon
+    case 'ANALYSIS_COMPLETE':
+      return AnalysisIcon
     default:
       return null
   }
@@ -418,10 +464,10 @@ async function fetchGPT(prompt, explicitIntent = null) {
         chatStore.messages.push({
           role: 'bot',
           type: 'buttons',
-          text: '🧠 분석이 완료되었습니다.\n다시 분석해보시겠어요?',
+          text: '분석이 완료되었습니다.\n다시 분석해보시겠어요?',
           buttons: [
-            { label: '🔁 다시 분석하기', intent: 'REANALYZE_OPTIONS' },
-            { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
+            { label: '다시 분석하기', intent: 'REANALYZE_OPTIONS' },
+            { label: '뒤로가기', intent: 'BACK_TO_MAIN' },
           ],
         })
       }
