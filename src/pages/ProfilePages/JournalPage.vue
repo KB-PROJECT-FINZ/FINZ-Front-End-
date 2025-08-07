@@ -30,6 +30,114 @@
       :show-arrows="true"
       :first-day-of-week="0"
     />
+    <div class="today-transactions mt-2">
+      <h2 class="text-lg font-bold ml-1 mb-2">오늘의 투자 내역</h2>
+      <div v-if="todayGroupedTransactions.length">
+        <div
+          v-for="stock in todayGroupedTransactions.slice(0, showAllStocks ? undefined : 1)"
+          :key="stock.stockName"
+          class="mb-3 p-3 bg-gray-50 rounded-lg"
+        >
+          <div class="font-semibold text-base mb-2">{{ stock.stockName }}</div>
+          <div class="flex flex-row gap-4">
+            <!-- 매수 테이블 -->
+            <div class="flex-1 min-w-[120px]">
+              <table class="w-full text-xs text-center border border-black">
+                <thead>
+                  <tr>
+                    <th class="border border-black px-2 py-1 bg-gray-100 text-red-700" colspan="2">매수</th>
+                  </tr>
+                  <tr>
+                    <th class="border border-black px-2 py-1 bg-gray-50">가격</th>
+                    <th class="border border-black px-2 py-1 bg-gray-50">수량</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, i) in stock.buy" :key="i">
+                    <td class="border border-black px-2 py-1 text-black">{{ row.price }}원</td>
+                    <td class="border border-black px-2 py-1 text-black">{{ row.quantity }}</td>
+                  </tr>
+                  <!-- 매수내역이 없을 때 '-' 행 제거 -->
+                </tbody>
+              </table>
+            </div>
+            <!-- 매도 테이블 -->
+            <div class="flex-1 min-w-[120px]">
+              <table class="w-full text-xs text-center border border-black">
+                <thead>
+                  <tr>
+                    <th class="border border-black px-2 py-1 bg-gray-100 text-blue-700" colspan="2">매도</th>
+                  </tr>
+                  <tr>
+                    <th class="border border-black px-2 py-1 bg-gray-50">가격</th>
+                    <th class="border border-black px-2 py-1 bg-gray-50">수량</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, i) in stock.sell" :key="i">
+                    <td class="border border-black px-2 py-1 text-black">{{ row.price }}원</td>
+                    <td class="border border-black px-2 py-1 text-black">{{ row.quantity }}</td>
+                  </tr>
+                  <!-- 매도내역이 없을 때 '-' 행 제거 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div v-if="todayGroupedTransactions.length > 1" class="flex justify-center">
+          <button
+            @click="showAllStocks = !showAllStocks"
+            class="px-4 py-1 rounded bg-gray-200 hover:bg-gray-300 text-sm flex items-center gap-1"
+          >
+            <span v-if="!showAllStocks">더보기</span>
+            <span v-else>접기</span>
+            <svg
+              v-if="!showAllStocks"
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+            <svg
+              v-else
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 15l7-7 7 7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div v-else class="flex flex-col items-center text-gray-400 text-base py-6">
+        거래 내역이 없습니다.
+      </div>
+    </div>
+    <div class="today-journal mt-2 mb-2">
+      <h2 class="text-lg font-bold ml-1 mb-2">오늘의 일지</h2>
+      <div
+        v-if="selectedDateJournals.length === 0"
+        class="flex flex-col items-center text-gray-400 text-base py-6"
+      >
+        <span class="text-3xl mb-2">📝</span>
+        지금 바로 일지를 작성해보세요!
+      </div>
+    </div>
     <div v-if="selectedDateJournals.length" class="journal-list mt-3 flex flex-col gap-3 pb-24">
       <div
         v-for="journal in selectedDateJournals"
@@ -40,41 +148,13 @@
         }"
         @click="selectJournal(journal)"
       >
-        <div class="mb-1">
+        <div class="mb-1 flex justify-between items-center">
+          <p><strong>감정 |</strong> {{ journal.emotion }}</p>
           <p class="font-semibold text-sm text-gray-700">{{ journal.journalDate }}</p>
         </div>
 
-        <div class="flex flex-wrap gap-1 mb-3 ml-2">
-          <div
-            v-for="(t, idx) in getCurrentPageTransactions(journal.journalDate, journal.id)"
-            :key="`${journal.id}-${currentPageMap[journal.id] || 0}-${idx}`"
-            :class="[
-              'px-2 py-0.5 rounded-full text-xs font-medium shadow-sm',
-              t.type === 'BUY' ? 'bg-red-200 text-red-800' : 'bg-blue-200 text-blue-800',
-            ]"
-          >
-            {{ t.type === 'BUY' ? '매수' : '매도' }} {{ t.stockName }} {{ t.quantity }}주
-          </div>
-        </div>
-        <div class="flex gap-1 mt-1 w-full justify-center">
-          <span
-            v-for="(_, dotIndex) in chunkTransactions(
-              getGroupedTransactionsForDate(journal.journalDate),
-            )"
-            :key="dotIndex"
-            @click.stop="changePage(journal.id, dotIndex)"
-            class="w-2 h-2 rounded-full cursor-pointer"
-            :class="
-              (currentPageMap[journal.id] || 0) === dotIndex
-                ? 'bg-gray-800'
-                : 'bg-gray-400 opacity-50'
-            "
-          ></span>
-        </div>
-
-        <p>감정: {{ journal.emotion }}</p>
-        <p>이유: {{ journal.reason }}</p>
-        <p>실수: {{ journal.mistake }}</p>
+        <p><strong>이유 |</strong> {{ journal.reason }}</p>
+        <p><strong>실수 |</strong> {{ journal.mistake }}</p>
 
         <div
           v-if="selectedJournal && selectedJournal.id === journal.id"
@@ -140,15 +220,7 @@ const showSuccess = ref(false)
 const successMessage = ref('')
 const showConfirm = ref(false)
 const targetJournalId = ref(null)
-
-//거래내역을 6개씩 나눠서 배열로 반환
-function chunkTransactions(transactions, chunkSize = 6) {
-  const chunks = []
-  for (let i = 0; i < transactions.length; i += chunkSize) {
-    chunks.push(transactions.slice(i, i + chunkSize))
-  }
-  return chunks
-}
+const showAllStocks = ref(false)
 
 //날짜 클릭 시 날짜랑 일지 초기화 , currentPage를 0으로 초기화
 function onDayClick(day) {
@@ -202,41 +274,36 @@ const selectedDateJournals = computed(() =>
   journals.value.filter((j) => j.journalDate === selectedDate.value),
 )
 
-//거래내역 데이터를 날짜별로 그룹화 + 같은 종목 매수/매도 시 합쳐서 거래 리스트 반환
-function getGroupedTransactionsForDate(date) {
-  if (!transactions.value || transactions.value.length === 0) {
-    return []
-  }
+const todayGroupedTransactions = computed(() => {
+  if (!transactions.value || transactions.value.length === 0) return []
 
-  const grouped = {}
-
-  transactions.value.forEach((t) => {
-    if (!t.executedAt) return
-
+  // 1. 날짜 필터
+  const filtered = transactions.value.filter((t) => {
+    if (!t.executedAt) return false
     const localDate = new Date(t.executedAt)
     const yyyy = localDate.getFullYear()
     const mm = String(localDate.getMonth() + 1).padStart(2, '0')
     const dd = String(localDate.getDate()).padStart(2, '0')
     const formattedDate = `${yyyy}-${mm}-${dd}`
-
-    if (formattedDate !== date) return
-
-    const key = `${t.stockCode}_${t.type}`
-
-    if (!grouped[key]) {
-      grouped[key] = {
-        stockName: t.stockName,
-        stockCode: t.stockCode,
-        type: t.type,
-        quantity: t.quantity,
-      }
-    } else {
-      grouped[key].quantity += t.quantity
-    }
+    return formattedDate === selectedDate.value
   })
 
-  return Object.values(grouped)
-}
+  // 2. 종목별 그룹화
+  const grouped = {}
+  filtered.forEach((t) => {
+    if (!grouped[t.stockName]) grouped[t.stockName] = { BUY: {}, SELL: {} }
+    const typeGroup = grouped[t.stockName][t.type]
+    if (!typeGroup[t.price]) typeGroup[t.price] = 0
+    typeGroup[t.price] += t.quantity
+  })
+
+  // 3. 배열로 변환
+  return Object.entries(grouped).map(([stockName, types]) => ({
+    stockName,
+    buy: Object.entries(types.BUY).map(([price, quantity]) => ({ price, quantity })),
+    sell: Object.entries(types.SELL).map(([price, quantity]) => ({ price, quantity })),
+  }))
+})
 
 function selectJournal(journal) {
   selectedJournal.value = journal
@@ -266,18 +333,6 @@ async function handleDelete() {
   } catch (err) {
     alert('삭제 실패')
   }
-}
-
-//dot 클릭 시 해당 일지의 페이지
-function changePage(journalId, pageIndex) {
-  currentPageMap.value[journalId] = pageIndex
-}
-
-function getCurrentPageTransactions(journalDate, journalId) {
-  const transactions = getGroupedTransactionsForDate(journalDate)
-  const chunks = chunkTransactions(transactions)
-  const currentPage = currentPageMap.value[journalId] || 0
-  return chunks[currentPage] || []
 }
 
 function goBack() {
