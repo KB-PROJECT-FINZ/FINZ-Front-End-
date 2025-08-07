@@ -31,6 +31,7 @@ import RiskProfile from '@/pages/ProfilePages/RiskProfile.vue'
 import RiskTypesList from '@/pages/ProfilePages/RiskTypesList.vue'
 import KakaoSignupPage from '@/pages/LoginPages/KakaoSignupPage.vue'
 import ProtfolioAnalysis from '@/pages/mockTrading/ProtfolioAnalysis.vue'
+import DailyQuizePage from '@/pages/Learning/DailyQuizePage.vue'
 const routes = [
   {
     path: '/',
@@ -154,12 +155,10 @@ const routes = [
     component: () => import('@/pages/mockTrading/ChartPage.vue'),
     props: true,
   },
-  // 새로 추가할 자산 현황 경로
   {
     path: '/mock-trading/asset-status',
     name: 'AssetStatus',
     component: AssetStatus,
-    //meta: { requiresAuth: true } // 로그인 필요
   },
   {
     path: '/mock-trading/holdings',
@@ -194,9 +193,14 @@ const routes = [
   { path: '/risk-types-list', name: 'RiskTypesList', component: RiskTypesList },
   {
     path: '/mock-trading/ai-report',
-    name:'AiReport',
-    component: ProtfolioAnalysis
-  }
+    name: 'AiReport',
+    component: ProtfolioAnalysis,
+  },
+  {
+    path: '/daily-quiz',
+    name: 'DailyQuizPage',
+    component: DailyQuizePage,
+  },
 ]
 
 const router = createRouter({

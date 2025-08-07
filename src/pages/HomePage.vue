@@ -45,7 +45,7 @@
         </div>
         <ul class="mt-2 space-y-1 text-sm list-disc list-inside">
           <li
-            v-for="(item, index) in recommendedLearningContents.slice(0, 2)"
+            v-for="item in recommendedLearningContents.slice(0, 2)"
             :key="item.contentId"
             class="text-white"
           >
@@ -104,10 +104,57 @@
     <div class="px-5 mt-6">
       <h2 class="text-md font-bold mb-2">빠른 실행</h2>
       <div class="grid grid-cols-2 gap-3">
-        <div class="bg-white p-4 rounded-xl shadow-sm text-center cursor-pointer" @click="goToQuiz">
-          <p class="font-bold">오늘의 퀴즈</p>
-          <p class="text-sm text-gray-400">5문제 남음</p>
-        </div>
+        <!-- 오늘의 퀴즈 모달 트리거 버튼 -->
+        <button
+          @click="showQuizModal = true"
+          class="bg-white p-4 rounded-xl shadow-sm text-center cursor-pointer"
+        >
+          <p class="font-bold">오늘의 퀴즈 보기</p>
+          <p class="text-sm text-gray-400">5개</p>
+        </button>
+
+        <!-- 퀴즈 모달창 -->
+        <transition name="fade-scale">
+          <div
+            v-if="showQuizModal"
+            class="fixed inset-0 z-50 flex items-center justify-center px-4"
+          >
+            <div
+              class="bg-white w-full max-w-md max-h-[80vh] rounded-xl shadow-2xl relative overflow-hidden"
+            >
+              <!-- 닫기 버튼 -->
+              <button
+                @click="showQuizModal = false"
+                class="absolute top-4 right-5 text-gray-500 hover:text-black z-10"
+              >
+                ✕
+              </button>
+
+              <!-- 내부 콘텐츠 -->
+              <div class="p-5 pt-10 overflow-y-auto h-full">
+                <h2 class="text-lg font-bold mb-2 text-purple-600">📝 오늘의 퀴즈</h2>
+                <p class="text-sm text-gray-500 mb-4">매일 퀴즈로 금융 감각을 키워보세요!</p>
+
+                <!-- ✅ 퀴즈 목록 최대 5개 + 클릭 시 상세 이동 -->
+                <div
+                  v-for="item in recommendedLearningContents"
+                  :key="item.contentId"
+                  class="mb-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer"
+                  @click="goToDetail(item.contentId)"
+                >
+                  <p class="text-xs text-yellow-600 font-bold mb-1">{{ item.credit }} 크레딧</p>
+                  <p class="font-semibold text-gray-800">{{ item.title }}</p>
+                </div>
+
+                <!-- 퀴즈 없을 때 -->
+                <div v-if="quizList.length === 0" class="text-gray-400 text-sm text-center">
+                  오늘의 퀴즈가 없습니다.
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
+
         <div
           class="bg-white p-4 rounded-xl shadow-sm text-center cursor-pointer"
           @click="goToPortfolio"
@@ -162,6 +209,12 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { ref, onMounted } from 'vue'
 const selectedContent = ref(null)
+const showQuizModal = ref(false)
+const quizList = ref([])
+
+function goToDetail(id) {
+  router.push(`/learning/${id}`)
+}
 
 const openContentModal = (item) => {
   selectedContent.value = item
@@ -203,13 +256,13 @@ function convertRiskTypeToName(code) {
 // 페이지 이동
 const goToStudy = () => router.push('/learning')
 const goToContents = () => router.push('/recommend')
-const goToQuiz = () => router.push('/learning')
+
 const goToPortfolio = () => router.push('/mock-trading/asset-status')
 
 // 초기 실행
 onMounted(async () => {
   try {
-    const riskType = await fetchUserInfo() // ← 여기서 riskType 반환
+    const riskType = await fetchUserInfo() //
     await fetchRecommendedContentsByRiskType(riskType)
     await fetchAllRecommendedContents()
     await fetchCompletedLearningCount()
@@ -254,7 +307,7 @@ const fetchAllRecommendedContents = async () => {
     })
 
     const noQuiz = res.data.filter((item) => !item.quizId && !item.hasQuiz)
-    recommendedLearningContents.value = noQuiz.slice(0, 2)
+    recommendedLearningContents.value = noQuiz.slice(0, 5)
     console.log('✅ 퀴즈 없는 콘텐츠 수:', noQuiz.length)
   } catch (e) {
     console.error('❌ 학습 목표 콘텐츠 조회 실패:', e)

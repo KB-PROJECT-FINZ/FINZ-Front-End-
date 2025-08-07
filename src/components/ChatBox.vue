@@ -223,7 +223,6 @@ async function fetchGPT(prompt, explicitIntent = null) {
 
   console.log('📤 서버로 보낼 userId:', userId.value)
 
-  // 🔐 intentType을 안전하게 추출
   let intentType = null
 
   if (explicitIntent) {
@@ -239,18 +238,15 @@ async function fetchGPT(prompt, explicitIntent = null) {
     awaitingStockAnalyze.value = false
   } else if (props.fixedIntent) {
     intentType = props.fixedIntent
-  } else if (typeof chatStore.intentType === 'string') {
-    intentType = chatStore.intentType
   }
-
   try {
-    console.log('🧾 최종 intentType 전송값:', intentType, typeof intentType)
+    console.log('🧾 최종 intentType 전송값:', intentType)
 
     const res = await axios.post('/api/chatbot/message', {
       userId: userId.value,
       sessionId: chatStore.sessionId,
       message: prompt,
-      intentType: intentType ?? chatStore.intentType,
+      intentType: intentType, // null이면 GPT가 분류함
     })
 
     if (res?.data?.content) {
@@ -260,7 +256,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
     } else {
       chatStore.messages.push({ role: 'bot', content: '❌ GPT 응답이 비어 있습니다.' })
     }
-  } catch (err) {
+  } catch (error) {
     console.log(userId)
     chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
     console.error('❌ GPT fetch 실패:', error)

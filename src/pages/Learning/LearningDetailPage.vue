@@ -1,109 +1,167 @@
 <template>
-  <div class="bg-gray-50 min-h-screen pb-6">
+  <div class="bg-[#f7f8fa] min-h-screen pb-6">
     <!-- 상단 헤더 -->
-    <header class="flex items-center justify-center relative bg-white py-4 px-4 shadow-sm mb-2">
-      <button
-        class="absolute left-4 top-1/2 -translate-y-1/2 bg-none border-none text-2xl text-gray-800 cursor-pointer"
-        @click="goBack"
-      >
-        &#8592;
+    <header class="flex items-center justify-between bg-white px-4 pt-4 pb-3 sticky top-0 z-10">
+      <button @click="goBack" class="p-2 hover:bg-gray-100 rounded-lg text-black">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
       </button>
-      <h1 class="text-xl font-bold text-gray-800 tracking-tight">개념 학습</h1>
+      <span class="ml-3 flex-1 text-left text-base font-semibold text-gray-900">개념학습</span>
     </header>
 
-    <div class="bg-white rounded-2xl mx-4 mt-4 p-5 shadow-sm">
-      <div v-if="content?.youtubeUrl" class="w-full max-w-md mx-auto mb-4">
+    <!-- 아티클 영역 -->
+    <div class="bg-white rounded-2xl mx-4 mt-5 p-6 shadow flex flex-col items-start">
+      <div v-if="content?.youtubeUrl" class="w-full max-w-[420px] mx-auto mb-5">
         <iframe
           :src="`https://www.youtube.com/embed/${extractYoutubeId(content.youtubeUrl)}?rel=0&modestbranding=1`"
           frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen
-          class="w-full h-56 rounded-xl shadow-md"
+          class="w-full h-[220px] rounded-xl shadow"
           loading="lazy"
         ></iframe>
       </div>
       <img
         v-else-if="content?.imageUrl"
         :src="content.imageUrl"
-        class="w-full max-w-md h-auto rounded-xl mx-auto mb-4 shadow-md"
+        class="w-full max-w-[420px] rounded-xl mb-5 mx-auto shadow"
       />
-      <h2 class="text-xl font-bold text-gray-800 mb-3">{{ content?.title }}</h2>
-      <div class="text-gray-600 text-base leading-relaxed" v-html="formattedBody"></div>
+      <h2 class="text-lg font-bold text-gray-900 mb-3">{{ formattedTitle }}</h2>
+      <div class="text-gray-700 text-base leading-7" v-html="formattedBody"></div>
     </div>
 
-    <!-- 퀴즈 카드 -->
-    <div v-if="quiz" class="bg-white rounded-2xl mx-4 mt-4 p-5 shadow-sm">
-      <div
-        class="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-1 mb-3 font-bold inline-block"
+    <!-- 퀴즈 풀러가기 버튼 -->
+    <div v-if="quiz && !isCompleted && !showQuizModal" class="mx-4 mt-5">
+      <button
+        class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg shadow hover:bg-indigo-700 transition"
+        @click="showQuizModal = true"
       >
-        {{ quiz.creditReward }}크레딧
-      </div>
-      <div class="text-lg font-bold text-gray-800 mb-4">{{ removeOX(quiz.question) }}</div>
+        퀴즈 풀러가기
+      </button>
+    </div>
 
-      <div class="flex gap-4 mb-3 justify-center">
-        <button
-          class="flex-1 text-lg font-bold border-none rounded-lg py-3 cursor-pointer transition-all duration-150 shadow-sm"
-          :class="[
-            selected === 'O'
-              ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-700 shadow-md'
-              : 'bg-green-50 text-green-600',
-            result !== null ? 'opacity-60 cursor-not-allowed' : '',
-          ]"
-          :disabled="result !== null"
-          @click="selectOX('O')"
-        >
-          O (맞음)
-        </button>
-        <button
-          class="flex-1 text-lg font-bold border-none rounded-lg py-3 cursor-pointer transition-all duration-150 shadow-sm"
-          :class="[
-            selected === 'X'
-              ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-700 shadow-md'
-              : 'bg-red-50 text-red-600',
-            result !== null ? 'opacity-60 cursor-not-allowed' : '',
-          ]"
-          :disabled="result !== null"
-          @click="selectOX('X')"
-        >
-          X (틀림)
-        </button>
-      </div>
+    <!-- 이미 완료된 콘텐츠 -->
+    <div
+      v-else-if="isCompleted"
+      class="mx-4 mt-5 text-center text-gray-600 font-semibold text-[0.95rem]"
+    >
+      ✅ 학습을 완료한 콘텐츠입니다.
+    </div>
 
-      <div v-if="result !== null" class="mt-3">
-        <div v-if="result" class="text-green-600 font-bold text-lg mb-3">
-          ✅ 정답입니다!
-          <span v-if="creditAwarded" class="text-red-600 font-bold animate-pulse"
-            >+{{ quiz.creditReward }}크레딧 획득!</span
+    <!-- 퀴즈 모달 -->
+    <div v-if="showQuizModal" class="fixed inset-0 z-50 flex items-center" @click="closeQuizModal">
+      <!-- 톤다운된 배경 -->
+      <div class="absolute inset-0 bg-gray-900/60"></div>
+
+      <!-- 모달 컨테이너 -->
+      <div
+        class="bg-white w-full max-w-[336px] mx-auto rounded-2xl p-6 relative z-10"
+        :class="!isModalDragging ? 'transition-transform duration-200' : ''"
+        :style="{ transform: `translateY(${modalDragOffset}px)` }"
+        @click.stop
+        @mousedown="onModalDragStart"
+        @touchstart="onModalDragStart"
+        @mousemove="onModalDragMove"
+        @touchmove="onModalDragMove"
+        @mouseup="onModalDragEnd"
+        @mouseleave="onModalDragEnd"
+        @touchend="onModalDragEnd"
+      >
+        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4 cursor-pointer"></div>
+        <template v-if="result === null">
+          <div
+            class="text-[0.92rem] text-yellow-700 bg-yellow-50 rounded px-3 py-1 mb-2 font-bold text-center"
           >
-        </div>
-        <div v-else class="text-red-600 font-bold text-lg mb-3">❌ 오답입니다.</div>
-      </div>
-
-      <div v-if="result !== null && !showExplainBtnClicked">
-        <button
-          class="bg-gray-100 text-indigo-700 border-none rounded-lg px-4 py-2 text-base font-bold mt-3 cursor-pointer transition-all duration-150 hover:bg-indigo-50"
-          @click="showExplainBtnClicked = true"
-        >
-          해설 보기
-        </button>
-      </div>
-
-      <div
-        v-if="result !== null && showExplainBtnClicked"
-        class="bg-gray-50 rounded-xl p-4 mt-4 text-gray-600"
-      >
-        <div class="font-bold mb-2 text-amber-700">💡 해설</div>
-        <div class="text-sm">{{ quiz.comment }}</div>
-      </div>
-
-      <div v-if="result !== null" class="w-full mt-4 flex justify-center">
-        <button
-          class="bg-indigo-700 text-white text-lg font-bold border-none rounded-lg py-3 px-6 cursor-pointer transition-all duration-200 shadow-md hover:bg-indigo-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          :disabled="isCompleted"
-          @click="handleComplete"
-        >
-          {{ isCompleted ? '✅ 완료됨' : '학습 완료' }}
-        </button>
+            {{ quiz.creditReward }}크레딧
+          </div>
+          <div class="text-base font-bold text-gray-900 mb-4 text-center">
+            {{ removeOX(quiz.question) }}
+          </div>
+          <div class="flex gap-4 w-full justify-center mb-3">
+            <button
+              class="flex flex-col items-center justify-center aspect-square max-w-[110px] flex-1 rounded-lg shadow border-2 border-transparent transition bg-blue-50 hover:bg-blue-100"
+              :class="{
+                'bg-blue-100 border-blue-700': selected === 'O',
+                'opacity-60 cursor-not-allowed': result !== null,
+              }"
+              :disabled="result !== null"
+              @click="selectOX('O')"
+            >
+              <svg class="w-8 h-8 mb-1" viewBox="0 0 40 40" fill="none">
+                <circle cx="20" cy="20" r="16" stroke="#2563eb" stroke-width="6" fill="none" />
+              </svg>
+              <span class="text-blue-700 font-bold text-base">그렇다</span>
+            </button>
+            <button
+              class="flex flex-col items-center justify-center aspect-square max-w-[110px] flex-1 rounded-lg shadow border-2 border-transparent transition bg-red-50 hover:bg-red-100"
+              :class="{
+                'bg-red-100 border-red-700': selected === 'X',
+                'opacity-60 cursor-not-allowed': result !== null,
+              }"
+              :disabled="result !== null"
+              @click="selectOX('X')"
+            >
+              <svg class="w-12 h-12 mb-1" viewBox="0 0 40 40" fill="none">
+                <line
+                  x1="12"
+                  y1="12"
+                  x2="28"
+                  y2="28"
+                  stroke="#ef4444"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                />
+                <line
+                  x1="28"
+                  y1="12"
+                  x2="12"
+                  y2="28"
+                  stroke="#ef4444"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <span class="text-red-700 font-bold text-base">아니다</span>
+            </button>
+          </div>
+        </template>
+        <template v-else>
+          <div class="flex flex-col items-center justify-center py-12">
+            <div
+              v-if="result"
+              class="text-blue-600 font-extrabold text-2xl mb-4 flex flex-col items-center gap-2"
+            >
+              <span class="flex items-center gap-2">
+                <svg class="w-6 h-6" viewBox="0 0 40 40" fill="none">
+                  <circle cx="20" cy="20" r="16" stroke="#2563eb" stroke-width="8" fill="none" />
+                </svg>
+                정답이에요!
+              </span>
+              <span class="text-yellow-600 text-lg font-bold animate-pulse">
+                +{{ quiz.creditReward }}크레딧 획득
+              </span>
+            </div>
+            <div v-else class="text-red-500 font-extrabold text-2xl mb-4">❌ 오답이에요!</div>
+            <div
+              class="bg-[#f7f8fa] rounded-lg px-4 py-4 mt-2 w-full text-gray-700 text-base text-center"
+            >
+              <div class="font-bold mb-2 text-yellow-700">💡 해설</div>
+              <div>{{ quiz.comment }}</div>
+            </div>
+            <button
+              class="mt-8 w-full bg-gray-200 text-gray-700 font-bold rounded-lg py-3 hover:bg-gray-300 transition"
+              @click="closeQuizModal"
+            >
+              닫기
+            </button>
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -126,69 +184,68 @@ const content = ref(null)
 const quiz = ref(null)
 const selected = ref('')
 const result = ref(null)
-const showExplainBtnClicked = ref(false)
-const userId = ref(null) // 세션에서 가져올 예정
+const userId = ref(null)
 const user = ref(null)
-const isCompleted = ref(false) // 학습 완료 여부 상태
-const creditAwarded = ref(false) // 크레딧 지급 여부
+const isCompleted = ref(false)
+const creditAwarded = ref(false)
+const showQuizModal = ref(false)
+const isModalDragging = ref(false)
+const modalDragStartY = ref(0)
+const modalDragOffset = ref(0)
+
+function onModalDragStart(e) {
+  isModalDragging.value = true
+  modalDragStartY.value = e.touches ? e.touches[0].clientY : e.clientY
+}
+function onModalDragMove(e) {
+  if (!isModalDragging.value) return
+  const currentY = e.touches ? e.touches[0].clientY : e.clientY
+  const offset = currentY - modalDragStartY.value
+  modalDragOffset.value = offset > 0 ? offset : 0
+}
+function onModalDragEnd() {
+  if (modalDragOffset.value > 60) closeQuizModal()
+  isModalDragging.value = false
+  setTimeout(() => {
+    modalDragOffset.value = 0
+  }, 200)
+}
+function closeQuizModal() {
+  showQuizModal.value = false
+  isModalDragging.value = false
+  modalDragOffset.value = 0
+}
 
 onMounted(async () => {
   try {
-    // 세션에서 사용자 정보 가져오기
     const res = await axios.get('/api/auth/me', { withCredentials: true })
     userId.value = res.data.userId || res.data.id
-
-    if (!userId.value) {
-      console.error('사용자 ID를 가져올 수 없습니다.')
-      return
-    }
-
-    console.log('현재 사용자 ID:', userId.value)
+    user.value = res.data
   } catch (e) {
     console.error('세션 정보 로딩 실패:', e)
-    // 세션 실패 시 로컬스토리지 fallback
     userId.value = Number(localStorage.getItem('userId') || 1)
   }
 
   const contentId = Number(route.params.id)
+
+  try {
+    const completeRes = await axios.get('/api/learning/history/complete', {
+      params: { userId: userId.value, contentId },
+    })
+    isCompleted.value = completeRes.data === true
+  } catch (e) {
+    console.warn('완료 여부 확인 실패:', e)
+  }
+
   content.value = await fetchLearningContentById(contentId)
   quiz.value = await fetchLearningQuizById(contentId)
 
   try {
-    const res = await axios.get('/api/auth/me', { withCredentials: true })
-    user.value = res.data
-
-    const userId = user.value.userId // 세션 기반 userId
-    const contentId = Number(route.params.id)
-
-    // 콘텐츠 로드
-    content.value = await fetchLearningContentById(contentId)
-    quiz.value = await fetchLearningQuizById(contentId)
-
-    // 완료 여부 체크
-    const completeRes = await axios.get('/api/learning/history/complete', {
-      params: {
-        userId: userId.value,
-        contentId: Number(route.params.id),
-      },
-    })
-    isCompleted.value = completeRes.data === true
-  } catch (e) {
-    console.error('초기 로딩 실패', e)
-  }
-
-  // 퀴즈 결과 확인
-  try {
-    const hasResult = await checkQuiz(userId.value, Number(route.params.id))
+    const hasResult = await checkQuiz(userId.value, contentId)
     if (hasResult) {
-      // 실제 퀴즈 결과 가져오기
       const resultRes = await axios.get('/api/learning/quiz/result/detail', {
-        params: {
-          userId: userId.value,
-          quizId: Number(route.params.id),
-        },
+        params: { userId: userId.value, quizId: contentId },
       })
-
       if (resultRes.data) {
         const quizResult = resultRes.data
         selected.value = quizResult.selectedAnswer
@@ -201,96 +258,41 @@ onMounted(async () => {
   }
 })
 
-function goBack() {
-  router.back()
-}
-
 function selectOX(val) {
   if (result.value !== null) return
   selected.value = val
   result.value = selected.value === quiz.value.answer
-  showExplainBtnClicked.value = false // 선택 시 해설은 다시 숨김
 
-  // 퀴즈 결과 처리 (정답이든 오답이든)
   if (!creditAwarded.value) {
     awardQuizCreditLocal()
+  }
+
+  if (!isCompleted.value) {
+    handleComplete()
   }
 }
 
 async function awardQuizCreditLocal() {
   try {
-    // 이미 퀴즈를 풀었는지 확인
     const hasResult = await checkQuiz(userId.value, Number(route.params.id))
-    if (hasResult) {
-      alert('이미 퀴즈를 푸신 콘텐츠입니다.')
-      return
-    }
+    if (hasResult) return
 
     if (result.value) {
-      // 정답일 때만 크레딧 지급
-      console.log('크레딧 지급 시도:', {
-        userId: userId.value,
-        quizId: quiz.value?.quizId,
-        selectedAnswer: selected.value,
-      })
-      const response = await giveCredit(userId.value, quiz.value.quizId, selected.value)
+      await giveCredit(userId.value, quiz.value.quizId, selected.value)
       creditAwarded.value = true
-      alert(`정답입니다! ${quiz.value.creditReward}크레딧이 지급되었습니다!`)
     } else {
-      // 오답일 때는 결과만 저장 (크레딧 지급 안함)
-      console.log('퀴즈 결과 저장:', {
-        userId: userId.value,
-        quizId: quiz.value?.quizId,
-        selectedAnswer: selected.value,
-      })
       await axios.post('/api/learning/quiz/result/save', {
         userId: userId.value,
         quizId: quiz.value.quizId,
         selectedAnswer: selected.value,
         isCorrect: false,
       })
-      alert('오답입니다. 다시 시도해보세요!')
     }
   } catch (e) {
-    console.error('크레딧 지급 실패:', e)
-    if (e.response?.data) {
-      alert(e.response.data)
-    }
+    console.error('퀴즈 처리 실패:', e)
   }
 }
 
-function extractYoutubeId(url) {
-  if (!url) return ''
-
-  // 다양한 YouTube URL 형식 지원
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
-  ]
-
-  for (const pattern of patterns) {
-    const match = url.match(pattern)
-    if (match) return match[1]
-  }
-
-  console.warn('YouTube URL 파싱 실패:', url)
-  return ''
-}
-
-function removeOX(text) {
-  return text ? text.replace(/\s*\(O\/X\)/gi, '') : ''
-}
-
-// 본문 줄바꿈, 리스트 등 간단 포맷팅
-const formattedBody = computed(() => {
-  if (!content.value?.body) return ''
-  let html = content.value.body
-    .replace(/\n/g, '<br>')
-    .replace(/•\s?(.+?)(?=<br>|$)/g, '<li>$1</li>')
-  if (html.includes('<li>')) html = '<ul>' + html + '</ul>'
-  return html
-})
 async function handleComplete() {
   try {
     await axios.post('/api/learning/history', {
@@ -300,7 +302,74 @@ async function handleComplete() {
     isCompleted.value = true
   } catch (e) {
     console.error('기록 실패:', e)
-    alert('기록에 실패했습니다.')
   }
+}
+
+function extractYoutubeId(url) {
+  if (!url) return ''
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+  ]
+  for (const pattern of patterns) {
+    const match = url.match(pattern)
+    if (match) return match[1]
+  }
+  return ''
+}
+
+function removeOX(text) {
+  return text ? text.replace(/\s*\(O\/X\)/gi, '') : ''
+}
+
+const formattedBody = computed(() => {
+  if (!content.value?.body) return ''
+
+  // 줄바꿈 통일: \n, \\n, \r\n → \n
+  const normalized = content.value.body.replace(/\\n|\\\\n|\r\n/g, '\n')
+
+  // 문단 나누기: \n\n 이상 기준으로 분리
+  const paragraphs = normalized
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+
+  const htmlParagraphs = paragraphs.map((paragraph) => {
+    // 리스트가 포함되어 있으면 <li>로 감싸기
+    const hasBullet = /[\u2022•]\s?/.test(paragraph)
+
+    if (hasBullet) {
+      const items = paragraph
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(
+          (line) =>
+            line.startsWith('•') ||
+            line.startsWith('∙') ||
+            line.startsWith('・') ||
+            line.startsWith('·') ||
+            line.startsWith('\u2022'),
+        )
+        .map((line) => `<li>${line.replace(/^[\u2022•∙・·]\s?/, '')}</li>`)
+        .join('')
+      return `<ul>${items}</ul>`
+    } else {
+      // 일반 문단은 내부 줄바꿈은 <br>로 변환
+      const withBreaks = paragraph.replace(/\n/g, '<br>')
+      return `<p>${withBreaks}</p>`
+    }
+  })
+
+  return htmlParagraphs.join('')
+})
+
+const formattedTitle = computed(() => {
+  if (!content.value?.title) return ''
+  return content.value.title.replace(/\\n|\n/g, '')
+})
+
+function goBack() {
+  router.go(-1)
 }
 </script>
