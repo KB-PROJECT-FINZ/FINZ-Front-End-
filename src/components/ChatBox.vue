@@ -41,25 +41,25 @@
               <StockRecommendationCards :content="msg.content" />
             </div>
 
-            <!-- 일반 메시지 -->
+        <!-- 일반 메시지 -->
             <div v-else-if="!msg.type" class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-xs shadow-lg border border-white/30">
               <p class="text-gray-800">{{ msg.content }}</p>
             </div>
 
-            <!-- 버튼 메시지 -->
+        <!-- 버튼 메시지 -->
             <div v-else-if="msg.type === 'buttons'" class="space-y-4">
               <div v-if="msg.text" class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-xs shadow-lg border border-white/30">
                 <p class="text-gray-800">{{ msg.text }}</p>
               </div>
               <div class="grid grid-cols-2 gap-3">
-                <button
-                  v-for="(btn, idx) in msg.buttons"
-                  :key="idx"
-                  @click="handleButtonIntent(btn)"
+            <button
+              v-for="(btn, idx) in msg.buttons"
+              :key="idx"
+              @click="handleButtonIntent(btn)"
                   class="bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl p-4 text-center hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                >
+            >
                   <span class="text-gray-800 font-semibold text-sm">{{ btn.label }}</span>
-                </button>
+            </button>
               </div>
             </div>
           </div>
@@ -87,17 +87,17 @@
     <!-- 입력창 -->
     <div class="absolute bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-white/30">
       <form @submit.prevent="submit" class="flex gap-3">
-        <input
-          v-model="input"
+      <input
+        v-model="input"
           placeholder="궁금한 종목이나 투자 질문을 입력해보세요"
           class="flex-1 bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent shadow-lg"
-        />
-        <button
+      />
+      <button
           type="submit"
           class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-2xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-        >
-          전송
-        </button>
+      >
+        전송
+      </button>
       </form>
     </div>
   </div>
@@ -375,12 +375,12 @@ async function handleButtonIntent(btn) {
         role: 'bot',
         type: 'buttons',
         text: '모의투자 내역 기반 피드백을 드릴게요.\n확인하려면 아래 버튼을 눌러주세요.',
-        buttons: [
-          {
+      buttons: [
+        {
             label: '🧠 피드백 요청하기',
-            intent: 'PORTFOLIO_ANALYZE',
-            message: '내 포트폴리오 피드백 줘',
-          },
+          intent: 'PORTFOLIO_ANALYZE',
+          message: '내 포트폴리오 피드백 줘',
+        },
           { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
         ],
       })

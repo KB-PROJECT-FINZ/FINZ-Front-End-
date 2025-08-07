@@ -29,7 +29,6 @@
       <div class="flex-1">
         <div class="text-base font-bold text-gray-900">{{ profile.name }}</div>
         <div class="text-sm text-gray-500 my-1">{{ profile.type }}</div>
-
         <div class="flex gap-2 mt-1">
           <span class="bg-indigo-100 text-indigo-800 rounded px-3 py-0.5 text-xs mt-1 inline-block">
             Level {{ profile.level }}
@@ -41,17 +40,15 @@
       </div>
     </section>
 
-    <!-- 모의투자 금액 카드 -->
+    <!-- 자산 섹션 -->
     <section class="bg-white rounded-xl mx-4 mb-5 px-5 py-5 border border-gray-200">
       <div class="text-gray-500 text-sm mb-2">총 보유자산</div>
 
-      <!-- 로딩 중일 때 -->
       <div v-if="!dataLoaded" class="flex items-center justify-between mb-1">
         <div class="w-40 h-8 bg-gray-200 rounded animate-pulse"></div>
         <div class="w-32 h-9 bg-gray-200 rounded animate-pulse"></div>
       </div>
 
-      <!-- 실제 자산 데이터 -->
       <div v-else class="flex items-baseline gap-x-4 mb-4">
         <span class="text-[28px] font-bold text-gray-900 leading-none">
           {{ calculatedTotalAssetValue.toLocaleString() }}원
@@ -70,7 +67,6 @@
         </span>
       </div>
 
-      <!-- 버튼 정렬 및 너비 조정 -->
       <div class="flex justify-center">
         <button
           class="bg-blue-600 text-white rounded px-6 py-2 text-sm font-semibold hover:bg-blue-800 transition"
@@ -80,28 +76,13 @@
           내 자산 현황 바로가기
         </button>
       </div>
-      <!-- 수익률 표시 -->
-      <div v-if="!dataLoaded" class="w-20 h-4 bg-gray-200 rounded animate-pulse ml-1"></div>
-      <div
-        v-else
-        :class="
-          calculatedProfitRate > 0
-            ? 'text-red-500'
-            : calculatedProfitRate < 0
-              ? 'text-blue-500'
-              : 'text-gray-500'
-        "
-        class="text-sm font-bold ml-1"
-      >
-        {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
-      </div>
     </section>
 
-    <!-- 메뉴 카드 -->
+    <!-- 메뉴 -->
     <section class="flex flex-col gap-3 mx-4 mb-5">
       <router-link
         to="/journal"
-        class="flex items-center bg-white rounded-xl px-4 py-4 border border-gray-200 transition text-inherit no-underline"
+        class="flex items-center bg-white rounded-xl px-4 py-4 border border-gray-200 text-inherit no-underline"
       >
         <span class="text-xl mr-4">📒</span>
         <div class="flex-1 min-w-0">
@@ -112,7 +93,7 @@
       </router-link>
       <router-link
         to="/risk-profile"
-        class="flex items-center bg-white rounded-xl px-4 py-4 border border-gray-200 transition text-inherit no-underline"
+        class="flex items-center bg-white rounded-xl px-4 py-4 border border-gray-200 text-inherit no-underline"
       >
         <span class="text-xl mr-4">📝</span>
         <div class="flex-1 min-w-0">
@@ -123,7 +104,7 @@
       </router-link>
     </section>
 
-    <!-- 내 투자내역 카드 -->
+    <!-- 투자 내역 -->
     <section class="bg-white rounded-xl mx-4 mb-5 overflow-hidden">
       <div class="flex items-center justify-between bg-gray-50 px-5 py-4 border-b border-gray-200">
         <div class="text-base font-bold text-gray-900">내 투자내역</div>
@@ -134,163 +115,97 @@
           최근 투자 내역 바로가기
         </button>
       </div>
+
       <div class="px-5 py-4">
-        <!-- 로딩 중일 때 스켈레톤 UI -->
+        <!-- 로딩 중 -->
         <div v-if="!dataLoaded">
-          <!-- 매수 내역 스켈레톤 -->
-          <div class="mb-4">
-            <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
-            <div class="flex flex-col gap-2">
-              <div
-                v-for="i in 2"
-                :key="`buy-skeleton-${i}`"
-                class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-red-600"
-              >
-                <div class="flex flex-col flex-1">
-                  <div class="w-20 h-4 bg-gray-200 rounded animate-pulse mb-1"></div>
-                  <div class="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-                <div class="text-right">
-                  <div class="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-      <div class="px-4 py-4">
-        <!-- 매수 내역 -->
-        <div class="mb-4">
           <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
-          <div class="flex flex-col gap-2">
+          <div class="flex flex-col gap-2 mb-4">
             <div
-              v-for="(item, index) in buyHistory"
-              :key="`buy-${index}`"
-              class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-red-600 hover:shadow-md transition"
-            >
-              <!-- 종목 이미지 or 이니셜 -->
-              <div
-                class="w-10 h-10 rounded-full overflow-hidden mr-3 flex items-center justify-center bg-gray-100 flex-shrink-0"
-              >
-                <img
-                  v-if="item.imageUrl && !imageErrors[item.stockCode]"
-                  :src="item.imageUrl"
-                  alt="종목 이미지"
-                  class="w-full h-full object-cover rounded-full"
-                  @error="handleImageError(item.stockCode)"
-                />
-                <span
-                  v-else
-                  class="text-xs font-bold border text-center w-full h-full flex items-center justify-center rounded-full"
-                  style="border-color: #2272eb; color: #2272eb; background: #fff"
-                >
-                  {{ getStockInitial(item.name) }}
-                </span>
-              </div>
-              <div class="flex flex-col flex-1">
-                <div class="text-sm font-bold text-gray-900 mb-0.5">{{ item.name }}</div>
-                <div class="text-xs text-gray-500">{{ item.desc }}</div>
-              </div>
-            </div>
+              v-for="i in 2"
+              :key="i"
+              class="w-full h-10 bg-gray-200 rounded animate-pulse"
+            ></div>
           </div>
-          <!-- 매도 내역 스켈레톤 -->
-          <div>
-            <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
-            <div class="flex flex-col gap-2">
-              <div
-                v-for="i in 2"
-                :key="`sell-skeleton-${i}`"
-                class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-blue-600"
-              >
-                <div class="flex flex-col flex-1">
-                  <div class="w-20 h-4 bg-gray-200 rounded animate-pulse mb-1"></div>
-                  <div class="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-                <div class="text-right">
-                  <div class="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- 실제 데이터 -->
-        <div v-else>
-          <!-- 매수 내역 -->
-          <div class="mb-4">
-            <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
-            <div class="flex flex-col gap-2">
-              <div
-                v-if="buyHistory.length === 0"
-                class="text-sm text-gray-500 text-center py-4"
-              >
-                매수 내역이 없습니다
-        <!-- 매도 내역 -->
-        <div>
           <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
           <div class="flex flex-col gap-2">
             <div
-              v-for="(item, index) in sellHistory"
-              :key="`sell-${index}`"
-              class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-blue-600 hover:shadow-md transition"
-            >
-              <!-- 종목 이미지 or 이니셜 -->
-              <div
-                class="w-10 h-10 rounded-full overflow-hidden mr-3 flex items-center justify-center bg-gray-100 flex-shrink-0"
-              >
-                <img
-                  v-if="item.imageUrl && !imageErrors[item.stockCode]"
-                  :src="item.imageUrl"
-                  alt="종목 이미지"
-                  class="w-full h-full object-cover rounded-full"
-                  @error="handleImageError(item.stockCode)"
-                />
-                <span
-                  v-else
-                  class="text-xs font-bold border text-center w-full h-full flex items-center justify-center rounded-full"
-                  style="border-color: #2272eb; color: #2272eb; background: #fff"
-                >
-                  {{ getStockInitial(item.name) }}
-                </span>
-              </div>
-              <div class="flex flex-col flex-1">
-                <div class="text-sm font-bold text-gray-900 mb-0.5">{{ item.name }}</div>
-                <div class="text-xs text-gray-500">{{ item.desc }}</div>
-              </div>
+              v-for="i in 2"
+              :key="i"
+              class="w-full h-10 bg-gray-200 rounded animate-pulse"
+            ></div>
+          </div>
+        </div>
+
+        <!-- 실제 데이터 -->
+        <div v-else>
+          <!-- 매수 -->
+          <div class="mb-4">
+            <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
+            <div v-if="buyHistory.length === 0" class="text-sm text-gray-500 text-center py-4">
+              매수 내역이 없습니다
+            </div>
+            <div v-else>
               <div
                 v-for="(item, index) in buyHistory"
                 :key="`buy-${index}`"
-                class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-red-600 hover:shadow-md transition"
+                class="flex items-center justify-between px-3 py-3 shadow border-l-4 border-red-600 rounded-lg mb-2"
               >
-                <div class="flex flex-col flex-1">
-                  <div class="text-sm font-bold text-gray-900 mb-0.5">{{ item.name }}</div>
-                  <div class="text-xs text-gray-500">{{ item.desc }}</div>
-                </div>
-                <div class="text-right">
-                  <div class="text-sm font-bold text-gray-900">
-                    {{ item.amount.toLocaleString() }}원
+                <div class="flex items-center">
+                  <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3">
+                    <img
+                      v-if="item.imageUrl && !imageErrors[item.stockCode]"
+                      :src="item.imageUrl"
+                      class="w-full h-full object-cover"
+                      @error="handleImageError(item.stockCode)"
+                    />
+                    <span v-else class="text-xs font-bold" style="color: #2272eb">
+                      {{ getStockInitial(item.name) }}
+                    </span>
                   </div>
+                  <div class="flex flex-col">
+                    <div class="text-sm font-bold text-gray-900">{{ item.name }}</div>
+                    <div class="text-xs text-gray-500">{{ item.desc }}</div>
+                  </div>
+                </div>
+                <div class="text-sm font-bold text-gray-900">
+                  {{ item.amount.toLocaleString() }}원
                 </div>
               </div>
             </div>
           </div>
-          <!-- 매도 내역 -->
+
+          <!-- 매도 -->
           <div>
             <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
-            <div class="flex flex-col gap-2">
-              <div
-                v-if="sellHistory.length === 0"
-                class="text-sm text-gray-500 text-center py-4"
-              >
-                매도 내역이 없습니다
-              </div>
+            <div v-if="sellHistory.length === 0" class="text-sm text-gray-500 text-center py-4">
+              매도 내역이 없습니다
+            </div>
+            <div v-else>
               <div
                 v-for="(item, index) in sellHistory"
                 :key="`sell-${index}`"
-                class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-blue-600 hover:shadow-md transition"
+                class="flex items-center justify-between px-3 py-3 shadow border-l-4 border-blue-600 rounded-lg mb-2"
               >
-                <div class="flex flex-col flex-1">
-                  <div class="text-sm font-bold text-gray-900 mb-0.5">{{ item.name }}</div>
-                  <div class="text-xs text-gray-500">{{ item.desc }}</div>
-                </div>
-                <div class="text-right">
-                  <div class="text-sm font-bold text-gray-900">
-                    {{ item.amount.toLocaleString() }}원
+                <div class="flex items-center">
+                  <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3">
+                    <img
+                      v-if="item.imageUrl && !imageErrors[item.stockCode]"
+                      :src="item.imageUrl"
+                      class="w-full h-full object-cover"
+                      @error="handleImageError(item.stockCode)"
+                    />
+                    <span v-else class="text-xs font-bold" style="color: #2272eb">
+                      {{ getStockInitial(item.name) }}
+                    </span>
                   </div>
+                  <div class="flex flex-col">
+                    <div class="text-sm font-bold text-gray-900">{{ item.name }}</div>
+                    <div class="text-xs text-gray-500">{{ item.desc }}</div>
+                  </div>
+                </div>
+                <div class="text-sm font-bold text-gray-900">
+                  {{ item.amount.toLocaleString() }}원
                 </div>
               </div>
             </div>
@@ -304,39 +219,31 @@
 </template>
 
 <script setup>
-import FooterNavigation from '../../components/FooterNavigation.vue'
+import FooterNavigation from '@/components/FooterNavigation.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import { getUserCredit } from '../../services/learning'
+import { getUserCredit } from '@/services/learning'
 import { useUserStore } from '@/stores/user'
-import { useAssetDataStore } from '@/services/useAssetData.js'
+import { useAssetDataStore } from '@/services/useAssetData'
 
 const router = useRouter()
 const userStore = useUserStore()
 const imageErrors = ref({})
 
-// AssetDataStore 컴포저블 사용
-const {
-  dataLoaded,
-  userAccount,
-  calculatedProfitRate,
-  loadUserData,
-  safeNumber,
-} = useAssetDataStore()
+const { dataLoaded, userAccount, calculatedProfitRate, loadUserData, safeNumber } =
+  useAssetDataStore()
 
 const profile = ref({ image: '', name: '', type: '', level: 3 })
 const asset = ref({ amount: 0 })
 const buyHistory = ref([])
 const sellHistory = ref([])
 
-// 총 자산 계산 (AssetStatus와 동일한 방식)
-const calculatedTotalAssetValue = computed(() => 
-  safeNumber(userAccount.value.totalAssetValue, 0)
-)
+const calculatedTotalAssetValue = computed(() => safeNumber(userAccount.value.totalAssetValue, 0))
 
 const goToAssetStatus = () => router.push('/mock-trading/asset-status')
 const goToTransactions = () => router.push('/mock-trading/transactions')
+
 const handleLogout = async () => {
   try {
     await axios.post('/api/auth/logout', {}, { withCredentials: true })
@@ -345,31 +252,34 @@ const handleLogout = async () => {
   }
 
   userStore.clearUser()
-  localStorage.removeItem('user') //
+  localStorage.removeItem('user')
   router.push('/login-form')
+}
+
+const handleImageError = (code) => {
+  imageErrors.value[code] = true
+}
+
+const getStockInitial = (name) => {
+  return name ? name[0] : '?'
 }
 
 onMounted(async () => {
   try {
-    // 사용자 정보 로드
     const me = await axios.get('/api/auth/me', { withCredentials: true })
     profile.value = {
       name: me.data.name,
       type: me.data.riskType,
-      level: me.data.level || 3,
+      level: typeof me.data.level === 'number' ? me.data.level : 3,
       image: me.data.profileImage || '',
     }
 
-    // 크레딧 정보 로드
     const credit = await getUserCredit(me.data.userId)
     asset.value.amount = credit
 
-    // AssetDataStore를 통해 자산 데이터 로드 (실시간 가격 포함)
     await loadUserData()
 
-    // 거래 내역 로드
     const txRes = await axios.get('/api/mocktrading/transactions', { withCredentials: true })
-    
     if (txRes.data && txRes.data.length > 0) {
       const buyTx = txRes.data.filter((t) => t.transactionType === 'BUY')
       const sellTx = txRes.data.filter((t) => t.transactionType === 'SELL')
@@ -378,48 +288,33 @@ onMounted(async () => {
         name: tx.stockName,
         desc: `매수 ${tx.quantity}주`,
         amount: tx.totalAmount,
+        stockCode: tx.stockCode,
+        imageUrl: tx.imageUrl,
       }))
-      
       sellHistory.value = sellTx.slice(0, 2).map((tx) => ({
         name: tx.stockName,
         desc: `매도 ${tx.quantity}주`,
         amount: tx.totalAmount,
+        stockCode: tx.stockCode,
+        imageUrl: tx.imageUrl,
       }))
-    } else {
-      buyHistory.value = []
-      sellHistory.value = []
     }
-        stockCode: tx.stockCode,
-        imageUrl: tx.imageUrl,
+      } catch (e) {
+      console.error('로딩 실패:', e)
+      // 세션 실패 시 로컬스토리지 fallback
+      try {
+        profile.value.name = localStorage.getItem('name') || '사용자'
+        profile.value.type = localStorage.getItem('riskType') || '정보 없음'
+        
+        const userId = Number(localStorage.getItem('userId') || 1)
+        const credit = await getUserCredit(userId)
+        asset.value.amount = credit
+        
+        await loadUserData()
+      } catch (fallbackError) {
+        console.error('Fallback 로딩도 실패:', fallbackError)
       }
-    })
-    sellHistory.value = sellTx.slice(0, 2).map((tx) => {
-      return {
-        name: tx.stockName,
-        desc: `매도 ${tx.quantity}주`,
-        amount: tx.totalAmount,
-        stockCode: tx.stockCode,
-        imageUrl: tx.imageUrl,
-      }
-    })
-
-  } catch (e) {
-    console.error('로딩 실패:', e)
-    // 세션 실패 시 로컬스토리지 fallback
-    try {
-      profile.value.name = localStorage.getItem('name') || '사용자'
-      profile.value.type = localStorage.getItem('riskType') || '정보 없음'
-      
-      const userId = Number(localStorage.getItem('userId') || 1)
-      const credit = await getUserCredit(userId)
-      asset.value.amount = credit
-      
-      // 자산 데이터 로드 시도
-      await loadUserData()
-    } catch (fallbackError) {
-      console.error('Fallback 로딩도 실패:', fallbackError)
     }
-  }
 })
 </script>
 
@@ -427,7 +322,6 @@ onMounted(async () => {
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
-
 @keyframes pulse {
   0%,
   100% {
