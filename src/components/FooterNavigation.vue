@@ -50,7 +50,8 @@ const navItems = [
 ]
 
 const goToChatbot = () => {
-  router.push('/chatbot')
+  // 챗봇 패널 열기 이벤트 발생
+  window.dispatchEvent(new CustomEvent('openChatBot'))
 }
 
 const isActive = (path) => route.path.startsWith(path)
