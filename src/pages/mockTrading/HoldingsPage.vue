@@ -375,7 +375,6 @@ const goToMockTrading = () => {
 }
 
 const refreshData = async () => {
-  console.log('🔄 보유 종목 데이터 새로고침')
   await fetchHoldings()
 }
 

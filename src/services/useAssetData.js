@@ -154,7 +154,6 @@ export function useAssetDataStore() {
       const response = await axios.get(`/api/stock/prices/${codesString}`)
 
       if (response.status === 200 && response.data) {
-        console.log(`가격 조회 완료`)
 
         if (response.data.fallbackMode) {
           console.info('단일 조회 모드로 처리됨')
@@ -296,7 +295,6 @@ export function useAssetDataStore() {
         }))
 
         holdingsData.value = await updateHoldingsWithRealTimePrice(basicHoldings)
-        console.log('실시간 가격 업데이트 완료')
       } else {
         holdingsData.value = []
         console.log('📝 보유 종목 없음')

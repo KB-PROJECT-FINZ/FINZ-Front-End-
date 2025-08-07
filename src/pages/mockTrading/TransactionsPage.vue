@@ -89,13 +89,13 @@
     </section>
 
     <!-- 거래 내역 리스트 -->
-    <section class="mx-4 mt-0 space-y-3">
-      <div v-for="transaction in visibleTransactions" :key="transaction.id" class="bg-white p-4">
+    <section class="mx-4 mt-0 space-y-1.5">
+      <div v-for="transaction in visibleTransactions" :key="transaction.id" class="bg-white p-3">
         <!-- 새 카드 레이아웃: 왼쪽 날짜, 가운데 종목명, 오른쪽 체결단가 -->
         <div class="flex items-center justify-between mb-1">
           <!-- 날짜 -->
           <div class="flex-shrink-0 w-10 text-left">
-            <div class="text-xs text-gray-400">{{ formatDateOnly(transaction.executedAt) }}</div>
+            <div class="text-xs text-gray-400">{{ formatDateDot(transaction.executedAt) }}</div>
           </div>
           <!-- 종목명 및 상태 + 이미지 -->
           <div class="flex-1 min-w-0 flex items-center gap-2">
@@ -148,9 +148,7 @@
             <div v-if="transaction.status !== 'CANCELLED'" class="text-sm text-gray-900">
               주당 {{ transaction.price.toLocaleString() }}원
             </div>
-            <div v-else class="text-sm text-gray-400">
-              &nbsp;
-            </div>
+            <div v-else class="text-sm text-gray-400">&nbsp;</div>
           </div>
         </div>
 
@@ -232,7 +230,7 @@ const {
   formatDateOnly,
   getTransactionStatusText,
   getStatusClass,
-  resetPagination
+  resetPagination,
 } = useTransactionsData()
 
 // 기간 필터링
@@ -253,7 +251,7 @@ const {
   onModalDragMove,
   onModalDragEnd,
   onMounted: onModalMounted,
-  onUnmounted: onModalUnmounted
+  onUnmounted: onModalUnmounted,
 } = useTransactionsModal()
 
 // ==================== 계산된 속성 ====================
@@ -267,6 +265,16 @@ const visibleTransactions = computed(() => {
 })
 
 // ==================== 템플릿에서 사용하는 메서드 ====================
+
+/**
+ * 날짜를 MM.DD 형식으로 반환 (예: 08.07)
+ */
+function formatDateDot(dateString) {
+  const date = new Date(dateString)
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  return `${month}.${day}`
+}
 
 /**
  * 선택된 기간 라벨 반환

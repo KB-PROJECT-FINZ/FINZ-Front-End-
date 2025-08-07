@@ -177,7 +177,7 @@
           <div class="w-full">
             <!-- 보유 종목들 -->
             <div
-              v-for="(holding, index) in portfolioPercentages.holdings || []"
+              v-for="(holding, index) in sortedHoldings"
               :key="holding.stockCode"
               class="flex items-center mb-2 gap-2"
             >
@@ -285,7 +285,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue'
+import { ref, onMounted, nextTick, watch, onUnmounted, computed } from 'vue'
 import ToastMessage from '@/components/ToastMessage.vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
@@ -310,6 +310,12 @@ const {
 
 const { portfolioChart, chartTooltip, chartColors, updatePortfolioChart, cleanupChartEvents } =
   useChartManager()
+
+// holdings를 퍼센트 내림차순 정렬하여 범례에 사용
+const sortedHoldings = computed(() => {
+  const arr = portfolioPercentages.value?.holdings || []
+  return [...arr].sort((a, b) => b.percentage - a.percentage)
+})
 
 // ===== 상태 관리 =====
 const showChargeModal = ref(false)
