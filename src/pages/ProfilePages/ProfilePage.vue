@@ -1,7 +1,9 @@
 <template>
   <div class="bg-white min-h-screen pb-16">
     <!-- 상단 헤더 -->
-    <header class="flex items-center justify-between bg-white px-4 pt-4 pb-3 sticky top-0 z-10">
+    <header
+      class="flex items-center justify-between bg-white px-4 pt-4 pb-3 sticky top-0 z-10 border-b border-gray-200"
+    >
       <div class="w-10"></div>
       <span class="text-lg font-bold text-gray-800">마이페이지</span>
       <img
