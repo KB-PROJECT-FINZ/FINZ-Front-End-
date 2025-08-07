@@ -157,6 +157,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '@/components/FooterNavigation.vue'
+import { analysisService } from '@/services/analysisService.js'
 
 const router = useRouter()
 const analysisData = ref(null)
@@ -179,33 +180,47 @@ const formatContent = (content) => {
     .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
 }
 
-const getMockData = () => {
-  return {
-    stats: {
-      userId: 12345,
-      transactionCount: 28,
-      startDate: '2024-01-15',
-      endDate: '2024-02-14',
-      analysisPeriod: 30,
-      totalReturn: 12.45,
-    },
-    aiAnalysis: {
-      strategy: `**단기 매매 중심의 활발한 거래 패턴**을 보이고 있습니다.\n\n- 월평균 28건의 거래로 *높은 거래 빈도*를 유지\n- 기술적 분석을 활용한 **차트 기반 매매** 선호\n- 소액 분할 매수를 통한 위험 분산 시도`,
-      risks: `**과도한 거래 빈도**로 인한 수수료 부담이 우려됩니다.\n\n- 잦은 매매로 인한 **거래비용 증가**\n- *감정적 매매*로 인한 손실 확대 가능성\n- 충분한 분석 없는 **충동적 거래** 위험`,
-      advice: `**장기 투자 관점**을 갖고 접근하시기 바랍니다.\n\n- 월 거래 횟수를 *15건 이하*로 제한\n- **포트폴리오 다양화**를 통한 위험 분산\n- 손실 한도 설정으로 *리스크 관리* 강화`,
-    },
-  }
-}
-
+/**
+ * AI 분석 데이터 조회
+ * 실제 API 호출 + 목데이터 폴백
+ */
 const fetchAnalysis = async () => {
   loading.value = true
   error.value = null
+
   try {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    analysisData.value = getMockData()
+    console.log('AI 분석 리포트 조회 시작...')
+
+    // 실제 API 호출
+    const response = await analysisService.fetchLatestAnalysisReport()
+
+    if (response.data) {
+      console.log('API 응답 데이터:', response.data)
+      // 백엔드 데이터를 Vue 컴포넌트 형태로 변환
+      analysisData.value = analysisService.transformReportData(response)
+      console.log('변환된 분석 데이터:', analysisData.value)
+    } else {
+      // 분석 결과가 없는 경우
+      console.log('분석 결과가 없어 목데이터 사용')
+      analysisData.value = analysisService.getMockAnalysisData()
+
+      // 사용자에게 안내 메시지 표시
+      error.value = '아직 분석할 거래 데이터가 충분하지 않습니다. 더 많은 거래를 진행해보세요.'
+    }
+
   } catch (err) {
-    error.value = '분석을 불러오는데 실패했습니다. 다시 시도해주세요.'
-    console.error('Analysis failed:', err)
+    console.error('API 호출 실패:', err)
+    if (err.message.includes('로그인')) {
+      error.value = '로그인이 필요합니다.'
+      setTimeout(() => {
+        router.push('/login-form')
+      }, 2000)
+    } else if (err.message.includes('찾을 수 없습니다')) {
+      error.value = '아직 분석할 거래 데이터가 충분하지 않습니다. 더 많은 거래를 진행해보세요.'
+      analysisData.value = analysisService.getMockAnalysisData()
+    } else {
+      error.value = '분석을 불러오는데 실패했습니다. 다시 시도해주세요.'
+    }
   } finally {
     loading.value = false
   }
@@ -278,46 +293,50 @@ const exportToPDF = async () => {
             .text-gray-700 { color: #374151 !important; }
             .text-gray-500 { color: #6b7280 !important; }
             .text-gray-400 { color: #9ca3af !important; }
-            .bg-white { background-color: #ffffff !important; }
-            .bg-gray-50 { background-color: #f9fafb !important; }
-            .bg-blue-50 { background-color: #eff6ff !important; }
-            .bg-red-50 { background-color: #fef2f2 !important; }
-            .bg-green-50 { background-color: #f0fdf4 !important; }
+            .bg-white { background: white !important; }
+            .bg-blue-50 { background: #eff6ff !important; }
+            .bg-red-50 { background: #fef2f2 !important; }
+            .bg-green-50 { background: #f0fdf4 !important; }
+            .bg-gray-50 { background: #f9fafb !important; }
             .border-blue-400 { border-color: #60a5fa !important; }
             .border-red-400 { border-color: #f87171 !important; }
             .border-green-400 { border-color: #4ade80 !important; }
-            .border-red-200 { border-color: #fecaca !important; }
-            .border-gray-200 { border-color: #e5e7eb !important; }
-            .report-title {
-              text-align: center;
-              font-size: 2rem;
-              font-weight: bold;
-              margin-bottom: 1.5rem;
-              color: #1f2937;
-              padding-bottom: 0.5rem;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              gap: 0.5rem;
-            }
-            .finz-logo {
-              width: 90px;
-              margin-bottom: 0.5rem;
-              display: block;
-            }
-            .section-divider {
-              height: 3px;
-              background: #e5e7eb;
-              border-radius: 2px;
-              margin: 1.5rem 0 2rem 0;
-              border: none;
-            }
+            .border-l-4 { border-left-width: 4px !important; }
+            .rounded { border-radius: 0.375rem !important; }
+            .p-4 { padding: 1rem !important; }
+            .px-6 { padding-left: 1.5rem !important; padding-right: 1.5rem !important; }
+            .py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+            .mb-4 { margin-bottom: 1rem !important; }
+            .mt-6 { margin-top: 1.5rem !important; }
+            .mb-2 { margin-bottom: 0.5rem !important; }
+            .font-bold { font-weight: 700 !important; }
+            .font-semibold { font-weight: 600 !important; }
+            .text-xl { font-size: 1.25rem !important; line-height: 1.75rem !important; }
+            .text-base { font-size: 1rem !important; line-height: 1.5rem !important; }
+            .text-sm { font-size: 0.875rem !important; line-height: 1.25rem !important; }
+            .text-xs { font-size: 0.75rem !important; line-height: 1rem !important; }
             .flex { display: flex !important; }
             .justify-between { justify-content: space-between !important; }
             .items-center { align-items: center !important; }
             .items-end { align-items: flex-end !important; }
             .flex-col { flex-direction: column !important; }
             .gap-3 { gap: 0.75rem !important; }
+            .finz-logo { width: 24px; height: 24px; margin-right: 0.5rem; }
+            .report-title {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 1.5rem;
+              font-weight: 700;
+              margin-bottom: 1rem;
+              color: #1f2937;
+            }
+            .section-divider {
+              border: none;
+              border-top: 3px solid #e5e7eb;
+              margin: 0 0 2rem 0;
+              width: 100%;
+            }
             @media print {
               .no-print, footer, .footer-navigation { display: none !important; }
               .sticky { position: static !important; }
@@ -328,17 +347,16 @@ const exportToPDF = async () => {
         <body>
           <div class="pdf-container">
             <div class="report-title">
-              <img src="/src/assets/finz.png" alt="Finz Logo" class="finz-logo" />
               <span>AI 포트폴리오 분석리포트</span>
             </div>
             <div class="report-date" style="text-align: center; margin-bottom: 2rem; color: #6b7280; font-size: 0.875rem;">
               생성일: ${new Date().toLocaleDateString('ko-KR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })}
             </div>
-            <hr class="section-divider" style="border: none; border-top: 3px solid #e5e7eb; margin: 0 0 2rem 0; width: 100%;" />
+            <hr class="section-divider" />
             ${content}
           </div>
         </body>
