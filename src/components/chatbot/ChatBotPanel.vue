@@ -46,7 +46,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useChatStore } from '@/stores/counter.js'
-import ChatBox from '@/components/ChatBox.vue'
+import ChatBox from '@/components/chatbot/ChatBox.vue'
 
 const isOpen = ref(false)
 const chatStore = useChatStore()
