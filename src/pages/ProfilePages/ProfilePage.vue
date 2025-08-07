@@ -291,8 +291,15 @@ const updateHoldingsWithRealTimePrice = async (holdings) => {
 
 const goToAssetStatus = () => router.push('/mock-trading/asset-status')
 const goToTransactions = () => router.push('/mock-trading/transactions')
-const handleLogout = () => {
+const handleLogout = async () => {
+  try {
+    await axios.post('/api/auth/logout', {}, { withCredentials: true })
+  } catch (e) {
+    console.warn('서버 세션 종료 실패', e)
+  }
+
   userStore.clearUser()
+  localStorage.removeItem('user') //
   router.push('/login-form')
 }
 
