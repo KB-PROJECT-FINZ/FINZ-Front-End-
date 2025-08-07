@@ -73,7 +73,7 @@ const stocks = computed(() => {
     return analysisData.map(stock => ({
       name: stock.name || stock.ticker, // 백엔드에서 name 제공
       code: stock.ticker,
-      description: stock.reason,
+      description: stock.reason || '', // 마크다운 형식 유지
       riskLevel: stock.riskLevel || '중간',
       timingComment: stock.timingComment || '추가 분석 필요',
       futureOutlook: stock.futureOutlook || '추가 분석 필요'
@@ -139,7 +139,7 @@ const parseTextToStocks = (text) => {
         stocks.push({
           name: stock.name,
           code: stock.code,
-          description: relatedSentences,
+          description: addMarkdownFormatting(relatedSentences),
           riskLevel: extractRiskLevel(relatedSentences),
           timingComment: '텍스트 기반 분석으로 구체적인 타이밍 정보는 제공되지 않습니다.',
           futureOutlook: '추가적인 분석이 필요합니다.'
@@ -165,5 +165,25 @@ const extractRiskLevel = (text) => {
 const formatReason = (reason) => {
   if (!reason) return ''
   return reason.replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-600">$1</strong>')
+}
+
+// 텍스트에 마크다운 포맷팅 추가
+const addMarkdownFormatting = (text) => {
+  if (!text) return ''
+  
+  // 주요 키워드들을 **텍스트** 형식으로 변환
+  const keywords = [
+    'AI', '반도체', '투자', '성장', '매력', '기대', '개선', '확대',
+    '수익성', '안정적', '고성장', '혁신', '기술', '시장', '전망'
+  ]
+  
+  let formattedText = text
+  
+  keywords.forEach(keyword => {
+    const regex = new RegExp(`(${keyword})`, 'gi')
+    formattedText = formattedText.replace(regex, '**$1**')
+  })
+  
+  return formattedText
 }
 </script>
