@@ -841,11 +841,11 @@
                   {{
                     tradeResultIsFilled
                       ? tradeResultType === 'BUY'
-                        ? '구매 주문 체결 완료'
-                        : '판매 주문 체결 완료'
+                        ? '구매 체결 완료'
+                        : '판매 체결 완료'
                       : tradeResultType === 'BUY'
-                        ? '구매 주문 신청 완료'
-                        : '판매 주문 신청 완료'
+                        ? '구매 신청 완료'
+                        : '판매 신청 완료'
                   }}
                 </span>
               </template>
