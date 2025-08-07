@@ -17,7 +17,7 @@
 
     <!-- 인기 종목 Top10 -->
     <div class="mb-6">
-      <Top10StockList v-if="stocks && stocks.length" :stocks="stocks" :isRealtime="true" />
+      <Top10StockList v-if="stocks.length" :stocks="stocks" :isRealtime="true" />
     </div>
 
     <!-- 랭킹 날짜 및 내 성과 -->
@@ -100,15 +100,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user.js'
-
 import TabSwitcher from '@/components/ranking/TabSwitcher.vue'
 import MyRankingCard from '@/components/ranking/MyRankingCard.vue'
 import Top10StockList from '@/components/ranking/Top10StockList.vue'
 import UserRankingCard from '@/components/ranking/UserRankingCard.vue'
 import FooterNavigation from '@/components/FooterNavigation.vue'
-
 import {
   fetchMyRanking,
   fetchTop10Stocks,
@@ -118,24 +116,53 @@ import {
   getRankingWeekLabel,
 } from '@/services/rankingService'
 
-// 상태 정의
+const traitGroupToKor = {
+  AGGRESSIVE: '공격형',
+  BALANCED: '균형형',
+  CONSERVATIVE: '보수형',
+  ANALYTICAL: '특수형',
+  EMOTIONAL: '기타',
+}
+const originalTraitToGroup = {
+  '적극적 성장형': 'AGGRESSIVE',
+  '적극적 안정형': 'BALANCED',
+  '균형 잡힌 도전형': 'BALANCED',
+  '균형 잡힌 수익 추구형': 'BALANCED',
+  '신중한 성장형': 'CONSERVATIVE',
+  '신중한 안정형': 'CONSERVATIVE',
+  '단타 추구형': 'AGGRESSIVE',
+  '실험적 모험가형': 'AGGRESSIVE',
+  '인덱스 수동형': 'CONSERVATIVE',
+  '정보 수집형': 'ANALYTICAL',
+  '사회 책임형': 'EMOTIONAL',
+  '시스템 트레이더형': 'ANALYTICAL',
+  '기술적 분석형': 'ANALYTICAL',
+  '테마 투자형': 'AGGRESSIVE',
+  '가치 투자형': 'CONSERVATIVE',
+}
+
+const userStore = useUserStore()
+const userId = computed(() => userStore.userId)
 const userTraitType = ref(null)
 const myRanking = ref(null)
 const selectedBaseDate = ref('')
-
 const popularStocksRealtime = ref([])
 const popularStocksLastWeek = ref([])
-
 const allUsers = ref([])
 const visibleCount = ref(10)
-
 const mainRankingTabs = ['주간', '성향별']
 const currentRankingType = ref('주간')
-
 const traitTypes = ['보수형', '균형형', '공격형', '특수형', '기타']
 const currentTraitType = ref('')
 
-// computed
+const traitCodeMap = {
+  보수형: 'CONSERVATIVE',
+  균형형: 'BALANCED',
+  공격형: 'AGGRESSIVE',
+  특수형: 'ANALYTICAL',
+  기타: 'EMOTIONAL',
+}
+
 const stocks = computed(() =>
   popularStocksRealtime.value.length > 0
     ? popularStocksRealtime.value
@@ -150,39 +177,34 @@ const rankingDateRangeText = computed(() => {
 const filteredUsers = computed(() => allUsers.value)
 const limitedUsers = computed(() => filteredUsers.value.slice(0, visibleCount.value))
 
-// 로딩 함수들
 async function loadRankingByDate(baseDate) {
   selectedBaseDate.value = baseDate
   popularStocksLastWeek.value = await fetchTop10Stocks(baseDate)
 
-  allUsers.value = []
   if (currentRankingType.value === '주간') {
-    allUsers.value = await fetchWeeklyRanking(baseDate)
+    const users = await fetchWeeklyRanking(baseDate)
+    allUsers.value = users.map((user) => {
+      let traitCode = user.trait
+      if (!traitCode && user.originalTrait) {
+        traitCode = originalTraitToGroup[user.originalTrait] || 'EMOTIONAL'
+      }
+      const traitKor = traitGroupToKor[traitCode] || '기타'
+      return { ...user, trait: traitKor }
+    })
   } else {
     await loadGroupedRanking()
   }
-
   visibleCount.value = 10
 }
 
-const traitCodeMap = {
-  보수형: 'CONSERVATIVE',
-  균형형: 'BALANCED',
-  공격형: 'AGGRESSIVE',
-  특수형: 'ANALYTICAL',
-  기타: 'EMOTIONAL',
-}
-
 async function loadGroupedRanking() {
-  console.log('📌 loadGroupedRanking 호출, currentTraitType:', currentTraitType.value)
-
   const grouped = await fetchGroupedWeeklyRanking(selectedBaseDate.value)
-  console.log('📦 fetchGroupedWeeklyRanking 결과:', grouped)
-
   const groupKey = traitCodeMap[currentTraitType.value] || 'EMOTIONAL'
-  allUsers.value = grouped[groupKey] || []
-
-  console.log('👥 allUsers 설정 완료:', allUsers.value)
+  allUsers.value = (grouped[groupKey] || []).map((user) => {
+    const traitCode = user.trait || originalTraitToGroup[user.originalTrait] || 'EMOTIONAL'
+    const traitKor = traitGroupToKor[traitCode] || '기타'
+    return { ...user, trait: traitKor }
+  })
   visibleCount.value = 10
 }
 
@@ -200,25 +222,11 @@ async function selectTraitType(trait) {
   currentTraitType.value = trait
   await loadGroupedRanking()
 }
-onMounted(async () => {
-  const userStore = useUserStore()
-  const userId = userStore.userId
-  console.log('✅ userId:', userId)
 
-  if (!userId) {
-    console.warn('⚠️ userId가 없습니다. fetchMyRanking 호출을 건너뜁니다.')
-    return
-  }
-
+;(async () => {
   try {
-    const my = await fetchMyRanking(userId, null)
-    console.log('✅ fetchMyRanking:', my)
-
-    if (!my) {
-      console.warn('❌ myRanking이 없습니다.')
-      return
-    }
-
+    const my = await fetchMyRanking(userId.value, null)
+    if (!my) return
     selectedBaseDate.value = my.baseDate
     myRanking.value = my
     userTraitType.value = my.trait
@@ -226,75 +234,10 @@ onMounted(async () => {
     popularStocksRealtime.value = await fetchTop10StocksRealtime()
     popularStocksLastWeek.value = await fetchTop10Stocks(my.baseDate)
 
-    console.log('📊 realtime stocks:', popularStocksRealtime.value)
-    console.log('📊 last week stocks:', popularStocksLastWeek.value)
-
     await loadRankingByDate(my.baseDate)
-    console.log('🏆 전체 유저 랭킹:', allUsers.value)
-    // 1. onMounted 내 userTraitType 할당 직후 확인
-    console.log('userTraitType:', userTraitType.value)
     currentTraitType.value = userTraitType.value || traitTypes[0]
-    console.log('currentTraitType 초기값:', currentTraitType.value)
-
-    // 2. loadGroupedRanking 호출 직전/후
-    async function loadGroupedRanking() {
-      console.log('loadGroupedRanking 호출, currentTraitType:', currentTraitType.value)
-      const grouped = await fetchGroupedWeeklyRanking(selectedBaseDate.value)
-      console.log('fetchGroupedWeeklyRanking 결과:', grouped)
-      allUsers.value = grouped[currentTraitType.value] || []
-      console.log('allUsers 값:', allUsers.value)
-      visibleCount.value = 10
-    }
-
-    // 3. selectTraitType 함수 내
-    async function selectTraitType(trait) {
-      console.log('selectTraitType 호출:', trait)
-      currentTraitType.value = trait
-      await loadGroupedRanking()
-    }
   } catch (error) {
-    console.error('❌ fetchMyRanking 호출 중 에러:', error)
+    console.error('❌ 초기 데이터 로딩 에러:', error)
   }
-})
-
-// onMounted
-onMounted(async () => {
-  const userStore = useUserStore()
-  const userId = userStore.userId
-  console.log('✅ userId:', userId)
-
-  if (!userId) {
-    console.warn('⚠️ userId가 없습니다. fetchMyRanking 호출을 건너뜁니다.')
-    return
-  }
-
-  try {
-    const my = await fetchMyRanking(userId, null)
-    console.log('✅ fetchMyRanking:', my)
-
-    if (!my) {
-      console.warn('❌ myRanking이 없습니다.')
-      return
-    }
-
-    selectedBaseDate.value = my.baseDate
-    myRanking.value = my
-    userTraitType.value = my.trait
-
-    // currentTraitType 초기화
-    currentTraitType.value = userTraitType.value || traitTypes[0]
-    console.log('currentTraitType 초기값:', currentTraitType.value)
-
-    popularStocksRealtime.value = await fetchTop10StocksRealtime()
-    popularStocksLastWeek.value = await fetchTop10Stocks(my.baseDate)
-
-    console.log('📊 realtime stocks:', popularStocksRealtime.value)
-    console.log('📊 last week stocks:', popularStocksLastWeek.value)
-
-    await loadRankingByDate(my.baseDate)
-    console.log('🏆 전체 유저 랭킹:', allUsers.value)
-  } catch (error) {
-    console.error('❌ fetchMyRanking 호출 중 에러:', error)
-  }
-})
+})()
 </script>
