@@ -1873,7 +1873,7 @@ const cancelSelectedOrders = async () => {
     await loadPendings()
     await loadUserAccount()
     await loadHoldings()
-    // ✅ TradeResultModal 표시
+    // TradeResultModal 표시
     openTradeResultModal(
       'CANCEL',
       `${stockInfo.value.name} 주문 ${checkedOrders.length}건 취소 완료`,
