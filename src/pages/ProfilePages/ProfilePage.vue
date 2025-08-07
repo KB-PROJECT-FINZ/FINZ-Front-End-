@@ -1,9 +1,7 @@
 <template>
-  <div class="bg-[#f7f8fa] min-h-screen pb-16">
+  <div class="bg-white min-h-screen pb-16">
     <!-- 상단 헤더 -->
-    <header
-      class="flex items-center justify-between bg-white px-4 pt-4 pb-3 shadow-sm sticky top-0 z-10"
-    >
+    <header class="flex items-center justify-between bg-white px-4 pt-4 pb-3 sticky top-0 z-10">
       <div class="w-10"></div>
       <span class="text-lg font-bold text-gray-800">마이페이지</span>
       <img
@@ -15,27 +13,28 @@
     </header>
 
     <!-- 프로필 박스 -->
-    <section class="flex items-center bg-[#f3f6fb] rounded-2xl mx-4 my-5 px-5 py-6 shadow">
+    <section class="flex items-center bg-gray-50 rounded-2xl mx-4 my-5 px-5 py-6">
       <img
         v-if="profile.image"
-        class="w-[50px] h-[50px] rounded-full object-cover mr-4"
+        class="w-[60px] h-[60px] rounded-full object-cover mr-4"
         :src="profile.image"
         alt="프로필"
       />
       <div
         v-else
-        class="w-[50px] h-[50px] rounded-full bg-gray-200 flex items-center justify-center text-2xl text-gray-400 mr-4"
+        class="w-[60px] h-[60px] rounded-full bg-gray-200 flex items-center justify-center text-2xl text-gray-400 mr-4"
       >
         <span>👤</span>
       </div>
       <div class="flex-1">
         <div class="text-base font-bold text-gray-900">{{ profile.name }}</div>
         <div class="text-sm text-gray-500 my-1">{{ profile.type }}</div>
+
         <div class="flex gap-2 mt-1">
           <span class="bg-indigo-100 text-indigo-800 rounded px-3 py-0.5 text-xs mt-1 inline-block">
             Level {{ profile.level }}
           </span>
-          <span class="bg-yellow-100 text-yellow-800 rounded px-3 py-0.5 text-xs mt-1 inline-block">
+          <span class="bg-yellow-100 text-yellow-800 rounded px-3 py-1 text-xs mt-1 inline-block">
             {{ asset.amount }}크레딧
           </span>
         </div>
@@ -43,10 +42,10 @@
     </section>
 
     <!-- 모의투자 금액 카드 -->
-    <section class="bg-white rounded-xl mx-4 mb-5 px-5 py-5 shadow">
-      <div class="text-gray-500 text-sm mb-1">총 보유자산</div>
+    <section class="bg-white rounded-xl mx-4 mb-5 px-5 py-5 border border-gray-200">
+      <div class="text-gray-500 text-sm mb-2">총 보유자산</div>
 
-      <!-- 로딩 중일 때 스켈레톤 UI -->
+      <!-- 로딩 중일 때 -->
       <div v-if="!dataLoaded" class="flex items-center justify-between mb-1">
         <div class="w-32 h-8 bg-gray-200 rounded animate-pulse"></div>
         <button
@@ -57,41 +56,42 @@
         </button>
       </div>
 
-      <!-- 실제 데이터 -->
-      <div v-else class="flex items-center justify-between mb-1">
-        <span class="text-2xl font-bold text-gray-900">
+      <!-- 실제 자산 데이터 -->
+      <div v-else class="flex items-baseline gap-x-4 mb-4">
+        <span class="text-[28px] font-bold text-gray-900 leading-none">
           {{ calculatedTotalAssetValue.toLocaleString() }}원
         </span>
+        <span
+          :class="
+            calculatedProfitRate > 0
+              ? 'text-red-600'
+              : calculatedProfitRate < 0
+                ? 'text-blue-600'
+                : 'text-gray-600'
+          "
+          class="text-base font-medium leading-none"
+        >
+          {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
+        </span>
+      </div>
+
+      <!-- 버튼 정렬 및 너비 조정 -->
+      <div class="flex justify-center">
         <button
-          class="bg-blue-600 text-white rounded px-4 py-2 text-sm font-bold hover:bg-blue-800 transition"
+          class="bg-blue-600 text-white rounded px-6 py-2 text-sm font-semibold hover:bg-blue-800 transition"
+          style="width: 320px"
           @click="goToAssetStatus"
         >
           내 자산 현황 바로가기
         </button>
       </div>
-
-      <!-- 수익률 표시 -->
-      <div
-        v-if="dataLoaded"
-        :class="
-          calculatedProfitRate > 0
-            ? 'text-red-500'
-            : calculatedProfitRate < 0
-              ? 'text-blue-500'
-              : 'text-gray-500'
-        "
-        class="text-sm font-bold ml-1"
-      >
-        {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
-      </div>
-      <div v-else class="w-16 h-4 bg-gray-200 rounded animate-pulse ml-1"></div>
     </section>
 
     <!-- 메뉴 카드 -->
     <section class="flex flex-col gap-3 mx-4 mb-5">
       <router-link
         to="/journal"
-        class="flex items-center bg-white rounded-xl shadow px-4 py-4 hover:shadow-lg transition text-inherit no-underline"
+        class="flex items-center bg-white rounded-xl px-4 py-4 border border-gray-200 transition text-inherit no-underline"
       >
         <span class="text-xl mr-4">📒</span>
         <div class="flex-1 min-w-0">
@@ -102,7 +102,7 @@
       </router-link>
       <router-link
         to="/risk-profile"
-        class="flex items-center bg-white rounded-xl shadow px-4 py-4 hover:shadow-lg transition text-inherit no-underline"
+        class="flex items-center bg-white rounded-xl px-4 py-4 border border-gray-200 transition text-inherit no-underline"
       >
         <span class="text-xl mr-4">📝</span>
         <div class="flex-1 min-w-0">
@@ -114,17 +114,17 @@
     </section>
 
     <!-- 내 투자내역 카드 -->
-    <section class="bg-white rounded-xl mx-4 mb-5 shadow overflow-hidden">
+    <section class="bg-white rounded-xl mx-4 mb-5 overflow-hidden">
       <div class="flex items-center justify-between bg-gray-50 px-5 py-4 border-b border-gray-200">
         <div class="text-base font-bold text-gray-900">내 투자내역</div>
         <button
-          class="bg-blue-600 text-white rounded px-4 py-2 text-sm font-bold hover:bg-blue-800 transition"
+          class="bg-white text-black border border-gray-300 rounded px-3 py-1 text-sm font-medium hover:bg-gray-100 transition"
           @click="goToTransactions"
         >
           최근 투자 내역 바로가기
         </button>
       </div>
-      <div class="px-5 py-4">
+      <div class="px-4 py-4">
         <!-- 매수 내역 -->
         <div class="mb-4">
           <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
@@ -134,6 +134,25 @@
               :key="`buy-${index}`"
               class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-red-600 hover:shadow-md transition"
             >
+              <!-- 종목 이미지 or 이니셜 -->
+              <div
+                class="w-10 h-10 rounded-full overflow-hidden mr-3 flex items-center justify-center bg-gray-100 flex-shrink-0"
+              >
+                <img
+                  v-if="item.imageUrl && !imageErrors[item.stockCode]"
+                  :src="item.imageUrl"
+                  alt="종목 이미지"
+                  class="w-full h-full object-cover rounded-full"
+                  @error="handleImageError(item.stockCode)"
+                />
+                <span
+                  v-else
+                  class="text-xs font-bold border text-center w-full h-full flex items-center justify-center rounded-full"
+                  style="border-color: #2272eb; color: #2272eb; background: #fff"
+                >
+                  {{ getStockInitial(item.name) }}
+                </span>
+              </div>
               <div class="flex flex-col flex-1">
                 <div class="text-sm font-bold text-gray-900 mb-0.5">{{ item.name }}</div>
                 <div class="text-xs text-gray-500">{{ item.desc }}</div>
@@ -146,6 +165,7 @@
             </div>
           </div>
         </div>
+
         <!-- 매도 내역 -->
         <div>
           <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
@@ -155,6 +175,25 @@
               :key="`sell-${index}`"
               class="flex items-center justify-between bg-white rounded-lg px-3 py-3 shadow border-l-4 border-blue-600 hover:shadow-md transition"
             >
+              <!-- 종목 이미지 or 이니셜 -->
+              <div
+                class="w-10 h-10 rounded-full overflow-hidden mr-3 flex items-center justify-center bg-gray-100 flex-shrink-0"
+              >
+                <img
+                  v-if="item.imageUrl && !imageErrors[item.stockCode]"
+                  :src="item.imageUrl"
+                  alt="종목 이미지"
+                  class="w-full h-full object-cover rounded-full"
+                  @error="handleImageError(item.stockCode)"
+                />
+                <span
+                  v-else
+                  class="text-xs font-bold border text-center w-full h-full flex items-center justify-center rounded-full"
+                  style="border-color: #2272eb; color: #2272eb; background: #fff"
+                >
+                  {{ getStockInitial(item.name) }}
+                </span>
+              </div>
               <div class="flex flex-col flex-1">
                 <div class="text-sm font-bold text-gray-900 mb-0.5">{{ item.name }}</div>
                 <div class="text-xs text-gray-500">{{ item.desc }}</div>
@@ -184,6 +223,7 @@ import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const userStore = useUserStore()
+const imageErrors = ref({})
 
 const profile = ref({ image: '', name: '', type: '', level: 3 })
 const asset = ref({ amount: 0 })
@@ -251,8 +291,15 @@ const updateHoldingsWithRealTimePrice = async (holdings) => {
 
 const goToAssetStatus = () => router.push('/mock-trading/asset-status')
 const goToTransactions = () => router.push('/mock-trading/transactions')
-const handleLogout = () => {
+const handleLogout = async () => {
+  try {
+    await axios.post('/api/auth/logout', {}, { withCredentials: true })
+  } catch (e) {
+    console.warn('서버 세션 종료 실패', e)
+  }
+
   userStore.clearUser()
+  localStorage.removeItem('user') //
   router.push('/login-form')
 }
 
@@ -302,6 +349,8 @@ onMounted(async () => {
         name: tx.stockName,
         desc: `매수 ${tx.quantity}주`,
         amount: tx.totalAmount,
+        stockCode: tx.stockCode,
+        imageUrl: tx.imageUrl,
       }
     })
     sellHistory.value = sellTx.slice(0, 2).map((tx) => {
@@ -309,6 +358,8 @@ onMounted(async () => {
         name: tx.stockName,
         desc: `매도 ${tx.quantity}주`,
         amount: tx.totalAmount,
+        stockCode: tx.stockCode,
+        imageUrl: tx.imageUrl,
       }
     })
 
