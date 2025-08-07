@@ -875,7 +875,7 @@ import axios from 'axios'
 const route = useRoute()
 const router = useRouter()
 
-// 종목 코드 (초기값: 삼성전자, 실제 값은 route.query에서 받아옴)
+// 종목 코드 (실제 값은 route.query에서 받아옴)
 let STOCK_CODE = ''
 
 // 로딩 상태
