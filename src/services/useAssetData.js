@@ -82,6 +82,10 @@ export function useAssetDataStore() {
     return Number(((totalProfitLoss.value / totalInvestment.value) * 100).toFixed(2))
   })
 
+  const calculatedTotalAssetValue = computed(() => {
+    return safeNumber(userAccount.value.currentBalance, 0) + stockValue.value
+  })
+
   const portfolioPercentages = computed(() => {
     if (!dataLoaded.value) {
       return {
@@ -333,6 +337,7 @@ export function useAssetDataStore() {
     totalInvestment,
     totalProfitLoss,
     calculatedProfitRate,
+    calculatedTotalAssetValue,
     portfolioPercentages,
 
     // 메서드
