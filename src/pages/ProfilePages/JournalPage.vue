@@ -85,7 +85,7 @@
 
   <router-link :to="{ path: '/journalwrite', query: { journalDate: selectedDate } }">
     <button
-      class="write-btn fixed bottom-24 right-5 w-14 h-14 rounded-full bg-indigo-500 text-white text-3xl border-none shadow-lg cursor-pointer z-10 md:bottom-24 md:right-5 sm:bottom-20 sm:right-3 sm:w-12 sm:h-12 sm:text-2xl"
+      class="write-btn absolute bottom-30 right-2 w-15 h-15 rounded-full bg-indigo-500 text-white text-3xl border-none shadow-lg cursor-pointer z-10 sm:bottom-20 sm:right-4 sm:w-12 sm:h-12 sm:text-2xl"
       @click="goToWrite"
     >
       ＋
