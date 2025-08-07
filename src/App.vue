@@ -4,6 +4,9 @@
       <router-view v-slot="{ Component }">
         <component :is="Component" />
       </router-view>
+      
+      <!-- 챗봇 패널 (전역에서 사용 가능) -->
+      <ChatBotPanel />
     </div>
   </div>
 </template>
@@ -11,8 +14,12 @@
 import axios from 'axios'
 import { onMounted } from 'vue'
 import { useUserStore } from './stores/user'
+import ChatBotPanel from './components/ChatBotPanel.vue'
 
 export default {
+  components: {
+    ChatBotPanel
+  },
   setup() {
     onMounted(async () => {
       const userStore = useUserStore()

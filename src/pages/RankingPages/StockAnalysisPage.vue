@@ -90,7 +90,6 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-
 import { useUserStore } from '@/stores/user'
 
 import TabSwitcher from '@/components/ranking/TabSwitcher.vue'
@@ -106,21 +105,26 @@ import {
   fetchPopularStocksByTrait,
 } from '@/services/rankingService'
 
-const hasInvestmentData = computed(() => {
-  return traitStocks.value.length > 0 || myStocks.value.length > 0 || popularStocks.value.length > 0
-})
-
+// Pinia store
 const userStore = useUserStore()
+
+// 유저 ID 반응형 참조
+const userId = computed(() => userStore.userId)
+console.log('🚩🚩 userId:', userId.value)
+
+// 데이터 상태
 const traitStocks = ref([])
 const myStocks = ref([])
 const popularStocks = ref([])
 
+// 수익률 분포 더보기
 const visibleMyStockCount = ref(3)
 const displayedMyStocks = computed(() => myStocks.value.slice(0, visibleMyStockCount.value))
 function loadMoreMyStocks() {
   visibleMyStockCount.value += 3
 }
 
+// 인기 종목 더보기
 const visiblePopularCount = ref(5)
 const displayedPopularStocks = computed(() =>
   popularStocks.value.slice(0, visiblePopularCount.value),
@@ -129,6 +133,12 @@ function loadMorePopular() {
   visiblePopularCount.value += 5
 }
 
+// 투자 데이터 유무 판단
+const hasInvestmentData = computed(() => {
+  return traitStocks.value.length > 0 || myStocks.value.length > 0 || popularStocks.value.length > 0
+})
+
+// 성향 비율 추출
 function getTraitRatio(stock) {
   return {
     보수형: stock.traitRatio?.보수형 ?? 0,
@@ -138,11 +148,12 @@ function getTraitRatio(stock) {
   }
 }
 
+// 분석 데이터 비동기 호출
 async function fetchAnalysisData() {
-  const userId = userStore.userId
+  const uid = userStore.userId
   let traitGroup = userStore.riskType || userStore.traitGroup
 
-  if (!userId) {
+  if (!uid) {
     console.error('[ERROR] userId 없음! Pinia에 유저 정보가 아직 세팅되지 않았을 수 있음')
     return
   }
@@ -152,16 +163,18 @@ async function fetchAnalysisData() {
     console.warn('[WARN] traitGroup 없음 → localStorage fallback:', traitGroup)
   }
 
+  // 특수 케이스 보정
   if (traitGroup === 'ANALYTICAL' || traitGroup === 'EMOTIONAL') {
     traitGroup = 'SPECIAL'
   }
 
   try {
     const [traitRes, myRes, popRes] = await Promise.all([
-      fetchTraitStockAnalysis(userId),
-      fetchMyStockDistribution(userId),
+      fetchTraitStockAnalysis(uid),
+      fetchMyStockDistribution(uid),
       fetchPopularStocksByTrait(traitGroup),
     ])
+    console.log('✅ 분석 API 결과:', { traitRes, myRes, popRes }) // <-- 이 로그 꼭 넣기
     traitStocks.value = traitRes
     myStocks.value = myRes
     popularStocks.value = popRes
@@ -170,11 +183,14 @@ async function fetchAnalysisData() {
   }
 }
 
-// ✅ Pinia가 준비될 때까지 기다림
+// ✅ userId가 존재할 때만 fetchAnalysisData 실행 (초기 mount 시점 포함)
 watch(
   () => userStore.userId,
-  (newVal) => {
-    if (newVal) fetchAnalysisData()
+  (newUserId) => {
+    if (newUserId) {
+      console.log('✅ userId 감지됨:', newUserId)
+      fetchAnalysisData()
+    }
   },
   { immediate: true },
 )
