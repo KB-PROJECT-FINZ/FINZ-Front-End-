@@ -46,6 +46,12 @@
           <div class="flex-1">
             <!-- 일반 메시지 -->
             <div v-if="!msg.type" class="bg-gray-100 rounded-2xl p-4 max-w-xs">
+              <p
+                v-if="msg.requestedPeriod && msg.intentType === 'PORTFOLIO_ANALYZE'"
+                class="text-xs text-gray-500 mb-1"
+              >
+                📅 사용자 지정 분석 기간: {{ msg.requestedPeriod }}일
+              </p>
               <p>{{ msg.content }}</p>
             </div>
 
@@ -180,7 +186,13 @@ async function fetchGPT(prompt, explicitIntent = null) {
     })
 
     if (res?.data?.content) {
-      chatStore.messages.push({ role: 'bot', content: res.data.content })
+      chatStore.messages.push({
+        role: 'bot',
+        content: res.data.content,
+        requestedPeriod: res.data.requestedPeriod,
+        intentType: res.data.intentType,
+      })
+      console.log('📦 requestedPeriod in response:', res.data.requestedPeriod)
 
       if (intentType === 'PORTFOLIO_ANALYZE') {
         chatStore.messages.push({
@@ -196,6 +208,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
 
       chatStore.sessionId = res.data.sessionId
       chatStore.intentType = res.data.intentType
+      console.log('📦 응답 전체:', res.data)
     } else {
       chatStore.messages.push({ role: 'bot', content: '❌ GPT 응답이 비어 있습니다.' })
     }
