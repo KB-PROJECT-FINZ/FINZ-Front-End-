@@ -12,7 +12,7 @@
           <div v-else class="w-1.5 h-1.5 bg-gray-500 rounded-full"></div>
         </button>
       </div>
-      
+
       <!-- 버튼 그리드 -->
       <div v-show="showButtons && !hasSubButtons" class="grid grid-cols-2 gap-2">
         <button
@@ -59,7 +59,7 @@
       <!-- 챗봇 아바타와 인사말 (첫 로드 시) -->
       <div v-if="chatStore.messages.length === 0" class="flex items-start space-x-4">
         <div
-          class="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg"
+          class="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg border-2 border-blue-200"
         >
           <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
         </div>
@@ -89,10 +89,11 @@
         <!-- 봇 메시지 -->
         <template v-else>
           <div
-            class="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg"
+            class="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg border-2 border-blue-200"
           >
             <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
           </div>
+
           <div class="flex-1 max-w-xs">
             <!-- 용어 설명 카드 -->
             <div v-if="isTermExplanationResponse(msg.content)">
@@ -104,11 +105,17 @@
               <StockRecommendationCards :content="msg.content" />
             </div>
 
-            <!-- 일반 메시지 -->
+            <!-- 일반 메시지 (PORTFOLIO_ANALYZE 등 포함) -->
             <div
               v-else-if="!msg.type"
               class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30"
             >
+              <p
+                v-if="msg.requestedPeriod && msg.intentType === 'PORTFOLIO_ANALYZE'"
+                class="text-xs text-gray-500 mb-1"
+              >
+                📅 사용자 지정 분석 기간: {{ msg.requestedPeriod }}일
+              </p>
               <p class="text-gray-800">{{ msg.content }}</p>
             </div>
 
@@ -143,7 +150,7 @@
       <!-- 로딩 메시지 (마지막에 표시) -->
       <div v-if="loading" class="flex items-start space-x-4">
         <div
-          class="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg"
+          class="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg border-2 border-blue-200"
         >
           <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
         </div>
@@ -205,7 +212,6 @@ import PortfolioIcon from '../icons/PortfolioIcon.vue'
 import ProfileIcon from '../icons/ProfileIcon.vue'
 import KeywordIcon from '../icons/KeywordIcon.vue'
 import BackIcon from '../icons/BackIcon.vue'
-import FeedbackIcon from '../icons/FeedbackIcon.vue'
 import ExternalLinkIcon from '../icons/ExternalLinkIcon.vue'
 
 const chatStore = useChatStore()
@@ -222,15 +228,17 @@ const showButtons = ref(true)
 
 // 하위 버튼이 있는지 감지
 const hasSubButtons = computed(() => {
-  return chatStore.messages.some(msg => 
-    msg.type === 'buttons' && 
-    msg.buttons && 
-    msg.buttons.some(btn => 
-      btn.intent === 'RECOMMEND_PROFILE' || 
-      btn.intent === 'RECOMMEND_KEYWORD' || 
-      btn.intent === 'RECOMMEND_SELECT' ||
-      btn.intent === 'BACK_TO_MAIN'
-    )
+  return chatStore.messages.some(
+    (msg) =>
+      msg.type === 'buttons' &&
+      msg.buttons &&
+      msg.buttons.some(
+        (btn) =>
+          btn.intent === 'RECOMMEND_PROFILE' ||
+          btn.intent === 'RECOMMEND_KEYWORD' ||
+          btn.intent === 'RECOMMEND_SELECT' ||
+          btn.intent === 'BACK_TO_MAIN',
+      ),
   )
 })
 
@@ -310,8 +318,6 @@ const getButtonIcon = (intent) => {
   }
 }
 
-
-
 // 버튼 토글 함수
 const toggleButtons = () => {
   showButtons.value = !showButtons.value
@@ -342,11 +348,14 @@ watch(loading, (newLoading) => {
 })
 
 // 대화 시작 시 버튼들 자동 숨김
-watch(() => chatStore.messages.length, (newLength, oldLength) => {
-  if (newLength > oldLength && oldLength === 0) {
-    showButtons.value = false
-  }
-})
+watch(
+  () => chatStore.messages.length,
+  (newLength, oldLength) => {
+    if (newLength > oldLength && oldLength === 0) {
+      showButtons.value = false
+    }
+  },
+)
 
 onMounted(async () => {
   if (!userStore.userId) {
@@ -359,7 +368,6 @@ onMounted(async () => {
         riskType: res.data.riskType,
       })
       chatStore.setUserId(res.data.userId)
-
       console.log('✅ 사용자 정보 동기화 완료:', userStore.$state)
     } catch (err) {
       console.error('❌ 사용자 정보 조회 실패:', err)
@@ -370,7 +378,6 @@ onMounted(async () => {
 async function fetchGPT(prompt, explicitIntent = null) {
   loading.value = true
   chatStore.messages.push({ role: 'user', content: prompt })
-
   console.log('📤 서버로 보낼 userId:', userId.value)
 
   let intentType = null
@@ -399,9 +406,29 @@ async function fetchGPT(prompt, explicitIntent = null) {
     })
 
     if (res?.data?.content) {
-      chatStore.messages.push({ role: 'bot', content: res.data.content })
+      chatStore.messages.push({
+        role: 'bot',
+        content: res.data.content,
+        requestedPeriod: res.data.requestedPeriod,
+        intentType: res.data.intentType,
+      })
+      console.log('📦 requestedPeriod in response:', res.data.requestedPeriod)
+
+      if (intentType === 'PORTFOLIO_ANALYZE') {
+        chatStore.messages.push({
+          role: 'bot',
+          type: 'buttons',
+          text: '🧠 분석이 완료되었습니다.\n다시 분석해보시겠어요?',
+          buttons: [
+            { label: '🔁 다시 분석하기', intent: 'REANALYZE_OPTIONS' },
+            { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
+          ],
+        })
+      }
+
       chatStore.sessionId = res.data.sessionId
       chatStore.intentType = res.data.intentType
+      console.log('📦 응답 전체:', res.data)
     } else {
       chatStore.messages.push({ role: 'bot', content: '❌ GPT 응답이 비어 있습니다.' })
     }
@@ -422,8 +449,6 @@ function submit() {
   if (awaitingKeyword.value) explicitIntent = 'RECOMMEND_KEYWORD'
   else if (awaitingStockAnalyze.value) explicitIntent = 'STOCK_ANALYZE'
   else if (awaitingTermExplain.value) explicitIntent = 'TERM_EXPLAIN'
-
-  console.log('📥 submit 시 intent:', explicitIntent)
 
   fetchGPT(text, explicitIntent)
   input.value = ''
@@ -477,7 +502,6 @@ async function handleButtonIntent(btn) {
       })
       return
     }
-
     const risk = userStore.riskType
     if (!risk) {
       chatStore.messages.push({
@@ -486,7 +510,6 @@ async function handleButtonIntent(btn) {
       })
       return
     }
-
     const message = `나의 투자 성향인 ${risk}에 맞는 종목을 추천해줘`
     await fetchGPT(message, btn.intent)
     return
@@ -516,7 +539,7 @@ async function handleButtonIntent(btn) {
 
   if (btn.intent === 'PORTFOLIO_ANALYZE') {
     if (!btn.message) {
-      console.log('⚠️ PORTFOLIO_ANALYZE 초기 안내 단계')
+      console.log('⚠️ PORTFOLIO_ANALYZE 초기 안내 단계') // ← 여기는 안내만
       chatStore.messages.push({
         role: 'bot',
         type: 'buttons',
@@ -533,11 +556,39 @@ async function handleButtonIntent(btn) {
       return
     }
     console.log('🚀 피드백 요청 버튼 클릭됨', btn)
+    // 🔥 여기서 메시지가 없으면 보내지지 않음 → 방어 코드 추가
     const message = btn.message ?? '내 포트폴리오 피드백 줘'
-    await chatStore.sendMessage(message, btn.intent, chatStore.userId)
+    await fetchGPT(message, btn.intent) // ✅ 변경됨
     return
   }
 
+  if (btn.intent === 'REANALYZE_OPTIONS') {
+    chatStore.clearMessages()
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '📆 다시 분석할 기간을 선택해주세요:',
+      buttons: [
+        {
+          label: '📅 1개월',
+          intent: 'PORTFOLIO_ANALYZE',
+          message: '최근 1개월간의 포트폴리오 피드백 줘',
+        },
+        {
+          label: '🗓 3개월',
+          intent: 'PORTFOLIO_ANALYZE',
+          message: '최근 3개월간의 포트폴리오 피드백 줘',
+        },
+        {
+          label: '📈 6개월',
+          intent: 'PORTFOLIO_ANALYZE',
+          message: '최근 6개월간의 포트폴리오 피드백 줘',
+        },
+        { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
+      ],
+    })
+    return
+  }
   if (btn.intent === 'TERM_EXPLAIN') {
     awaitingTermExplain.value = true
     chatStore.messages.push({

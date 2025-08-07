@@ -101,6 +101,7 @@ const getRecommendationType = () => {
   return '주식 추천'
 }
 
+
 // reason 텍스트에서 종목 이름 추출
 const extractStockName = (reason) => {
   if (!reason) return ''
