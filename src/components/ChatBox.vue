@@ -9,7 +9,9 @@
         </div>
         <div class="flex-1">
           <div class="bg-gray-100 rounded-2xl p-4 max-w-xs">
-            <p class="font-semibold text-gray-800">안녕하세요 {{ userStore.name || '사용자' }}님!</p>
+            <p class="font-semibold text-gray-800">
+              안녕하세요 {{ userStore.name || '사용자' }}님!
+            </p>
             <p class="text-gray-600 text-sm mt-1">무엇을 도와드릴까요?</p>
           </div>
         </div>
@@ -69,7 +71,9 @@
     </div>
 
     <!-- 입력창 -->
-    <div class="border-t border-gray-200 p-4 bg-white fixed bottom-2 left-0 right-0 max-w-[430px] mx-auto">
+    <div
+      class="border-t border-gray-200 p-4 bg-white fixed bottom-2 left-0 right-0 max-w-[430px] mx-auto"
+    >
       <form @submit.prevent="submit" class="flex gap-2">
         <input
           v-model="input"
@@ -107,7 +111,6 @@ const awaitingKeyword = ref(false)
 const awaitingStockAnalyze = ref(false)
 const awaitingTermExplain = ref(false)
 
-// ✅ intent 상태 초기화 함수
 function resetAwaitingState() {
   awaitingKeyword.value = false
   awaitingStockAnalyze.value = false
@@ -125,7 +128,6 @@ onMounted(async () => {
         riskType: res.data.riskType,
       })
       chatStore.setUserId(res.data.userId)
-
       console.log('✅ 사용자 정보 동기화 완료:', userStore.$state)
     } catch (err) {
       console.error('❌ 사용자 정보 조회 실패:', err)
@@ -149,7 +151,6 @@ onMounted(async () => {
 async function fetchGPT(prompt, explicitIntent = null) {
   loading.value = true
   chatStore.messages.push({ role: 'user', content: prompt })
-
   console.log('📤 서버로 보낼 userId:', userId.value)
 
   let intentType = null
@@ -180,6 +181,19 @@ async function fetchGPT(prompt, explicitIntent = null) {
 
     if (res?.data?.content) {
       chatStore.messages.push({ role: 'bot', content: res.data.content })
+
+      if (intentType === 'PORTFOLIO_ANALYZE') {
+        chatStore.messages.push({
+          role: 'bot',
+          type: 'buttons',
+          text: '🧠 분석이 완료되었습니다.\n다시 분석해보시겠어요?',
+          buttons: [
+            { label: '🔁 다시 분석하기', intent: 'REANALYZE_OPTIONS' },
+            { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
+          ],
+        })
+      }
+
       chatStore.sessionId = res.data.sessionId
       chatStore.intentType = res.data.intentType
     } else {
@@ -188,7 +202,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
   } catch (error) {
     console.log(userId)
     chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
-    console.error('❌ GPT fetch 실패:', error)
+    console.error('❌ GPT fetch 실패:', err)
   } finally {
     loading.value = false
   }
@@ -203,15 +217,12 @@ function submit() {
   else if (awaitingStockAnalyze.value) explicitIntent = 'STOCK_ANALYZE'
   else if (awaitingTermExplain.value) explicitIntent = 'TERM_EXPLAIN'
 
-  console.log('📥 submit 시 intent:', explicitIntent)
-
   fetchGPT(text, explicitIntent)
   input.value = ''
 }
 
 async function handleButtonIntent(btn) {
-  console.log('👆 버튼 클릭됨:', btn) // 이게 콘솔에 안 찍히면 렌더링 문제
-
+  console.log('👆 버튼 클릭됨:', btn)
   resetAwaitingState()
 
   if (btn.intent === 'EXTERNAL_LINK' && btn.href) {
@@ -257,7 +268,6 @@ async function handleButtonIntent(btn) {
       })
       return
     }
-
     const risk = userStore.riskType
     if (!risk) {
       chatStore.messages.push({
@@ -266,7 +276,6 @@ async function handleButtonIntent(btn) {
       })
       return
     }
-
     const message = `나의 투자 성향인 ${risk}에 맞는 종목을 추천해줘`
     await fetchGPT(message, btn.intent)
     return
@@ -298,7 +307,6 @@ async function handleButtonIntent(btn) {
 
   if (btn.intent === 'PORTFOLIO_ANALYZE') {
     if (!btn.message) {
-      console.log('⚠️ PORTFOLIO_ANALYZE 초기 안내 단계') // ← 여기는 안내만
       chatStore.clearMessages()
       chatStore.messages.push({
         role: 'bot',
@@ -315,12 +323,39 @@ async function handleButtonIntent(btn) {
       })
       return
     }
-    console.log('🚀 피드백 요청 버튼 클릭됨', btn)
-    // 🔥 여기서 메시지가 없으면 보내지지 않음 → 방어 코드 추가
     const message = btn.message ?? '내 포트폴리오 피드백 줘'
-    await chatStore.sendMessage(message, btn.intent, chatStore.userId)
+    await fetchGPT(message, btn.intent) // ✅ 변경됨
     return
   }
+
+  if (btn.intent === 'REANALYZE_OPTIONS') {
+    chatStore.clearMessages()
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '📆 다시 분석할 기간을 선택해주세요:',
+      buttons: [
+        {
+          label: '📅 1개월',
+          intent: 'PORTFOLIO_ANALYZE',
+          message: '최근 1개월간의 포트폴리오 피드백 줘',
+        },
+        {
+          label: '🗓 3개월',
+          intent: 'PORTFOLIO_ANALYZE',
+          message: '최근 3개월간의 포트폴리오 피드백 줘',
+        },
+        {
+          label: '📈 6개월',
+          intent: 'PORTFOLIO_ANALYZE',
+          message: '최근 6개월간의 포트폴리오 피드백 줘',
+        },
+        { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
+      ],
+    })
+    return
+  }
+
   if (btn.intent === 'TERM_EXPLAIN') {
     awaitingTermExplain.value = true
     chatStore.clearMessages()
@@ -349,7 +384,7 @@ async function handleButtonIntent(btn) {
   }
 
   loading.value = true
-  await chatStore.sendMessage(btn.message, btn.intent)
+  await fetchGPT(btn.message, btn.intent) // ✅ 여기서도 fetchGPT 사용
   loading.value = false
 }
 </script>
