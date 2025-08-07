@@ -49,13 +49,10 @@
               :key="idx"
               :class="[
                 'px-2 py-0.5 rounded-full text-xs font-medium shadow-sm',
-                t.transactionType === 'BUY'
-                  ? 'bg-red-200 text-red-800'
-                  : 'bg-blue-200 text-blue-800',
+                t.type === 'BUY' ? 'bg-red-200 text-red-800' : 'bg-blue-200 text-blue-800',
               ]"
             >
-              {{ t.transactionType === 'BUY' ? '매수' : '매도' }} {{ t.stockName }}
-              {{ t.quantity }}주
+              {{ t.type === 'BUY' ? '매수' : '매도' }} {{ t.stockName }} {{ t.quantity }}주
             </div>
           </div>
         </div>
@@ -104,7 +101,9 @@ import { useRouter } from 'vue-router'
 import { Calendar } from 'v-calendar'
 import SuccessModal from '@/components/SuccessModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
-import { fetchJournals, fetchTransactions, deleteJournalById } from '@/services/journal.js'
+import { fetchJournals, deleteJournalById } from '@/services/journal.js'
+import { useTransactionsData } from '@/services/useTranscationsData.js'
+const { transactionsData, fetchTransactions } = useTransactionsData()
 
 const router = useRouter()
 
@@ -119,8 +118,9 @@ const targetJournalId = ref(null)
 
 onMounted(async () => {
   try {
+    await fetchTransactions()
+    transactions.value = transactionsData.value
     journals.value = await fetchJournals()
-    transactions.value = await fetchTransactions()
   } catch (err) {
     console.error('❌ 데이터 로딩 실패:', err)
   }
@@ -151,7 +151,15 @@ const selectedDateJournals = computed(() =>
 )
 
 function getTransactionsForDate(date) {
-  return transactions.value.filter((t) => t.executedAt?.slice(0, 10) === date)
+  return transactions.value.filter((t) => {
+    if (!t.executedAt) return false
+    const localDate = new Date(t.executedAt)
+    const yyyy = localDate.getFullYear()
+    const mm = String(localDate.getMonth() + 1).padStart(2, '0')
+    const dd = String(localDate.getDate()).padStart(2, '0')
+    const formattedDate = `${yyyy}-${mm}-${dd}`
+    return formattedDate === date
+  })
 }
 
 function onDayClick(day) {

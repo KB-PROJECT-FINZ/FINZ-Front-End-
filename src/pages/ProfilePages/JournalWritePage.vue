@@ -17,10 +17,10 @@
           :key="index"
           :class="[
             'px-3 py-1 rounded-full text-sm font-medium shadow-sm',
-            t.transactionType === 'BUY' ? 'bg-red-200 text-red-800' : 'bg-blue-200 text-blue-800',
+            t.type === 'BUY' ? 'bg-red-200 text-red-800' : 'bg-blue-200 text-blue-800',
           ]"
         >
-          {{ t.transactionType === 'BUY' ? '매수' : '매도' }} {{ t.stockName }} {{ t.quantity }}주
+          {{ t.type === 'BUY' ? '매수' : '매도' }} {{ t.stockName }} {{ t.quantity }}주
         </div>
       </div>
     </div>
@@ -65,28 +65,20 @@
   </div>
   <SuccessModal :message="successMessage" :visible="showSuccess" />
 </template>
-
 <script setup>
-import axios from 'axios'
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { computed } from 'vue'
 import SuccessModal from '@/components/SuccessModal.vue'
 import { createJournal, updateJournal } from '@/services/journal.js'
+import { useTransactionsData } from '@/services/useTranscationsData.js'
 
-const formattedDateTitle = computed(() => {
-  if (!form.value.journalDate) return '오늘'
-  const [year, month, day] = form.value.journalDate.split('-')
-  return `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`
-})
-const transactions = ref([])
+const { transactionsData, fetchTransactions } = useTransactionsData()
+
 const route = useRoute()
 const router = useRouter()
 const showSuccess = ref(false)
 const successMessage = ref('저장')
-function goBack() {
-  router.back()
-}
+
 const form = ref({
   emotion: '',
   reason: '',
@@ -94,11 +86,23 @@ const form = ref({
   journalDate: '',
   userId: null,
 })
+
+const formattedDateTitle = computed(() => {
+  if (!form.value.journalDate) return '오늘'
+  const [year, month, day] = form.value.journalDate.split('-')
+  return `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`
+})
+
 const matchedTransactions = computed(() => {
   if (!form.value.journalDate) return []
-  return transactions.value.filter((t) => {
-    const dateOnly = t.executedAt?.slice(0, 10)
-    return dateOnly === form.value.journalDate
+  return transactionsData.value.filter((t) => {
+    if (!t.executedAt) return false
+    const date = new Date(t.executedAt)
+    const yyyy = date.getFullYear()
+    const mm = String(date.getMonth() + 1).padStart(2, '0')
+    const dd = String(date.getDate()).padStart(2, '0')
+    const formatted = `${yyyy}-${mm}-${dd}`
+    return formatted === form.value.journalDate
   })
 })
 
@@ -107,28 +111,22 @@ function getTodayDate() {
   const yyyy = today.getFullYear()
   const mm = String(today.getMonth() + 1).padStart(2, '0')
   const dd = String(today.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}` // 'YYYY-MM-DD'
+  return `${yyyy}-${mm}-${dd}`
 }
 
 onMounted(async () => {
   if (route.query.emotion) form.value.emotion = route.query.emotion
   if (route.query.reason) form.value.reason = route.query.reason
   if (route.query.mistake) form.value.mistake = route.query.mistake
-  if (route.query.journalDate) {
-    form.value.journalDate = route.query.journalDate
-  } else {
-    form.value.journalDate = getTodayDate()
-  }
-  // 거래 내역 불러오기
+  form.value.journalDate = route.query.journalDate || getTodayDate()
+
   try {
-    const response = await axios.get('/api/trading/transactions', {
-      withCredentials: true,
-    })
-    transactions.value = response.data
+    await fetchTransactions()
   } catch (error) {
-    console.error('❌ 거래 내역 불러오기 실패:', error)
+    console.error('❌ 거래내역 불러오기 실패:', error)
   }
 })
+
 async function submitJournal() {
   try {
     if (route.query.id) {
@@ -148,5 +146,9 @@ async function submitJournal() {
     alert('실패했습니다.')
     router.push('/journal')
   }
+}
+
+function goBack() {
+  router.back()
 }
 </script>
