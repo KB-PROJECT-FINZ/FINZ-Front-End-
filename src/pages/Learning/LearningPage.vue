@@ -8,7 +8,8 @@
     </header>
     <div class="px-4 py-6 pb-20">
       <!-- 사용자 맞춤 추천 타이틀 -->
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ user.name }}님을 위한</h2>
+      <!-- <h2 class="text-lg font-semibold text-indigo-900 mb-4">{{ user.name }}님</h2> -->
+
       <!-- 추천 학습 콘텐츠 -->
       <div class="mb-8">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">추천 학습 콘텐츠</h2>
@@ -20,7 +21,7 @@
         </div>
         <div v-else class="space-y-3">
           <div
-            v-for="(item, index) in formattedRecommendedContents.slice(0, recommendedViewCount)"
+            v-for="item in formattedRecommendedContents.slice(0, recommendedViewCount)"
             :key="item.contentId"
             class="bg-white rounded-xl p-5 cursor-pointer hover:shadow-md transition border-t border-b border-r border-gray-200 border-l-4 border-indigo-300"
             @click="goToDetail(item.contentId)"
@@ -95,9 +96,9 @@
         </div>
         <div v-else class="space-y-3">
           <div
-            v-for="(item, index) in formattedCompletedContents.slice(0, completedViewCount)"
+            v-for="item in formattedCompletedContents.slice(0, completedViewCount)"
             :key="item.contentId"
-            class="bg-gray-50 rounded-xl border border-gray-200 p-5 cursor-pointer transition hover:bg-gray-100"
+            class="bg-gray-50 rounded-xl border border-gray-200 p-5 cursor-pointer transition hover:bg-gray-100 border-l-4 border-gray-300"
             @click="goToDetail(item.contentId)"
           >
             <div class="flex items-center justify-between">

@@ -103,7 +103,11 @@
               >
                 <!-- 잔량 시각화 배경 막대 (오른쪽부터 그려짐, 패딩 추가)-->
                 <div
-                  class="absolute top-2 bottom-2 right-0 bg-blue-100 opacity-50 rounded-l-md"
+                  class="absolute top-2 bottom-2 right-0 opacity-50 rounded-l-md transition-all duration-500"
+                  :class="[
+                    'bg-blue-100',
+                    askHighlightIndexes.includes(index) ? 'animate-ask-highlight' : '',
+                  ]"
                   :style="{ width: getVolumeRatio(ask.volume) + '%' }"
                 ></div>
                 <!-- 호가 및 잔량 텍스트 -->
@@ -151,7 +155,11 @@
               >
                 <!-- 잔량 시각화 배경 막대 (오른쪽부터 그려짐, 패딩 추가) -->
                 <div
-                  class="absolute top-2 bottom-2 right-0 bg-red-100 opacity-50 rounded-l-md"
+                  class="absolute top-2 bottom-2 right-0 opacity-50 rounded-l-md transition-all duration-500"
+                  :class="[
+                    'bg-red-100',
+                    bidHighlightIndexes.includes(index) ? 'animate-bid-highlight' : '',
+                  ]"
                   :style="{ width: getVolumeRatio(bid.volume) + '%' }"
                 ></div>
                 <!-- 호가 및 잔량 텍스트 -->
@@ -391,9 +399,26 @@
           <div v-if="activeTab !== 'waiting'" class="mb-4 p-3 bg-gray-50 rounded-lg">
             <!-- 수량 표시 및 조절 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="text-lg font-bold">
-                <span v-if="orderQuantity > 0" class="text-gray-900">{{ orderQuantity }}주</span>
-                <span v-else class="text-gray-400">최대 {{ maxOrderQuantity }}주</span>
+              <div class="text-lg font-bold flex items-center gap-2">
+                <!-- input을 visually hidden으로 두고, 숫자만 입력받고, 화면에는 기존 텍스트만 노출 -->
+                <input
+                  type="number"
+                  v-model.number="orderQuantity"
+                  min="0"
+                  :max="maxOrderQuantity"
+                  class="absolute opacity-0 pointer-events-none w-0 h-0"
+                  tabindex="-1"
+                  @keydown.stop
+                />
+                <span
+                  tabindex="0"
+                  @keydown="onOrderQuantityKeydown"
+                  style="outline: none"
+                  class="focus:ring-2 focus:ring-blue-300 rounded"
+                >
+                  <span v-if="orderQuantity > 0" class="text-gray-900">{{ orderQuantity }}주</span>
+                  <span v-else class="text-gray-400">최대 {{ maxOrderQuantity }}주</span>
+                </span>
               </div>
               <div class="flex gap-1">
                 <button
@@ -485,7 +510,7 @@
               </div>
             </div>
 
-            <!-- 하단 영역: 대기중인 거래 목록 -->
+            <!-- 하단 영역: 대기중 거래 목록 -->
             <div class="flex-1 space-y-2">
               <div
                 v-for="order in pendingOrders"
@@ -759,7 +784,15 @@
               <template v-else>
                 {{ tradeResultStockName }}
                 <span class="ml-2 text-white font-normal">
-                  {{ tradeResultType === 'BUY' ? '구매 주문 완료' : '판매 주문 완료' }}
+                  {{
+                    tradeResultIsFilled
+                      ? tradeResultType === 'BUY'
+                        ? '구매 주문 체결 완료'
+                        : '판매 주문 체결 완료'
+                      : tradeResultType === 'BUY'
+                        ? '구매 주문 신청 완료'
+                        : '판매 주문 신청 완료'
+                  }}
                 </span>
               </template>
             </div>
@@ -810,10 +843,18 @@ const orderConfirmQuantity = ref(0)
 const orderConfirmPrice = ref(0)
 const orderConfirmStockName = ref('')
 
+const askHighlightIndexes = ref([])
+const bidHighlightIndexes = ref([])
+
+const askLastHighlightTime = ref({})
+const bidLastHighlightTime = ref({})
+// 호가 하이라이트 애니메이션 쿨타임 필요시 설정
+const HIGHLIGHT_COOLDOWN = 0 // ms
+
 const openOrderConfirmModal = () => {
   orderConfirmType.value = activeTab.value === 'buy' ? 'BUY' : 'SELL'
   orderConfirmQuantity.value = orderQuantity.value
-  // 시장가 가격 계산 로직을 submitOrder와 동일하게!
+  // 주문 확인 모달에서도 지정가라도 호가 범위 벗어나면 시장가처럼 호가 가격으로 보여주기
   if (orderType.value === 'market') {
     if (orderConfirmType.value === 'BUY') {
       // 매수 시장가: askPrices에서 가장 싼 가격
@@ -827,7 +868,25 @@ const openOrderConfirmModal = () => {
         sortedBid.length > 0 ? sortedBid[0].price : stockInfo.value.currentPrice
     }
   } else {
-    orderConfirmPrice.value = orderPrice.value
+    // 지정가 주문이지만, 호가 범위 벗어나면 실제 체결될 호가로 보여주기
+    if (
+      orderConfirmType.value === 'BUY' &&
+      askPrices.value.length > 0 &&
+      orderPrice.value >= Math.min(...askPrices.value.map((a) => a.price))
+    ) {
+      // 매수 지정가가 최저 매도호가 이상이면 최저 매도호가로
+      orderConfirmPrice.value = Math.min(...askPrices.value.map((a) => a.price))
+    } else if (
+      orderConfirmType.value === 'SELL' &&
+      bidPrices.value.length > 0 &&
+      orderPrice.value <= Math.max(...bidPrices.value.map((b) => b.price))
+    ) {
+      // 매도 지정가가 최고 매수호가 이하이면 최고 매수호가로
+      orderConfirmPrice.value = Math.max(...bidPrices.value.map((b) => b.price))
+    } else {
+      // 일반 지정가 주문
+      orderConfirmPrice.value = orderPrice.value
+    }
   }
   orderConfirmStockName.value = stockInfo.value.name
   showOrderConfirmModal.value = true
@@ -845,9 +904,13 @@ const tradeResultType = ref('BUY') // 'BUY' or 'SELL'
 const tradeResultStockName = ref('')
 let tradeResultTimer = null
 
-const openTradeResultModal = (type, stockName) => {
+// TradeResultModal에 체결 완료 여부를 위한 플래그 추가
+const tradeResultIsFilled = ref(false)
+
+const openTradeResultModal = (type, stockName, isFilled = false) => {
   tradeResultType.value = type
   tradeResultStockName.value = stockName
+  tradeResultIsFilled.value = isFilled
   showTradeResultModal.value = true
   if (tradeResultTimer) clearTimeout(tradeResultTimer)
   tradeResultTimer = setTimeout(() => {
@@ -1104,6 +1167,7 @@ const loadHoldings = async () => {
 // 사용자 계좌에서 거래 대기 목록 가져오기
 const loadPendings = async () => {
   try {
+    await axios.post('/api/stock/orders/settle')
     const response = await axios.get('/api/stock/orders')
     if (response.data && Array.isArray(response.data)) {
       // 현재 종목코드와 일치하는 주문만 필터링
@@ -1193,6 +1257,52 @@ const generateOrderBookData = async (currentPrice) => {
     orderBookScroll.value.scrollTop = orderBookScroll.value.scrollHeight / 4
   }
 }
+
+// 2. 호가 데이터가 바뀔 때마다 변화 감지 및 애니메이션 트리거
+watch(askPrices, (newVal, oldVal) => {
+  if (!oldVal.length) return
+  const now = Date.now()
+  askHighlightIndexes.value = []
+  newVal.forEach((ask, idx) => {
+    if (!oldVal[idx] || ask.volume !== oldVal[idx].volume) {
+      // 쿨타임 체크
+      if (
+        !askLastHighlightTime.value[idx] ||
+        now - askLastHighlightTime.value[idx] > HIGHLIGHT_COOLDOWN
+      ) {
+        askHighlightIndexes.value.push(idx)
+        askLastHighlightTime.value[idx] = now
+      }
+    }
+  })
+  if (askHighlightIndexes.value.length > 0) {
+    setTimeout(() => {
+      askHighlightIndexes.value = []
+    }, 500)
+  }
+})
+
+watch(bidPrices, (newVal, oldVal) => {
+  if (!oldVal.length) return
+  const now = Date.now()
+  bidHighlightIndexes.value = []
+  newVal.forEach((bid, idx) => {
+    if (!oldVal[idx] || bid.volume !== oldVal[idx].volume) {
+      if (
+        !bidLastHighlightTime.value[idx] ||
+        now - bidLastHighlightTime.value[idx] > HIGHLIGHT_COOLDOWN
+      ) {
+        bidHighlightIndexes.value.push(idx)
+        bidLastHighlightTime.value[idx] = now
+      }
+    }
+  })
+  if (bidHighlightIndexes.value.length > 0) {
+    setTimeout(() => {
+      bidHighlightIndexes.value = []
+    }, 500)
+  }
+})
 
 const orderBookScroll = ref(null)
 
@@ -1402,6 +1512,37 @@ const processOrderBookData = (data) => {
     waitingInfo.value.buyOrders = parseInt(data.totalBidQty)
   } else if (data.TOTAL_BIDP_RSQN) {
     waitingInfo.value.buyOrders = parseInt(data.TOTAL_BIDP_RSQN)
+  }
+}
+
+// 키보드 입력으로 수량 입력 지원
+const onOrderQuantityKeydown = (e) => {
+  // 숫자 키, 백스페이스, 딜리트, 방향키만 허용
+  if (
+    (e.key >= '0' && e.key <= '9') ||
+    e.key === 'Backspace' ||
+    e.key === 'Delete' ||
+    e.key === 'ArrowLeft' ||
+    e.key === 'ArrowRight' ||
+    e.key === 'Tab'
+  ) {
+    e.preventDefault()
+    let newVal = String(orderQuantity.value)
+    if (e.key >= '0' && e.key <= '9') {
+      newVal += e.key
+    } else if (e.key === 'Backspace') {
+      newVal = newVal.slice(0, -1)
+    } else if (e.key === 'Delete') {
+      newVal = ''
+    }
+    let num = Number(newVal)
+    if (isNaN(num) || num < 0) num = 0
+    if (activeTab.value === 'buy') {
+      num = Math.min(num, maxOrderQuantity.value)
+    } else if (activeTab.value === 'sell') {
+      num = Math.min(num, userInfo.value.quantity)
+    }
+    orderQuantity.value = num
   }
 }
 
@@ -1842,7 +1983,7 @@ const cancelSelectedOrders = async () => {
     await loadPendings()
     await loadUserAccount()
     await loadHoldings()
-    // ✅ TradeResultModal 표시
+    // TradeResultModal 표시
     openTradeResultModal(
       'CANCEL',
       `${stockInfo.value.name} 주문 ${checkedOrders.length}건 취소 완료`,
@@ -1868,6 +2009,7 @@ const handleCancelConfirm = async () => {
   await cancelSelectedOrders()
 }
 
+// submitOrder에서 체결 완료 시 isFilled=true로 전달
 const submitOrder = async () => {
   // 주문 유효성 검사
   if (orderQuantity.value <= 0) {
@@ -1875,16 +2017,71 @@ const submitOrder = async () => {
     return
   }
 
+  // 지정가 주문에서 호가 범위 벗어나는 경우 → 시장가처럼 즉시 체결 처리
+  if (orderType.value === 'limit') {
+    // 매수: 지정가가 최저 매도호가(askPrices)보다 높으면 즉시 매수(시장가 매수) 처리
+    if (
+      activeTab.value === 'buy' &&
+      askPrices.value.length > 0 &&
+      orderPrice.value >= Math.min(...askPrices.value.map((a) => a.price))
+    ) {
+      // 최저 매도호가로 매수 처리
+      const marketPrice = Math.min(...askPrices.value.map((a) => a.price))
+      const params = {
+        marketPrice,
+        quantity: orderQuantity.value,
+        stockCode: STOCK_CODE,
+        stockName: stockInfo.value.name,
+        transactionType: 'BUY',
+      }
+      try {
+        await axios.post('/api/stock/order/market', params)
+        orderQuantity.value = 0
+        await loadUserAccount()
+        await loadHoldings()
+      } catch (error) {
+        console.error('지정가 즉시 매수(시장가) 주문 제출 실패:', error)
+        alert('지정가 즉시 매수(시장가) 주문 제출에 실패했습니다.')
+      }
+      openTradeResultModal('BUY', stockInfo.value.name, true) // 체결 완료
+      return
+    }
+    // 매도: 지정가가 최고 매수호가(bidPrices)보다 낮으면 즉시 매도(시장가 매도) 처리
+    if (
+      activeTab.value === 'sell' &&
+      bidPrices.value.length > 0 &&
+      orderPrice.value <= Math.max(...bidPrices.value.map((b) => b.price))
+    ) {
+      // 최고 매수호가로 매도 처리
+      const marketPrice = Math.max(...bidPrices.value.map((b) => b.price))
+      const params = {
+        marketPrice,
+        quantity: orderQuantity.value,
+        stockCode: STOCK_CODE,
+        stockName: stockInfo.value.name,
+        transactionType: 'SELL',
+      }
+      try {
+        await axios.post('/api/stock/order/market', params)
+        orderQuantity.value = 0
+        await loadUserAccount()
+        await loadHoldings()
+      } catch (error) {
+        console.error('지정가 즉시 매도(시장가) 주문 제출 실패:', error)
+        alert('지정가 즉시 매도(시장가) 주문 제출에 실패했습니다.')
+      }
+      openTradeResultModal('SELL', stockInfo.value.name, true) // 체결 완료
+      return
+    }
+  }
+
   // 시장가 주문 처리
   if (orderType.value === 'market') {
-    // 시장가 가격 결정: 매수는 askPrices, 매도는 bidPrices
-    let marketPrice = orderConfirmPrice.value // 모달에서 계산한 값 그대로 사용
+    let marketPrice = orderConfirmPrice.value
     if (activeTab.value === 'buy') {
-      // 매도호가 배열을 오름차순 정렬해서 가장 싼 가격 사용
       const sortedAsk = [...askPrices.value].sort((a, b) => a.price - b.price)
       marketPrice = sortedAsk.length > 0 ? sortedAsk[0].price : stockInfo.value.currentPrice
     } else if (activeTab.value === 'sell') {
-      // 매수호가 배열을 내림차순 정렬해서 가장 비싼 가격 사용
       const sortedBid = [...bidPrices.value].sort((a, b) => b.price - a.price)
       marketPrice = sortedBid.length > 0 ? sortedBid[0].price : stockInfo.value.currentPrice
     }
@@ -1906,11 +2103,11 @@ const submitOrder = async () => {
       console.error('시장가 주문 제출 실패:', error)
       alert('시장가 주문 제출에 실패했습니다.')
     }
-    openTradeResultModal(params.transactionType, params.stockName)
+    openTradeResultModal(params.transactionType, params.stockName, true) // 체결 완료
     return
   }
 
-  // 기존 지정가 주문 처리
+  // 기존 지정가 주문 처리 (호가 범위 내)
   if (activeTab.value === 'buy' && totalOrderAmount.value > userInfo.value.availableAmount) {
     alert('구매 가능 금액을 초과했습니다.')
     return
@@ -1932,16 +2129,13 @@ const submitOrder = async () => {
 
   try {
     await axios.post('/api/stock/order', params)
-    // 주문 완료 후 초기화
     orderQuantity.value = 0
-    // 주문 후 계좌/보유수량 정보 갱신
     await loadUserAccount()
     await loadHoldings()
-    // 필요시 대기 목록 새로고침 등 추가
     if (activeTab.value === 'waiting') {
       loadPendings()
     }
-    openTradeResultModal(params.orderType, params.stockName)
+    openTradeResultModal(params.orderType, params.stockName, false) // 신청 완료
   } catch (error) {
     console.error('주문 제출 실패:', error)
     alert('주문 제출에 실패했습니다.')
@@ -1994,4 +2188,32 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+/* 4. 애니메이션 효과 정의 */
+@keyframes askHighlight {
+  0% {
+    background-color: #bfdbfe; /* blue-600 */
+    opacity: 0.8;
+  }
+  100% {
+    background-color: #dbeafe; /* blue-100 */
+    opacity: 0.5;
+  }
+}
+@keyframes bidHighlight {
+  0% {
+    background-color: #fecaca; /* red-600 */
+    opacity: 0.8;
+  }
+  100% {
+    background-color: #fee2e2; /* red-100 */
+    opacity: 0.5;
+  }
+}
+.animate-ask-highlight {
+  animation: askHighlight 0.5s;
+}
+.animate-bid-highlight {
+  animation: bidHighlight 0.5s;
+}
+</style>

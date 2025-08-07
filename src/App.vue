@@ -4,6 +4,9 @@
       <router-view v-slot="{ Component }">
         <component :is="Component" />
       </router-view>
+      
+      <!-- 챗봇 패널 (전역에서 사용 가능) -->
+      <ChatBotPanel />
     </div>
   </div>
 </template>
@@ -11,17 +14,30 @@
 import axios from 'axios'
 import { onMounted } from 'vue'
 import { useUserStore } from './stores/user'
+import ChatBotPanel from './components/ChatBotPanel.vue'
 
 export default {
+  components: {
+    ChatBotPanel
+  },
   setup() {
-    const userStore = useUserStore()
-
     onMounted(async () => {
+      const userStore = useUserStore()
+
+      if (userStore.userId) return
+
       try {
         const res = await axios.get('/api/auth/me')
-        userStore.setUser(res.data)
-        localStorage.setItem('user', JSON.stringify(res.data)) // Optional
-        // eslint-disable-next-line no-unused-vars
+
+        const user = res.data
+        if (!user || (!user.id && !user.userId)) return
+
+        userStore.setUser({
+          userId: user.id ?? user.userId,
+          username: user.username,
+          name: user.name,
+          riskType: user.riskType,
+        })
       } catch (err) {
         console.warn('로그인된 사용자 정보 없음 또는 세션 만료됨')
       }
