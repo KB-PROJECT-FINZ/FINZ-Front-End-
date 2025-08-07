@@ -202,7 +202,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
   } catch (error) {
     console.log(userId)
     chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
-    console.error('❌ GPT fetch 실패:', err)
+    console.error('❌ GPT fetch 실패:', error)
   } finally {
     loading.value = false
   }
