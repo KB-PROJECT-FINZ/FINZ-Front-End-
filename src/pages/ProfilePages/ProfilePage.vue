@@ -175,9 +175,8 @@ import { Calendar } from 'v-calendar'
 
 const router = useRouter()
 const userStore = useUserStore()
-const imageErrors = ref({})
 
-const { dataLoaded, userAccount, calculatedProfitRate, loadUserData, safeNumber } =
+const { loadUserData } =
   useAssetDataStore()
 
 const profile = ref({ image: '', name: '', type: '', level: 3 })
@@ -190,10 +189,6 @@ const riskTypeName = ref('')
 const recommendedContentsByRisk = ref([])
 const selectedContent = ref(null)
 const nameKr = ref('')
-const calculatedTotalAssetValue = computed(() => safeNumber(userAccount.value.totalAssetValue, 0))
-
-const goToAssetStatus = () => router.push('/mock-trading/asset-status')
-const goToTransactions = () => router.push('/mock-trading/transactions')
 
 const goToContents = () => router.push('/recommend')
 const openContentModal = (item) => {
@@ -225,13 +220,6 @@ const handleLogout = async () => {
   router.push('/login-form')
 }
 
-const handleImageError = (code) => {
-  imageErrors.value[code] = true
-}
-
-const getStockInitial = (name) => {
-  return name ? name[0] : '?'
-}
 
 onMounted(async () => {
   try {

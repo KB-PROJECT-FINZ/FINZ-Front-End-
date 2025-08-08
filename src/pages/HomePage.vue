@@ -20,17 +20,6 @@
           <p class="text-sm text-gray-600 font-medium text-black mb-1">보유 크레딧</p>
           <p class="font-bold text-gray-700">{{ asset.amount }}C</p>
         </div>
-
-        <!-- <div class="bg-gray-100 p-4 rounded-xl border-black">
-          <p class="text-sm text-gray-600 font-medium text-black mb-1">완료한 학습</p>
-          <p class="font-semibold text-gray-600">{{ completedLearningCount }}개</p>
-        </div>
-        <div class="bg-gray-100 p-4 rounded-xl border-black">
-          <p class="text-sm text-gray-600 font-medium text-black mb-1">모의투자 수익</p>
-          <p class="font-semibold text-gray-600">
-            {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
-          </p>
-        </div> -->
       </div>
 
       <!-- 내 종목보기 카드 전체를 버튼으로, 좌측 정렬 및 아이콘 추가 -->
@@ -325,15 +314,12 @@ import axios from 'axios'
 import { useAssetDataStore } from '@/services/useAssetData'
 import BottomNav from '@/components/FooterNavigation.vue'
 import { useHoldingsData } from '@/services/useHoldingsData'
-import { useHoldingsSorting } from '@/services/useHoldingsSorting'
 
 // --- 내 투자내역 카드 관련 상태 및 함수 ---
 const asset = ref({ amount: 0 })
 const buyHistory = ref([])
 const sellHistory = ref([])
 const imageErrors = ref({})
-
-const goToTransactions = () => router.push('/mock-trading/transactions')
 
 const handleImageError = (code) => {
   imageErrors.value[code] = true
@@ -484,8 +470,6 @@ const {
   totalInvestment,
 } = useAssetDataStore()
 
-const calculatedTotalAssetValue = computed(() => safeNumber(userAccount.value.totalAssetValue, 0))
-
 // 원금 대비 손익금 계산 (평가금액 - 투자원금)
 const calculatedProfitAmount = computed(() => {
   if (!dataLoaded.value) return 0
@@ -525,12 +509,6 @@ function convertRiskTypeToName(code) {
   }
   return map[code] || '미분류'
 }
-
-// 페이지 이동
-const goToStudy = () => router.push('/learning')
-const goToContents = () => router.push('/recommend')
-
-const goToPortfolio = () => router.push('/mock-trading/asset-status')
 
 // 초기 실행
 onMounted(async () => {
