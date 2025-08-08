@@ -40,7 +40,7 @@
             <MyStockChart
               v-for="(stock, idx) in displayedMyStocks"
               :key="idx"
-              :name="stock.name"
+              :name="stock.stockName"
               :gain="stock.gain"
               :positionIndex="stock.positionIndex"
               :positionLabel="stock.positionLabel"
@@ -66,7 +66,7 @@
             <PopularStockItem
               v-for="(stock, idx) in displayedPopularStocks"
               :key="idx"
-              :name="stock.name"
+              :name="stock.stockName"
               :trait="stock.trait"
               :gain="stock.gain"
               :logo="stock.logo"
@@ -91,6 +91,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
+import debounce from 'lodash.debounce'
 
 import TabSwitcher from '@/components/ranking/TabSwitcher.vue'
 import TraitStockCard from '@/components/ranking/TraitStockCard.vue'
@@ -101,39 +102,39 @@ import NoInvestmentGuide from '@/components/ranking/NoInvestmentGuide.vue'
 
 import {
   fetchTraitStockAnalysis,
-  fetchMyStockDistribution,
   fetchPopularStocksByTrait,
-} from '@/services/rankingService'
+  saveMyStockDistribution,
+  fetchMyRealTimeStockDistribution,
+} from '@/services/stockAnalysisService'
 
-// Pinia store
+// 파니아 store
 const userStore = useUserStore()
 
 // 유저 ID 반응형 참조
 const userId = computed(() => userStore.userId)
-console.log('🚩🚩 userId:', userId.value)
 
 // 데이터 상태
 const traitStocks = ref([])
 const myStocks = ref([])
 const popularStocks = ref([])
 
-// 수익률 분포 더보기
+// 더보기 관련 상태
 const visibleMyStockCount = ref(3)
-const displayedMyStocks = computed(() => myStocks.value.slice(0, visibleMyStockCount.value))
-function loadMoreMyStocks() {
-  visibleMyStockCount.value += 3
-}
-
-// 인기 종목 더보기
 const visiblePopularCount = ref(5)
+
+const displayedMyStocks = computed(() => myStocks.value.slice(0, visibleMyStockCount.value))
 const displayedPopularStocks = computed(() =>
   popularStocks.value.slice(0, visiblePopularCount.value),
 )
+
+function loadMoreMyStocks() {
+  visibleMyStockCount.value += 3
+}
 function loadMorePopular() {
   visiblePopularCount.value += 5
 }
 
-// 투자 데이터 유무 판단
+// 유저 투자 데이터 존재 여부
 const hasInvestmentData = computed(() => {
   return traitStocks.value.length > 0 || myStocks.value.length > 0 || popularStocks.value.length > 0
 })
@@ -142,15 +143,15 @@ const hasInvestmentData = computed(() => {
 function getTraitRatio(stock) {
   return {
     보수형: stock.traitRatio?.보수형 ?? 0,
-    균형형: stock.traitRatio?.균형형 ?? 0,
+    규합형: stock.traitRatio?.규합형 ?? 0,
     공격형: stock.traitRatio?.공격형 ?? 0,
     특수형: stock.traitRatio?.특수형 ?? 0,
   }
 }
 
-// 분석 데이터 비동기 호출
+// 분석 데이터 비디오 호출
 async function fetchAnalysisData() {
-  const uid = userStore.userId
+  const uid = userId.value
   let traitGroup = userStore.riskType || userStore.traitGroup
 
   if (!uid) {
@@ -163,7 +164,6 @@ async function fetchAnalysisData() {
     console.warn('[WARN] traitGroup 없음 → localStorage fallback:', traitGroup)
   }
 
-  // 특수 케이스 보정
   if (traitGroup === 'ANALYTICAL' || traitGroup === 'EMOTIONAL') {
     traitGroup = 'SPECIAL'
   }
@@ -171,10 +171,9 @@ async function fetchAnalysisData() {
   try {
     const [traitRes, myRes, popRes] = await Promise.all([
       fetchTraitStockAnalysis(uid),
-      fetchMyStockDistribution(uid),
+      fetchMyRealTimeStockDistribution(uid),
       fetchPopularStocksByTrait(traitGroup),
     ])
-    console.log('✅ 분석 API 결과:', { traitRes, myRes, popRes }) // <-- 이 로그 꼭 넣기
     traitStocks.value = traitRes
     myStocks.value = myRes
     popularStocks.value = popRes
@@ -183,13 +182,43 @@ async function fetchAnalysisData() {
   }
 }
 
-// ✅ userId가 존재할 때만 fetchAnalysisData 실행 (초기 mount 시점 포함)
+const debouncedSave = debounce(async (uid, stocks) => {
+  if (!uid || stocks.length === 0) return
+
+  const payload = stocks.map((stock) => ({
+    stockCode: stock.stockCode,
+    stockName: stock.stockName,
+    gainRate: stock.gainRate,
+    positionIndex: stock.positionIndex,
+    positionLabel: stock.positionLabel,
+    distributionBins: stock.distribution,
+    color: stock.color || '#3b82f6',
+  }))
+
+  try {
+    await saveMyStockDistribution(uid, payload)
+  } catch (err) {
+    console.error('❌ 자동 저장 실패:', err)
+  }
+}, 1000)
+
+watch(
+  myStocks,
+  (newVal) => {
+    if (userId.value && newVal && newVal.length > 0) {
+      debouncedSave(userId.value, newVal)
+    }
+  },
+  { deep: true },
+)
+
 watch(
   () => userStore.userId,
   (newUserId) => {
-    if (newUserId) {
-      console.log('✅ userId 감지됨:', newUserId)
+    if (newUserId && typeof newUserId === 'number' && newUserId > 0) {
       fetchAnalysisData()
+    } else {
+      console.warn('⛔ userId가 유효하지 않음:', newUserId)
     }
   },
   { immediate: true },
