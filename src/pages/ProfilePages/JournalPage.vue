@@ -11,7 +11,7 @@
   </header>
 
   <div class="journal-page px-4 py-4">
-    <router-link
+    <!-- <router-link
       to="/feedback"
       class="flex items-center gap-4 w-full bg-white rounded-xl p-4 shadow transition hover:-translate-y-0.5 hover:shadow-lg"
     >
@@ -19,7 +19,7 @@
       <div class="flex flex-col items-start">
         <span class="text-base font-semibold text-gray-800">AI 피드백 보러가기</span>
       </div>
-    </router-link>
+    </router-link> -->
 
     <Calendar
       class="custom-calendar w-full mt-4 mb-4"
@@ -30,105 +30,112 @@
       :show-arrows="true"
       :first-day-of-week="0"
     />
+
     <div class="today-transactions mt-2">
       <h2 class="text-lg font-bold ml-1 mb-2">오늘의 투자 내역</h2>
-      <div v-if="todayGroupedTransactions.length">
+
+      <div v-if="todayGroupedTransactions.length" class="transactions-container">
+        <!-- 스와이프 가능한 종목 카드 -->
         <div
-          v-for="stock in todayGroupedTransactions.slice(0, showAllStocks ? undefined : 1)"
-          :key="stock.stockName"
-          class="mb-3 p-3 bg-gray-50 rounded-lg"
+          class="stock-display relative"
+          @touchstart="handleTouchStart"
+          @touchmove="handleTouchMove"
+          @touchend="handleTouchEnd"
+          @mousedown="handleMouseDown"
+          @mousemove="handleMouseMove"
+          @mouseup="handleMouseUp"
+          @mouseleave="handleMouseUp"
         >
-          <div class="font-semibold text-base mb-2">{{ stock.stockName }}</div>
-          <div class="flex flex-row gap-4">
-            <!-- 매수 테이블 -->
-            <div class="flex-1 min-w-[120px]">
-              <table class="w-full text-xs text-center border border-black">
-                <thead>
-                  <tr>
-                    <th class="border border-black px-2 py-1 bg-gray-100 text-red-700" colspan="2">매수</th>
-                  </tr>
-                  <tr>
-                    <th class="border border-black px-2 py-1 bg-gray-50">가격</th>
-                    <th class="border border-black px-2 py-1 bg-gray-50">수량</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(row, i) in stock.buy" :key="i">
-                    <td class="border border-black px-2 py-1 text-black">{{ row.price }}원</td>
-                    <td class="border border-black px-2 py-1 text-black">{{ row.quantity }}</td>
-                  </tr>
-                  <!-- 매수내역이 없을 때 '-' 행 제거 -->
-                </tbody>
-              </table>
+          <div
+            v-if="currentStock"
+            class="stock-item bg-white p-4 rounded-lg mx-auto max-w-[400px] shadow-sm"
+            :style="{ transform: `translateX(${dragOffset}px)` }"
+          >
+            <!-- 종목 헤더 -->
+            <div class="flex items-center gap-3 mb-2">
+              <span
+                class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0"
+              >
+                <img
+                  v-if="getStockImageUrl(currentStock) && !imageErrors[currentStock.stockCode]"
+                  :src="getStockImageUrl(currentStock)"
+                  :alt="`${currentStock.stockName} 로고`"
+                  class="w-full h-full object-cover rounded-full"
+                  @error="handleImageError(currentStock.stockCode)"
+                />
+                <span
+                  v-else
+                  class="w-full h-full rounded-full flex items-center justify-center text-sm font-bold border-2 text-center flex-shrink-0"
+                  style="border-color: #2272eb; color: #2272eb; background: #fff"
+                >
+                  {{ getStockInitial(currentStock.stockName) }}
+                </span>
+              </span>
+              <div class="flex-1">
+                <div class="text-lg font-semibold text-gray-900">{{ currentStock.stockName }}</div>
+              </div>
             </div>
-            <!-- 매도 테이블 -->
-            <div class="flex-1 min-w-[120px]">
-              <table class="w-full text-xs text-center border border-black">
-                <thead>
-                  <tr>
-                    <th class="border border-black px-2 py-1 bg-gray-100 text-blue-700" colspan="2">매도</th>
-                  </tr>
-                  <tr>
-                    <th class="border border-black px-2 py-1 bg-gray-50">가격</th>
-                    <th class="border border-black px-2 py-1 bg-gray-50">수량</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(row, i) in stock.sell" :key="i">
-                    <td class="border border-black px-2 py-1 text-black">{{ row.price }}원</td>
-                    <td class="border border-black px-2 py-1 text-black">{{ row.quantity }}</td>
-                  </tr>
-                  <!-- 매도내역이 없을 때 '-' 행 제거 -->
-                </tbody>
-              </table>
+
+            <!-- 매수/매도 한 줄 리스트(시간순) -->
+            <div class="space-y-2 mt-1">
+              <div
+                v-for="(row, i) in mergedTransactions"
+                :key="i"
+                :class="[
+                  'flex items-center justify-between p-3 rounded-lg',
+                  row.type === 'BUY' ? 'bg-red-50' : 'bg-blue-50',
+                ]"
+              >
+                <div class="flex items-center gap-2">
+                  <span
+                    :class="[
+                      'text-xs font-semibold px-2 py-0.5 rounded-full',
+                      row.type === 'BUY' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700',
+                    ]"
+                  >
+                    {{ row.type === 'BUY' ? '매수' : '매도' }}
+                  </span>
+                  <span class="text-sm text-gray-700">
+                    {{ row.quantity }}주 {{ row.type === 'BUY' ? '구매' : '판매' }}
+                  </span>
+                </div>
+                <div
+                  :class="[
+                    'text-sm font-semibold',
+                    row.type === 'BUY' ? 'text-red-600' : 'text-blue-600',
+                  ]"
+                >
+                  주당 {{ row.price.toLocaleString() }}원
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div v-if="todayGroupedTransactions.length > 1" class="flex justify-center">
-          <button
-            @click="showAllStocks = !showAllStocks"
-            class="px-4 py-1 rounded bg-gray-200 hover:bg-gray-300 text-sm flex items-center gap-1"
-          >
-            <span v-if="!showAllStocks">더보기</span>
-            <span v-else>접기</span>
-            <svg
-              v-if="!showAllStocks"
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-            <svg
-              v-else
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 15l7-7 7 7"
-              />
-            </svg>
-          </button>
+
+        <!-- 인디케이터 -->
+        <div v-if="todayGroupedTransactions.length > 1" class="flex justify-center mt-3">
+          <div class="flex space-x-2">
+            <button
+              v-for="(_, index) in todayGroupedTransactions"
+              :key="index"
+              class="w-2 h-2 rounded-full transition-colors"
+              :class="{
+                'bg-indigo-500': index === currentStockIndex,
+                'bg-gray-300': index !== currentStockIndex,
+              }"
+              @click="currentStockIndex = index"
+              aria-label="go-to-stock"
+            />
+          </div>
         </div>
       </div>
+
       <div v-else class="flex flex-col items-center text-gray-400 text-base py-6">
         거래 내역이 없습니다.
       </div>
     </div>
-    <div class="today-journal mt-2 mb-2">
+
+    <div class="today-journal mt-4 mb-2">
       <h2 class="text-lg font-bold ml-1 mb-2">오늘의 일지</h2>
       <div
         v-if="selectedDateJournals.length === 0"
@@ -136,53 +143,53 @@
       >
         <span class="text-3xl mb-2">📝</span>
         지금 바로 일지를 작성해보세요!
+        <button
+          class="mt-4 bg-indigo-400 hover:bg-indigo-500 text-white font-semibold px-6 py-2 rounded-full shadow-md transition"
+          @click="showWriteModal = true"
+        >
+          글쓰기
+        </button>
       </div>
     </div>
+
     <div v-if="selectedDateJournals.length" class="journal-list mt-3 flex flex-col gap-3 pb-24">
       <div
         v-for="journal in selectedDateJournals"
         :key="journal.id"
-        class="journal-item bg-gray-100 p-3 rounded-lg"
-        :class="{
-          'border border-gray-400': selectedJournal && selectedJournal.id === journal.id,
-        }"
+        class="journal-item relative p-3 rounded-xl bg-gray-50 transition-all duration-200 hover:shadow-sm cursor-pointer"
+        :class="isSelected(journal) ? 'shadow-md' : ''"
         @click="selectJournal(journal)"
       >
         <div class="mb-1 flex justify-between items-center">
-          <p><strong>감정 |</strong> {{ journal.emotion }}</p>
-          <p class="font-semibold text-sm text-gray-700">{{ journal.journalDate }}</p>
+          <p class="text-gray-800"><strong>감정 |</strong> {{ journal.emotion }}</p>
+          <p class="font-semibold text-sm text-gray-600">{{ journal.journalDate }}</p>
         </div>
 
-        <p><strong>이유 |</strong> {{ journal.reason }}</p>
-        <p><strong>실수 |</strong> {{ journal.mistake }}</p>
+        <p class="text-gray-800"><strong>이유 |</strong> {{ journal.reason }}</p>
+        <p class="text-gray-800"><strong>실수 |</strong> {{ journal.mistake }}</p>
 
+        <!-- 액션 바: 아래에 딱 붙는 버튼 행 -->
         <div
-          v-if="selectedJournal && selectedJournal.id === journal.id"
-          class="edit-delete-btns flex justify-between mt-2"
+          v-if="isSelected(journal)"
+          class="mt-3 pt-2 border-t border-gray-200 flex items-center justify-end gap-2"
+          @click.stop
         >
           <button
-            class="edit-btn bg-indigo-500 text-white rounded px-4 py-1 mr-2 hover:bg-indigo-700"
-            @click.stop="editJournal(journal)"
+            class="px-3 py-1.5 rounded-full text-sm font-medium bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 active:scale-[0.99] transition"
+            @click="editJournal(journal)"
           >
-            수정하기
+            ✏️ 수정하기
           </button>
           <button
-            class="delete-btn bg-red-500 text-white rounded px-4 py-1 hover:bg-red-700"
-            @click.stop="deleteJournal(journal.id)"
+            class="px-3 py-1.5 rounded-full text-sm font-medium bg-white text-red-600 border border-red-200 hover:bg-red-50 active:scale-[0.99] transition"
+            @click="deleteJournal(journal.id)"
           >
-            삭제하기
+            🗑 삭제하기
           </button>
         </div>
       </div>
     </div>
   </div>
-
-  <button
-    class="write-btn absolute bottom-30 right-2 w-15 h-15 rounded-full bg-indigo-500 text-white text-3xl border-none shadow-lg cursor-pointer z-10 sm:bottom-20 sm:right-4 sm:w-12 sm:h-12 sm:text-2xl"
-    @click="showWriteModal = true"
-  >
-    ＋
-  </button>
 
   <JournalWriteModal
     v-if="showWriteModal"
@@ -208,9 +215,9 @@ import ConfirmModal from '@/components/ConfirmModal.vue'
 import { fetchJournals, deleteJournalById } from '@/services/journal.js'
 import { useTransactionsData } from '@/services/useTranscationsData.js'
 import JournalWriteModal from './JournalWriteModal.vue'
+
 const showWriteModal = ref(false)
 const { transactionsData, fetchTransactions } = useTransactionsData()
-const currentPageMap = ref({})
 const router = useRouter()
 const journals = ref([])
 const transactions = ref([])
@@ -220,31 +227,93 @@ const showSuccess = ref(false)
 const successMessage = ref('')
 const showConfirm = ref(false)
 const targetJournalId = ref(null)
-const showAllStocks = ref(false)
+const currentStockIndex = ref(0)
+const dragOffset = ref(0)
+const isDragging = ref(false)
+const startX = ref(0)
+const currentX = ref(0)
+const imageErrors = ref({})
 
-//날짜 클릭 시 날짜랑 일지 초기화 , currentPage를 0으로 초기화
 function onDayClick(day) {
   selectedDate.value = day.id
   selectedJournal.value = null
-
-  selectedDateJournals.value.forEach((j) => {
-    currentPageMap.value[j.id] = 0
-  })
+  currentStockIndex.value = 0
 }
+function isSelected(journal) {
+  return selectedJournal.value && selectedJournal.value.id === journal.id
+}
+
+function handleTouchStart(e) {
+  const touch = e.touches[0]
+  startX.value = touch.clientX
+  currentX.value = touch.clientX
+  isDragging.value = true
+  dragOffset.value = 0
+}
+function handleTouchMove(e) {
+  if (!isDragging.value) return
+  e.preventDefault()
+  const touch = e.touches[0]
+  currentX.value = touch.clientX
+  dragOffset.value = currentX.value - startX.value
+}
+function handleTouchEnd() {
+  if (!isDragging.value) return
+  isDragging.value = false
+  const threshold = 50
+  const diff = currentX.value - startX.value
+  if (Math.abs(diff) > threshold) {
+    if (diff > 0 && currentStockIndex.value > 0) {
+      currentStockIndex.value--
+    } else if (diff < 0 && currentStockIndex.value < todayGroupedTransactions.value.length - 1) {
+      currentStockIndex.value++
+    }
+  }
+  dragOffset.value = 0
+}
+function handleMouseDown(e) {
+  startX.value = e.clientX
+  currentX.value = e.clientX
+  isDragging.value = true
+  dragOffset.value = 0
+}
+function handleMouseMove(e) {
+  if (!isDragging.value) return
+  currentX.value = e.clientX
+  dragOffset.value = currentX.value - startX.value
+}
+function handleMouseUp() {
+  if (!isDragging.value) return
+  isDragging.value = false
+  const threshold = 50
+  const diff = currentX.value - startX.value
+  if (Math.abs(diff) > threshold) {
+    if (diff > 0 && currentStockIndex.value > 0) {
+      currentStockIndex.value--
+    } else if (diff < 0 && currentStockIndex.value < todayGroupedTransactions.value.length - 1) {
+      currentStockIndex.value++
+    }
+  }
+  dragOffset.value = 0
+}
+
+function getStockImageUrl(stock) {
+  if (!stock || !stock.stockCode) return null
+  return `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
+}
+function handleImageError(stockCode) {
+  imageErrors.value[stockCode] = true
+}
+function getStockInitial(stockName) {
+  if (!stockName) return ''
+  return stockName.charAt(0)
+}
+
 onMounted(async () => {
   try {
     await fetchTransactions()
     transactions.value = transactionsData.value || []
     journals.value = await fetchJournals()
-
-    // 초기 페이지맵 설정
-    if (journals.value.length > 0) {
-      journals.value.forEach((journal) => {
-        if (!currentPageMap.value[journal.id]) {
-          currentPageMap.value[journal.id] = 0
-        }
-      })
-    }
   } catch (err) {
     console.error('❌ 데이터 로딩 실패:', err)
   }
@@ -277,48 +346,64 @@ const selectedDateJournals = computed(() =>
 const todayGroupedTransactions = computed(() => {
   if (!transactions.value || transactions.value.length === 0) return []
 
-  // 1. 날짜 필터
+  // 1) 선택 날짜만 필터
   const filtered = transactions.value.filter((t) => {
     if (!t.executedAt) return false
-    const localDate = new Date(t.executedAt)
-    const yyyy = localDate.getFullYear()
-    const mm = String(localDate.getMonth() + 1).padStart(2, '0')
-    const dd = String(localDate.getDate()).padStart(2, '0')
-    const formattedDate = `${yyyy}-${mm}-${dd}`
-    return formattedDate === selectedDate.value
+    const d = new Date(t.executedAt)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}` === selectedDate.value
   })
 
-  // 2. 종목별 그룹화
+  // 2) 종목별 그룹화
   const grouped = {}
   filtered.forEach((t) => {
-    if (!grouped[t.stockName]) grouped[t.stockName] = { BUY: {}, SELL: {} }
-    const typeGroup = grouped[t.stockName][t.type]
-    if (!typeGroup[t.price]) typeGroup[t.price] = 0
-    typeGroup[t.price] += t.quantity
+    if (!grouped[t.stockName]) {
+      grouped[t.stockName] = { stockCode: t.stockCode, BUY: [], SELL: [] }
+    }
+    grouped[t.stockName][t.type].push({
+      price: t.price,
+      quantity: t.quantity,
+      executedAt: t.executedAt,
+    })
   })
 
-  // 3. 배열로 변환
-  return Object.entries(grouped).map(([stockName, types]) => ({
+  // 3) 배열로 변환
+  return Object.entries(grouped).map(([stockName, data]) => ({
     stockName,
-    buy: Object.entries(types.BUY).map(([price, quantity]) => ({ price, quantity })),
-    sell: Object.entries(types.SELL).map(([price, quantity]) => ({ price, quantity })),
+    stockCode: data.stockCode,
+    buy: data.BUY.sort((a, b) => new Date(a.executedAt) - new Date(b.executedAt)),
+    sell: data.SELL.sort((a, b) => new Date(a.executedAt) - new Date(b.executedAt)),
   }))
+})
+
+const currentStock = computed(() => {
+  if (todayGroupedTransactions.value.length === 0) return null
+  return todayGroupedTransactions.value[currentStockIndex.value]
+})
+
+//매수/매도 합쳐서 시간순 정렬된 리스트
+const mergedTransactions = computed(() => {
+  if (!currentStock.value) return []
+  const merged = [
+    ...currentStock.value.buy.map((x) => ({ ...x, type: 'BUY' })),
+    ...currentStock.value.sell.map((x) => ({ ...x, type: 'SELL' })),
+  ]
+  return merged.sort((a, b) => new Date(a.executedAt) - new Date(b.executedAt))
 })
 
 function selectJournal(journal) {
   selectedJournal.value = journal
 }
-
 function editJournal(journal) {
   selectedJournal.value = journal
   showWriteModal.value = true
 }
-
 function deleteJournal(id) {
   showConfirm.value = true
   targetJournalId.value = id
 }
-
 async function handleDelete() {
   try {
     await deleteJournalById(targetJournalId.value)
@@ -327,9 +412,7 @@ async function handleDelete() {
     showConfirm.value = false
     successMessage.value = '삭제 완료되었습니다.'
     showSuccess.value = true
-    setTimeout(() => {
-      showSuccess.value = false
-    }, 1500)
+    setTimeout(() => (showSuccess.value = false), 1500)
   } catch (err) {
     alert('삭제 실패')
   }
@@ -360,15 +443,25 @@ function refreshJournals() {
   width: 100% !important;
 }
 .transactions-container {
-  overflow-x: auto;
-  overflow-y: hidden;
-  max-height: 4.5rem; /* 약 3줄 정도 높이 */
-  padding-bottom: 2px;
-  scroll-behavior: smooth;
-}
-
-.transactions-scroll {
+  position: relative;
   display: flex;
-  flex-wrap: nowrap;
+  flex-direction: column;
+  align-items: center;
+}
+.stock-display {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.stock-item {
+  width: 100%;
+  max-width: 400px;
+  transition: transform 0.1s ease-out;
+  user-select: none;
+  cursor: grab;
+}
+.stock-item:active {
+  cursor: grabbing;
 }
 </style>
