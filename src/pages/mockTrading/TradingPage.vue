@@ -870,6 +870,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getStockInfo } from '@/services/stockApi.js'
 import axios from 'axios'
+import { checkExecution } from '@/services/checkExecution'
 
 // Vue Router
 const route = useRoute()
@@ -1226,7 +1227,7 @@ const isPendingLoading = ref(false)
 const loadPendings = async () => {
   isPendingLoading.value = true
   try {
-    await axios.post('/api/stock/orders/settle')
+    await checkExecution()
     const response = await axios.get('/api/stock/orders')
     if (response.data && Array.isArray(response.data)) {
       // 현재 종목코드와 일치하는 주문만 필터링
@@ -1900,7 +1901,11 @@ const expectedReturnRateClass = computed(() => {
   if (activeTab.value !== 'sell') return 'text-gray-500'
 
   const avgPrice = userInfo.value.avgPrice
-  const sellPrice = orderPrice.value
+  // 시장가일 때는 getSellPrice.value, 지정가일 때는 orderPrice.value
+  const sellPrice = orderType.value === 'market' ? getSellPrice.value : orderPrice.value
+
+  if (!avgPrice || avgPrice === 0) return 'text-gray-500'
+
   const returnRate = ((sellPrice - avgPrice) / avgPrice) * 100
 
   if (returnRate > 0) {
@@ -1912,12 +1917,11 @@ const expectedReturnRateClass = computed(() => {
   }
 })
 
-// 예상 손익 색상 클래스
 const expectedProfitClass = computed(() => {
   if (activeTab.value !== 'sell') return 'text-gray-500'
 
   const avgPrice = userInfo.value.avgPrice
-  const sellPrice = orderPrice.value
+  const sellPrice = orderType.value === 'market' ? getSellPrice.value : orderPrice.value
   const quantity = orderQuantity.value || 1
   const profit = (sellPrice - avgPrice) * quantity
 
