@@ -85,7 +85,7 @@
         </div>
       </div>
       <button
-        v-if="visibleCount < stockRanking.length"
+        v-if="activeTab !== 'market_cap' && visibleCount < stockRanking.length"
         class="block w-full py-3 bg-gray-100 text-gray-800 border-none border-t border-gray-200 text-[14px] font-medium cursor-pointer transition-colors hover:bg-gray-200"
         @click="visibleCount = Math.min(visibleCount + 10, stockRanking.length)"
       >
@@ -105,6 +105,9 @@ const stockRanking = ref([])
 const updateTime = ref('')
 const isLoading = ref(false)
 const visibleCount = ref(10)
+
+// 시가총액 탭일 때는 100개, 나머지는 10개씩
+const getInitialVisibleCount = () => (activeTab.value === 'market_cap' ? 100 : 10)
 const imageErrors = ref({})
 const activeTab = ref('market_cap') // 기본값: 시가총액순
 
@@ -123,7 +126,7 @@ const changeTab = async (tabCode) => {
   if (activeTab.value === tabCode) return
 
   activeTab.value = tabCode
-  visibleCount.value = 10
+  visibleCount.value = getInitialVisibleCount()
   await fetchVolumeRanking()
 }
 
@@ -175,7 +178,7 @@ const fetchVolumeRanking = async () => {
           marketCap: parseFloat(stock.stotprice) * 100000000, // 시가총액 (억원 단위를 원 단위로)
           imageUrl: `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.code}.png`,
         }))
-
+        visibleCount.value = 100
         updateTime.value = new Date().toLocaleTimeString('ko-KR', {
           hour: '2-digit',
           minute: '2-digit',
@@ -190,6 +193,7 @@ const fetchVolumeRanking = async () => {
       const response = await getVolumeRanking(20, activeTab.value)
       if (response.success && response.data) {
         stockRanking.value = response.data
+        visibleCount.value = 10
         updateTime.value = new Date().toLocaleTimeString('ko-KR', {
           hour: '2-digit',
           minute: '2-digit',
