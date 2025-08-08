@@ -206,7 +206,11 @@ export function useTransactionsData() {
           ? '지정가'
           : ''
 
-    return `${typeText} ${orderTypeText}`.trim()
+    // '시장가 매수', '지정가 매도' 등으로 표기
+    if (orderTypeText && typeText) {
+      return `${orderTypeText} ${typeText}`
+    }
+    return typeText
   }
 
   /**

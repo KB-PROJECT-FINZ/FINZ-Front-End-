@@ -8,6 +8,7 @@
     <div
       ref="ticker"
       class="flex overflow-hidden whitespace-nowrap gap-6"
+      :class="{ 'justify-center': stocks.length < 3 }"
       @mouseenter="pauseScroll"
       @mouseleave="resumeScroll"
     >
@@ -55,17 +56,18 @@ const ticker = ref(null)
 const animationFrameId = ref(null)
 const speed = 0.5 // px per frame
 
-// stocks 2배 복제
-const duplicatedStocks = computed(() => [...props.stocks, ...props.stocks])
+// ✅ 종목 수 3개 이상일 때만 복제
+const duplicatedStocks = computed(() => {
+  return props.stocks.length >= 3 ? [...props.stocks, ...props.stocks] : props.stocks
+})
 
-// 스크롤 이동 함수
+// ✅ 스크롤 애니메이션 함수
 function step() {
   if (!ticker.value) return
 
   const el = ticker.value
   el.scrollLeft += speed
 
-  // 절반 위치 도달하면 scrollLeft 초기화 (끊김 최소화)
   if (el.scrollLeft >= el.scrollWidth / 2) {
     el.scrollLeft = 0
   }
@@ -73,16 +75,21 @@ function step() {
   animationFrameId.value = requestAnimationFrame(step)
 }
 
+// ✅ 마우스 오버/리브 시 스크롤 제어
 function pauseScroll() {
   if (animationFrameId.value) cancelAnimationFrame(animationFrameId.value)
 }
-
 function resumeScroll() {
-  animationFrameId.value = requestAnimationFrame(step)
+  if (props.stocks.length >= 3) {
+    animationFrameId.value = requestAnimationFrame(step)
+  }
 }
 
+// ✅ 마운트 시 조건부로 스크롤 시작
 onMounted(() => {
-  animationFrameId.value = requestAnimationFrame(step)
+  if (props.stocks.length >= 3) {
+    animationFrameId.value = requestAnimationFrame(step)
+  }
 })
 
 onBeforeUnmount(() => {
