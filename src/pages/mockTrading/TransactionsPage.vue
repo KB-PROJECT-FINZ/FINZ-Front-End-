@@ -124,29 +124,29 @@
               >
                 {{ transaction.stockName }}
               </div>
-              <div
-                class="text-xs mt-1"
-                :class="
-                  transaction.status === 'CANCELLED'
-                    ? 'text-gray-400'
-                    : [
-                        getStatusClass(transaction.status, transaction.type),
-                        transaction.type === 'BUY'
-                          ? 'text-red-600'
-                          : transaction.type === 'SELL'
-                            ? 'text-blue-600'
-                            : '',
-                      ]
-                "
-              >
-                {{ getTransactionStatusText(transaction) }}
+              <div class="text-xs mt-1 flex items-center gap-1">
+                <span
+                  :class="transaction.type === 'BUY' ? 'text-red-600' : 'text-blue-600'"
+                  v-if="transaction.status !== 'CANCELLED'"
+                >
+                  {{ transaction.quantity }}주
+                  {{
+                    transaction.type === 'BUY' ? '매수' : transaction.type === 'SELL' ? '매도' : ''
+                  }}
+                </span>
+                <span v-else class="text-gray-400">취소됨</span>
               </div>
             </div>
           </div>
           <!-- 체결단가 -->
           <div class="flex-shrink-0 text-right">
-            <div v-if="transaction.status !== 'CANCELLED'" class="text-sm text-gray-900">
-              주당 {{ transaction.price.toLocaleString() }}원
+            <div v-if="transaction.status !== 'CANCELLED'">
+              <div class="text-base font-semibold text-gray-900 mb-0.5">
+                {{ (transaction.price * transaction.quantity).toLocaleString() }}원
+              </div>
+              <div class="text-[11px] text-gray-500">
+                주당 {{ transaction.price.toLocaleString() }}원
+              </div>
             </div>
             <div v-else class="text-sm text-gray-400">&nbsp;</div>
           </div>
