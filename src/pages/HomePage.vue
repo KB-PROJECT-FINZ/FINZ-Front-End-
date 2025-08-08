@@ -1,25 +1,24 @@
 <template>
-  <div class="bg-gray-50 min-h-screen pb-20">
+  <div class="min-h-screen pb-20">
     <!-- 상단 로고 + 인사말 -->
     <div class="px-5 pt-6">
-      <img src="@/assets/finz.png" alt="finz" class="w-12 mb-2" />
-      <p class="text-lg font-bold">
-        안녕하세요! <span class="font-black">{{ name }}</span
-        >님! 👍
+      <img src="@/assets/finz.png" alt="finz" class="mx-5 w-12 mb-2" />
+      <p class="text-lg font-normal mx-5">
+        안녕하세요, <span class="font-black">{{ name }}</span
+        >님!
       </p>
-      <p class="text-sm text-gray-600 mb-2">오늘도 화이팅 해볼까요?</p>
 
       <!-- 내 투자 상태 카드 -->
-      <div class="grid grid-cols-2 gap-3 px-5 mt-6 mb-4">
+      <div class="grid grid-cols-2 gap-3 px-5 mt-2 mb-4">
         <div class="bg-gray-100 p-4 rounded-xl border-black">
           <p class="text-sm text-gray-600 font-medium text-black mb-1">보유 현금</p>
-          <p class="font-bold text-gray-600">
+          <p class="font-bold text-gray-700">
             {{ safeNumber(userAccount.currentBalance).toLocaleString() }}원
           </p>
         </div>
         <div class="bg-gray-100 p-4 rounded-xl border-black">
           <p class="text-sm text-gray-600 font-medium text-black mb-1">보유 크레딧</p>
-          <p class="font-bold text-gray-600">{{ asset.amount }}C</p>
+          <p class="font-bold text-gray-700">{{ asset.amount }}C</p>
         </div>
 
         <!-- <div class="bg-gray-100 p-4 rounded-xl border-black">
@@ -36,15 +35,15 @@
 
       <!-- 내 종목보기 카드 전체를 버튼으로, 좌측 정렬 및 아이콘 추가 -->
       <button
-        class="bg-white rounded-xl mx-4 mb-5 overflow-hidden border border-gray-200"
+        class="mx-6 w-80 max-w-[420px] bg-white rounded-xl mb-2 overflow-hidden"
         @click="goToAssetStatus"
         style="display: block"
       >
-        <div class="px-5 py-6">
-          <div class="flex items-center mb-3">
-            <span class="font-semibold text-base text-gray-900">내 종목보기</span>
+        <div class="py-4">
+          <div class="flex items-center mb-1">
+            <span class="font-bold text-base text-gray-900">내 종목보기</span>
             <svg
-              class="w-6 h-6 ml-2 text-gray-400"
+              class="w-5 h-5 text-gray-700"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -60,10 +59,10 @@
           </div>
           <div v-if="!dataLoaded" class="w-40 h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
           <div v-else class="w-full flex flex-col items-start">
-            <div class="text-lg font-bold text-gray-900 mb-1">
+            <div class="text-2xl font-bold text-gray-900 mb-1">
               {{ stockValue.toLocaleString() }}원
             </div>
-            <div class="text-base font-semibold mb-1">
+            <div class="text-base font-medium mb-1">
               <span
                 :class="
                   calculatedProfitAmount > 0
@@ -76,13 +75,175 @@
                 {{ calculatedProfitAmount > 0 ? '+' : ''
                 }}{{ calculatedProfitAmount.toLocaleString() }}원
               </span>
-              <span class="ml-2 text-gray-500">
+              <span
+                :class="
+                  calculatedProfitAmount > 0
+                    ? 'text-red-600'
+                    : calculatedProfitAmount < 0
+                      ? 'text-blue-600'
+                      : 'text-gray-600'
+                "
+              >
                 ({{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%)
               </span>
             </div>
           </div>
         </div>
       </button>
+
+      <!-- 종목 정렬 옵션 셀렉트 + 현재가/평가금 토글 -->
+      <div v-if="holdingsData && holdingsData.length > 0" class="mx-6 mb-2">
+        <div class="flex items-center justify-between">
+          <!-- 정렬 드롭다운 -->
+          <div class="relative inline-block" ref="sortDropdownRoot">
+            <button
+              @click="showSortDropdown = !showSortDropdown"
+              class="px-0 py-2 text-sm font-medium rounded-md bg-white text-gray-700 flex items-center gap-1 min-w-[120px]"
+              type="button"
+            >
+              <span>{{ sortOptions.find((opt) => opt.key === currentSort)?.label || '정렬' }}</span>
+              <svg
+                class="w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            <div
+              v-if="showSortDropdown"
+              class="absolute left-0 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg z-10"
+            >
+              <ul>
+                <li v-for="sort in sortOptions" :key="sort.key">
+                  <button
+                    @click="selectSortOption(sort.key)"
+                    class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 rounded-md"
+                    :class="currentSort === sort.key ? 'text-blue-600 font-bold' : 'text-gray-700'"
+                  >
+                    {{ sort.label }}
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <!-- 현재가/평가금 토글 버튼 (오른쪽 정렬) -->
+          <div class="flex items-center ml-2">
+            <div class="flex bg-gray-100 rounded-lg p-0.5 gap-0.5 flex-nowrap">
+              <button
+                :class="[
+                  showPriceType === 'current'
+                    ? 'bg-white text-blue-600 shadow-sm border border-blue-100 hover:bg-blue-50 hover:border-blue-300'
+                    : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200',
+                  'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap min-w-[56px] h-7',
+                ]"
+                @click="showPriceType = 'current'"
+                type="button"
+                style="box-shadow: 0 1px 2px 0 rgb(16 30 115 / 0.04)"
+              >
+                현재가
+              </button>
+              <button
+                :class="[
+                  showPriceType === 'value'
+                    ? 'bg-white text-blue-600 shadow-sm border border-blue-100 hover:bg-blue-50 hover:border-blue-300'
+                    : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200',
+                  'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap min-w-[56px] h-7',
+                ]"
+                @click="showPriceType = 'value'"
+                type="button"
+                style="box-shadow: 0 1px 2px 0 rgb(16 30 115 / 0.04)"
+              >
+                평가금
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 내 종목 간단 카드 리스트 (상세 아님) -->
+      <div v-if="holdingsData && holdingsData.length > 0" class="mx-6 mb-5">
+        <div
+          v-for="holding in sortedHoldings"
+          :key="holding.stockCode"
+          class="p-0 mb-5 bg-white rounded-xl cursor-pointer transition-colors hover:bg-gray-50 hover:rounded-xl"
+          @click="goToStockDetail(holding.stockCode, holding.stockName)"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              <span
+                class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden"
+              >
+                <img
+                  v-if="holding.imageUrl && !imageErrors[holding.stockCode]"
+                  :src="holding.imageUrl"
+                  :alt="`${holding.stockName} 로고`"
+                  class="w-full h-full object-cover rounded-full"
+                  @error="handleImageError(holding.stockCode)"
+                />
+                <span
+                  v-else
+                  class="w-full h-full rounded-full flex items-center justify-center text-[13px] font-bold border-2 text-center flex-shrink-0"
+                  style="border-color: #2272eb; color: #2272eb; background: #fff"
+                >
+                  {{ getStockInitial(holding.stockName) }}
+                </span>
+              </span>
+              <div class="flex flex-col min-w-0">
+                <div class="text-base font-semibold text-gray-900 truncate">
+                  {{ holding.stockName }}
+                </div>
+                <div class="text-xs text-gray-500 mt-0.5">{{ holding.quantity }}주</div>
+              </div>
+            </div>
+            <div class="flex flex-col items-end justify-center min-w-[110px]">
+              <span class="text-base text-gray-900 font-semibold mb-0.5">
+                {{ holding.currentPrice.toLocaleString() }}원
+              </span>
+              <template v-if="showPriceType === 'value'">
+                <!-- 기존 평가손익/수익률 표시 -->
+                <span
+                  v-if="holding.profitLoss !== null && holding.profitRate !== null"
+                  :class="holding.profitLoss >= 0 ? 'text-red-600' : 'text-blue-600'"
+                  class="text-xs"
+                >
+                  {{ holding.profitRate >= 0 ? '+' : '-' }}
+                  {{ Math.abs(holding.profitLoss).toLocaleString() }}원 ({{
+                    holding.profitRate >= 0 ? '+' : ''
+                  }}{{ holding.profitRate }}%)
+                </span>
+                <span v-else class="text-xs text-gray-400">계산 중...</span>
+              </template>
+              <template v-else>
+                <!-- 전일 대비 변동 금액/변동률 표시 -->
+                <span
+                  v-if="stockPrices[holding.stockCode]"
+                  class="text-xs"
+                  :class="
+                    Number(stockPrices[holding.stockCode].inter2_prdy_vrss) > 0
+                      ? 'text-red-600'
+                      : Number(stockPrices[holding.stockCode].inter2_prdy_vrss) < 0
+                        ? 'text-blue-600'
+                        : 'text-gray-600'
+                  "
+                >
+                  {{ Number(stockPrices[holding.stockCode].inter2_prdy_vrss) > 0 ? '+' : '' }}
+                  {{ Number(stockPrices[holding.stockCode].inter2_prdy_vrss).toLocaleString() }}원
+                  ({{ Number(stockPrices[holding.stockCode].prdy_ctrt) > 0 ? '+' : ''
+                  }}{{ stockPrices[holding.stockCode].prdy_ctrt }}%)
+                </span>
+                <span v-else class="text-xs text-gray-400">-</span>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- 학습 안내 컨테이너 -->
       <!-- <div class="bg-white rounded-2xl shadow px-5 py-4 flex flex-col items-center mb-4">
@@ -115,294 +276,7 @@
         </button>
       </div> -->
 
-      <!-- 내 투자내역 카드 -->
-      <section class="bg-white rounded-xl mx-4 mb-5 overflow-hidden border border-gray-200">
-        <div
-          class="flex items-center justify-between bg-gray-50 px-5 py-4 border-b border-gray-200"
-        >
-          <div class="text-base font-bold text-gray-900">내 투자내역</div>
-          <button
-            class="bg-white text-black border border-gray-300 rounded px-3 py-1 text-sm font-medium hover:bg-gray-100 transition"
-            @click="goToTransactions"
-          >
-            최근 투자 내역 바로가기
-          </button>
-        </div>
-
-        <div class="px-5 py-4">
-          <!-- 로딩 중 -->
-          <div v-if="!dataLoaded">
-            <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
-            <div class="flex flex-col gap-2 mb-4">
-              <div
-                v-for="i in 2"
-                :key="i"
-                class="w-full h-10 bg-gray-200 rounded animate-pulse"
-              ></div>
-            </div>
-            <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
-            <div class="flex flex-col gap-2">
-              <div
-                v-for="i in 2"
-                :key="i"
-                class="w-full h-10 bg-gray-200 rounded animate-pulse"
-              ></div>
-            </div>
-          </div>
-
-          <!-- 실제 데이터 -->
-          <div v-else>
-            <!-- 매수 -->
-            <div class="mb-4">
-              <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
-              <div v-if="buyHistory.length === 0" class="text-sm text-gray-500 text-center py-4">
-                매수 내역이 없습니다
-              </div>
-              <div v-else>
-                <div
-                  v-for="(item, index) in buyHistory"
-                  :key="`buy-${index}`"
-                  class="flex items-center justify-between px-3 py-3 shadow border-l-4 border-red-600 rounded-lg mb-2"
-                >
-                  <div class="flex items-center">
-                    <div
-                      class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3"
-                    >
-                      <img
-                        v-if="item.imageUrl && !imageErrors[item.stockCode]"
-                        :src="item.imageUrl"
-                        class="w-full h-full object-cover"
-                        @error="handleImageError(item.stockCode)"
-                      />
-                      <span v-else class="text-xs font-bold" style="color: #2272eb">
-                        {{ getStockInitial(item.name) }}
-                      </span>
-                    </div>
-                    <div class="flex flex-col">
-                      <div class="text-sm font-bold text-gray-900">{{ item.name }}</div>
-                      <div class="text-xs text-gray-500">{{ item.desc }}</div>
-                    </div>
-                  </div>
-                  <div class="text-sm font-bold text-gray-900">
-                    {{ item.amount.toLocaleString() }}원
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 매도 -->
-            <div>
-              <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
-              <div v-if="sellHistory.length === 0" class="text-sm text-gray-500 text-center py-4">
-                매도 내역이 없습니다
-              </div>
-              <div v-else>
-                <div
-                  v-for="(item, index) in sellHistory"
-                  :key="`sell-${index}`"
-                  class="flex items-center justify-between px-3 py-3 shadow border-l-4 border-blue-600 rounded-lg mb-2"
-                >
-                  <div class="flex items-center">
-                    <div
-                      class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3"
-                    >
-                      <img
-                        v-if="item.imageUrl && !imageErrors[item.stockCode]"
-                        :src="item.imageUrl"
-                        class="w-full h-full object-cover"
-                        @error="handleImageError(item.stockCode)"
-                      />
-                      <span v-else class="text-xs font-bold" style="color: #2272eb">
-                        {{ getStockInitial(item.name) }}
-                      </span>
-                    </div>
-                    <div class="flex flex-col">
-                      <div class="text-sm font-bold text-gray-900">{{ item.name }}</div>
-                      <div class="text-xs text-gray-500">{{ item.desc }}</div>
-                    </div>
-                  </div>
-                  <div class="text-sm font-bold text-gray-900">
-                    {{ item.amount.toLocaleString() }}원
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 프로필 주요 정보: 총 보유자산 -->
-      <div class="px-5 mt-6">
-        <!-- 총 보유자산 -->
-        <section class="bg-white rounded-xl mb-5 px-5 py-5 border border-gray-200">
-          <div class="text-gray-500 text-sm mb-2">총 보유자산</div>
-          <div v-if="!dataLoaded" class="flex items-center justify-between mb-1">
-            <div class="w-40 h-8 bg-gray-200 rounded animate-pulse"></div>
-            <div class="w-32 h-9 bg-gray-200 rounded animate-pulse"></div>
-          </div>
-          <div v-else class="flex items-baseline gap-x-4 mb-4">
-            <span class="text-[28px] font-bold text-gray-900 leading-none">
-              {{ calculatedTotalAssetValue.toLocaleString() }}원
-            </span>
-            <span
-              :class="
-                calculatedProfitRate > 0
-                  ? 'text-red-600'
-                  : calculatedProfitRate < 0
-                    ? 'text-blue-600'
-                    : 'text-gray-600'
-              "
-              class="text-base font-medium leading-none"
-            >
-              {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
-            </span>
-          </div>
-          <div class="flex justify-center">
-            <button
-              class="bg-blue-600 text-white rounded px-6 py-2 text-sm font-semibold hover:bg-blue-800 transition"
-              style="width: 320px"
-              @click="goToAssetStatus"
-            >
-              내 자산 현황 바로가기
-            </button>
-          </div>
-        </section>
-      </div>
-    </div>
-
-    <!-- 오늘의 할 일 -->
-    <div class="px-5 mt-6">
-      <h2 class="text-md font-bold mb-2">오늘의 할 일</h2>
-      <div class="text-white rounded-xl p-4 mb-4" style="background-color: #fab809">
-        <div class="flex justify-between items-center mb-1">
-          <p class="font-semibold">오늘의 학습 목표</p>
-          <button
-            class="text-sm bg-white text-purple-600 px-3 py-1 rounded-full font-bold"
-            @click="goToStudy"
-          >
-            시작하기
-          </button>
-        </div>
-        <ul class="mt-2 space-y-1 text-sm list-disc list-inside">
-          <li
-            v-for="item in recommendedLearningContents.slice(0, 2)"
-            :key="item.contentId"
-            class="text-white"
-          >
-            {{ item.title }}
-          </li>
-          <li v-if="recommendedLearningContents.length === 0" class="text-white">
-            학습 콘텐츠 없음
-          </li>
-        </ul>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3">
-        <div class="bg-white p-4 rounded-xl shadow-sm text-center">
-          <p class="text-xs text-gray-500 mb-1">오늘의 퀴즈</p>
-          <p class="font-semibold text-orange-400">+500 크레딧</p>
-        </div>
-        <div class="bg-white p-4 rounded-xl shadow-sm text-center">
-          <p class="text-xs text-gray-500 mb-1">투자 요약</p>
-          <p class="font-semibold text-green-500">+2.1% 오늘</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- 추천 콘텐츠 -->
-    <div class="px-5 mt-6">
-      <div class="flex justify-between items-center mb-2">
-        <h2 class="text-md font-bold">{{ riskTypeName }}에게 추천 콘텐츠</h2>
-        <button class="text-xs text-gray-400 underline" @click="goToContents">전체보기</button>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 place-items-center">
-        <div
-          v-for="(item, index) in recommendedContentsByRisk.filter(
-            (item) => !item.quizId && !item.hasQuiz,
-          )"
-          :key="item.contentId"
-          class="min-w-[160px] bg-white p-3 rounded-xl shadow-sm shrink-0 cursor-pointer"
-          @click="openContentModal(item)"
-        >
-          <p
-            :class="
-              index % 2 === 0
-                ? 'text-purple-600 text-base font-bold'
-                : 'text-blue-600 text-base font-bold'
-            "
-            class="mb-1"
-          >
-            {{ item.label || '추천' }}
-          </p>
-          <p class="text-sm font-semibold">{{ item.title }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- 빠른 실행 -->
-    <div class="px-5 mt-6">
-      <h2 class="text-md font-bold mb-2">빠른 실행</h2>
-      <div class="grid grid-cols-2 gap-3">
-        <!-- 오늘의 퀴즈 모달 트리거 버튼 -->
-        <button
-          @click="showQuizModal = true"
-          class="bg-white p-4 rounded-xl shadow-sm text-center cursor-pointer"
-        >
-          <p class="font-bold">오늘의 퀴즈 보기</p>
-          <p class="text-sm text-gray-400">5개</p>
-        </button>
-
-        <!-- 퀴즈 모달창 -->
-        <transition name="fade-scale">
-          <div
-            v-if="showQuizModal"
-            class="fixed inset-0 z-50 flex items-center justify-center px-4"
-          >
-            <div
-              class="bg-white w-full max-w-md max-h-[80vh] rounded-xl shadow-2xl relative overflow-hidden"
-            >
-              <!-- 닫기 버튼 -->
-              <button
-                @click="showQuizModal = false"
-                class="absolute top-4 right-5 text-gray-500 hover:text-black z-10"
-              >
-                ✕
-              </button>
-
-              <!-- 내부 콘텐츠 -->
-              <div class="p-5 pt-10 overflow-y-auto h-full">
-                <h2 class="text-lg font-bold mb-2 text-purple-600">📝 오늘의 퀴즈</h2>
-                <p class="text-sm text-gray-500 mb-4">매일 퀴즈로 금융 감각을 키워보세요!</p>
-
-                <!-- ✅ 퀴즈 목록 최대 5개 + 클릭 시 상세 이동 -->
-                <div
-                  v-for="item in recommendedLearningContents"
-                  :key="item.contentId"
-                  class="mb-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer"
-                  @click="goToDetail(item.contentId)"
-                >
-                  <p class="text-xs text-yellow-600 font-bold mb-1">{{ item.credit }} 크레딧</p>
-                  <p class="font-semibold text-gray-800">{{ item.title }}</p>
-                </div>
-
-                <!-- 퀴즈 없을 때 -->
-                <div v-if="quizList.length === 0" class="text-gray-400 text-sm text-center">
-                  오늘의 퀴즈가 없습니다.
-                </div>
-              </div>
-            </div>
-          </div>
-        </transition>
-
-        <div
-          class="bg-white p-4 rounded-xl shadow-sm text-center cursor-pointer"
-          @click="goToPortfolio"
-        >
-          <p class="font-bold">포트폴리오</p>
-          <p class="text-sm text-gray-400">수익률 확인</p>
-        </div>
-      </div>
+      <!-- 여기에 최근 거래 내역, 거래 대기 중인 목록 가져오는 가로 버튼 만들기 -->
     </div>
 
     <div>
@@ -445,10 +319,16 @@
 
 <script setup>
 import { getUserCredit } from '@/services/learning'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { useAssetDataStore } from '@/services/useAssetData'
+import BottomNav from '@/components/FooterNavigation.vue'
+import { useHoldingsData } from '@/services/useHoldingsData'
+import { useHoldingsSorting } from '@/services/useHoldingsSorting'
 
-const asset = ref({ amount: 0 })
-// ...existing code...
 // --- 내 투자내역 카드 관련 상태 및 함수 ---
+const asset = ref({ amount: 0 })
 const buyHistory = ref([])
 const sellHistory = ref([])
 const imageErrors = ref({})
@@ -462,6 +342,103 @@ const handleImageError = (code) => {
 const getStockInitial = (name) => {
   return name ? name[0] : '?'
 }
+
+// --- 내 종목보기(보유 종목) 데이터 ---
+const {
+  holdingsData,
+  loading: holdingsLoading,
+  fetchHoldings,
+  safeNumber: holdingsSafeNumber,
+} = useHoldingsData()
+
+// 현재가/평가금 토글 상태
+const showPriceType = ref('current') // 'current' | 'value'
+
+// 보유 종목 코드 추출
+const stockCodes = computed(() =>
+  (holdingsData.value || []).map((item) => item.stockCode).join(','),
+)
+
+// 시세 데이터 저장
+const stockPrices = ref({})
+
+// 시세 데이터 불러오기 함수
+const fetchStockPrices = async () => {
+  if (!stockCodes.value) return
+  try {
+    const res = await axios.get(`/api/stock/prices/${stockCodes.value}`)
+    if (res.data && res.data.success) {
+      stockPrices.value = res.data.data
+    }
+  } catch (e) {
+    stockPrices.value = {}
+  }
+}
+
+// 종목코드 변경 시마다 시세 데이터 갱신
+watch(stockCodes, fetchStockPrices, { immediate: true })
+
+const sortOptions = [
+  { key: 'name', label: '가나다 순' },
+  { key: 'profitRateAsc', label: '총 수익률 낮은 순' },
+  { key: 'profitRateDesc', label: '총 수익률 높은 순' },
+  { key: 'valueAsc', label: '평가손익 낮은 순' },
+  { key: 'valueDesc', label: '평가손익 높은 순' },
+]
+
+const currentSort = ref('name')
+function changeSortOption(key) {
+  currentSort.value = key
+}
+
+const sortedHoldings = computed(() => {
+  if (!holdingsData.value || holdingsData.value.length === 0) return []
+  let arr = [...holdingsData.value]
+  switch (currentSort.value) {
+    case 'name':
+      arr.sort((a, b) => (a.stockName || '').localeCompare(b.stockName || '', 'ko'))
+      break
+    case 'profitRateDesc':
+      arr.sort((a, b) => (b.profitRate ?? -Infinity) - (a.profitRate ?? -Infinity))
+      break
+    case 'profitRateAsc':
+      arr.sort((a, b) => (b.profitRate ?? -Infinity) - (a.profitRate ?? -Infinity)).reverse()
+      break
+    case 'valueDesc':
+      arr.sort((a, b) => (b.profitLoss ?? -Infinity) - (a.profitLoss ?? -Infinity))
+      break
+    case 'valueAsc':
+      arr.sort((a, b) => (b.profitLoss ?? -Infinity) - (a.profitLoss ?? -Infinity)).reverse()
+      break
+    default:
+      break
+  }
+  return arr
+})
+
+const showSortDropdown = ref(false)
+function selectSortOption(key) {
+  changeSortOption(key)
+  showSortDropdown.value = false
+}
+
+// 드롭다운 외부 클릭 시 닫기
+import { onBeforeUnmount } from 'vue'
+const sortDropdownRoot = ref(null)
+function handleClickOutside(event) {
+  if (sortDropdownRoot.value && !sortDropdownRoot.value.contains(event.target)) {
+    showSortDropdown.value = false
+  }
+}
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+onMounted(async () => {
+  await fetchHoldings()
+  document.addEventListener('click', handleClickOutside)
+})
 
 // 데이터 로딩 (내 투자내역)
 onMounted(async () => {
@@ -491,23 +468,8 @@ onMounted(async () => {
     console.error('내 투자내역 로딩 실패:', e)
   }
 })
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import axios from 'axios'
-import { useAssetDataStore } from '@/services/useAssetData'
-import BottomNav from '@/components/FooterNavigation.vue'
 
 const selectedContent = ref(null)
-const showQuizModal = ref(false)
-const quizList = ref([])
-
-function goToDetail(id) {
-  router.push(`/learning/${id}`)
-}
-
-const openContentModal = (item) => {
-  selectedContent.value = item
-}
 
 const router = useRouter()
 
