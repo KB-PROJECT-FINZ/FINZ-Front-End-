@@ -15,74 +15,111 @@
     </header>
 
     <!-- 프로필 박스 -->
-    <section class="rounded-2xl mt-5 px-5 py-5 bg-white">
-      <!-- 이모지 + 이름 -->
-      <div class="flex items-center mb-3">
+    <section class="rounded-2xl px-5 mt-5 bg-white">
+      <!-- 프로필 이미지 + 투자 성향 + 이름 (가운데 정렬) -->
+      <div class="flex flex-col items-center">
         <div
-          class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-lg text-gray-400 mr-2"
+class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mb-2"
         >
-          👤
+          <img
+            src="@/assets/finz.png"
+            alt="프로필"
+            style="
+              width: 80%;
+              height: 100%;
+              object-fit: scale-down;
+              object-position: center;
+              background: transparent;
+            "
+          />
         </div>
-        <div class="text-base font-bold text-gray-900">{{ profile.name }}</div>
-      </div>
-
-      <!-- 투자 성향 & 포인트 박스 (줄바꿈 없이, 여백 좁게) -->
-      <div class="flex flex-nowrap gap-2">
-        <div class="w-1/2 bg-white shadow rounded-lg px-4 py-2 text-sm text-gray-700">
-          <div class="text-gray-500 text-xs mb-0.5">투자 성향</div>
-          <div class="font-semibold text-indigo-600 truncate">{{ profile.type }} {{ nameKr }}</div>
-        </div>
-
-        <div class="w-1/2 bg-white shadow rounded-lg px-4 py-2 text-sm text-gray-700">
-          <div class="text-gray-500 text-xs mb-0.5">크레딧</div>
-          <div class="font-semibold text-yellow-600 truncate">{{ asset.amount }}C</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 자산 섹션 -->
-    <section class="bg-white rounded-xl mx-4 mb-5 px-5 py-5 border border-gray-200">
-      <div class="text-gray-500 text-sm mb-2">총 보유자산</div>
-
-      <div v-if="!dataLoaded" class="flex items-center justify-between mb-1">
-        <div class="w-40 h-8 bg-gray-200 rounded animate-pulse"></div>
-        <div class="w-32 h-9 bg-gray-200 rounded animate-pulse"></div>
-      </div>
-
-      <div v-else class="flex items-baseline gap-x-4 mb-4">
-        <span class="text-[28px] font-bold text-gray-900 leading-none">
-          {{ calculatedTotalAssetValue.toLocaleString() }}원
-        </span>
-        <span
-          :class="
-            calculatedProfitRate > 0
-              ? 'text-red-600'
-              : calculatedProfitRate < 0
-                ? 'text-blue-600'
-                : 'text-gray-600'
+        <div
+          class="inline-block mb-1 px-3 py-1 rounded-full text-xs font-semibold"
+          style="
+            background: #6366f1;
+            color: #fff;
+            box-shadow: 0 1px 4px 0 rgba(99, 102, 241, 0.08);
+            letter-spacing: 0.01em;
           "
-          class="text-base font-medium leading-none"
         >
-          {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
-        </span>
-      </div>
-
-      <div class="flex justify-center">
-        <button
-          class="bg-blue-600 text-white rounded px-6 py-2 text-sm font-semibold hover:bg-blue-800 transition"
-          style="width: 320px"
-          @click="goToAssetStatus"
-        >
-          내 자산 현황 바로가기
-        </button>
+          {{ profile.type }} {{ nameKr }}
+        </div>
+        <div class="text-base font-bold text-gray-900">{{ profile.name }}님</div>
       </div>
     </section>
+    <hr class="my-4 mx-15 border-gray-200" />
 
-    <!-- 메뉴 -->
+    <!-- 추천 콘텐츠 -->
+    <div class="px-5">
+      <div class="mb-2">
+        <h2 class="text-md font-bold text-center w-full">{{ riskTypeName }} 맞춤 콘텐츠</h2>
+        <div class="flex justify-end w-full mt-1">
+          <button class="text-xs text-gray-600 underline" @click="goToContents">
+            다른 성향도 알아보기 >
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 place-items-center">
+        <div
+          v-for="(item, index) in recommendedContentsByRisk.filter(
+            (item) => !item.quizId && !item.hasQuiz,
+          )"
+          :key="item.contentId"
+          class="min-w-[160px] h-28 bg-white p-3 rounded-xl shadow-sm shrink-0 cursor-pointer flex flex-col justify-center mb-6"
+          @click="openContentModal(item)"
+        >
+          <p
+            :class="
+              index % 2 === 0
+                ? 'text-purple-600 text-base font-bold'
+                : 'text-blue-600 text-base font-bold'
+            "
+            class="mb-1"
+          >
+            {{ item.label || '추천' }}
+          </p>
+          <p class="text-sm font-semibold">{{ item.title }}</p>
+        </div>
+      </div>
+    </div>
+    <hr class="my-2 border-gray-200" />
+    <!-- 추천 콘텐츠 상세 모달 -->
+    <transition name="fade-scale">
+      <div
+        v-if="selectedContent"
+        class="fixed inset-0 bg-gray-300/40 z-50 flex items-center justify-center"
+      >
+        <div
+          class="bg-white p-6 rounded-xl w-[90%] max-w-md relative shadow-2xl ring-1 ring-gray-200 transition-all duration-300 ease-in-out"
+        >
+          <p
+            v-if="selectedContent.label"
+            class="text-xs text-gray-500 mb-1 uppercase tracking-wide"
+          >
+            {{ selectedContent.label }}
+          </p>
+          <h2 class="text-lg font-bold mb-1 text-gray-800">
+            {{ selectedContent.title }}
+          </h2>
+          <div class="border-b border-gray-300 my-3"></div>
+          <p class="text-sm text-gray-700 whitespace-pre-wrap">
+            {{ selectedContent.content }}
+          </p>
+          <button
+            class="absolute top-3 right-4 text-gray-500 hover:text-black"
+            @click="selectedContent = null"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    </transition>
+    <!-- 투자 일지 & 나의 투자 성향 알아보기 -->
     <section class="flex flex-col gap-3 mx-4 mb-5">
       <router-link
         to="/journal"
-        class="flex items-center bg-white rounded-xl px-4 py-4 border border-gray-200 text-inherit no-underline"
+        class="flex items-center bg-white rounded-xl px-4 py-4 text-inherit no-underline"
       >
         <span class="text-xl mr-4">📒</span>
         <div class="flex-1 min-w-0">
@@ -91,9 +128,28 @@
         </div>
         <span class="text-xl text-gray-300 ml-2">&#8250;</span>
       </router-link>
+      <!-- 달력: 투자 일지/성향 알아보기 바로 위 -->
+      <div class="flex justify-center">
+        <Calendar
+          class="custom-calendar w-full max-w-md mb-2"
+          :attributes="calendarAttrs"
+          :title-position="'center'"
+          :show-arrows="true"
+          :first-day-of-week="0"
+          @dayclick="
+            (day, event) => {
+              event.target.blur()
+              onCalendarDayClick(day)
+            }
+          "
+        />
+      </div>
+    </section>
+    <hr class="my-2 border-gray-200" />
+    <section class="flex flex-col gap-3 mx-4 mb-5">
       <router-link
         to="/risk-profile"
-        class="flex items-center bg-white rounded-xl px-4 py-4 border border-gray-200 text-inherit no-underline"
+        class="flex items-center bg-white rounded-xl px-4 py-4 text-inherit no-underline"
       >
         <span class="text-xl mr-4">📝</span>
         <div class="flex-1 min-w-0">
@@ -103,121 +159,7 @@
         <span class="text-xl text-gray-300 ml-2">&#8250;</span>
       </router-link>
     </section>
-
-    <!-- 내 투자내역 카드 -->
-    <section class="bg-white rounded-xl mx-4 mb-5 overflow-hidden border border-gray-200">
-      <div class="flex items-center justify-between bg-gray-50 px-5 py-4 border-b border-gray-200">
-        <div class="text-base font-bold text-gray-900">내 투자내역</div>
-        <button
-          class="bg-white text-black border border-gray-300 rounded px-3 py-1 text-sm font-medium hover:bg-gray-100 transition"
-          @click="goToTransactions"
-        >
-          최근 투자 내역 바로가기
-        </button>
-      </div>
-
-      <div class="px-5 py-4">
-        <!-- 로딩 중 -->
-        <div v-if="!dataLoaded">
-          <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
-          <div class="flex flex-col gap-2 mb-4">
-            <div
-              v-for="i in 2"
-              :key="i"
-              class="w-full h-10 bg-gray-200 rounded animate-pulse"
-            ></div>
-          </div>
-          <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
-          <div class="flex flex-col gap-2">
-            <div
-              v-for="i in 2"
-              :key="i"
-              class="w-full h-10 bg-gray-200 rounded animate-pulse"
-            ></div>
-          </div>
-        </div>
-
-        <!-- 실제 데이터 -->
-        <div v-else>
-          <!-- 매수 -->
-          <div class="mb-4">
-            <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
-            <div v-if="buyHistory.length === 0" class="text-sm text-gray-500 text-center py-4">
-              매수 내역이 없습니다
-            </div>
-            <div v-else>
-              <div
-                v-for="(item, index) in buyHistory"
-                :key="`buy-${index}`"
-                class="flex items-center justify-between px-3 py-3 shadow border-l-4 border-red-600 rounded-lg mb-2"
-              >
-                <div class="flex items-center">
-                  <div
-                    class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3"
-                  >
-                    <img
-                      v-if="item.imageUrl && !imageErrors[item.stockCode]"
-                      :src="item.imageUrl"
-                      class="w-full h-full object-cover"
-                      @error="handleImageError(item.stockCode)"
-                    />
-                    <span v-else class="text-xs font-bold" style="color: #2272eb">
-                      {{ getStockInitial(item.name) }}
-                    </span>
-                  </div>
-                  <div class="flex flex-col">
-                    <div class="text-sm font-bold text-gray-900">{{ item.name }}</div>
-                    <div class="text-xs text-gray-500">{{ item.desc }}</div>
-                  </div>
-                </div>
-                <div class="text-sm font-bold text-gray-900">
-                  {{ item.amount.toLocaleString() }}원
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 매도 -->
-          <div>
-            <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
-            <div v-if="sellHistory.length === 0" class="text-sm text-gray-500 text-center py-4">
-              매도 내역이 없습니다
-            </div>
-            <div v-else>
-              <div
-                v-for="(item, index) in sellHistory"
-                :key="`sell-${index}`"
-                class="flex items-center justify-between px-3 py-3 shadow border-l-4 border-blue-600 rounded-lg mb-2"
-              >
-                <div class="flex items-center">
-                  <div
-                    class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3"
-                  >
-                    <img
-                      v-if="item.imageUrl && !imageErrors[item.stockCode]"
-                      :src="item.imageUrl"
-                      class="w-full h-full object-cover"
-                      @error="handleImageError(item.stockCode)"
-                    />
-                    <span v-else class="text-xs font-bold" style="color: #2272eb">
-                      {{ getStockInitial(item.name) }}
-                    </span>
-                  </div>
-                  <div class="flex flex-col">
-                    <div class="text-sm font-bold text-gray-900">{{ item.name }}</div>
-                    <div class="text-xs text-gray-500">{{ item.desc }}</div>
-                  </div>
-                </div>
-                <div class="text-sm font-bold text-gray-900">
-                  {{ item.amount.toLocaleString() }}원
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
+    <hr class="my-2 border-gray-200" />
     <FooterNavigation />
   </div>
 </template>
@@ -227,9 +169,9 @@ import FooterNavigation from '@/components/FooterNavigation.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import { getUserCredit } from '@/services/learning'
 import { useUserStore } from '@/stores/user'
 import { useAssetDataStore } from '@/services/useAssetData'
+import { Calendar } from 'v-calendar'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -239,14 +181,37 @@ const { dataLoaded, userAccount, calculatedProfitRate, loadUserData, safeNumber 
   useAssetDataStore()
 
 const profile = ref({ image: '', name: '', type: '', level: 3 })
-const asset = ref({ amount: 0 })
 const buyHistory = ref([])
 const sellHistory = ref([])
+const transactions = ref([])
+
+// 추천 콘텐츠 관련 상태
+const riskTypeName = ref('')
+const recommendedContentsByRisk = ref([])
+const selectedContent = ref(null)
 const nameKr = ref('')
 const calculatedTotalAssetValue = computed(() => safeNumber(userAccount.value.totalAssetValue, 0))
 
 const goToAssetStatus = () => router.push('/mock-trading/asset-status')
 const goToTransactions = () => router.push('/mock-trading/transactions')
+
+const goToContents = () => router.push('/recommend')
+const openContentModal = (item) => {
+  selectedContent.value = item
+}
+
+// 추천 콘텐츠 API 호출 함수 (onMounted 바깥으로 이동)
+const fetchRecommendedContentsByRiskType = async (riskType) => {
+  try {
+    const res = await axios.get(`/api/contents/recommend?riskType=${riskType}`, {
+      withCredentials: true,
+    })
+    recommendedContentsByRisk.value = res.data
+  } catch (e) {
+    console.error('❌ 추천 콘텐츠 조회 실패:', e)
+    recommendedContentsByRisk.value = []
+  }
+}
 
 const handleLogout = async () => {
   try {
@@ -278,16 +243,19 @@ onMounted(async () => {
       image: me.data.profileImage || '',
     }
 
-    const credit = await getUserCredit(me.data.userId)
-    asset.value.amount = credit
-
-    await loadUserData()
+    // 투자 성향 한글명
     const detailRes = await axios.get(`/api/user/risk-type-detail/${profile.value.type}`, {
       withCredentials: true,
     })
     nameKr.value = detailRes.data.nameKr
+    riskTypeName.value = detailRes.data.nameKr
 
+    // 추천 콘텐츠 불러오기
+    await fetchRecommendedContentsByRiskType(profile.value.type)
+
+    await loadUserData()
     const txRes = await axios.get('/api/mocktrading/transactions', { withCredentials: true })
+    transactions.value = txRes.data || []
     if (txRes.data && txRes.data.length > 0) {
       const buyTx = txRes.data.filter((t) => t.transactionType === 'BUY')
       const sellTx = txRes.data.filter((t) => t.transactionType === 'SELL')
@@ -313,20 +281,46 @@ onMounted(async () => {
     try {
       profile.value.name = localStorage.getItem('name') || '사용자'
       profile.value.type = localStorage.getItem('riskType') || '정보 없음'
-
-      const userId = Number(localStorage.getItem('userId') || 1)
-      const credit = await getUserCredit(userId)
-      asset.value.amount = credit
-
+      riskTypeName.value = profile.value.type
       await loadUserData()
     } catch (fallbackError) {
       console.error('Fallback 로딩도 실패:', fallbackError)
     }
   }
 })
+
+// 거래내역 날짜에 파란 점 찍히는 달력 속성
+const calendarAttrs = computed(() => {
+  const dates = Array.from(
+    new Set(
+      transactions.value
+        .filter((t) => t.executedAt)
+        .map((t) => {
+          const d = new Date(t.executedAt)
+          const y = d.getFullYear()
+          const m = String(d.getMonth() + 1).padStart(2, '0')
+          const day = String(d.getDate()).padStart(2, '0')
+          return `${y}-${m}-${day}`
+        }),
+    ),
+  )
+  return dates.map((date) => ({
+    key: date,
+    dates: date,
+    dot: { color: '#2272eb', backgroundColor: '#2272eb' },
+  }))
+})
+
+// 달력 날짜 클릭 시 투자 일지로 이동
+function onCalendarDayClick(day) {
+  if (day && day.id) {
+    router.push({ path: '/journal', query: { date: day.id } })
+  }
+}
 </script>
 
 <style scoped>
+@import 'v-calendar/style.css';
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
@@ -338,5 +332,8 @@ onMounted(async () => {
   50% {
     opacity: 0.5;
   }
+}
+.vc-container {
+  width: 100% !important;
 }
 </style>
