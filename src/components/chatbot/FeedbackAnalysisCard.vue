@@ -1,10 +1,10 @@
 <template>
   <div class="space-y-4">
     <!-- 분석 기간 표시 -->
-    <div v-if="analysisPeriod" class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl p-4 border border-blue-200/30">
+    <div v-if="feedbackData.periodDays" class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl p-4 border border-blue-200/30">
       <p class="text-base text-gray-700 font-semibold flex items-center">
         <span class="mr-2">📅</span>
-        사용자 지정 분석 기간: {{ analysisPeriod }}일
+        분석 기간: {{ feedbackData.startDate }} ~ {{ feedbackData.endDate }} ({{ feedbackData.periodDays }}일)
       </p>
     </div>
 
@@ -17,9 +17,9 @@
         <h3 class="text-lg font-bold text-gray-900">투자 전략의 특징</h3>
       </div>
       <div class="space-y-3">
-        <div v-for="(feature, index) in investmentFeatures" :key="index" class="flex items-start">
+        <div class="flex items-start">
           <div class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-          <p class="text-gray-700 leading-relaxed">{{ feature }}</p>
+          <p class="text-gray-700 leading-relaxed">{{ feedbackData.strategySummary }}</p>
         </div>
       </div>
     </div>
@@ -33,9 +33,9 @@
         <h3 class="text-lg font-bold text-gray-900">리스크 및 개선점</h3>
       </div>
       <div class="space-y-3">
-        <div v-for="(risk, index) in riskPoints" :key="index" class="flex items-start">
+        <div class="flex items-start">
           <div class="w-2 h-2 bg-orange-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-          <p class="text-gray-700 leading-relaxed">{{ risk }}</p>
+          <p class="text-gray-700 leading-relaxed">{{ feedbackData.riskPoint }}</p>
         </div>
       </div>
     </div>
@@ -49,9 +49,9 @@
         <h3 class="text-lg font-bold text-gray-900">개인 맞춤 조언</h3>
       </div>
       <div class="space-y-3">
-        <div v-for="(advice, index) in personalAdvice" :key="index" class="flex items-start">
+        <div class="flex items-start">
           <div class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-          <p class="text-gray-700 leading-relaxed">{{ advice }}</p>
+          <p class="text-gray-700 leading-relaxed">{{ feedbackData.suggestion }}</p>
         </div>
       </div>
     </div>
@@ -71,72 +71,39 @@ const props = defineProps({
   },
 })
 
-// 분석 기간 추출
-const analysisPeriod = computed(() => {
-  const match = props.content.match(/사용자 지정 분석 기간: (\d+)일/)
-  return match ? match[1] : null
-})
-
-// 투자 전략 특징 추출
-const investmentFeatures = computed(() => {
-  const features = []
-  const lines = props.content.split('\n')
-  let inFeatures = false
-  
-  for (const line of lines) {
-    if (line.includes('1. 투자 전략의 특징:')) {
-      inFeatures = true
-      continue
+// JSON 데이터 파싱
+const feedbackData = computed(() => {
+  try {
+    // JSON 형태인지 확인하고 파싱
+    if (props.content.trim().startsWith('{')) {
+      return JSON.parse(props.content)
     }
-    if (line.includes('2. 리스크 및 개선점:')) {
-      break
+    
+    // 텍스트와 JSON이 섞여있는 경우 JSON 부분만 추출
+    const jsonMatch = props.content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0])
     }
-    if (inFeatures && line.trim() && line.includes('-')) {
-      features.push(line.trim().replace(/^-\s*/, ''))
+    
+    // 기존 텍스트 형태인 경우 fallback
+    return {
+      periodDays: null,
+      startDate: null,
+      endDate: null,
+      strategySummary: '분석 데이터를 불러오는 중입니다.',
+      riskPoint: '분석 데이터를 불러오는 중입니다.',
+      suggestion: '분석 데이터를 불러오는 중입니다.'
     }
-  }
-  
-  return features
-})
-
-// 리스크 및 개선점 추출
-const riskPoints = computed(() => {
-  const risks = []
-  const lines = props.content.split('\n')
-  let inRisks = false
-  
-  for (const line of lines) {
-    if (line.includes('2. 리스크 및 개선점:')) {
-      inRisks = true
-      continue
-    }
-    if (line.includes('3. 개인 맞춤 조언:')) {
-      break
-    }
-    if (inRisks && line.trim() && line.includes('-')) {
-      risks.push(line.trim().replace(/^-\s*/, ''))
+  } catch (error) {
+    console.error('피드백 데이터 파싱 오류:', error)
+    return {
+      periodDays: null,
+      startDate: null,
+      endDate: null,
+      strategySummary: '데이터 파싱 중 오류가 발생했습니다.',
+      riskPoint: '데이터 파싱 중 오류가 발생했습니다.',
+      suggestion: '데이터 파싱 중 오류가 발생했습니다.'
     }
   }
-  
-  return risks
-})
-
-// 개인 맞춤 조언 추출
-const personalAdvice = computed(() => {
-  const advice = []
-  const lines = props.content.split('\n')
-  let inAdvice = false
-  
-  for (const line of lines) {
-    if (line.includes('3. 개인 맞춤 조언:')) {
-      inAdvice = true
-      continue
-    }
-    if (inAdvice && line.trim() && line.includes('-')) {
-      advice.push(line.trim().replace(/^-\s*/, ''))
-    }
-  }
-  
-  return advice
 })
 </script>
