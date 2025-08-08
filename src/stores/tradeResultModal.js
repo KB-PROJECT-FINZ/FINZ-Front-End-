@@ -6,13 +6,16 @@ export const useTradeResultModalStore = defineStore('tradeResultModal', {
     type: 'BUY',
     stockName: '',
     isFilled: false,
+    // quantity: 0,
     timer: null,
   }),
   actions: {
+    // open(type, stockName, isFilled = false, quantity = 0) {
     open(type, stockName, isFilled = false) {
       this.type = type
       this.stockName = stockName
       this.isFilled = isFilled
+      // this.quantity = quantity
       this.visible = true
       if (this.timer) clearTimeout(this.timer)
       this.timer = setTimeout(() => {

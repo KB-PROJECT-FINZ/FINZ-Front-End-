@@ -64,6 +64,7 @@ const props = defineProps({
   type: String,
   stockName: String,
   isFilled: Boolean,
+  // quantity: Number,
 })
 
 const resultMessage = computed(() => {
