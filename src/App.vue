@@ -14,7 +14,7 @@
 import axios from 'axios'
 import { onMounted } from 'vue'
 import { useUserStore } from './stores/user'
-import ChatBotPanel from './components/ChatBotPanel.vue'
+import ChatBotPanel from './components/chatbot/ChatBotPanel.vue'
 
 export default {
   components: {

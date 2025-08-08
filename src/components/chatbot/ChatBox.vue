@@ -1,22 +1,81 @@
 <template>
   <div class="flex flex-col h-full">
+    <!-- 상단 고정 버튼들 -->
+    <div class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-white/30 p-4">
+      <!-- 토글 버튼 -->
+      <div v-show="!hasSubButtons" class="flex justify-center mb-3">
+        <button
+          @click="toggleButtons"
+          class="w-6 h-6 rounded-2xl bg-white/60 hover:bg-white/80 transition-all duration-300 flex items-center justify-center shadow-sm hover:shadow-md backdrop-blur-sm"
+        >
+          <div v-if="showButtons" class="w-1.5 h-1.5 bg-gray-500 rounded-full"></div>
+          <div v-else class="w-1.5 h-1.5 bg-gray-500 rounded-full"></div>
+        </button>
+      </div>
+
+      <!-- 버튼 그리드 -->
+      <div v-show="showButtons && !hasSubButtons" class="grid grid-cols-2 gap-2">
+        <button
+          @click="handleButtonIntent({ intent: 'RECOMMEND_SELECT' })"
+          class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-2 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
+        >
+          <div class="flex flex-col items-center space-y-1">
+            <div class="w-6 h-6 bg-blue-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <RecommendIcon class="text-blue-600 w-3 h-3" />
+            </div>
+            <span class="text-gray-700 font-medium text-xs">종목 추천</span>
+          </div>
+        </button>
+        <button
+          @click="handleButtonIntent({ intent: 'STOCK_ANALYZE' })"
+          class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-2 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
+        >
+          <div class="flex flex-col items-center space-y-1">
+            <div class="w-6 h-6 bg-green-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <AnalyzeIcon class="text-green-600 w-3 h-3" />
+            </div>
+            <span class="text-gray-700 font-medium text-xs">종목 분석</span>
+          </div>
+        </button>
+        <button
+          @click="handleButtonIntent({ intent: 'TERM_EXPLAIN' })"
+          class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-2 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
+        >
+          <div class="flex flex-col items-center space-y-1">
+            <div class="w-6 h-6 bg-orange-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <TermIcon class="text-orange-600 w-3 h-3" />
+            </div>
+            <span class="text-gray-700 font-medium text-xs">용어 설명</span>
+          </div>
+        </button>
+        <button
+          @click="handleButtonIntent({ intent: 'PORTFOLIO_ANALYZE' })"
+          class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-2 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
+        >
+          <div class="flex flex-col items-center space-y-1">
+            <div class="w-6 h-6 bg-purple-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <PortfolioIcon class="text-purple-600 w-3 h-3" />
+            </div>
+            <span class="text-gray-700 font-medium text-xs">포트폴리오</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
     <!-- 대화 내용 -->
     <div ref="messageContainer" class="flex-1 overflow-y-auto space-y-6 p-4 pb-28">
       <!-- 챗봇 아바타와 인사말 (첫 로드 시) -->
       <div v-if="chatStore.messages.length === 0" class="flex items-start space-x-4">
         <div
-          class="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg"
+          class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-400/90 to-purple-500/90 shadow-lg border-2 border-white/40 backdrop-blur-sm"
         >
           <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
         </div>
         <div class="flex-1 max-w-xs">
           <div
-            class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30"
+            class="bg-white/90 backdrop-blur-md rounded-3xl p-4 max-w-sm shadow-lg border border-white/40"
           >
-            <p class="font-bold text-gray-800 text-lg">
-              안녕하세요 {{ userStore.name || '사용자' }}님!👋
-            </p>
-            <p class="text-gray-600 text-sm mt-2">무엇을 도와드릴까요?</p>
+            <p class="text-gray-600 text-sm">원하는 기능을 선택해주세요</p>
           </div>
         </div>
       </div>
@@ -30,61 +89,72 @@
         <!-- 사용자 메시지 -->
         <div
           v-if="msg.role === 'user'"
-          class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-3xl p-4 max-w-sm shadow-lg"
+          class="bg-gradient-to-r from-blue-400/90 to-purple-500/90 text-white rounded-3xl p-4 max-w-sm shadow-lg backdrop-blur-sm"
         >
           <p class="font-medium">{{ msg.content }}</p>
         </div>
 
         <!-- 봇 메시지 -->
         <template v-else>
-          <!-- 아바타 -->
           <div
-            class="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg"
+            class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-400/90 to-purple-500/90 shadow-lg border-2 border-white/40 backdrop-blur-sm"
           >
             <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
           </div>
 
           <div class="flex-1 max-w-xs">
-            <!-- 🆕 용어 설명 카드 -->
+            <!-- 용어 설명 카드 -->
             <div v-if="isTermExplanationResponse(msg.content)">
               <TermExplanationCard :content="msg.content" />
             </div>
 
-            <!-- 🆕 키워드 기반 주식 추천 카드 -->
+            <!-- 키워드 기반 주식 추천 카드 -->
             <div v-else-if="isStockRecommendationResponse(msg.content)">
               <StockRecommendationCards :content="msg.content" />
+            </div>
+
+            <!-- 피드백 분석 카드 -->
+            <div v-else-if="isFeedbackAnalysisResponse(msg.content)">
+              <FeedbackAnalysisCard :content="msg.content" />
             </div>
 
             <!-- 일반 메시지 (PORTFOLIO_ANALYZE 등 포함) -->
             <div
               v-else-if="!msg.type"
-              class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30"
+              class="bg-white/90 backdrop-blur-md rounded-3xl p-4 max-w-sm shadow-lg border border-white/40"
             >
               <p
                 v-if="msg.requestedPeriod && msg.intentType === 'PORTFOLIO_ANALYZE'"
-                class="text-xs text-gray-500 mb-1"
+                class="text-xs text-purple-600 font-medium mb-2 bg-purple-50/80 px-2 py-1 rounded-full inline-block backdrop-blur-sm"
               >
                 📅 사용자 지정 분석 기간: {{ msg.requestedPeriod }}일
               </p>
-              <p class="text-gray-800">{{ msg.content }}</p>
+              <p class="text-gray-700 text-sm">{{ msg.content }}</p>
             </div>
 
             <!-- 버튼 메시지 -->
-            <div v-else-if="msg.type === 'buttons'" class="space-y-4">
+            <div v-else-if="msg.type === 'buttons'" class="space-y-3">
               <div
                 v-if="msg.text"
-                class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30"
+                class="bg-white/90 backdrop-blur-md rounded-3xl p-4 max-w-sm shadow-lg border border-white/40"
               >
-                <p class="text-gray-800">{{ msg.text }}</p>
+                <p class="text-gray-700 text-sm">{{ msg.text }}</p>
               </div>
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-2 gap-2">
                 <button
                   v-for="(btn, idx) in msg.buttons"
                   :key="idx"
                   @click="handleButtonIntent(btn)"
-                  class="bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl p-4 text-center hover:bg-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                  class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-3 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
                 >
-                  <span class="text-gray-800 font-semibold text-sm">{{ btn.label }}</span>
+                  <div class="flex flex-col items-center space-y-2">
+                    <div class="w-6 h-6 bg-blue-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                      <component :is="getButtonIcon(btn.intent)" class="text-blue-600 w-3 h-3" />
+                    </div>
+                    <span class="text-gray-700 font-medium text-xs">{{
+                      btn.label.replace(/[🎯🔍🔙🧠🧪📊]/g, '').trim()
+                    }}</span>
+                  </div>
                 </button>
               </div>
             </div>
@@ -95,27 +165,27 @@
       <!-- 로딩 메시지 (마지막에 표시) -->
       <div v-if="loading" class="flex items-start space-x-4">
         <div
-          class="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg"
+          class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-400/90 to-purple-500/90 shadow-lg border-2 border-white/40 backdrop-blur-sm"
         >
           <img src="@/assets/finz-robot.png" alt="FINZ" class="w-full h-full object-cover" />
         </div>
         <div class="max-w-xs">
           <div
-            class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 max-w-sm shadow-lg border border-white/30"
+            class="bg-white/90 backdrop-blur-md rounded-3xl p-4 max-w-sm shadow-lg border border-white/40"
           >
             <div class="flex items-center space-x-2">
               <div class="flex space-x-1">
-                <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-blue-400/80 rounded-full animate-bounce"></div>
                 <div
-                  class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                  class="w-2 h-2 bg-purple-400/80 rounded-full animate-bounce"
                   style="animation-delay: 0.1s"
                 ></div>
                 <div
-                  class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                  class="w-2 h-2 bg-blue-400/80 rounded-full animate-bounce"
                   style="animation-delay: 0.2s"
                 ></div>
               </div>
-              <p class="text-sm text-gray-600">답변을 준비하고 있어요...</p>
+              <p class="text-gray-600 text-sm">답변을 준비하고 있어요...</p>
             </div>
           </div>
         </div>
@@ -124,17 +194,17 @@
 
     <!-- 입력창 -->
     <div
-      class="absolute bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-white/30"
+      class="absolute bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-white/40"
     >
       <form @submit.prevent="submit" class="flex gap-3">
         <input
           v-model="input"
           placeholder="궁금한 종목이나 투자 질문을 입력해보세요"
-          class="flex-1 bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent shadow-lg"
+          class="flex-1 bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent shadow-sm transition-all duration-300"
         />
         <button
           type="submit"
-          class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-2xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          class="bg-gradient-to-r from-blue-400/90 to-purple-500/90 text-white px-5 py-3 rounded-2xl font-medium hover:from-blue-500/90 hover:to-purple-600/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1 backdrop-blur-sm"
         >
           전송
         </button>
@@ -150,14 +220,21 @@ import { useChatStore } from '@/stores/counter.js'
 import { useUserStore } from '@/stores/user.js'
 import StockRecommendationCards from './StockRecommendationCards.vue'
 import TermExplanationCard from './TermExplanationCard.vue'
+import FeedbackAnalysisCard from './FeedbackAnalysisCard.vue'
+import RecommendIcon from '../icons/RecommendIcon.vue'
+import AnalyzeIcon from '../icons/AnalyzeIcon.vue'
+import TermIcon from '../icons/TermIcon.vue'
+import PortfolioIcon from '../icons/PortfolioIcon.vue'
+import ProfileIcon from '../icons/ProfileIcon.vue'
+import KeywordIcon from '../icons/KeywordIcon.vue'
+import BackIcon from '../icons/BackIcon.vue'
+import ExternalLinkIcon from '../icons/ExternalLinkIcon.vue'
+import AnalysisIcon from '../icons/AnalysisIcon.vue'
+import RefreshIcon from '../icons/RefreshIcon.vue'
 
 const chatStore = useChatStore()
 const userStore = useUserStore()
 const userId = computed(() => userStore.userId)
-
-const props = defineProps({
-  fixedIntent: { type: String, default: null },
-})
 
 const input = ref('')
 const loading = ref(false)
@@ -165,8 +242,25 @@ const awaitingKeyword = ref(false)
 const awaitingStockAnalyze = ref(false)
 const awaitingTermExplain = ref(false)
 const messageContainer = ref(null)
+const showButtons = ref(true)
 
-// 🆕 용어 설명 응답 감지 함수
+// 하위 버튼이 있는지 감지
+const hasSubButtons = computed(() => {
+  return chatStore.messages.some(
+    (msg) =>
+      msg.type === 'buttons' &&
+      msg.buttons &&
+      msg.buttons.some(
+        (btn) =>
+          btn.intent === 'RECOMMEND_PROFILE' ||
+          btn.intent === 'RECOMMEND_KEYWORD' ||
+          btn.intent === 'RECOMMEND_SELECT' ||
+          btn.intent === 'BACK_TO_MAIN',
+      ),
+  )
+})
+
+// 용어 설명 응답 감지 함수
 const isTermExplanationResponse = (content) => {
   if (!content || typeof content !== 'string') {
     return false
@@ -185,14 +279,12 @@ const isTermExplanationResponse = (content) => {
   return false
 }
 
-// 🆕 키워드 기반 주식 추천 응답 감지 함수 (개선된 버전)
+// 키워드 기반 주식 추천 응답 감지 함수
 const isStockRecommendationResponse = (content) => {
-  // content가 없거나 문자열이 아닌 경우 false 반환
   if (!content || typeof content !== 'string') {
     return false
   }
 
-  // 1. JSON 형태 응답 감지 (백엔드에서 구조화된 데이터 제공)
   try {
     const parsed = JSON.parse(content)
     if (
@@ -210,57 +302,71 @@ const isStockRecommendationResponse = (content) => {
     console.log('❌ JSON 파싱 실패:', error)
   }
 
-  // 2. 텍스트 형태 주식 추천 감지 (기존 방식 유지)
-  const stockKeywords = [
-    'CJ제일제당',
-    '삼양식품',
-    '오뚜기',
-    '롯데제과',
-    '농심',
-    '삼성전자',
-    'SK하이닉스',
-    'NAVER',
-    '카카오',
-    '넵튠',
-    '한국정보인증',
-    '현대차',
-    '기아',
-    '삼성바이오로직스',
-    '셀트리온',
-    'LG화학',
-    'POSCO',
-    'SK이노베이션',
-    '포스코',
+  return false
+}
+
+// 피드백 분석 응답 감지 함수
+const isFeedbackAnalysisResponse = (content) => {
+  if (!content || typeof content !== 'string') {
+    return false
+  }
+
+  // 피드백 분석 응답의 특징적인 패턴들 확인
+  const feedbackPatterns = [
+    '투자 전략의 특징:',
+    '리스크 및 개선점:',
+    '개인 맞춤 조언:',
+    '사용자 지정 분석 기간:'
   ]
 
-  const foundStocks = stockKeywords.filter((keyword) => content.includes(keyword))
-  const hasMultipleStocks = foundStocks.length >= 2
-  const hasRecommendationText =
-    content.includes('투자') &&
-    (content.includes('추천') ||
-      content.includes('매력') ||
-      content.includes('가능성') ||
-      content.includes('고려') ||
-      content.includes('가치') ||
-      content.includes('적합') ||
-      content.includes('어울리는'))
-
-  if (hasMultipleStocks && hasRecommendationText) {
-    console.log('✅ 텍스트 형태 키워드 기반 추천 감지됨:', {
-      foundStocks,
-      content: content.substring(0, 100),
-    })
+  const hasFeedbackPatterns = feedbackPatterns.some(pattern => content.includes(pattern))
+  
+  if (hasFeedbackPatterns) {
+    console.log('✅ 피드백 분석 응답 감지됨')
     return true
   }
 
   return false
 }
 
-// ✅ intent 상태 초기화 함수
+// intent 상태 초기화 함수
 function resetAwaitingState() {
   awaitingKeyword.value = false
   awaitingStockAnalyze.value = false
   awaitingTermExplain.value = false
+}
+
+// 버튼 아이콘 반환 함수
+const getButtonIcon = (intent) => {
+  switch (intent) {
+    case 'RECOMMEND_SELECT':
+      return RecommendIcon
+    case 'STOCK_ANALYZE':
+      return AnalyzeIcon
+    case 'TERM_EXPLAIN':
+      return TermIcon
+    case 'PORTFOLIO_ANALYZE':
+      return PortfolioIcon
+    case 'RECOMMEND_PROFILE':
+      return ProfileIcon
+    case 'RECOMMEND_KEYWORD':
+      return KeywordIcon
+    case 'EXTERNAL_LINK':
+      return ExternalLinkIcon
+    case 'BACK_TO_MAIN':
+      return BackIcon
+    case 'REANALYZE_OPTIONS':
+      return RefreshIcon
+    case 'ANALYSIS_COMPLETE':
+      return AnalysisIcon
+    default:
+      return null
+  }
+}
+
+// 버튼 토글 함수
+const toggleButtons = () => {
+  showButtons.value = !showButtons.value
 }
 
 // 자동 스크롤 함수
@@ -287,6 +393,16 @@ watch(loading, (newLoading) => {
   }
 })
 
+// 대화 시작 시 버튼들 자동 숨김
+watch(
+  () => chatStore.messages.length,
+  (newLength, oldLength) => {
+    if (newLength > oldLength && oldLength === 0) {
+      showButtons.value = false
+    }
+  },
+)
+
 onMounted(async () => {
   if (!userStore.userId) {
     try {
@@ -302,20 +418,6 @@ onMounted(async () => {
     } catch (err) {
       console.error('❌ 사용자 정보 조회 실패:', err)
     }
-  }
-
-  if (chatStore.messages.length === 0) {
-    chatStore.messages.push({
-      role: 'bot',
-      type: 'buttons',
-      text: '원하시는 기능을 선택해주세요',
-      buttons: [
-        { label: '📈 종목 추천', intent: 'RECOMMEND_SELECT' },
-        { label: '📊 종목 분석', intent: 'STOCK_ANALYZE' },
-        { label: '📚 용어 설명', intent: 'TERM_EXPLAIN' },
-        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE' },
-      ],
-    })
   }
 })
 
@@ -337,9 +439,8 @@ async function fetchGPT(prompt, explicitIntent = null) {
   } else if (awaitingStockAnalyze.value) {
     intentType = 'STOCK_ANALYZE'
     awaitingStockAnalyze.value = false
-  } else if (props.fixedIntent) {
-    intentType = props.fixedIntent
   }
+
   try {
     console.log('🧾 최종 intentType 전송값:', intentType)
 
@@ -347,7 +448,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
       userId: userId.value,
       sessionId: chatStore.sessionId,
       message: prompt,
-      intentType: intentType, // null이면 GPT가 분류함
+      intentType: intentType,
     })
 
     if (res?.data?.content) {
@@ -363,10 +464,10 @@ async function fetchGPT(prompt, explicitIntent = null) {
         chatStore.messages.push({
           role: 'bot',
           type: 'buttons',
-          text: '🧠 분석이 완료되었습니다.\n다시 분석해보시겠어요?',
+          text: '분석이 완료되었습니다.\n다시 분석해보시겠어요?',
           buttons: [
-            { label: '🔁 다시 분석하기', intent: 'REANALYZE_OPTIONS' },
-            { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
+            { label: '다시 분석하기', intent: 'REANALYZE_OPTIONS' },
+            { label: '뒤로가기', intent: 'BACK_TO_MAIN' },
           ],
         })
       }
@@ -401,6 +502,7 @@ function submit() {
 
 async function handleButtonIntent(btn) {
   console.log('👆 버튼 클릭됨:', btn)
+
   resetAwaitingState()
 
   if (btn.intent === 'EXTERNAL_LINK' && btn.href) {
@@ -484,7 +586,6 @@ async function handleButtonIntent(btn) {
   if (btn.intent === 'PORTFOLIO_ANALYZE') {
     if (!btn.message) {
       console.log('⚠️ PORTFOLIO_ANALYZE 초기 안내 단계') // ← 여기는 안내만
-      chatStore.clearMessages()
       chatStore.messages.push({
         role: 'bot',
         type: 'buttons',
@@ -500,6 +601,8 @@ async function handleButtonIntent(btn) {
       })
       return
     }
+    console.log('🚀 피드백 요청 버튼 클릭됨', btn)
+    // 🔥 여기서 메시지가 없으면 보내지지 않음 → 방어 코드 추가
     const message = btn.message ?? '내 포트폴리오 피드백 줘'
     await fetchGPT(message, btn.intent) // ✅ 변경됨
     return
@@ -532,7 +635,6 @@ async function handleButtonIntent(btn) {
     })
     return
   }
-
   if (btn.intent === 'TERM_EXPLAIN') {
     awaitingTermExplain.value = true
     chatStore.messages.push({
@@ -545,22 +647,15 @@ async function handleButtonIntent(btn) {
   }
 
   if (btn.intent === 'BACK_TO_MAIN') {
-    chatStore.clearMessages()
-    chatStore.messages.push({
-      role: 'bot',
-      type: 'buttons',
-      buttons: [
-        { label: '📈 종목 추천', intent: 'RECOMMEND_SELECT' },
-        { label: '📊 종목 분석', intent: 'STOCK_ANALYZE' },
-        { label: '📚 용어 설명', intent: 'TERM_EXPLAIN' },
-        { label: '🧠 포트폴리오', intent: 'PORTFOLIO_ANALYZE' },
-      ],
-    })
+    chatStore.messages = []
     return
   }
 
-  loading.value = true
-  await fetchGPT(btn.message, btn.intent) // ✅ 여기서도 fetchGPT 사용
-  loading.value = false
+  // message가 있는 경우에만 sendMessage 호출
+  if (btn.message) {
+    loading.value = true
+    await chatStore.sendMessage(btn.message, btn.intent)
+    loading.value = false
+  }
 }
 </script>
