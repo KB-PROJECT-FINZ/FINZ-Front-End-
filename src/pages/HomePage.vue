@@ -12,28 +12,30 @@
 
     <!-- 내 투자 상태 카드 -->
     <div class="grid grid-cols-2 gap-3 px-5 mt-6">
-      <div class="bg-white p-4 rounded-xl shadow-sm">
-        <p class="text-sm text-gray-500 mb-1">내 투자 성향</p>
-        <p class="font-semibold text-purple-600">{{ riskTypeName }}</p>
+      <div class="bg-gray-100 p-4 rounded-xl border-black">
+        <p class="text-sm text-gray-600 font-medium text-black mb-1">내 투자 성향</p>
+        <p class="font-bold text-gray-600">{{ riskTypeName }}</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm">
-        <p class="text-sm text-gray-500 mb-1">누적 크레딧</p>
-        <p class="font-semibold text-indigo-500">{{ totalEarnedCredit }}</p>
+      <div class="bg-gray-100 p-4 rounded-xl border-black">
+        <p class="text-sm text-gray-600 font-medium text-black mb-1">누적 크레딧</p>
+        <p class="font-semibold text-gray-600">{{ totalEarnedCredit }}</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm">
-        <p class="text-sm text-gray-500 mb-1">완료한 학습</p>
-        <p class="font-semibold text-green-500">{{ completedLearningCount }}개</p>
+      <div class="bg-gray-100 p-4 rounded-xl border-black">
+        <p class="text-sm text-gray-600 font-medium text-black mb-1">완료한 학습</p>
+        <p class="font-semibold text-gray-600">{{ completedLearningCount }}개</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm">
-        <p class="text-sm text-gray-500 mb-1">모의투자 수익</p>
-        <p class="font-semibold text-blue-500">{{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%</p>
+      <div class="bg-gray-100 p-4 rounded-xl border-black">
+        <p class="text-sm text-gray-600 font-medium text-black mb-1">모의투자 수익</p>
+        <p class="font-semibold text-gray-600">
+          {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
+        </p>
       </div>
     </div>
 
     <!-- 오늘의 할 일 -->
     <div class="px-5 mt-6">
       <h2 class="text-md font-bold mb-2">오늘의 할 일</h2>
-      <div class="bg-gradient-to-r from-purple-400 to-blue-400 text-white rounded-xl p-4 mb-4">
+      <div class="text-white rounded-xl p-4 mb-4" style="background-color: #fab809">
         <div class="flex justify-between items-center mb-1">
           <p class="font-semibold">오늘의 학습 목표</p>
           <button
