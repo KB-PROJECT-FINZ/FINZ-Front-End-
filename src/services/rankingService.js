@@ -1,6 +1,14 @@
 import axios from 'axios'
 axios.defaults.withCredentials = true
 
+// utils
+function getLastMonday() {
+  const today = new Date()
+  const day = today.getDay() || 7
+  today.setDate(today.getDate() - day + 1 - 7) // 지난주 월요일
+  return today.toISOString().slice(0, 10)
+}
+
 // ✅ 랭킹 주간 날짜 라벨 생성 함수
 export function getRankingWeekLabel(baseDateString) {
   const baseDate = new Date(baseDateString)
@@ -24,10 +32,11 @@ export function getRankingWeekLabel(baseDateString) {
  * [1] 내 주간 수익률 및 랭킹
  */
 export async function fetchMyRanking(userId, baseDate) {
-  console.log('fetchMyRanking 호출 파라미터:', { userId, baseDate })
+  const fallbackBaseDate = baseDate ?? getLastMonday()
+
   try {
     const res = await axios.get('/api/ranking/my', {
-      params: { userId, baseDate },
+      params: { userId, baseDate: fallbackBaseDate },
     })
     const data = res.data
 
@@ -36,7 +45,7 @@ export async function fetchMyRanking(userId, baseDate) {
       gainRate: data.gainRate,
       topPercent: data.topPercent,
       trait: data.riskType || '미지정',
-      baseDate: data.baseDate,
+      baseDate: data.baseDate ?? fallbackBaseDate,
     }
   } catch (error) {
     console.error('fetchMyRanking error:', error)
@@ -102,7 +111,6 @@ export async function fetchGroupedWeeklyRanking(baseDate) {
     const response = await axios.get('/api/ranking/weekly/grouped', {
       params: { baseDate },
     })
-    console.log('📦 fetchGroupedWeeklyRanking 원본 결과:', response.data)
 
     const grouped = response.data
 
@@ -120,7 +128,6 @@ export async function fetchGroupedWeeklyRanking(baseDate) {
       }))
     }
 
-    console.log('✅ 가공된 grouped:', parsedGrouped)
     return parsedGrouped
   } catch (error) {
     console.error('❌ fetchGroupedWeeklyRanking 오류:', error)
