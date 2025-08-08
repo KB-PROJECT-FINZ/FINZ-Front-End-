@@ -47,7 +47,7 @@ const navItems = [
   { name: 'mock', label: '거래', to: '/mock-trading', icon: TradingIcon },
   { name: 'study', label: '학습', to: '/learning', icon: StudyIcon },
   { name: 'ranking', label: '랭킹', to: '/ranking', icon: RankingIcon },
-  { name: 'mypage', label: '프로필', to: '/profile', icon: MypageIcon },
+  { name: 'mypage', label: '마이페이지', to: '/profile', icon: MypageIcon },
 ]
 
 const goToChatbot = () => {

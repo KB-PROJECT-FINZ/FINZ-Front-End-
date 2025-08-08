@@ -2,33 +2,271 @@
   <div class="bg-gray-50 min-h-screen pb-20">
     <!-- 상단 로고 + 인사말 -->
     <div class="px-5 pt-6">
-      <img src="@/assets/finz.png" alt="finz" class="w-16 mb-2" />
+      <img src="@/assets/finz.png" alt="finz" class="w-12 mb-2" />
       <p class="text-lg font-bold">
         안녕하세요! <span class="font-black">{{ name }}</span
         >님! 👍
       </p>
-      <p class="text-sm text-gray-600">오늘도 화이팅 해볼까요?</p>
-    </div>
+      <p class="text-sm text-gray-600 mb-2">오늘도 화이팅 해볼까요?</p>
 
-    <!-- 내 투자 상태 카드 -->
-    <div class="grid grid-cols-2 gap-3 px-5 mt-6">
-      <div class="bg-gray-100 p-4 rounded-xl border-black">
-        <p class="text-sm text-gray-600 font-medium text-black mb-1">내 투자 성향</p>
-        <p class="font-bold text-gray-600">{{ riskTypeName }}</p>
+      <!-- 내 투자 상태 카드 -->
+      <div class="grid grid-cols-2 gap-3 px-5 mt-6 mb-4">
+        <div class="bg-gray-100 p-4 rounded-xl border-black">
+          <p class="text-sm text-gray-600 font-medium text-black mb-1">보유 현금</p>
+          <p class="font-bold text-gray-600">
+            {{ safeNumber(userAccount.currentBalance).toLocaleString() }}원
+          </p>
+        </div>
+        <div class="bg-gray-100 p-4 rounded-xl border-black">
+          <p class="text-sm text-gray-600 font-medium text-black mb-1">보유 크레딧</p>
+          <p class="font-bold text-gray-600">{{ asset.amount }}C</p>
+        </div>
+
+        <!-- <div class="bg-gray-100 p-4 rounded-xl border-black">
+          <p class="text-sm text-gray-600 font-medium text-black mb-1">완료한 학습</p>
+          <p class="font-semibold text-gray-600">{{ completedLearningCount }}개</p>
+        </div>
+        <div class="bg-gray-100 p-4 rounded-xl border-black">
+          <p class="text-sm text-gray-600 font-medium text-black mb-1">모의투자 수익</p>
+          <p class="font-semibold text-gray-600">
+            {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
+          </p>
+        </div> -->
       </div>
-      <div class="bg-gray-100 p-4 rounded-xl border-black">
-        <p class="text-sm text-gray-600 font-medium text-black mb-1">누적 크레딧</p>
-        <p class="font-semibold text-gray-600">{{ totalEarnedCredit }}</p>
-      </div>
-      <div class="bg-gray-100 p-4 rounded-xl border-black">
-        <p class="text-sm text-gray-600 font-medium text-black mb-1">완료한 학습</p>
-        <p class="font-semibold text-gray-600">{{ completedLearningCount }}개</p>
-      </div>
-      <div class="bg-gray-100 p-4 rounded-xl border-black">
-        <p class="text-sm text-gray-600 font-medium text-black mb-1">모의투자 수익</p>
-        <p class="font-semibold text-gray-600">
-          {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
-        </p>
+
+      <!-- 내 종목보기 카드 전체를 버튼으로, 좌측 정렬 및 아이콘 추가 -->
+      <button
+        class="bg-white rounded-xl mx-4 mb-5 overflow-hidden border border-gray-200"
+        @click="goToAssetStatus"
+        style="display: block"
+      >
+        <div class="px-5 py-6">
+          <div class="flex items-center mb-3">
+            <span class="font-semibold text-base text-gray-900">내 종목보기</span>
+            <svg
+              class="w-6 h-6 ml-2 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              style="transform: scaleX(-1)"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </div>
+          <div v-if="!dataLoaded" class="w-40 h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
+          <div v-else class="w-full flex flex-col items-start">
+            <div class="text-lg font-bold text-gray-900 mb-1">
+              {{ stockValue.toLocaleString() }}원
+            </div>
+            <div class="text-base font-semibold mb-1">
+              <span
+                :class="
+                  calculatedProfitAmount > 0
+                    ? 'text-red-600'
+                    : calculatedProfitAmount < 0
+                      ? 'text-blue-600'
+                      : 'text-gray-600'
+                "
+              >
+                {{ calculatedProfitAmount > 0 ? '+' : ''
+                }}{{ calculatedProfitAmount.toLocaleString() }}원
+              </span>
+              <span class="ml-2 text-gray-500">
+                ({{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%)
+              </span>
+            </div>
+          </div>
+        </div>
+      </button>
+
+      <!-- 학습 안내 컨테이너 -->
+      <!-- <div class="bg-white rounded-2xl shadow px-5 py-4 flex flex-col items-center mb-4">
+        <div class="w-full flex flex-col items-left">
+          <p class="text-base mb-2 text-gray-800">
+            <span class="font-extrabold">{{ name }}</span
+            ><span class="font-medium">님,</span><br />
+            <span class="font-medium">오늘의 학습 목표예요</span>
+          </p>
+          <div class="my-2 flex justify-center">
+            <svg
+              class="w-12 h-12 animate-bounce-smooth"
+              viewBox="0 0 48 48"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect x="8" y="16" width="32" height="20" rx="6" fill="#fbbf24" />
+              <rect x="14" y="22" width="20" height="8" rx="3" fill="#fff" />
+              <path d="M24 16v-4" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" />
+              <circle cx="24" cy="10" r="3" fill="#fbbf24" />
+            </svg>
+          </div>
+        </div>
+        <button
+          class="mt-3 bg-yellow-400 text-white font-semibold px-6 py-2 rounded-md shadow-sm hover:bg-yellow-500 transition-all text-sm w-full max-w-xs"
+          style="border-radius: 0.5rem"
+          @click="goToStudy"
+        >
+          학습 시작하기
+        </button>
+      </div> -->
+
+      <!-- 내 투자내역 카드 -->
+      <section class="bg-white rounded-xl mx-4 mb-5 overflow-hidden border border-gray-200">
+        <div
+          class="flex items-center justify-between bg-gray-50 px-5 py-4 border-b border-gray-200"
+        >
+          <div class="text-base font-bold text-gray-900">내 투자내역</div>
+          <button
+            class="bg-white text-black border border-gray-300 rounded px-3 py-1 text-sm font-medium hover:bg-gray-100 transition"
+            @click="goToTransactions"
+          >
+            최근 투자 내역 바로가기
+          </button>
+        </div>
+
+        <div class="px-5 py-4">
+          <!-- 로딩 중 -->
+          <div v-if="!dataLoaded">
+            <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
+            <div class="flex flex-col gap-2 mb-4">
+              <div
+                v-for="i in 2"
+                :key="i"
+                class="w-full h-10 bg-gray-200 rounded animate-pulse"
+              ></div>
+            </div>
+            <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
+            <div class="flex flex-col gap-2">
+              <div
+                v-for="i in 2"
+                :key="i"
+                class="w-full h-10 bg-gray-200 rounded animate-pulse"
+              ></div>
+            </div>
+          </div>
+
+          <!-- 실제 데이터 -->
+          <div v-else>
+            <!-- 매수 -->
+            <div class="mb-4">
+              <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
+              <div v-if="buyHistory.length === 0" class="text-sm text-gray-500 text-center py-4">
+                매수 내역이 없습니다
+              </div>
+              <div v-else>
+                <div
+                  v-for="(item, index) in buyHistory"
+                  :key="`buy-${index}`"
+                  class="flex items-center justify-between px-3 py-3 shadow border-l-4 border-red-600 rounded-lg mb-2"
+                >
+                  <div class="flex items-center">
+                    <div
+                      class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3"
+                    >
+                      <img
+                        v-if="item.imageUrl && !imageErrors[item.stockCode]"
+                        :src="item.imageUrl"
+                        class="w-full h-full object-cover"
+                        @error="handleImageError(item.stockCode)"
+                      />
+                      <span v-else class="text-xs font-bold" style="color: #2272eb">
+                        {{ getStockInitial(item.name) }}
+                      </span>
+                    </div>
+                    <div class="flex flex-col">
+                      <div class="text-sm font-bold text-gray-900">{{ item.name }}</div>
+                      <div class="text-xs text-gray-500">{{ item.desc }}</div>
+                    </div>
+                  </div>
+                  <div class="text-sm font-bold text-gray-900">
+                    {{ item.amount.toLocaleString() }}원
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 매도 -->
+            <div>
+              <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
+              <div v-if="sellHistory.length === 0" class="text-sm text-gray-500 text-center py-4">
+                매도 내역이 없습니다
+              </div>
+              <div v-else>
+                <div
+                  v-for="(item, index) in sellHistory"
+                  :key="`sell-${index}`"
+                  class="flex items-center justify-between px-3 py-3 shadow border-l-4 border-blue-600 rounded-lg mb-2"
+                >
+                  <div class="flex items-center">
+                    <div
+                      class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3"
+                    >
+                      <img
+                        v-if="item.imageUrl && !imageErrors[item.stockCode]"
+                        :src="item.imageUrl"
+                        class="w-full h-full object-cover"
+                        @error="handleImageError(item.stockCode)"
+                      />
+                      <span v-else class="text-xs font-bold" style="color: #2272eb">
+                        {{ getStockInitial(item.name) }}
+                      </span>
+                    </div>
+                    <div class="flex flex-col">
+                      <div class="text-sm font-bold text-gray-900">{{ item.name }}</div>
+                      <div class="text-xs text-gray-500">{{ item.desc }}</div>
+                    </div>
+                  </div>
+                  <div class="text-sm font-bold text-gray-900">
+                    {{ item.amount.toLocaleString() }}원
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 프로필 주요 정보: 총 보유자산 -->
+      <div class="px-5 mt-6">
+        <!-- 총 보유자산 -->
+        <section class="bg-white rounded-xl mb-5 px-5 py-5 border border-gray-200">
+          <div class="text-gray-500 text-sm mb-2">총 보유자산</div>
+          <div v-if="!dataLoaded" class="flex items-center justify-between mb-1">
+            <div class="w-40 h-8 bg-gray-200 rounded animate-pulse"></div>
+            <div class="w-32 h-9 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div v-else class="flex items-baseline gap-x-4 mb-4">
+            <span class="text-[28px] font-bold text-gray-900 leading-none">
+              {{ calculatedTotalAssetValue.toLocaleString() }}원
+            </span>
+            <span
+              :class="
+                calculatedProfitRate > 0
+                  ? 'text-red-600'
+                  : calculatedProfitRate < 0
+                    ? 'text-blue-600'
+                    : 'text-gray-600'
+              "
+              class="text-base font-medium leading-none"
+            >
+              {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
+            </span>
+          </div>
+          <div class="flex justify-center">
+            <button
+              class="bg-blue-600 text-white rounded px-6 py-2 text-sm font-semibold hover:bg-blue-800 transition"
+              style="width: 320px"
+              @click="goToAssetStatus"
+            >
+              내 자산 현황 바로가기
+            </button>
+          </div>
+        </section>
       </div>
     </div>
 
@@ -206,11 +444,58 @@
 </template>
 
 <script setup>
-import BottomNav from '@/components/FooterNavigation.vue'
+import { getUserCredit } from '@/services/learning'
+
+const asset = ref({ amount: 0 })
+// ...existing code...
+// --- 내 투자내역 카드 관련 상태 및 함수 ---
+const buyHistory = ref([])
+const sellHistory = ref([])
+const imageErrors = ref({})
+
+const goToTransactions = () => router.push('/mock-trading/transactions')
+
+const handleImageError = (code) => {
+  imageErrors.value[code] = true
+}
+
+const getStockInitial = (name) => {
+  return name ? name[0] : '?'
+}
+
+// 데이터 로딩 (내 투자내역)
+onMounted(async () => {
+  try {
+    const txRes = await axios.get('/api/mocktrading/transactions', { withCredentials: true })
+    if (txRes.data && txRes.data.length > 0) {
+      const buyTx = txRes.data.filter((t) => t.transactionType === 'BUY')
+      const sellTx = txRes.data.filter((t) => t.transactionType === 'SELL')
+
+      buyHistory.value = buyTx.slice(0, 2).map((tx) => ({
+        name: tx.stockName,
+        desc: `매수 ${tx.quantity}주`,
+        amount: tx.totalAmount,
+        stockCode: tx.stockCode,
+        imageUrl: tx.imageUrl,
+      }))
+      sellHistory.value = sellTx.slice(0, 2).map((tx) => ({
+        name: tx.stockName,
+        desc: `매도 ${tx.quantity}주`,
+        amount: tx.totalAmount,
+        stockCode: tx.stockCode,
+        imageUrl: tx.imageUrl,
+      }))
+    }
+  } catch (e) {
+    // ignore error for now
+    console.error('내 투자내역 로딩 실패:', e)
+  }
+})
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import { ref, onMounted } from 'vue'
 import { useAssetDataStore } from '@/services/useAssetData'
+import BottomNav from '@/components/FooterNavigation.vue'
 
 const selectedContent = ref(null)
 const showQuizModal = ref(false)
@@ -226,8 +511,27 @@ const openContentModal = (item) => {
 
 const router = useRouter()
 
-// 자산 데이터 스토어
-const { calculatedProfitRate, loadUserData } = useAssetDataStore()
+// 자산 데이터 스토어 (for total asset section)
+const {
+  dataLoaded,
+  userAccount,
+  calculatedProfitRate,
+  loadUserData,
+  safeNumber,
+  stockValue,
+  totalInvestment,
+} = useAssetDataStore()
+
+const calculatedTotalAssetValue = computed(() => safeNumber(userAccount.value.totalAssetValue, 0))
+
+// 원금 대비 손익금 계산 (평가금액 - 투자원금)
+const calculatedProfitAmount = computed(() => {
+  if (!dataLoaded.value) return 0
+  // 평가금액 - 투자원금
+  return safeNumber(stockValue.value, 0) - safeNumber(totalInvestment.value, 0)
+})
+
+const goToAssetStatus = () => router.push('/mock-trading/asset-status')
 
 // 상태 변수
 const name = ref('')
@@ -269,7 +573,11 @@ const goToPortfolio = () => router.push('/mock-trading/asset-status')
 // 초기 실행
 onMounted(async () => {
   try {
-    const riskType = await fetchUserInfo() //
+    const riskType = await fetchUserInfo()
+    // 크레딧 정보 가져오기
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    const userId = res.data.userId
+    asset.value.amount = await getUserCredit(userId)
     await fetchRecommendedContentsByRiskType(riskType)
     await fetchAllRecommendedContents()
     await fetchCompletedLearningCount()
@@ -290,7 +598,7 @@ const fetchUserInfo = async () => {
     riskTypeName.value = convertRiskTypeToName(user.riskType)
     return user.riskType // riskType 코드 (예: 'TEC') 반환
   } catch (e) {
-    throw new Error('사용자 정보 조회 실패')
+    throw new Error('사용자 정보 조회 실패', e)
   }
 }
 
@@ -370,5 +678,17 @@ const fetchTotalCredit = async () => {
 .fade-scale-leave-to {
   opacity: 0;
   transform: scale(0.9);
+}
+.animate-bounce-smooth {
+  animation: bounce-smooth 1.4s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+}
+@keyframes bounce-smooth {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
 }
 </style>
