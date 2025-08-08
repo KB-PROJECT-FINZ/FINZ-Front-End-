@@ -14,34 +14,6 @@
             />
           </svg>
         </button>
-
-        <!-- 빈 공간 (중앙 여백) -->
-        <div></div>
-
-        <!-- 오른쪽 버튼들 -->
-        <div class="flex items-center gap-2">
-          <!-- 관심종목 하트 버튼 -->
-          <button
-            @click="toggleFavorite"
-            class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            :class="isFavorite ? 'text-red-500' : 'text-[#b5bdc7]'"
-          >
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-              />
-            </svg>
-          </button>
-
-          <!-- 더보기 메뉴 버튼 -->
-          <button @click="toggleMenu" class="p-2 hover:bg-gray-100 rounded-lg text-[#b5bdc7]">
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
-              />
-            </svg>
-          </button>
-        </div>
       </div>
     </header>
 
@@ -358,28 +330,6 @@
         </div>
       </div>
     </div>
-
-    <!-- 더보기 메뉴 모달 -->
-    <div
-      v-if="showMenu"
-      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end"
-      @click="showMenu = false"
-    >
-      <div class="bg-white w-full rounded-t-2xl p-4" @click.stop>
-        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
-        <div class="space-y-4">
-          <button class="w-full text-left p-3 hover:bg-gray-100 rounded-lg">
-            <span class="text-gray-900">차트 설정</span>
-          </button>
-          <button class="w-full text-left p-3 hover:bg-gray-100 rounded-lg">
-            <span class="text-gray-900">알림 설정</span>
-          </button>
-          <button class="w-full text-left p-3 hover:bg-gray-100 rounded-lg">
-            <span class="text-gray-900">공유하기</span>
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -473,8 +423,6 @@ const currentEndTime = ref(null) // 현재 차트 오른쪽 끝 시간
 const autoRefreshInterval = ref(null) // 자동 새로고침 인터벌
 
 // 반응형 데이터
-const isFavorite = ref(false)
-const showMenu = ref(false)
 const showMinutesModal = ref(false)
 const selectedTimeFrame = ref('1min')
 
@@ -1242,15 +1190,6 @@ const updateChart = async () => {
   } catch (error) {
     console.error('[차트 업데이트] 오류:', error.message)
   }
-}
-
-const toggleFavorite = () => {
-  isFavorite.value = !isFavorite.value
-  console.log('관심종목 상태:', isFavorite.value ? '추가됨' : '제거됨')
-}
-
-const toggleMenu = () => {
-  showMenu.value = !showMenu.value
 }
 
 const formatPrice = (price) => {

@@ -26,7 +26,7 @@
       </div>
       <div class="bg-white p-4 rounded-xl shadow-sm">
         <p class="text-sm text-gray-500 mb-1">모의투자 수익</p>
-        <p class="font-semibold text-blue-500">+12.8%</p>
+        <p class="font-semibold text-blue-500">{{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%</p>
       </div>
     </div>
 
@@ -208,6 +208,8 @@ import BottomNav from '@/components/FooterNavigation.vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { ref, onMounted } from 'vue'
+import { useAssetDataStore } from '@/services/useAssetData'
+
 const selectedContent = ref(null)
 const showQuizModal = ref(false)
 const quizList = ref([])
@@ -221,6 +223,9 @@ const openContentModal = (item) => {
 }
 
 const router = useRouter()
+
+// 자산 데이터 스토어
+const { calculatedProfitRate, loadUserData } = useAssetDataStore()
 
 // 상태 변수
 const name = ref('')
@@ -267,6 +272,7 @@ onMounted(async () => {
     await fetchAllRecommendedContents()
     await fetchCompletedLearningCount()
     await fetchTotalCredit()
+    await loadUserData() // 자산 데이터 로드
   } catch (e) {
     console.error('❌ 초기 로딩 실패:', e)
     router.push('/login-form')

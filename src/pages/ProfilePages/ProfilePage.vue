@@ -34,8 +34,8 @@
         </div>
 
         <div class="w-1/2 bg-white shadow rounded-lg px-4 py-2 text-sm text-gray-700">
-          <div class="text-gray-500 text-xs mb-0.5">포인트</div>
-          <div class="font-semibold text-yellow-600 truncate">{{ asset.amount }}P</div>
+          <div class="text-gray-500 text-xs mb-0.5">크레딧</div>
+          <div class="font-semibold text-yellow-600 truncate">{{ asset.amount }}C</div>
         </div>
       </div>
     </section>
