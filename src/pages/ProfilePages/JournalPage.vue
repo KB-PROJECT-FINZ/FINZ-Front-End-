@@ -11,15 +11,12 @@
   </header>
 
   <div class="journal-page px-4 py-4">
-    <!-- <router-link
+    <router-link
       to="/feedback"
-      class="flex items-center gap-4 w-full bg-white rounded-xl p-4 shadow transition hover:-translate-y-0.5 hover:shadow-lg"
+      class="flex items-center justify-center gap-4 w-full bg-gray-50 rounded-xl p-2 shadow transition hover:-translate-y-0.5 hover:shadow-lg"
     >
-      <span class="text-3xl">📊</span>
-      <div class="flex flex-col items-start">
-        <span class="text-base font-semibold text-gray-800">AI 피드백 보러가기</span>
-      </div>
-    </router-link> -->
+      <span class="text-base font-semibold text-black">주간 AI 피드백 보기</span>
+    </router-link>
 
     <Calendar
       class="custom-calendar w-full mt-4 mb-4"
@@ -394,8 +391,14 @@ const mergedTransactions = computed(() => {
 })
 
 function selectJournal(journal) {
-  selectedJournal.value = journal
+  // 같은 카드를 다시 누르면 선택 해제
+  if (selectedJournal.value && selectedJournal.value.id === journal.id) {
+    selectedJournal.value = null
+  } else {
+    selectedJournal.value = journal
+  }
 }
+
 function editJournal(journal) {
   selectedJournal.value = journal
   showWriteModal.value = true

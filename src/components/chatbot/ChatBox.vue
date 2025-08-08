@@ -20,7 +20,9 @@
           class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-2 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
         >
           <div class="flex flex-col items-center space-y-1">
-            <div class="w-6 h-6 bg-blue-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+            <div
+              class="w-6 h-6 bg-blue-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm"
+            >
               <RecommendIcon class="text-blue-600 w-3 h-3" />
             </div>
             <span class="text-gray-700 font-medium text-xs">종목 추천</span>
@@ -31,7 +33,9 @@
           class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-2 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
         >
           <div class="flex flex-col items-center space-y-1">
-            <div class="w-6 h-6 bg-green-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+            <div
+              class="w-6 h-6 bg-green-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm"
+            >
               <AnalyzeIcon class="text-green-600 w-3 h-3" />
             </div>
             <span class="text-gray-700 font-medium text-xs">종목 분석</span>
@@ -42,7 +46,9 @@
           class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-2 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
         >
           <div class="flex flex-col items-center space-y-1">
-            <div class="w-6 h-6 bg-orange-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+            <div
+              class="w-6 h-6 bg-orange-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm"
+            >
               <TermIcon class="text-orange-600 w-3 h-3" />
             </div>
             <span class="text-gray-700 font-medium text-xs">용어 설명</span>
@@ -53,7 +59,9 @@
           class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-2 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
         >
           <div class="flex flex-col items-center space-y-1">
-            <div class="w-6 h-6 bg-purple-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+            <div
+              class="w-6 h-6 bg-purple-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm"
+            >
               <PortfolioIcon class="text-purple-600 w-3 h-3" />
             </div>
             <span class="text-gray-700 font-medium text-xs">포트폴리오</span>
@@ -148,7 +156,9 @@
                   class="bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl p-3 text-center hover:bg-white/90 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-1"
                 >
                   <div class="flex flex-col items-center space-y-2">
-                    <div class="w-6 h-6 bg-blue-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                    <div
+                      class="w-6 h-6 bg-blue-100/80 rounded-xl flex items-center justify-center backdrop-blur-sm"
+                    >
                       <component :is="getButtonIcon(btn.intent)" class="text-blue-600 w-3 h-3" />
                     </div>
                     <span class="text-gray-700 font-medium text-xs">{{
@@ -311,18 +321,41 @@ const isFeedbackAnalysisResponse = (content) => {
     return false
   }
 
-  // 피드백 분석 응답의 특징적인 패턴들 확인
+  // JSON 형태의 피드백 응답인지 확인
+  try {
+    if (content.trim().startsWith('{')) {
+      const jsonData = JSON.parse(content)
+      if (jsonData.strategySummary && jsonData.riskPoint && jsonData.suggestion) {
+        console.log('✅ JSON 형태 피드백 분석 응답 감지됨')
+        return true
+      }
+    }
+
+    // 텍스트와 JSON이 섞여있는 경우 JSON 부분만 확인
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      const jsonData = JSON.parse(jsonMatch[0])
+      if (jsonData.strategySummary && jsonData.riskPoint && jsonData.suggestion) {
+        console.log('✅ 혼합 형태 피드백 분석 응답 감지됨')
+        return true
+      }
+    }
+  } catch (error) {
+    // JSON 파싱 실패 시 텍스트 패턴으로 확인
+  }
+
+  // 기존 텍스트 형태 피드백 분석 응답의 특징적인 패턴들 확인
   const feedbackPatterns = [
     '투자 전략의 특징:',
     '리스크 및 개선점:',
     '개인 맞춤 조언:',
-    '사용자 지정 분석 기간:'
+    '사용자 지정 분석 기간:',
   ]
 
-  const hasFeedbackPatterns = feedbackPatterns.some(pattern => content.includes(pattern))
-  
+  const hasFeedbackPatterns = feedbackPatterns.some((pattern) => content.includes(pattern))
+
   if (hasFeedbackPatterns) {
-    console.log('✅ 피드백 분석 응답 감지됨')
+    console.log('✅ 텍스트 형태 피드백 분석 응답 감지됨')
     return true
   }
 

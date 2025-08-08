@@ -74,7 +74,7 @@
             <span class="text-sm text-gray-500">분석 기간</span>
             <span class="flex flex-col items-end">
               <span class="text-base text-gray-900"
-                >{{ analysisData.stats.startDate }} ~ {{ analysisData.stats.endDate }}</span
+                >{{ analysisData.stats.analysisStart }} ~ {{ analysisData.stats.analysisEnd }}</span
               >
               <span class="text-xs text-gray-400 font-normal"
                 >{{ analysisData.stats.analysisPeriod }}일</span
@@ -207,7 +207,6 @@ const fetchAnalysis = async () => {
       // 사용자에게 안내 메시지 표시
       error.value = '아직 분석할 거래 데이터가 충분하지 않습니다. 더 많은 거래를 진행해보세요.'
     }
-
   } catch (err) {
     console.error('API 호출 실패:', err)
     if (err.message.includes('로그인')) {
@@ -314,10 +313,10 @@ const exportToPDF = async () => {
             </div>
             <div class="report-date" style="text-align: center; margin-bottom: 2rem; color: #6b7280; font-size: 0.875rem;">
               생성일: ${new Date().toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })}
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
             </div>
             <hr class="section-divider" />
             ${content}

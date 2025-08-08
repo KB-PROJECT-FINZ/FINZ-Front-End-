@@ -45,8 +45,8 @@ export const analysisService = {
       stats: {
         transactionCount: data.stats?.transactionCount || 0,
         analysisPeriod: data.stats?.analysisPeriod || 0,
-        startDate: data.stats?.startDate || '',
-        endDate: data.stats?.endDate || '',
+        analysisStart: data.stats?.analysisStart || '',
+        analysisEnd: data.stats?.analysisEnd || '',
         totalReturn: data.stats?.totalReturn || 0.0,
       },
       aiAnalysis: {
