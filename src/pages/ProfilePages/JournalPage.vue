@@ -394,8 +394,14 @@ const mergedTransactions = computed(() => {
 })
 
 function selectJournal(journal) {
-  selectedJournal.value = journal
+  // 같은 카드를 다시 누르면 선택 해제
+  if (selectedJournal.value && selectedJournal.value.id === journal.id) {
+    selectedJournal.value = null
+  } else {
+    selectedJournal.value = journal
+  }
 }
+
 function editJournal(journal) {
   selectedJournal.value = journal
   showWriteModal.value = true
