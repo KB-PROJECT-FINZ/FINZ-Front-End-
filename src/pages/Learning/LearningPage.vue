@@ -28,14 +28,14 @@
           >
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-2">
+                <div class="flex items-center gap-1 mb-2">
+                  <span class="text-xs text-gray-500 bg-gray-100 rounded-full px-1 py-1">추천</span>
                   <span
                     v-if="item.creditReward"
                     class="inline-block text-xs font-semibold text-yellow-700 bg-yellow-50 rounded-full px-3 py-1"
                   >
                     {{ item.creditReward }}크레딧
                   </span>
-                  <span class="text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-1">추천</span>
                 </div>
                 <h3 class="text-base font-medium text-gray-900 truncate">
                   {{ item.title }}
