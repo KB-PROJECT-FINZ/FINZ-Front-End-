@@ -19,7 +19,7 @@
       <!-- 프로필 이미지 + 투자 성향 + 이름 (가운데 정렬) -->
       <div class="flex flex-col items-center">
         <div
-class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mb-2"
+          class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mb-2"
         >
           <img
             src="@/assets/finz.png"
@@ -176,8 +176,7 @@ import { Calendar } from 'v-calendar'
 const router = useRouter()
 const userStore = useUserStore()
 
-const { loadUserData } =
-  useAssetDataStore()
+const { loadUserData } = useAssetDataStore()
 
 const profile = ref({ image: '', name: '', type: '', level: 3 })
 const buyHistory = ref([])
@@ -219,7 +218,6 @@ const handleLogout = async () => {
   localStorage.removeItem('user')
   router.push('/login-form')
 }
-
 
 onMounted(async () => {
   try {
