@@ -1,6 +1,6 @@
 // stockAnalysisService.js
 import axios from 'axios'
-import { useAssetDataStore } from '@/services/useAssetData'
+// import { useAssetDataStore } from '@/services/useAssetData'
 axios.defaults.withCredentials = true
 
 // [A1] 성향별 보유 비중
@@ -32,21 +32,25 @@ export async function fetchMyStockDistribution(userId) {
     const res = await axios.get('/api/ranking/analysis/my-distribution', {
       params: { userId },
     })
-    console.log('📦 내 수익률 분포 응답:', res.data)
     return res.data.map((stock) => ({
-      name: stock.stockName,
-      gain: stock.gain,
+      stockName: stock.stockName,
+      gainRate: stock.gainRate,
       positionIndex: stock.positionIndex,
       positionLabel: stock.positionLabel,
-      distribution: [stock.bin0, stock.bin1, stock.bin2, stock.bin3, stock.bin4, stock.bin5],
-      color: stock.color || '#3b82f6',
+      distribution: [
+        stock.bin0 || 0,
+        stock.bin1 || 0,
+        stock.bin2 || 0,
+        stock.bin3 || 0,
+        stock.bin4 || 0,
+        stock.bin5 || 0,
+      ],
     }))
   } catch (error) {
-    console.error('❌ fetchMyStockDistribution error:', error)
+    console.error('fetchMyStockDistribution error:', error)
     return []
   }
 }
-
 // [A3] 유사 성향 투자자 인기 종목
 export async function fetchPopularStocksByTrait(traitGroup) {
   try {
@@ -103,48 +107,28 @@ export async function saveMyStockDistribution(userId, distributions) {
 // [A5] 실시간 내 보유종목 수익률 분포 계산 (통합버전)
 export async function fetchMyRealTimeStockDistribution(userId) {
   try {
-    const assetStore = useAssetDataStore()
-
-    if (userId) {
-      // userId가 있으면 명시적으로 로드
-      await assetStore.loadUserData(userId)
-    } else {
-      // 없으면 기본 로드
-      await assetStore.loadUserData()
-    }
-
-    console.log('holdingsData 값:', assetStore.holdingsData.value)
-
-    if (!assetStore.holdingsData.value || assetStore.holdingsData.value.length === 0) {
-      console.warn('holdingsData가 비어있거나 데이터가 없습니다!')
-      return []
-    }
-
-    const stocks = assetStore.holdingsData.value.map((holding) => {
-      const quantity = holding.quantity ?? 0
-      const avgPrice = holding.averagePrice ?? 0
-      const currentPrice = holding.currentPrice ?? 0
-
-      const currentValue = quantity * currentPrice
-      const totalInvestment = quantity * avgPrice
-      const profitLoss = currentValue - totalInvestment
-      const profitRate = totalInvestment ? (profitLoss / totalInvestment) * 100 : 0
-
-      return {
-        stockCode: holding.stockCode,
-        stockName: holding.stockName,
-        gainRate: profitRate,
-        positionIndex: holding.positionIndex ?? 0,
-        positionLabel: holding.positionLabel || '',
-        distributionBins: holding.distributionBins || [0, 0, 0, 0, 0, 0],
-        color: holding.color || '#3b82f6',
-      }
+    const res = await axios.get('/api/ranking/analysis/my-distribution', {
+      params: { userId },
     })
 
-    console.log('실제 저장할 stocks:', stocks)
-    return stocks
+    return res.data.map((stock) => ({
+      stockCode: stock.stockCode,
+      stockName: stock.stockName,
+      gainRate: stock.gainRate,
+      positionIndex: stock.positionIndex,
+      positionLabel: stock.positionLabel,
+      distributionBins: [
+        stock.bin0 || 0,
+        stock.bin1 || 0,
+        stock.bin2 || 0,
+        stock.bin3 || 0,
+        stock.bin4 || 0,
+        stock.bin5 || 0,
+      ],
+      color: stock.color || '#3b82f6',
+    }))
   } catch (error) {
-    console.error('❌ fetchMyRealTimeStockDistribution error:', error?.message || error)
+    console.error('fetchMyRealTimeStockDistribution error:', error)
     return []
   }
 }

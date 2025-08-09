@@ -16,6 +16,7 @@
     <!-- 조건부 분석 or 안내 -->
     <div class="mt-4">
       <NoInvestmentGuide v-if="!hasInvestmentData" />
+
       <template v-else>
         <!-- 성향별 보유 비중 -->
         <section class="mt-4">
@@ -33,7 +34,7 @@
           </div>
         </section>
 
-        <!-- 내 수익률 분포 위치 -->
+        <!-- 내 수익률 분포 위치 (새로 리팩터링된 부분) -->
         <section class="mt-6">
           <h2 class="text-base font-semibold mb-2">내 수익률 분포 위치</h2>
           <div class="flex flex-col space-y-4">
@@ -41,11 +42,10 @@
               v-for="(stock, idx) in displayedMyStocks"
               :key="idx"
               :name="stock.stockName"
-              :gain="stock.gain"
+              :gain="stock.gain ?? stock.gainRate ?? 0"
               :positionIndex="stock.positionIndex"
               :positionLabel="stock.positionLabel"
-              :distribution="stock.distribution"
-              :color="'#60a5fa'"
+              :distribution="Array.isArray(stock.distributionBins) ? stock.distributionBins : []"
             />
           </div>
           <button
@@ -66,7 +66,7 @@
             <PopularStockItem
               v-for="(stock, idx) in displayedPopularStocks"
               :key="idx"
-              :name="stock.stockName"
+              :name="stock.name"
               :trait="stock.trait"
               :gain="stock.gain"
               :logo="stock.logo"
@@ -95,30 +95,25 @@ import debounce from 'lodash.debounce'
 
 import TabSwitcher from '@/components/ranking/TabSwitcher.vue'
 import TraitStockCard from '@/components/ranking/TraitStockCard.vue'
-import MyStockChart from '@/components/ranking/MyStockChart.vue'
+import MyStockChart from '@/components/ranking/MyStockChart.vue' // 내 수익률 분포 UI 컴포넌트
 import PopularStockItem from '@/components/ranking/PopularStockItem.vue'
 import FooterNavigation from '@/components/FooterNavigation.vue'
 import NoInvestmentGuide from '@/components/ranking/NoInvestmentGuide.vue'
 
 import {
   fetchTraitStockAnalysis,
+  fetchMyRealTimeStockDistribution,
   fetchPopularStocksByTrait,
   saveMyStockDistribution,
-  fetchMyRealTimeStockDistribution,
 } from '@/services/stockAnalysisService'
 
-// 파니아 store
 const userStore = useUserStore()
-
-// 유저 ID 반응형 참조
 const userId = computed(() => userStore.userId)
 
-// 데이터 상태
 const traitStocks = ref([])
 const myStocks = ref([])
 const popularStocks = ref([])
 
-// 더보기 관련 상태
 const visibleMyStockCount = ref(3)
 const visiblePopularCount = ref(5)
 
@@ -134,54 +129,47 @@ function loadMorePopular() {
   visiblePopularCount.value += 5
 }
 
-// 유저 투자 데이터 존재 여부
 const hasInvestmentData = computed(() => {
   return traitStocks.value.length > 0 || myStocks.value.length > 0 || popularStocks.value.length > 0
 })
 
-// 성향 비율 추출
 function getTraitRatio(stock) {
   return {
     보수형: stock.traitRatio?.보수형 ?? 0,
-    규합형: stock.traitRatio?.규합형 ?? 0,
+    균형형: stock.traitRatio?.균형형 ?? 0,
     공격형: stock.traitRatio?.공격형 ?? 0,
     특수형: stock.traitRatio?.특수형 ?? 0,
   }
 }
 
-// 분석 데이터 비디오 호출
 async function fetchAnalysisData() {
   const uid = userId.value
   let traitGroup = userStore.riskType || userStore.traitGroup
-
-  if (!uid) {
-    console.error('[ERROR] userId 없음! Pinia에 유저 정보가 아직 세팅되지 않았을 수 있음')
-    return
-  }
-
-  if (!traitGroup) {
-    traitGroup = localStorage.getItem('userTraitType') || 'SPECIAL'
-    console.warn('[WARN] traitGroup 없음 → localStorage fallback:', traitGroup)
-  }
-
-  if (traitGroup === 'ANALYTICAL' || traitGroup === 'EMOTIONAL') {
-    traitGroup = 'SPECIAL'
-  }
-
   try {
     const [traitRes, myRes, popRes] = await Promise.all([
       fetchTraitStockAnalysis(uid),
       fetchMyRealTimeStockDistribution(uid),
       fetchPopularStocksByTrait(traitGroup),
     ])
+
     traitStocks.value = traitRes
-    myStocks.value = myRes
+    console.log('API 원본 수익률 분포 데이터:', myRes)
+
+    myStocks.value = myRes.map((stock) => {
+      console.log('stock.distributionBins:', stock.distributionBins)
+      return {
+        ...stock,
+        distribution: stock.distributionBins || [0, 0, 0, 0, 0, 0],
+      }
+    })
+
     popularStocks.value = popRes
   } catch (err) {
     console.error('분석 데이터 로드 실패:', err)
   }
 }
 
+// 자동 저장 (디바운스)
 const debouncedSave = debounce(async (uid, stocks) => {
   if (!uid || stocks.length === 0) return
 
@@ -191,7 +179,12 @@ const debouncedSave = debounce(async (uid, stocks) => {
     gainRate: stock.gainRate,
     positionIndex: stock.positionIndex,
     positionLabel: stock.positionLabel,
-    distributionBins: stock.distribution,
+    bin0: stock.distribution?.[0] ?? 0,
+    bin1: stock.distribution?.[1] ?? 0,
+    bin2: stock.distribution?.[2] ?? 0,
+    bin3: stock.distribution?.[3] ?? 0,
+    bin4: stock.distribution?.[4] ?? 0,
+    bin5: stock.distribution?.[5] ?? 0,
     color: stock.color || '#3b82f6',
   }))
 
