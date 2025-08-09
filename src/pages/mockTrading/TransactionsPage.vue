@@ -212,6 +212,7 @@ import FooterNavigation from '@/components/FooterNavigation.vue'
 import { useTransactionsModal } from '@/services/useTranscationsModal.js'
 import { useTransactionsData } from '@/services/useTranscationsData.js'
 import { useTransactionsPeriod } from '@/services/useTranscationsPeriod.js'
+import { checkExecution } from '@/services/checkExecution'
 
 // ==================== 라우터 ====================
 const router = useRouter()
@@ -227,9 +228,9 @@ const {
   getStockImageUrl,
   getStockInitial,
   handleImageError,
-  formatDateOnly,
-  getTransactionStatusText,
-  getStatusClass,
+  // formatDateOnly,
+  // getTransactionStatusText,
+  // getStatusClass,
   resetPagination,
 } = useTransactionsData()
 
@@ -297,6 +298,7 @@ function selectPeriod(periodKey) {
  */
 async function refreshData() {
   await fetchTransactions()
+  await checkExecution()
   resetPagination() // 새로고침 시 페이지네이션 리셋
 }
 
@@ -321,6 +323,7 @@ function goToMockTrading() {
 onMounted(async () => {
   // 거래 내역 데이터 로드
   await fetchTransactions()
+  await checkExecution()
 
   // 모달 이벤트 리스너 등록
   onModalMounted()
