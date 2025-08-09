@@ -334,8 +334,6 @@
 </template>
 
 <script setup>
-console.log('=== ChartPage 스크립트 시작 ===')
-
 // 콘솔 에러/경고/미처리 예외 완전 무시 (이 페이지 한정)
 if (typeof window !== 'undefined') {
   // console.warn = () => {}
@@ -464,7 +462,6 @@ const loadHoldings = async () => {
           avgPrice: currentStockHolding.averagePrice,
           quantity: currentStockHolding.quantity,
         }
-        console.log('보유 종목 갯수:', userHoldings.value.quantity)
       } else {
         // 해당 종목을 보유하지 않은 경우
         userHoldings.value = {
@@ -536,24 +533,21 @@ const goBack = () => {
 }
 
 function convertApiDataTo1MinChartData(apiResponse) {
-  // apiResponse가 배열이면 그대로 사용, 객체면 배열로 변환
+  // 구조 변경 대응: { date, data } 형태
   const chartDataArray = Array.isArray(apiResponse)
     ? apiResponse
-    : apiResponse?.stk_min_pole_chart_qry || []
+    : apiResponse?.data || apiResponse?.stk_min_pole_chart_qry || []
   if (!Array.isArray(chartDataArray) || chartDataArray.length === 0) {
     console.warn('[데이터 변환] API 응답에 차트 데이터가 없습니다')
     return []
   }
 
-  // 오늘 날짜(YYYYMMDD) 구하기
-  const today = new Date()
-  const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
+  // date 값도 구조에 맞게 가져오기
+  const dateStr = apiResponse?.date // "YYYYMMDD" 형태
 
-  // 만약 날짜 정보가 추가되면, 그에 맞게 필터링 필요
-  // 시간 역순(15:30~09:00)이면 오름차순 정렬 필요
   const converted = chartDataArray.map((item, idx) => {
-    // 시간 문자열 조합 (오늘 날짜 + stck_cntg_hour)
-    const timeStr = todayStr + item.stck_cntg_hour // "YYYYMMDDHHMMSS"
+    // 시간 문자열 조합 (API 응답의 date + stck_cntg_hour)
+    const timeStr = dateStr + item.stck_cntg_hour // "YYYYMMDDHHMMSS"
     const year = parseInt(timeStr.substr(0, 4))
     const month = parseInt(timeStr.substr(4, 2)) - 1
     const day = parseInt(timeStr.substr(6, 2))
@@ -574,10 +568,7 @@ function convertApiDataTo1MinChartData(apiResponse) {
     }
   })
 
-  // 시간 오름차순(09:00~15:30)으로 정렬
   converted.sort((a, b) => a.dateTime - b.dateTime)
-
-  // 인덱스 재할당
   return converted.map((item, idx) => ({ ...item, x: idx }))
 }
 
@@ -676,6 +667,7 @@ let cachedStockCode = ''
 // 차트 데이터를 가져오는 함수 (API 데이터 캐싱)
 const generateCandlestickData = async () => {
   isChartLoading.value = true
+
   try {
     let apiResponse
 
@@ -694,6 +686,7 @@ const generateCandlestickData = async () => {
       // 분봉 데이터
       if (!cachedMinuteApiResponse) {
         apiResponse = await fetchStockChartData(stockInfo.stockCode)
+
         cachedMinuteApiResponse = apiResponse
       } else {
         apiResponse = cachedMinuteApiResponse

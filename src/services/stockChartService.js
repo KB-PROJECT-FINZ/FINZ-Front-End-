@@ -23,18 +23,19 @@ export async function fetchStockChartData(stockCode) {
 
     const result = await response.json()
 
-    if (result.rt_cd && result.rt_cd !== '0') {
-      console.error('[API 오류] 응답 오류:', result.msg1)
-      throw new Error(`API 오류: ${result.msg1 || 'Unknown error'}`)
-    }
-
-    if (!result || !Array.isArray(result)) {
+    // 구조 변경 대응
+    let chartData = result
+    if (result.data && Array.isArray(result.data)) {
+      chartData = result
+    } else if (Array.isArray(result)) {
+      chartData = { date: null, data: result }
+    } else {
       console.error('[API 오류] 차트 데이터가 없습니다')
       throw new Error(`API 오류: 차트 데이터가 없습니다`)
     }
 
-    console.log(`[API 성공] ${result.length}개 데이터 수신`)
-    return result
+    console.log(`[API 성공] ${chartData.data.length}개 데이터 수신`)
+    return chartData
   } catch (error) {
     console.error('[API 오류] 주식 차트 데이터 조회 실패:', error.message)
     throw error
