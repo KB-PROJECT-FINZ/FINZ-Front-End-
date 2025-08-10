@@ -4,7 +4,6 @@
       <h1 class="text-lg font-bold">랭킹</h1>
     </div>
 
-    <!-- 2. 상단 라우팅 탭 -->
     <TabSwitcher
       :tabs="[
         { label: '투자 랭킹 보기', route: '/ranking' },
@@ -12,7 +11,6 @@
       ]"
     />
 
-    <!-- 조건부 분석 or 안내 -->
     <div class="mt-4">
       <NoInvestmentGuide v-if="!hasInvestmentData" />
       <template v-else>
@@ -78,15 +76,7 @@
               :traitRatio="getTraitRatio(currentRatioItem)"
               :logo="currentRatioItem.logo"
               class="mx-auto w-full max-w-[420px]"
-              :name="currentRatioItem.name"
-              :gain="currentRatioItem.gain"
-              :traitRatio="getTraitRatio(currentRatioItem)"
-              :logo="currentRatioItem.logo"
-              class="mx-auto w-full max-w-[420px]"
             />
-          </div>
-          <div v-else class="text-center text-sm text-gray-500 py-8">
-            상단에서 종목을 선택하면 성향별 보유 비중 차트를 보여줄게요.
           </div>
           <div v-else class="text-center text-sm text-gray-500 py-8">
             상단에서 종목을 선택하면 성향별 보유 비중 차트를 보여줄게요.
@@ -122,19 +112,7 @@
                   ? currentDistItem.distributionBins
                   : currentDistItem.distribution || [0, 0, 0, 0, 0, 0]
               "
-              :name="currentDistItem.stockName"
-              :gain="currentDistItem.gain ?? currentDistItem.gainRate ?? 0"
-              :positionIndex="currentDistItem.positionIndex"
-              :positionLabel="currentDistItem.positionLabel"
-              :distribution="
-                Array.isArray(currentDistItem.distributionBins)
-                  ? currentDistItem.distributionBins
-                  : currentDistItem.distribution || [0, 0, 0, 0, 0, 0]
-              "
             />
-          </div>
-          <div v-else class="text-center text-sm text-gray-500 py-8">
-            상단에서 종목을 선택하면 수익률 분포 차트를 보여줄게요.
           </div>
           <div v-else class="text-center text-sm text-gray-500 py-8">
             상단에서 종목을 선택하면 수익률 분포 차트를 보여줄게요.
@@ -145,20 +123,16 @@
         <section v-show="activeMain === 'popular'" class="mt-6">
           <div class="flex justify-between items-center mb-2">
             <h2 class="text-base font-semibold">{{ traitGroupLabel }} 투자자 인기 종목</h2>
-            <h2 class="text-base font-semibold">{{ traitGroupLabel }} 투자자 인기 종목</h2>
           </div>
-
           <div class="space-y-2">
             <PopularStockItem
               v-for="(stock, idx) in displayedPopularStocks"
               :key="idx"
               :name="stock.name"
               :logo="stock.logo"
-              :logo="stock.logo"
               :gain="stock.gain"
             />
           </div>
-
           <button
             v-if="visiblePopularCount < Math.min(popularStocks.length, 50)"
             @click="loadMorePopular"
@@ -177,12 +151,10 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import debounce from 'lodash.debounce'
-import debounce from 'lodash.debounce'
 import { useUserStore } from '@/stores/user'
 
 import TabSwitcher from '@/components/ranking/TabSwitcher.vue'
 import TraitStockCard from '@/components/ranking/TraitStockCard.vue'
-import MyStockChart from '@/components/ranking/MyStockChart.vue'
 import MyStockChart from '@/components/ranking/MyStockChart.vue'
 import PopularStockItem from '@/components/ranking/PopularStockItem.vue'
 import FooterNavigation from '@/components/FooterNavigation.vue'
@@ -200,9 +172,8 @@ import {
 const userStore = useUserStore()
 const userId = computed(() => userStore.userId)
 
-/* ===== 상태 ===== */
-const traitStocks = ref([]) // [{ name, logo, traitRatio... }]
-const myStocks = ref([]) // [{ stockCode, stockName, distributionBins... }]
+const traitStocks = ref([])
+const myStocks = ref([])
 const popularStocks = ref([])
 
 const activeMain = ref('ratio')
@@ -214,7 +185,6 @@ const displayedPopularStocks = computed(() =>
   popularStocks.value.slice(0, visiblePopularCount.value),
 )
 function loadMorePopular() {
-  visiblePopularCount.value += 10
   visiblePopularCount.value += 10
 }
 
@@ -234,7 +204,6 @@ function getTraitRatio(stock) {
     균형형: stock.traitRatio?.균형형 ?? 0,
     공격형: stock.traitRatio?.공격형 ?? 0,
     특수형: stock.traitRatio?.특수형 ?? 0,
-    기타: stock.traitRatio?.기타 ?? 0,
     기타: stock.traitRatio?.기타 ?? 0,
   }
 }
@@ -278,21 +247,20 @@ async function fetchAnalysisData() {
 }
 
 const debouncedSave = debounce(async (uid, stocks) => {
-  if (!uid || stocks.length === 0) return
-
-  const payload = stocks.map((stock) => ({
-    stockCode: stock.stockCode,
-    stockName: stock.stockName,
-    gainRate: stock.gainRate,
-    positionIndex: stock.positionIndex,
-    positionLabel: stock.positionLabel,
-    bin0: stock.distribution?.[0] ?? 0,
-    bin1: stock.distribution?.[1] ?? 0,
-    bin2: stock.distribution?.[2] ?? 0,
-    bin3: stock.distribution?.[3] ?? 0,
-    bin4: stock.distribution?.[4] ?? 0,
-    bin5: stock.distribution?.[5] ?? 0,
-    color: stock.color || '#3b82f6',
+  if (!uid || !stocks?.length) return
+  const payload = stocks.map((s) => ({
+    stockCode: s.stockCode,
+    stockName: s.stockName,
+    gainRate: s.gainRate,
+    positionIndex: s.positionIndex,
+    positionLabel: s.positionLabel,
+    bin0: s.distribution?.[0] ?? s.distributionBins?.[0] ?? 0,
+    bin1: s.distribution?.[1] ?? s.distributionBins?.[1] ?? 0,
+    bin2: s.distribution?.[2] ?? s.distributionBins?.[2] ?? 0,
+    bin3: s.distribution?.[3] ?? s.distributionBins?.[3] ?? 0,
+    bin4: s.distribution?.[4] ?? s.distributionBins?.[4] ?? 0,
+    bin5: s.distribution?.[5] ?? s.distributionBins?.[5] ?? 0,
+    color: s.color || '#3b82f6',
   }))
   try {
     await saveMyStockDistribution(uid, payload)
@@ -301,8 +269,6 @@ const debouncedSave = debounce(async (uid, stocks) => {
 
 watch(
   myStocks,
-  (v) => {
-    if (userId.value && v && v.length) debouncedSave(userId.value, v)
   (v) => {
     if (userId.value && v && v.length) debouncedSave(userId.value, v)
   },

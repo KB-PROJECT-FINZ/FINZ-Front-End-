@@ -9,32 +9,6 @@ export const TRAIT_LABELS = {
   EMOTIONAL: '기타',
 }
 
-const DETAILED_TO_GROUP = {
-  AGR: 'AGGRESSIVE',
-  AID: 'BALANCED',
-  BGT: 'BALANCED',
-  BSS: 'BALANCED',
-  CAG: 'CONSERVATIVE',
-  CSD: 'CONSERVATIVE',
-  DTA: 'AGGRESSIVE',
-  EXP: 'AGGRESSIVE',
-  IND: 'CONSERVATIVE',
-  INF: 'ANALYTICAL',
-  SOC: 'EMOTIONAL',
-  SYS: 'ANALYTICAL',
-  TEC: 'ANALYTICAL',
-  THE: 'AGGRESSIVE',
-  VAL: 'CONSERVATIVE',
-}
-
-export const TRAIT_LABELS = {
-  AGGRESSIVE: '공격형',
-  BALANCED: '균형형',
-  CONSERVATIVE: '보수형',
-  ANALYTICAL: '특수형',
-  EMOTIONAL: '기타',
-}
-
 export const DETAILED_TO_GROUP = {
   AGR: 'AGGRESSIVE',
   AID: 'BALANCED',
@@ -65,7 +39,6 @@ export async function fetchTraitStockAnalysis(userId) {
     const { data } = await axios.get('/api/ranking/analysis/trait-stock', { params: { userId } })
     return (data || []).map((item) => ({
       name: item.name,
-      gain: item.gain ?? 0,
       gain: item.gain ?? 0,
       logo: item.logo,
       traitRatio: {

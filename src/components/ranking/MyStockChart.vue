@@ -1,18 +1,13 @@
 <template>
   <div class="w-full h-[300px] sm:h-[340px] p-2">
     <canvas ref="canvas" class="w-full h-full"></canvas>
-  <div class="w-full h-[300px] sm:h-[340px] p-2">
-    <canvas ref="canvas" class="w-full h-full"></canvas>
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref, watch, onBeforeUnmount } from 'vue'
 import Chart from 'chart.js/auto'
-import { onMounted, ref, watch, onBeforeUnmount } from 'vue'
-import Chart from 'chart.js/auto'
 
-const props = defineProps({
 const props = defineProps({
   name: String,
   gain: Number,
