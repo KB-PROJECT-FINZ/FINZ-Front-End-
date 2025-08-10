@@ -139,6 +139,7 @@ function getTraitRatio(stock) {
     균형형: stock.traitRatio?.균형형 ?? 0,
     공격형: stock.traitRatio?.공격형 ?? 0,
     특수형: stock.traitRatio?.특수형 ?? 0,
+    기타: stock.traitRatio?.기타 ?? 0,
   }
 }
 

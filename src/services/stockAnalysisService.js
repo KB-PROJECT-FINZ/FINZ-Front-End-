@@ -3,21 +3,31 @@ import axios from 'axios'
 // import { useAssetDataStore } from '@/services/useAssetData'
 axios.defaults.withCredentials = true
 
+export const TRAIT_LABELS = {
+  AGGRESSIVE: '공격형',
+  BALANCED: '균형형',
+  CONSERVATIVE: '보수형',
+  ANALYTICAL: '특수형',
+  EMOTIONAL: '기타',
+}
+
 // [A1] 성향별 보유 비중
 export async function fetchTraitStockAnalysis(userId) {
   try {
     const res = await axios.get('/api/ranking/analysis/trait-stock', {
       params: { userId },
     })
+    // 백엔드가 5개 컬럼을 각각 %로 주도록 변경했으니 그대로 매핑
     return res.data.map((item) => ({
       name: item.name,
-      gain: item.gain,
+      gain: item.gain ?? 0,
       logo: item.logo,
       traitRatio: {
-        보수형: item.conservativeRatio,
-        균형형: item.balancedRatio,
-        공격형: item.aggressiveRatio,
-        특수형: item.specialRatio,
+        보수형: item.conservativeRatio ?? 0,
+        균형형: item.balancedRatio ?? 0,
+        공격형: item.aggressiveRatio ?? 0,
+        특수형: item.analyticalRatio ?? 0, // <-- NEW
+        기타: item.emotionalRatio ?? 0, // <-- NEW
       },
     }))
   } catch (error) {
@@ -74,24 +84,25 @@ export async function fetchPopularStocksByTrait(traitGroup) {
 // [A4] 내 수익률 분포 저장
 export async function saveMyStockDistribution(userId, distributions) {
   try {
-    // distributions 배열 내 각 객체의 필수 필드 존재 확인 및 기본값 보정
     const sanitized = distributions
-      // stockCode가 없거나 빈 문자열인 항목은 제외
       .filter((item) => item.stockCode && String(item.stockCode).trim() !== '')
-      .map((item) => ({
-        stockCode: item.stockCode,
-        stockName: item.stockName,
-        gainRate: item.gainRate,
-        positionIndex: item.positionIndex,
-        positionLabel: item.positionLabel,
-        bin0: item.distributionBins?.[0] ?? 0,
-        bin1: item.distributionBins?.[1] ?? 0,
-        bin2: item.distributionBins?.[2] ?? 0,
-        bin3: item.distributionBins?.[3] ?? 0,
-        bin4: item.distributionBins?.[4] ?? 0,
-        bin5: item.distributionBins?.[5] ?? 0,
-        color: item.color || '#3b82f6',
-      }))
+      .map((item) => {
+        const bins = item.distribution ?? item.distributionBins ?? [0, 0, 0, 0, 0, 0] // <-- 통일
+        return {
+          stockCode: item.stockCode,
+          stockName: item.stockName,
+          gainRate: item.gainRate,
+          positionIndex: item.positionIndex,
+          positionLabel: item.positionLabel,
+          bin0: bins[0] ?? 0,
+          bin1: bins[1] ?? 0,
+          bin2: bins[2] ?? 0,
+          bin3: bins[3] ?? 0,
+          bin4: bins[4] ?? 0,
+          bin5: bins[5] ?? 0,
+          color: item.color || '#3b82f6',
+        }
+      })
 
     await axios.post('/api/ranking/analysis/my-distribution/save', {
       userId,

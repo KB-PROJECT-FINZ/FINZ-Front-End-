@@ -21,6 +21,7 @@
   </div>
 </template>
 
+<!-- TraitStockCard.vue -->
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
@@ -36,37 +37,34 @@ const chartCanvas = ref(null)
 let chartInstance = null
 
 const COLORS = {
-  보수형: '#a855f7', // purple
-  균형형: '#3b82f6', // blue
-  공격형: '#ef4444', // red
-  특수형: '#10b981', // green
-  기타: 'rgba(0,0,0,0.1)', // 빈 공간 연한 회색
+  보수형: '#a855f7',
+  균형형: '#3b82f6',
+  공격형: '#ef4444',
+  특수형: '#10b981',
+  기타: '#6b7280', // EMOTIONAL = 기타(회색 계열)
+  미분류: 'rgba(0,0,0,0.08)', // 총합 < 100일 때 남는 영역
 }
 
 function createChart() {
   if (!chartCanvas.value || !props.traitRatio) return
 
-  // traitRatio 값, 라벨
   const labels = Object.keys(props.traitRatio)
-  const dataValues = Object.values(props.traitRatio)
+  const dataValues = Object.values(props.traitRatio).map((v) => Number(v) || 0)
 
-  // 합계 계산
-  const total = dataValues.reduce((acc, val) => acc + val, 0)
+  const total = dataValues.reduce((a, b) => a + b, 0)
 
-  // 100보다 작으면 빈 공간 추가
   const adjustedLabels = [...labels]
   const adjustedData = [...dataValues]
-  const adjustedColors = labels.map((key) => COLORS[key] || '#ccc')
+  const adjustedColors = adjustedLabels.map((k) => COLORS[k] || '#ccc')
 
+  // 남는 영역(미분류) 표현(선택사항)
   if (total < 100) {
-    adjustedLabels.push('기타')
+    adjustedLabels.push('미분류')
     adjustedData.push(100 - total)
-    adjustedColors.push(COLORS['기타'])
+    adjustedColors.push(COLORS['미분류'])
   }
 
-  if (chartInstance) {
-    chartInstance.destroy()
-  }
+  if (chartInstance) chartInstance.destroy()
 
   chartInstance = new Chart(chartCanvas.value.getContext('2d'), {
     type: 'doughnut',
@@ -85,18 +83,14 @@ function createChart() {
       cutout: '70%',
       responsive: true,
       plugins: {
-        legend: {
-          display: false,
-        },
+        legend: { display: false },
         tooltip: {
           enabled: true,
           callbacks: {
-            label(context) {
-              // '기타' 항목 툴팁 다르게 표시 가능
-              const label = context.label || ''
-              const value = context.parsed || 0
-              if (label === '기타') return `기타: ${value.toFixed(2)}%`
-              return `${label}: ${value.toFixed(2)}%`
+            label(ctx) {
+              const label = ctx.label || ''
+              const value = ctx.parsed || 0
+              return `${label}: ${value.toFixed(0)}%`
             },
           },
         },
@@ -105,21 +99,7 @@ function createChart() {
   })
 }
 
-watch(
-  () => props.traitRatio,
-  () => {
-    createChart()
-  },
-  { immediate: true },
-)
-
-onMounted(() => {
-  createChart()
-})
-
-onBeforeUnmount(() => {
-  if (chartInstance) {
-    chartInstance.destroy()
-  }
-})
+watch(() => props.traitRatio, createChart, { immediate: true })
+onMounted(createChart)
+onBeforeUnmount(() => chartInstance?.destroy())
 </script>
