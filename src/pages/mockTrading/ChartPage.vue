@@ -14,34 +14,6 @@
             />
           </svg>
         </button>
-
-        <!-- 빈 공간 (중앙 여백) -->
-        <div></div>
-
-        <!-- 오른쪽 버튼들 -->
-        <div class="flex items-center gap-2">
-          <!-- 관심종목 하트 버튼 -->
-          <button
-            @click="toggleFavorite"
-            class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            :class="isFavorite ? 'text-red-500' : 'text-[#b5bdc7]'"
-          >
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-              />
-            </svg>
-          </button>
-
-          <!-- 더보기 메뉴 버튼 -->
-          <button @click="toggleMenu" class="p-2 hover:bg-gray-100 rounded-lg text-[#b5bdc7]">
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
-              />
-            </svg>
-          </button>
-        </div>
       </div>
     </header>
 
@@ -358,34 +330,10 @@
         </div>
       </div>
     </div>
-
-    <!-- 더보기 메뉴 모달 -->
-    <div
-      v-if="showMenu"
-      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end"
-      @click="showMenu = false"
-    >
-      <div class="bg-white w-full rounded-t-2xl p-4" @click.stop>
-        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
-        <div class="space-y-4">
-          <button class="w-full text-left p-3 hover:bg-gray-100 rounded-lg">
-            <span class="text-gray-900">차트 설정</span>
-          </button>
-          <button class="w-full text-left p-3 hover:bg-gray-100 rounded-lg">
-            <span class="text-gray-900">알림 설정</span>
-          </button>
-          <button class="w-full text-left p-3 hover:bg-gray-100 rounded-lg">
-            <span class="text-gray-900">공유하기</span>
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
-console.log('=== ChartPage 스크립트 시작 ===')
-
 // 콘솔 에러/경고/미처리 예외 완전 무시 (이 페이지 한정)
 if (typeof window !== 'undefined') {
   // console.warn = () => {}
@@ -473,8 +421,6 @@ const currentEndTime = ref(null) // 현재 차트 오른쪽 끝 시간
 const autoRefreshInterval = ref(null) // 자동 새로고침 인터벌
 
 // 반응형 데이터
-const isFavorite = ref(false)
-const showMenu = ref(false)
 const showMinutesModal = ref(false)
 const selectedTimeFrame = ref('1min')
 
@@ -516,7 +462,6 @@ const loadHoldings = async () => {
           avgPrice: currentStockHolding.averagePrice,
           quantity: currentStockHolding.quantity,
         }
-        console.log('보유 종목 갯수:', userHoldings.value.quantity)
       } else {
         // 해당 종목을 보유하지 않은 경우
         userHoldings.value = {
@@ -588,24 +533,21 @@ const goBack = () => {
 }
 
 function convertApiDataTo1MinChartData(apiResponse) {
-  // apiResponse가 배열이면 그대로 사용, 객체면 배열로 변환
+  // 구조 변경 대응: { date, data } 형태
   const chartDataArray = Array.isArray(apiResponse)
     ? apiResponse
-    : apiResponse?.stk_min_pole_chart_qry || []
+    : apiResponse?.data || apiResponse?.stk_min_pole_chart_qry || []
   if (!Array.isArray(chartDataArray) || chartDataArray.length === 0) {
     console.warn('[데이터 변환] API 응답에 차트 데이터가 없습니다')
     return []
   }
 
-  // 오늘 날짜(YYYYMMDD) 구하기
-  const today = new Date()
-  const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
+  // date 값도 구조에 맞게 가져오기
+  const dateStr = apiResponse?.date // "YYYYMMDD" 형태
 
-  // 만약 날짜 정보가 추가되면, 그에 맞게 필터링 필요
-  // 시간 역순(15:30~09:00)이면 오름차순 정렬 필요
   const converted = chartDataArray.map((item, idx) => {
-    // 시간 문자열 조합 (오늘 날짜 + stck_cntg_hour)
-    const timeStr = todayStr + item.stck_cntg_hour // "YYYYMMDDHHMMSS"
+    // 시간 문자열 조합 (API 응답의 date + stck_cntg_hour)
+    const timeStr = dateStr + item.stck_cntg_hour // "YYYYMMDDHHMMSS"
     const year = parseInt(timeStr.substr(0, 4))
     const month = parseInt(timeStr.substr(4, 2)) - 1
     const day = parseInt(timeStr.substr(6, 2))
@@ -626,10 +568,7 @@ function convertApiDataTo1MinChartData(apiResponse) {
     }
   })
 
-  // 시간 오름차순(09:00~15:30)으로 정렬
   converted.sort((a, b) => a.dateTime - b.dateTime)
-
-  // 인덱스 재할당
   return converted.map((item, idx) => ({ ...item, x: idx }))
 }
 
@@ -728,6 +667,7 @@ let cachedStockCode = ''
 // 차트 데이터를 가져오는 함수 (API 데이터 캐싱)
 const generateCandlestickData = async () => {
   isChartLoading.value = true
+
   try {
     let apiResponse
 
@@ -746,6 +686,7 @@ const generateCandlestickData = async () => {
       // 분봉 데이터
       if (!cachedMinuteApiResponse) {
         apiResponse = await fetchStockChartData(stockInfo.stockCode)
+
         cachedMinuteApiResponse = apiResponse
       } else {
         apiResponse = cachedMinuteApiResponse
@@ -1242,15 +1183,6 @@ const updateChart = async () => {
   } catch (error) {
     console.error('[차트 업데이트] 오류:', error.message)
   }
-}
-
-const toggleFavorite = () => {
-  isFavorite.value = !isFavorite.value
-  console.log('관심종목 상태:', isFavorite.value ? '추가됨' : '제거됨')
-}
-
-const toggleMenu = () => {
-  showMenu.value = !showMenu.value
 }
 
 const formatPrice = (price) => {

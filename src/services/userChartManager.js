@@ -118,7 +118,6 @@ export function useChartManager() {
     portfolioChart.value.addEventListener('mouseleave', handleChartMouseLeave)
 
     eventsSetup = true
-    console.log('Canvas 이벤트 리스너 등록 완료')
   }
 
   const cleanupChartEvents = () => {
@@ -126,7 +125,6 @@ export function useChartManager() {
       portfolioChart.value.removeEventListener('mousemove', handleChartMouseMove)
       portfolioChart.value.removeEventListener('mouseleave', handleChartMouseLeave)
       eventsSetup = false
-      console.log('Canvas 이벤트 리스너 정리 완료')
     }
   }
 
@@ -160,7 +158,11 @@ export function useChartManager() {
     // 캔버스 초기화
     ctx.clearRect(0, 0, portfolioChart.value.width, portfolioChart.value.height)
 
-    const { holdings = [], cash = 100 } = portfolioPercentages
+    // holdings를 퍼센트 내림차순으로 정렬
+    let { holdings = [], cash = 100 } = portfolioPercentages
+    holdings = Array.isArray(holdings)
+      ? [...holdings].sort((a, b) => b.percentage - a.percentage)
+      : []
     chartSegments = []
 
     // 현금만 있는 경우

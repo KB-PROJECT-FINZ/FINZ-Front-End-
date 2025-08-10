@@ -215,7 +215,7 @@
                 </div>
               </div>
             </div>
-            <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="grid grid-cols-2 text-sm">
               <div>
                 <span class="text-gray-500">보유수량</span>
                 <span class="ml-2 font-medium text-gray-900">{{ holding.quantity }}주</span>

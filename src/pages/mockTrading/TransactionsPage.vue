@@ -89,13 +89,13 @@
     </section>
 
     <!-- 거래 내역 리스트 -->
-    <section class="mx-4 mt-0 space-y-3">
-      <div v-for="transaction in visibleTransactions" :key="transaction.id" class="bg-white p-4">
+    <section class="mx-4 mt-0 space-y-1.5">
+      <div v-for="transaction in visibleTransactions" :key="transaction.id" class="bg-white p-3">
         <!-- 새 카드 레이아웃: 왼쪽 날짜, 가운데 종목명, 오른쪽 체결단가 -->
         <div class="flex items-center justify-between mb-1">
           <!-- 날짜 -->
           <div class="flex-shrink-0 w-10 text-left">
-            <div class="text-xs text-gray-400">{{ formatDateOnly(transaction.executedAt) }}</div>
+            <div class="text-xs text-gray-400">{{ formatDateDot(transaction.executedAt) }}</div>
           </div>
           <!-- 종목명 및 상태 + 이미지 -->
           <div class="flex-1 min-w-0 flex items-center gap-2">
@@ -124,33 +124,31 @@
               >
                 {{ transaction.stockName }}
               </div>
-              <div
-                class="text-xs mt-1"
-                :class="
-                  transaction.status === 'CANCELLED'
-                    ? 'text-gray-400'
-                    : [
-                        getStatusClass(transaction.status, transaction.type),
-                        transaction.type === 'BUY'
-                          ? 'text-red-600'
-                          : transaction.type === 'SELL'
-                            ? 'text-blue-600'
-                            : '',
-                      ]
-                "
-              >
-                {{ getTransactionStatusText(transaction) }}
+              <div class="text-xs mt-1 flex items-center gap-1">
+                <span
+                  :class="transaction.type === 'BUY' ? 'text-red-600' : 'text-blue-600'"
+                  v-if="transaction.status !== 'CANCELLED'"
+                >
+                  {{ transaction.quantity }}주
+                  {{
+                    transaction.type === 'BUY' ? '매수' : transaction.type === 'SELL' ? '매도' : ''
+                  }}
+                </span>
+                <span v-else class="text-gray-400">취소됨</span>
               </div>
             </div>
           </div>
           <!-- 체결단가 -->
           <div class="flex-shrink-0 text-right">
-            <div v-if="transaction.status !== 'CANCELLED'" class="text-sm text-gray-900">
-              주당 {{ transaction.price.toLocaleString() }}원
+            <div v-if="transaction.status !== 'CANCELLED'">
+              <div class="text-base font-semibold text-gray-900 mb-0.5">
+                {{ (transaction.price * transaction.quantity).toLocaleString() }}원
+              </div>
+              <div class="text-[11px] text-gray-500">
+                주당 {{ transaction.price.toLocaleString() }}원
+              </div>
             </div>
-            <div v-else class="text-sm text-gray-400">
-              &nbsp;
-            </div>
+            <div v-else class="text-sm text-gray-400">&nbsp;</div>
           </div>
         </div>
 
@@ -214,6 +212,7 @@ import FooterNavigation from '@/components/FooterNavigation.vue'
 import { useTransactionsModal } from '@/services/useTranscationsModal.js'
 import { useTransactionsData } from '@/services/useTranscationsData.js'
 import { useTransactionsPeriod } from '@/services/useTranscationsPeriod.js'
+import { checkExecution } from '@/services/checkExecution'
 
 // ==================== 라우터 ====================
 const router = useRouter()
@@ -229,10 +228,10 @@ const {
   getStockImageUrl,
   getStockInitial,
   handleImageError,
-  formatDateOnly,
-  getTransactionStatusText,
-  getStatusClass,
-  resetPagination
+  // formatDateOnly,
+  // getTransactionStatusText,
+  // getStatusClass,
+  resetPagination,
 } = useTransactionsData()
 
 // 기간 필터링
@@ -253,7 +252,7 @@ const {
   onModalDragMove,
   onModalDragEnd,
   onMounted: onModalMounted,
-  onUnmounted: onModalUnmounted
+  onUnmounted: onModalUnmounted,
 } = useTransactionsModal()
 
 // ==================== 계산된 속성 ====================
@@ -267,6 +266,16 @@ const visibleTransactions = computed(() => {
 })
 
 // ==================== 템플릿에서 사용하는 메서드 ====================
+
+/**
+ * 날짜를 MM.DD 형식으로 반환 (예: 08.07)
+ */
+function formatDateDot(dateString) {
+  const date = new Date(dateString)
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  return `${month}.${day}`
+}
 
 /**
  * 선택된 기간 라벨 반환
@@ -289,6 +298,7 @@ function selectPeriod(periodKey) {
  */
 async function refreshData() {
   await fetchTransactions()
+  await checkExecution()
   resetPagination() // 새로고침 시 페이지네이션 리셋
 }
 
@@ -313,6 +323,7 @@ function goToMockTrading() {
 onMounted(async () => {
   // 거래 내역 데이터 로드
   await fetchTransactions()
+  await checkExecution()
 
   // 모달 이벤트 리스너 등록
   onModalMounted()

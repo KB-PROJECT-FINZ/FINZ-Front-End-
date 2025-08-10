@@ -10,14 +10,14 @@
     <span class="ml-3 flex-1 text-left text-base font-semibold text-gray-900">AI 피드백</span>
   </header>
   <div class="feedback-page px-6 py-6">
-    <div class="flex items-center font-bold text-[20px] mb-5 text-gray-800 gap-2">
+    <div class="flex items-center font-bold text-[18px] mb-5 text-gray-800 gap-2">
       <span
-        class="text-[23px] rounded-full p-1 bg-gradient-to-r from-indigo-500 to-indigo-300 text-white"
+        class="text-[20px] rounded-full p-1 bg-gradient-to-r from-indigo-500 to-indigo-300 text-white"
         >🤖</span
       >
-      <span>이번 주 투자 분석</span>
+      <span>지난 주 투자 분석</span>
     </div>
-    <div v-if="loading" class="text-indigo-500 font-bold my-6">피드백을 불러오는 중...</div>
+    <div v-if="loading" class="text-gray-500 font-bold my-6">피드백을 불러오는 중...</div>
     <div v-else-if="error" class="text-red-500 font-bold my-6">{{ error }}</div>
     <div v-else-if="rawFeedback">
       <div v-if="rawFeedback.feedback">

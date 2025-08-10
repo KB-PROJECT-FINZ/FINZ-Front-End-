@@ -8,20 +8,6 @@
       >
         <button class="absolute top-2 right-2 text-2xl z-20" @click="$emit('close')">×</button>
         <h2 class="text-lg font-semibold mb-4">{{ formattedDateTitle }} 투자 일지 작성</h2>
-        <div v-if="groupedTransactions.length" class="mt-4 mb-4">
-          <div class="flex flex-wrap gap-2">
-            <div
-              v-for="(t, index) in groupedTransactions"
-              :key="index"
-              :class="[
-                'px-3 py-1 rounded-full text-sm font-medium shadow-sm',
-                t.type === 'BUY' ? 'bg-red-200 text-red-800' : 'bg-blue-200 text-blue-800',
-              ]"
-            >
-              {{ t.type === 'BUY' ? '매수' : '매도' }} {{ t.stockName }} {{ t.quantity }}주
-            </div>
-          </div>
-        </div>
         <form @submit.prevent="submitJournal" class="flex flex-col gap-4">
           <label class="font-semibold">감정</label>
           <input
@@ -83,7 +69,7 @@ const props = defineProps({
   visible: { type: Boolean, default: true },
 })
 const emit = defineEmits(['close', 'saved'])
-const { transactionsData, fetchTransactions } = useTransactionsData()
+const { fetchTransactions } = useTransactionsData()
 const form = ref({
   emotion: '',
   reason: '',
@@ -97,31 +83,6 @@ const formattedDateTitle = computed(() => {
   if (!form.value.journalDate) return '오늘'
   const [year, month, day] = form.value.journalDate.split('-')
   return `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`
-})
-const groupedTransactions = computed(() => {
-  if (!form.value.journalDate) return []
-  const grouped = {}
-  transactionsData.value.forEach((t) => {
-    if (!t.executedAt) return
-    const date = new Date(t.executedAt)
-    const yyyy = date.getFullYear()
-    const mm = String(date.getMonth() + 1).padStart(2, '0')
-    const dd = String(date.getDate()).padStart(2, '0')
-    const formatted = `${yyyy}-${mm}-${dd}`
-    if (formatted !== form.value.journalDate) return
-    const key = `${t.stockCode}_${t.type}`
-    if (!grouped[key]) {
-      grouped[key] = {
-        stockName: t.stockName,
-        stockCode: t.stockCode,
-        type: t.type,
-        quantity: t.quantity,
-      }
-    } else {
-      grouped[key].quantity += t.quantity
-    }
-  })
-  return Object.values(grouped)
 })
 function getTodayDate() {
   const today = new Date()
