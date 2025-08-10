@@ -11,6 +11,24 @@ export const TRAIT_LABELS = {
   EMOTIONAL: '기타',
 }
 
+const DETAILED_TO_GROUP = {
+  AGR: 'AGGRESSIVE',
+  AID: 'BALANCED',
+  BGT: 'BALANCED',
+  BSS: 'BALANCED',
+  CAG: 'CONSERVATIVE',
+  CSD: 'CONSERVATIVE',
+  DTA: 'AGGRESSIVE',
+  EXP: 'AGGRESSIVE',
+  IND: 'CONSERVATIVE',
+  INF: 'ANALYTICAL',
+  SOC: 'EMOTIONAL',
+  SYS: 'ANALYTICAL',
+  TEC: 'ANALYTICAL',
+  THE: 'AGGRESSIVE',
+  VAL: 'CONSERVATIVE',
+}
+
 // [A1] 성향별 보유 비중
 export async function fetchTraitStockAnalysis(userId) {
   try {
@@ -64,16 +82,25 @@ export async function fetchMyStockDistribution(userId) {
 // [A3] 유사 성향 투자자 인기 종목
 export async function fetchPopularStocksByTrait(traitGroup) {
   try {
+    const tg = DETAILED_TO_GROUP[traitGroup] || String(traitGroup || '').toUpperCase()
     const res = await axios.get('/api/ranking/analysis/popular-stocks', {
-      params: { traitGroup },
+      params: { traitGroup: tg },
     })
     return res.data.map((stock) => ({
       name: stock.stockName,
-      gain: stock.transactionCount,
+      gain: stock.investorCount, // 보유자 수
       logo: stock.stockCode
         ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
         : '/images/stocks/default.png',
-      trait: traitGroup,
+      trait:
+        {
+          AGGRESSIVE: '공격형',
+          BALANCED: '균형형',
+          CONSERVATIVE: '보수형',
+          ANALYTICAL: '특수형',
+          EMOTIONAL: '기타',
+        }[tg] || tg,
+      ranking: stock.ranking,
     }))
   } catch (error) {
     console.error('fetchPopularStocksByTrait error:', error)

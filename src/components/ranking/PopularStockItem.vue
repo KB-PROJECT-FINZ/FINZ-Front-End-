@@ -10,9 +10,11 @@
     />
     <div class="flex-1 truncate">
       <div class="font-semibold truncate">{{ name }}</div>
-      <div class="text-xs text-gray-500">{{ trait }}</div>
+      <!-- 성향 줄은 필요할 때만 -->
+      <div v-if="trait" class="text-xs text-gray-500">{{ trait }}</div>
     </div>
-    <div :class="['font-semibold', gain >= 0 ? 'text-green-600' : 'text-red-600']">
+    <!-- gain = 보유자 수: 색상 고정 추천 -->
+    <div class="font-semibold text-gray-800">
       {{ gain }}
     </div>
   </div>
@@ -21,8 +23,8 @@
 <script setup>
 defineProps({
   name: String,
-  trait: String,
-  gain: Number,
+  trait: { type: String, default: '' }, // 선택값
+  gain: Number, // 보유자 수
   logo: String,
 })
 </script>

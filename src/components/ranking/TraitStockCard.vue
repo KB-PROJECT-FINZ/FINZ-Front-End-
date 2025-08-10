@@ -1,27 +1,27 @@
 <template>
-  <div class="w-36 p-2 bg-white rounded-lg shadow flex flex-col items-center text-center">
-    <!-- 회사 로고와 이름 -->
-    <img :src="logo" alt="logo" class="w-10 h-10 object-contain rounded mb-1" loading="lazy" />
+  <div class="w-full p-3 bg-white rounded-lg shadow flex flex-col items-center text-center">
+    <img :src="logo" alt="logo" class="w-12 h-12 object-contain rounded mb-1" loading="lazy" />
     <div class="text-sm font-semibold mb-2 truncate">{{ name }}</div>
 
-    <!-- 도넛 차트 -->
-    <canvas ref="chartCanvas" class="w-24 h-24"></canvas>
+    <!-- 차트 래퍼: 높이 크게 & 반응형 -->
+    <div class="w-full h-[220px] sm:h-[240px]">
+      <canvas ref="chartCanvas" class="w-full h-full"></canvas>
+    </div>
 
     <!-- 성향 비율 -->
-    <div class="mt-2 flex justify-around w-full text-xs">
+    <div class="mt-3 grid grid-cols-5 gap-2 w-full text-[11px]">
       <div v-for="(value, key) in traitRatio" :key="key" class="flex flex-col items-center">
         <span
           class="w-3 h-3 rounded-full mb-1"
           :style="{ backgroundColor: COLORS[key] || '#ccc' }"
         ></span>
-        <span>{{ key }}</span>
+        <span class="truncate">{{ key }}</span>
         <span>{{ value }}%</span>
       </div>
     </div>
   </div>
 </template>
 
-<!-- TraitStockCard.vue -->
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
@@ -41,8 +41,8 @@ const COLORS = {
   균형형: '#3b82f6',
   공격형: '#ef4444',
   특수형: '#10b981',
-  기타: '#6b7280', // EMOTIONAL = 기타(회색 계열)
-  미분류: 'rgba(0,0,0,0.08)', // 총합 < 100일 때 남는 영역
+  기타: '#6b7280',
+  미분류: 'rgba(0,0,0,0.08)',
 }
 
 function createChart() {
@@ -50,14 +50,12 @@ function createChart() {
 
   const labels = Object.keys(props.traitRatio)
   const dataValues = Object.values(props.traitRatio).map((v) => Number(v) || 0)
-
   const total = dataValues.reduce((a, b) => a + b, 0)
 
   const adjustedLabels = [...labels]
   const adjustedData = [...dataValues]
   const adjustedColors = adjustedLabels.map((k) => COLORS[k] || '#ccc')
 
-  // 남는 영역(미분류) 표현(선택사항)
   if (total < 100) {
     adjustedLabels.push('미분류')
     adjustedData.push(100 - total)
@@ -80,8 +78,9 @@ function createChart() {
       ],
     },
     options: {
-      cutout: '70%',
       responsive: true,
+      maintainAspectRatio: false, // ← 높이 꽉 채움
+      cutout: '65%',
       plugins: {
         legend: { display: false },
         tooltip: {
