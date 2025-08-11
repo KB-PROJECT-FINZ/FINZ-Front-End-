@@ -177,7 +177,7 @@
           <div class="w-full">
             <!-- 보유 종목들 -->
             <div
-              v-for="(holding, index) in portfolioPercentages.holdings || []"
+              v-for="(holding, index) in sortedHoldings"
               :key="holding.stockCode"
               class="flex items-center mb-2 gap-2"
             >
@@ -251,10 +251,11 @@
     <!-- 보유 종목 바로가기 -->
     <section class="my-2 px-6">
       <button
-        class="w-full text-left text-base font-semibold text-gray-700 py-4 px-1 hover:bg-gray-100"
+        class="w-full flex justify-between items-center text-base font-semibold text-gray-700 py-4 px-1 hover:bg-gray-100"
         @click="goHoldingsPage"
       >
-        보유 종목 전체 보기 &gt;
+        <span>보유 종목 전체 보기</span>
+        <span class="ml-2">&gt;</span>
       </button>
     </section>
     <div class="w-full h-px bg-gray-200 mx-auto" />
@@ -262,10 +263,11 @@
     <!-- 최근 거래 내역 바로가기 -->
     <section class="my-2 px-6">
       <button
-        class="w-full text-left text-base font-semibold text-gray-700 py-4 px-1 hover:bg-gray-100"
+        class="w-full flex justify-between items-center text-base font-semibold text-gray-700 py-4 px-1 hover:bg-gray-100"
         @click="goTransactionsPage"
       >
-        최근 거래 내역 전체 보기 &gt;
+        <span>최근 거래 내역 전체 보기</span>
+        <span class="ml-2">&gt;</span>
       </button>
     </section>
 
@@ -285,7 +287,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue'
+import { ref, onMounted, nextTick, watch, onUnmounted, computed } from 'vue'
 import ToastMessage from '@/components/ToastMessage.vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
@@ -310,6 +312,12 @@ const {
 
 const { portfolioChart, chartTooltip, chartColors, updatePortfolioChart, cleanupChartEvents } =
   useChartManager()
+
+// holdings를 퍼센트 내림차순 정렬하여 범례에 사용
+const sortedHoldings = computed(() => {
+  const arr = portfolioPercentages.value?.holdings || []
+  return [...arr].sort((a, b) => b.percentage - a.percentage)
+})
 
 // ===== 상태 관리 =====
 const showChargeModal = ref(false)

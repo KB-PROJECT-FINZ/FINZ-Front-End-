@@ -1,224 +1,125 @@
 import axios from 'axios'
+import { useAssetDataStore } from '@/services/useAssetData'
 axios.defaults.withCredentials = true
 
-// ✅ 랭킹 주간 날짜 라벨 생성 함수
+function getLastMonday() {
+  const today = new Date()
+  const day = today.getDay() || 7
+  today.setDate(today.getDate() - day + 1 - 7)
+  return today.toISOString().slice(0, 10)
+}
+
 export function getRankingWeekLabel(baseDateString) {
   const baseDate = new Date(baseDateString)
   const start = new Date(baseDate)
   const end = new Date(baseDate)
   end.setDate(end.getDate() + 6)
-
   const month = start.getMonth() + 1
   const weekNumber = Math.ceil(start.getDate() / 7)
   const label = `${month}월 ${['첫째', '둘째', '셋째', '넷째', '다섯째'][weekNumber - 1]} 주`
-
-  const format = (date) => `${date.getMonth() + 1}/${String(date.getDate()).padStart(2, '0')}`
-  return ` ${label} 랭킹 (${format(start)}~${format(end)})`
+  const fmt = (d) => `${d.getMonth() + 1}/${String(d.getDate()).padStart(2, '0')}`
+  return `${label} 랭킹 (${fmt(start)}~${fmt(end)})`
 }
 
-// ------------------------------
-// 📘 랭킹 관련 API
-// ------------------------------
+const mapStock = (stock) => ({
+  name: stock.stockName,
+  gain: stock.avgGainRate,
+  image: stock.stockCode
+    ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
+    : '/images/stocks/default.png',
+})
 
-/**
- * [1] 내 주간 수익률 및 랭킹
- */
+const mapUser = (user) => ({
+  userId: user.userId,
+  nickname: user.nickname || 'N/A',
+  gainRate: user.gainRate,
+  trait: user.traitGroup || '기타',
+  originalTrait: user.originalTrait,
+  image: `/images/profile${(user.userId % 5) + 1}.png`,
+})
+
 export async function fetchMyRanking(userId, baseDate) {
-  console.log('fetchMyRanking 호출 파라미터:', { userId, baseDate })
+  const fallbackBaseDate = baseDate ?? getLastMonday()
   try {
-    const res = await axios.get('/api/ranking/my', {
-      params: { userId, baseDate },
+    const { data } = await axios.get('/api/ranking/my', {
+      params: { userId, baseDate: fallbackBaseDate },
     })
-    const data = res.data
-
     return {
       rank: data.ranking,
       gainRate: data.gainRate,
       topPercent: data.topPercent,
       trait: data.riskType || '미지정',
-      baseDate: data.baseDate,
+      baseDate: data.baseDate ?? fallbackBaseDate,
     }
-  } catch (error) {
-    console.error('fetchMyRanking error:', error)
+  } catch {
     return null
   }
 }
 
-/**
- * [2] 주간 인기 종목 Top10 (지난주 기준)
- */
 export async function fetchTop10Stocks(baseDate) {
   try {
-    const res = await axios.get('/api/ranking/popular-stocks', {
-      params: { baseDate },
-    })
-
-    return res.data.map((stock) => ({
-      name: stock.stockName,
-      gain: stock.avgGainRate,
-      image: stock.stockCode
-        ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
-        : '/images/stocks/default.png',
-    }))
-  } catch (error) {
-    console.error('fetchTop10Stocks error:', error)
+    const { data } = await axios.get('/api/ranking/popular-stocks', { params: { baseDate } })
+    return (data || []).map(mapStock)
+  } catch {
     return []
   }
 }
 
-/**
- * [3] 주간 전체 유저 랭킹 Top100 (지난주 기준)
- */
 export async function fetchWeeklyRanking(baseDate) {
   try {
-    const res = await axios.get('/api/ranking/weekly', {
-      params: { baseDate },
-    })
-
-    if (!Array.isArray(res.data)) {
-      console.warn('fetchWeeklyRanking 응답이 배열이 아닙니다:', res.data)
-      return []
-    }
-
-    return res.data.map((user) => ({
-      userId: user.userId,
-      nickname: user.nickname || 'N/A',
-      gainRate: user.gainRate,
-      trait: user.traitGroup || '기타',
-      originalTrait: user.originalTrait,
-      image: `/images/profile${(user.userId % 5) + 1}.png`,
-    }))
-  } catch (error) {
-    console.error('fetchWeeklyRanking error:', error)
+    const { data } = await axios.get('/api/ranking/weekly', { params: { baseDate } })
+    return Array.isArray(data) ? data.map(mapUser) : []
+  } catch {
     return []
   }
 }
 
-/**
- * [4] 성향 그룹별 주간 랭킹 (지난주 기준)
- */
 export async function fetchGroupedWeeklyRanking(baseDate) {
   try {
-    const response = await axios.get('/api/ranking/weekly/grouped', {
-      params: { baseDate },
-    })
-    console.log('📦 fetchGroupedWeeklyRanking 원본 결과:', response.data)
-
-    const grouped = response.data
-
-    // 각 그룹별 배열 가공: userId, nickname, gainRate 등 추출
-    const parsedGrouped = {}
-
-    for (const [groupKey, users] of Object.entries(grouped)) {
-      parsedGrouped[groupKey] = users.map((user) => ({
-        userId: user.userId,
-        nickname: user.nickname || 'N/A',
-        gainRate: user.gainRate,
-        trait: user.traitGroup || '기타',
-        originalTrait: user.originalTrait,
-        image: `/images/profile${(user.userId % 5) + 1}.png`,
-      }))
+    const { data } = await axios.get('/api/ranking/weekly/grouped', { params: { baseDate } })
+    const parsed = {}
+    for (const [groupKey, users] of Object.entries(data || {})) {
+      parsed[groupKey] = (users || []).map(mapUser)
     }
-
-    console.log('✅ 가공된 grouped:', parsedGrouped)
-    return parsedGrouped
-  } catch (error) {
-    console.error('❌ fetchGroupedWeeklyRanking 오류:', error)
+    return parsed
+  } catch {
     return {}
   }
 }
 
-/**
- * [5] 실시간 인기 종목 Top10
- */
 export async function fetchTop10StocksRealtime() {
   try {
-    const res = await axios.get('/api/ranking/popular-stocks')
-    return res.data.map((stock) => ({
-      name: stock.stockName,
-      gain: stock.avgGainRate,
-      image: stock.stockCode
-        ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
-        : '/images/stocks/default.png',
-    }))
-  } catch (error) {
-    console.error('fetchTop10StocksRealtime error:', error)
+    const { data } = await axios.get('/api/ranking/popular-stocks')
+    return (data || []).map(mapStock)
+  } catch {
     return []
   }
 }
 
-// ------------------------------
-// 📊 종목 분석 관련 API (항상 최신 기준)
-// ------------------------------
-
-/**
- * [A1] 성향별 보유 비중
- */
-export async function fetchTraitStockAnalysis(userId) {
+export async function fetchMyRealTimeStockDistribution() {
   try {
-    const res = await axios.get('/api/ranking/analysis/trait-stock', {
-      params: { userId },
+    const assetStore = useAssetDataStore()
+    await assetStore.loadUserData()
+    if (!assetStore.holdingsData.value?.length) return []
+    return assetStore.holdingsData.value.map((h) => {
+      const q = h.quantity ?? 0
+      const avg = h.averagePrice ?? 0
+      const cur = h.currentPrice ?? 0
+      const curVal = q * cur
+      const total = q * avg
+      const pnl = curVal - total
+      const rate = total ? (pnl / total) * 100 : 0
+      return {
+        stockCode: h.stockCode,
+        stockName: h.stockName,
+        gainRate: rate,
+        positionIndex: h.positionIndex ?? 0,
+        positionLabel: h.positionLabel || '',
+        distributionBins: h.distributionBins || [0, 0, 0, 0, 0, 0],
+        color: h.color || '#3b82f6',
+      }
     })
-
-    return res.data.map((item) => ({
-      name: item.name,
-      gain: item.gain,
-      logo: item.logo,
-      traitRatio: {
-        보수형: item.conservativeRatio,
-        균형형: item.balancedRatio,
-        공격형: item.aggressiveRatio,
-        특수형: item.specialRatio,
-      },
-    }))
-  } catch (error) {
-    console.error('fetchTraitStockAnalysis error:', error)
-    return []
-  }
-}
-
-/**
- * [A2] 내 보유 종목 수익률 분포
- */
-export async function fetchMyStockDistribution(userId) {
-  try {
-    const res = await axios.get('/api/ranking/analysis/my-distribution', {
-      params: { userId },
-    })
-
-    return res.data.map((stock) => ({
-      name: stock.stockName,
-      gain: stock.gainRate,
-      positionIndex: stock.positionIndex,
-      positionLabel: stock.positionLabel,
-      distribution: stock.distributionBins,
-      color: '#3b82f6',
-    }))
-  } catch (error) {
-    console.error('fetchMyStockDistribution error:', error)
-    return []
-  }
-}
-
-/**
- * [A3] 유사 성향 투자자 인기 종목
- */
-export async function fetchPopularStocksByTrait(traitGroup) {
-  try {
-    const res = await axios.get('/api/ranking/analysis/popular-stocks', {
-      params: { traitGroup },
-    })
-
-    return res.data.map((stock) => ({
-      name: stock.stockName,
-      gain: stock.transactionCount,
-      logo: stock.stockCode
-        ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
-        : '/images/stocks/default.png',
-      trait: traitGroup,
-    }))
-  } catch (error) {
-    console.error('fetchPopularStocksByTrait error:', error)
+  } catch {
     return []
   }
 }

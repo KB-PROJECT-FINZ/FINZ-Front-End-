@@ -4,7 +4,16 @@
       <router-view v-slot="{ Component }">
         <component :is="Component" />
       </router-view>
-      
+
+      <!-- TradeResultModal 전역 등록 -->
+      <TradeResultModal
+        :visible="tradeResultModal.visible"
+        :type="tradeResultModal.type"
+        :stockName="tradeResultModal.stockName"
+        :isFilled="tradeResultModal.isFilled"
+        @goHistory="goToTransactionHistory"
+      />
+
       <!-- 챗봇 패널 (전역에서 사용 가능) -->
       <ChatBotPanel />
     </div>
@@ -15,12 +24,24 @@ import axios from 'axios'
 import { onMounted } from 'vue'
 import { useUserStore } from './stores/user'
 import ChatBotPanel from './components/chatbot/ChatBotPanel.vue'
+import TradeResultModal from '@/components/mockTrading/TradeResultModal.vue'
+import { useTradeResultModalStore } from './stores/tradeResultModal'
+import { useRouter } from 'vue-router'
 
 export default {
   components: {
-    ChatBotPanel
+    ChatBotPanel,
+    TradeResultModal,
   },
   setup() {
+    const tradeResultModal = useTradeResultModalStore()
+    const router = useRouter()
+
+    const goToTransactionHistory = () => {
+      tradeResultModal.close()
+      router.push('/mock-trading/transactions')
+    }
+
     onMounted(async () => {
       const userStore = useUserStore()
 
@@ -39,9 +60,13 @@ export default {
           riskType: user.riskType,
         })
       } catch (err) {
-        console.warn('로그인된 사용자 정보 없음 또는 세션 만료됨')
+        console.warn('로그인된 사용자 정보 없음 또는 세션 만료됨', err)
       }
     })
+    return {
+      tradeResultModal,
+      goToTransactionHistory,
+    }
   },
 }
 </script>

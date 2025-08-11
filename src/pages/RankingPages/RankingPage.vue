@@ -100,7 +100,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useUserStore } from '@/stores/user.js'
 import TabSwitcher from '@/components/ranking/TabSwitcher.vue'
 import MyRankingCard from '@/components/ranking/MyRankingCard.vue'
@@ -116,6 +116,7 @@ import {
   getRankingWeekLabel,
 } from '@/services/rankingService'
 
+// 상수 매핑
 const traitGroupToKor = {
   AGGRESSIVE: '공격형',
   BALANCED: '균형형',
@@ -124,25 +125,28 @@ const traitGroupToKor = {
   EMOTIONAL: '기타',
 }
 const originalTraitToGroup = {
-  '적극적 성장형': 'AGGRESSIVE',
-  '적극적 안정형': 'BALANCED',
-  '균형 잡힌 도전형': 'BALANCED',
-  '균형 잡힌 수익 추구형': 'BALANCED',
-  '신중한 성장형': 'CONSERVATIVE',
-  '신중한 안정형': 'CONSERVATIVE',
-  '단타 추구형': 'AGGRESSIVE',
-  '실험적 모험가형': 'AGGRESSIVE',
-  '인덱스 수동형': 'CONSERVATIVE',
-  '정보 수집형': 'ANALYTICAL',
-  '사회 책임형': 'EMOTIONAL',
-  '시스템 트레이더형': 'ANALYTICAL',
-  '기술적 분석형': 'ANALYTICAL',
-  '테마 투자형': 'AGGRESSIVE',
-  '가치 투자형': 'CONSERVATIVE',
+  AGR: '적극적 성장형',
+  AID: '적극적 안정형',
+  BGT: '균형 잡힌 도전형',
+  BSS: '균형 잡힌 수익 추구형',
+  CAG: '신중한 성장형',
+  CSD: '신중한 안정형',
+  DTA: '단타 추구형',
+  EXP: '실험적 모험가형',
+  IND: '인덱스 수동형',
+  INF: '정보 수집형',
+  SOC: '사회 책임형',
+  SYS: '시스템 트레이더형',
+  TEC: '기술적 분석형',
+  THE: '테마 투자형',
+  VAL: '가치 투자형',
 }
 
+// 유저 스토어에서 userId 가져오기
 const userStore = useUserStore()
 const userId = computed(() => userStore.userId)
+
+// 상태 변수 선언
 const userTraitType = ref(null)
 const myRanking = ref(null)
 const selectedBaseDate = ref('')
@@ -155,6 +159,7 @@ const currentRankingType = ref('주간')
 const traitTypes = ['보수형', '균형형', '공격형', '특수형', '기타']
 const currentTraitType = ref('')
 
+// 성향 -> 그룹코드
 const traitCodeMap = {
   보수형: 'CONSERVATIVE',
   균형형: 'BALANCED',
@@ -163,6 +168,16 @@ const traitCodeMap = {
   기타: 'EMOTIONAL',
 }
 
+// ✅ fallback 날짜: **지난주 월요일** (YYYY-MM-DD)
+const fallbackDate = (() => {
+  const d = new Date()
+  const day = d.getDay() || 7 // Sun=0 → 7
+  d.setDate(d.getDate() - day + 1 - 7) // 지난주 월요일
+  d.setHours(0, 0, 0, 0)
+  return d.toISOString().substring(0, 10)
+})()
+
+// 인기 종목은 실시간 데이터가 있으면 우선 사용, 없으면 지난주 데이터 사용
 const stocks = computed(() =>
   popularStocksRealtime.value.length > 0
     ? popularStocksRealtime.value
@@ -177,6 +192,7 @@ const rankingDateRangeText = computed(() => {
 const filteredUsers = computed(() => allUsers.value)
 const limitedUsers = computed(() => filteredUsers.value.slice(0, visibleCount.value))
 
+// 랭킹 데이터 불러오기 (주간 전체 랭킹)
 async function loadRankingByDate(baseDate) {
   selectedBaseDate.value = baseDate
   popularStocksLastWeek.value = await fetchTop10Stocks(baseDate)
@@ -185,8 +201,12 @@ async function loadRankingByDate(baseDate) {
     const users = await fetchWeeklyRanking(baseDate)
     allUsers.value = users.map((user) => {
       let traitCode = user.trait
-      if (!traitCode && user.originalTrait) {
-        traitCode = originalTraitToGroup[user.originalTrait] || 'EMOTIONAL'
+      if (traitCode && originalTraitToGroup[traitCode]) {
+        // 약어인 경우 한글로 변환
+        traitCode = originalTraitToGroup[traitCode]
+      } else if (!traitCode && user.originalTrait) {
+        // 없으면 originalTrait에서 변환 (필요시)
+        traitCode = originalTraitToGroup[user.originalTrait] || '기타'
       }
       const traitKor = traitGroupToKor[traitCode] || '기타'
       return { ...user, trait: traitKor }
@@ -197,47 +217,68 @@ async function loadRankingByDate(baseDate) {
   visibleCount.value = 10
 }
 
+// 성향별 랭킹 불러오기
 async function loadGroupedRanking() {
   const grouped = await fetchGroupedWeeklyRanking(selectedBaseDate.value)
   const groupKey = traitCodeMap[currentTraitType.value] || 'EMOTIONAL'
   allUsers.value = (grouped[groupKey] || []).map((user) => {
-    const traitCode = user.trait || originalTraitToGroup[user.originalTrait] || 'EMOTIONAL'
-    const traitKor = traitGroupToKor[traitCode] || '기타'
-    return { ...user, trait: traitKor }
+    const traitKor = user.trait || '기타' // 대분류 한글명
+    const originalTraitKor =
+      originalTraitToGroup[user.originalTrait] || user.originalTrait || '기타'
+    return { ...user, trait: traitKor, originalTraitKor }
   })
   visibleCount.value = 10
 }
 
+// 메인 탭 선택 시 처리
 async function selectMainRankingTab(tab) {
   currentRankingType.value = tab
   if (tab === '성향별') {
-    currentTraitType.value = userTraitType.value
+    currentTraitType.value = '보수형' // 무조건 보수형으로 설정
     await loadGroupedRanking()
   } else {
-    await loadRankingByDate(selectedBaseDate.value)
+    await loadRankingByDate(selectedBaseDate.value || fallbackDate)
   }
 }
 
+// 성향 버튼 선택 시 처리
 async function selectTraitType(trait) {
   currentTraitType.value = trait
   await loadGroupedRanking()
 }
 
-;(async () => {
-  try {
-    const my = await fetchMyRanking(userId.value, null)
-    if (!my) return
-    selectedBaseDate.value = my.baseDate
-    myRanking.value = my
-    userTraitType.value = my.trait
+// userId가 준비되면 초기 데이터 로딩
+watch(
+  userId,
+  async (newUserId) => {
+    if (!newUserId) {
+      console.warn('❗ userId가 아직 설정되지 않았습니다.')
+      return
+    }
 
-    popularStocksRealtime.value = await fetchTop10StocksRealtime()
-    popularStocksLastWeek.value = await fetchTop10Stocks(my.baseDate)
+    try {
+      // ✅ 지난주 월요일로 호출
+      const my = await fetchMyRanking(newUserId, fallbackDate)
+      if (!my) return
 
-    await loadRankingByDate(my.baseDate)
-    currentTraitType.value = userTraitType.value || traitTypes[0]
-  } catch (error) {
-    console.error('❌ 초기 데이터 로딩 에러:', error)
-  }
-})()
+      const traitKor = originalTraitToGroup[my.trait] || '미지정'
+      selectedBaseDate.value = my.baseDate || fallbackDate
+      myRanking.value = {
+        ...my,
+        trait: traitKor,
+      }
+      userTraitType.value = traitKor
+
+      // ✅ 실시간이 비어있으면 지난주 데이터 사용(기존 로직 유지)
+      popularStocksRealtime.value = await fetchTop10StocksRealtime()
+      popularStocksLastWeek.value = await fetchTop10Stocks(selectedBaseDate.value)
+
+      await loadRankingByDate(selectedBaseDate.value)
+      currentTraitType.value = userTraitType.value || traitTypes[0]
+    } catch (error) {
+      console.error('❌ 초기 데이터 로딩 에러:', error)
+    }
+  },
+  { immediate: true },
+)
 </script>

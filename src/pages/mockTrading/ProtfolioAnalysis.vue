@@ -74,7 +74,7 @@
             <span class="text-sm text-gray-500">분석 기간</span>
             <span class="flex flex-col items-end">
               <span class="text-base text-gray-900"
-                >{{ analysisData.stats.startDate }} ~ {{ analysisData.stats.endDate }}</span
+                >{{ analysisData.stats.analysisStart }} ~ {{ analysisData.stats.analysisEnd }}</span
               >
               <span class="text-xs text-gray-400 font-normal"
                 >{{ analysisData.stats.analysisPeriod }}일</span
@@ -207,7 +207,6 @@ const fetchAnalysis = async () => {
       // 사용자에게 안내 메시지 표시
       error.value = '아직 분석할 거래 데이터가 충분하지 않습니다. 더 많은 거래를 진행해보세요.'
     }
-
   } catch (err) {
     console.error('API 호출 실패:', err)
     if (err.message.includes('로그인')) {
@@ -285,43 +284,6 @@ const exportToPDF = async () => {
               margin: 0;
               padding: 0;
             }
-            .text-blue-600 { color: #2563eb !important; }
-            .text-red-600 { color: #dc2626 !important; }
-            .text-green-700 { color: #15803d !important; }
-            .text-blue-700 { color: #1d4ed8 !important; }
-            .text-gray-900 { color: #111827 !important; }
-            .text-gray-700 { color: #374151 !important; }
-            .text-gray-500 { color: #6b7280 !important; }
-            .text-gray-400 { color: #9ca3af !important; }
-            .bg-white { background: white !important; }
-            .bg-blue-50 { background: #eff6ff !important; }
-            .bg-red-50 { background: #fef2f2 !important; }
-            .bg-green-50 { background: #f0fdf4 !important; }
-            .bg-gray-50 { background: #f9fafb !important; }
-            .border-blue-400 { border-color: #60a5fa !important; }
-            .border-red-400 { border-color: #f87171 !important; }
-            .border-green-400 { border-color: #4ade80 !important; }
-            .border-l-4 { border-left-width: 4px !important; }
-            .rounded { border-radius: 0.375rem !important; }
-            .p-4 { padding: 1rem !important; }
-            .px-6 { padding-left: 1.5rem !important; padding-right: 1.5rem !important; }
-            .py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
-            .mb-4 { margin-bottom: 1rem !important; }
-            .mt-6 { margin-top: 1.5rem !important; }
-            .mb-2 { margin-bottom: 0.5rem !important; }
-            .font-bold { font-weight: 700 !important; }
-            .font-semibold { font-weight: 600 !important; }
-            .text-xl { font-size: 1.25rem !important; line-height: 1.75rem !important; }
-            .text-base { font-size: 1rem !important; line-height: 1.5rem !important; }
-            .text-sm { font-size: 0.875rem !important; line-height: 1.25rem !important; }
-            .text-xs { font-size: 0.75rem !important; line-height: 1rem !important; }
-            .flex { display: flex !important; }
-            .justify-between { justify-content: space-between !important; }
-            .items-center { align-items: center !important; }
-            .items-end { align-items: flex-end !important; }
-            .flex-col { flex-direction: column !important; }
-            .gap-3 { gap: 0.75rem !important; }
-            .finz-logo { width: 24px; height: 24px; margin-right: 0.5rem; }
             .report-title {
               display: flex;
               align-items: center;
@@ -351,10 +313,10 @@ const exportToPDF = async () => {
             </div>
             <div class="report-date" style="text-align: center; margin-bottom: 2rem; color: #6b7280; font-size: 0.875rem;">
               생성일: ${new Date().toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })}
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
             </div>
             <hr class="section-divider" />
             ${content}

@@ -341,6 +341,7 @@ import { useRouter } from 'vue-router'
 import { useHoldingsData } from '@/services/useHoldingsData'
 import { useHoldingsSorting } from '@/services/useHoldingsSorting'
 import FooterNavigation from '@/components/FooterNavigation.vue'
+import { checkExecution } from '@/services/checkExecution'
 
 const router = useRouter()
 
@@ -375,13 +376,14 @@ const goToMockTrading = () => {
 }
 
 const refreshData = async () => {
-  console.log('🔄 보유 종목 데이터 새로고침')
   await fetchHoldings()
+  await checkExecution()
 }
 
 // ===== 컴포넌트 라이프사이클 =====
-onMounted(() => {
-  fetchHoldings()
+onMounted(async () => {
+  await fetchHoldings()
+  await checkExecution()
 })
 </script>
 

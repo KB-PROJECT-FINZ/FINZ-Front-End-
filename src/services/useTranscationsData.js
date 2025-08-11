@@ -41,58 +41,61 @@ export function useTransactionsData() {
       // eslint-disable-next-line no-unused-vars
       let skippedCount = 0
 
-      transactionsData.value = (response.data || []).map((transaction, index) => {
-        try {
-          // 날짜 우선순위: executedAt > orderCreatedAt > 현재시간
-          let executedAt = transaction.executedAt || transaction.orderCreatedAt
-          if (!executedAt) {
-            console.warn(`⚠️ 트랜잭션 ${index + 1}: 날짜 정보 없음, 현재 시간으로 설정`, transaction)
-            executedAt = new Date().toISOString()
-          }
-
-          // 가격 우선순위: price > orderPrice > totalAmount/quantity > 0
-          let price = transaction.price || 0
-          if (!price || price === 0) {
-            if (transaction.orderPrice && transaction.orderPrice > 0) {
-              price = transaction.orderPrice
-            } else if (transaction.totalAmount && transaction.quantity) {
-              price = Math.floor(transaction.totalAmount / transaction.quantity)
+      transactionsData.value = (response.data || [])
+        .map((transaction, index) => {
+          try {
+            // 날짜 우선순위: executedAt > orderCreatedAt > 현재시간
+            let executedAt = transaction.executedAt || transaction.orderCreatedAt
+            if (!executedAt) {
+              console.warn(
+                `⚠️ 트랜잭션 ${index + 1}: 날짜 정보 없음, 현재 시간으로 설정`,
+                transaction,
+              )
+              executedAt = new Date().toISOString()
             }
+
+            // 가격 우선순위: price > orderPrice > totalAmount/quantity > 0
+            let price = transaction.price || 0
+            if (!price || price === 0) {
+              if (transaction.orderPrice && transaction.orderPrice > 0) {
+                price = transaction.orderPrice
+              } else if (transaction.totalAmount && transaction.quantity) {
+                price = Math.floor(transaction.totalAmount / transaction.quantity)
+              }
+            }
+
+            const processedTransaction = {
+              id: transaction.transactionId || index + 1,
+              stockCode: transaction.stockCode,
+              stockName: transaction.stockName,
+              type: transaction.transactionType, // BUY/SELL
+              quantity: transaction.quantity || 0,
+              price: price,
+              orderType: transaction.orderType,
+              totalAmount: transaction.totalAmount || 0,
+              executedAt: executedAt,
+              status: transaction.status || 'EXECUTED',
+              imageUrl: transaction.imageUrl || null,
+            }
+
+            processedCount++
+            return processedTransaction
+          } catch (error) {
+            console.error(`❌ 트랜잭션 ${index + 1} 변환 오류:`, error, transaction)
+            skippedCount++
+            return null // null 반환으로 필터링에서 제외
           }
-
-          const processedTransaction = {
-            id: transaction.transactionId || index + 1,
-            stockCode: transaction.stockCode,
-            stockName: transaction.stockName,
-            type: transaction.transactionType, // BUY/SELL
-            quantity: transaction.quantity || 0,
-            price: price,
-            orderType: transaction.orderType,
-            totalAmount: transaction.totalAmount || 0,
-            executedAt: executedAt,
-            status: transaction.status || 'EXECUTED',
-            imageUrl: transaction.imageUrl || null
-          }
-
-          processedCount++
-          return processedTransaction
-
-        } catch (error) {
-          console.error(`❌ 트랜잭션 ${index + 1} 변환 오류:`, error, transaction)
-          skippedCount++
-          return null // null 반환으로 필터링에서 제외
-        }
-      }).filter(transaction => transaction !== null) // null 제거
+        })
+        .filter((transaction) => transaction !== null) // null 제거
 
       // 날짜순 정렬 (최신순)
       transactionsData.value.sort((a, b) => new Date(b.executedAt) - new Date(a.executedAt))
 
       // 날짜가 없는 트랜잭션들 체크
-      const noDateTransactions = transactionsData.value.filter(t => !t.executedAt)
+      const noDateTransactions = transactionsData.value.filter((t) => !t.executedAt)
       if (noDateTransactions.length > 0) {
         console.warn('⚠️ 날짜 정보가 없는 트랜잭션들:', noDateTransactions.length, '개')
       }
-
     } catch (error) {
       console.error('❌ 거래 내역 데이터 로딩 실패:', error)
 
@@ -194,12 +197,20 @@ export function useTransactionsData() {
       return '취소됨'
     }
 
-    const typeText = transaction.type === 'BUY' ? '매수' :
-      transaction.type === 'SELL' ? '매도' : '거래'
-    const orderTypeText = transaction.orderType === 'MARKET' ? '시장가' :
-      transaction.orderType === 'LIMIT' ? '지정가' : ''
+    const typeText =
+      transaction.type === 'BUY' ? '매수' : transaction.type === 'SELL' ? '매도' : '거래'
+    const orderTypeText =
+      transaction.orderType === 'MARKET'
+        ? '시장가'
+        : transaction.orderType === 'LIMIT'
+          ? '지정가'
+          : ''
 
-    return `${typeText} ${orderTypeText}`.trim()
+    // '시장가 매수', '지정가 매도' 등으로 표기
+    if (orderTypeText && typeText) {
+      return `${orderTypeText} ${typeText}`
+    }
+    return typeText
   }
 
   /**
@@ -213,9 +224,7 @@ export function useTransactionsData() {
       return 'text-gray-400'
     }
 
-    return type === 'BUY' ? 'text-red-600' :
-      type === 'SELL' ? 'text-blue-600' :
-        'text-gray-600'
+    return type === 'BUY' ? 'text-red-600' : type === 'SELL' ? 'text-blue-600' : 'text-gray-600'
   }
 
   // ==================== 페이지네이션 ====================
@@ -247,6 +256,6 @@ export function useTransactionsData() {
     formatDateOnly,
     getTransactionStatusText,
     getStatusClass,
-    resetPagination
+    resetPagination,
   }
 }
