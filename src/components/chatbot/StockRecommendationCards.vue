@@ -14,9 +14,9 @@
         class="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-white/40 transform hover:-translate-y-1"
       >
         <!-- 헤더 -->
-        <div class="flex justify-between items-start mb-4">
-          <div>
-            <h4 class="font-bold text-gray-900 text-xl">{{ stock.name }}</h4>
+        <div class="flex justify-between items-start mb-4 gap-4">
+          <div class="flex-1 min-w-0">
+            <h4 class="font-bold text-gray-900 text-xl break-words">{{ stock.name }}</h4>
             <span class="text-sm text-gray-500 font-medium">{{ stock.code }}</span>
           </div>
           <span
@@ -27,7 +27,7 @@
                 stock.riskLevel === '중간',
               'bg-gradient-to-r from-red-400 to-pink-500 text-white': stock.riskLevel === '높음',
             }"
-            class="px-3 py-1 text-xs rounded-full font-semibold shadow-sm"
+            class="whitespace-nowrap shrink-0 px-3 py-1 text-xs rounded-full font-semibold shadow-sm"
           >
             위험도: {{ stock.riskLevel }}
           </span>
@@ -102,27 +102,26 @@ const getRecommendationType = () => {
 }
 
 
-// reason 텍스트에서 종목 이름 추출
-const extractStockName = (reason) => {
-  if (!reason) return ''
-  
-  // "종목명은" 또는 "종목명이" 패턴에서 종목명 추출
-  const match = reason.match(/^([가-힣A-Za-z]+)(은|는|이|가)/)
-  if (match) {
-    return match[1]
-  }
-  
-  return ''
-}
+// // reason 텍스트에서 종목 이름 추출
+// const extractStockName = (reason) => {
+//   if (!reason) return ''
+//
+//   // "종목명은" 또는 "종목명이" 패턴에서 종목명 추출
+//   const match = reason.match(/^([가-힣A-Za-z]+)(은|는|이|가)/)
+//   if (match) {
+//     return match[1]
+//   }
+//
+//   return ''
+// }
 
 // JSON 파싱 및 카드 데이터 변환
 const stocks = computed(() => {
   try {
     const analysisData = JSON.parse(props.content)
     console.log('📊 JSON 파싱된 종목 데이터:', analysisData)
-
     return analysisData.map((stock) => ({
-      name: extractStockName(stock.reason) || stock.ticker, // reason에서 종목명 추출
+      name: stock.name || stock.ticker, // reason에서 종목명 추출
       code: stock.ticker,
       description: stock.reason || '',
       riskLevel: stock.riskLevel || '중간',
