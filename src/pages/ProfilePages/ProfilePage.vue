@@ -33,6 +33,7 @@
           @close="showProfileEditModal = false"
           :profile="profile"
           @update-profile-image="onProfileImageUpdated"
+          @update-nickname="onNicknameUpdated"
         />
       </header>
 
@@ -51,7 +52,6 @@
                 @error="handleImageError"
               />
             </div>
-            <!-- 사진 변경 버튼 및 파일 입력은 ProfileEditModal로 이동 -->
           </div>
 
           <div class="text-sm text-gray-900 mb-1">{{ profile.nickname }}님</div>
@@ -68,7 +68,13 @@
         to="/mock-trading/ai-report"
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
-        <span class="text-xl mr-4">🤖</span>
+        <img
+          src="https://cdn-icons-png.flaticon.com/128/12400/12400883.png"
+          alt="뉴스 아이콘"
+          width="24"
+          height="24"
+          class="mr-4"
+        />
         <div class="flex-1 min-w-0">
           <div class="text-base text-gray-900 mb-0.5">AI 분석 리포트</div>
           <div class="text-sm text-gray-500">AI가 분석한 투자 리포트를 확인해보세요</div>
@@ -82,7 +88,13 @@
         to="/journal"
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
-        <span class="text-xl mr-4">📒</span>
+        <img
+          src="https://cdn-icons-png.flaticon.com/128/7653/7653160.png"
+          alt="뉴스 아이콘"
+          width="24"
+          height="24"
+          class="mr-4"
+        />
         <div class="flex-1 min-w-0">
           <div class="text-base text-gray-900 mb-0.5">투자 일지</div>
           <div class="text-sm text-gray-500">나의 투자 기록을 확인해보세요</div>
@@ -95,7 +107,13 @@
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
         @click="goToCustomContents"
       >
-        <span class="text-xl mr-4">📰</span>
+        <img
+          src="https://cdn-icons-png.flaticon.com/128/7931/7931221.png"
+          alt="뉴스 아이콘"
+          width="24"
+          height="24"
+          class="mr-4"
+        />
         <div class="flex-1 min-w-0">
           <div class="text-base text-gray-900 mb-0.5">맞춤 콘텐츠</div>
           <div class="text-sm text-gray-500">나만을 위한 추천 콘텐츠를 확인해보세요</div>
@@ -109,7 +127,13 @@
         to="/risk-profile"
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
-        <span class="text-xl mr-4">📝</span>
+        <img
+          src="https://cdn-icons-png.flaticon.com/128/14700/14700716.png"
+          alt="뉴스 아이콘"
+          width="24"
+          height="24"
+          class="mr-4"
+        />
         <div class="flex-1 min-w-0">
           <div class="text-base text-gray-900 mb-0.5">나의 투자 성향 알아보기</div>
           <div class="text-sm text-gray-500">투자 성향을 분석해보세요</div>
@@ -191,7 +215,11 @@ const handleImageError = (event) => {
 
 // ProfileEditModal에서 이미지 변경 시 반영
 const onProfileImageUpdated = (newImageUrl) => {
-  profile.value.image = newImageUrl
+  profile.value.image = newImageUrl || ''
+}
+// ProfileEditModal에서 닉네임 변경 시 반영
+const onNicknameUpdated = (newNickname) => {
+  profile.value.nickname = newNickname
 }
 
 // 기존 함수들
