@@ -1,11 +1,9 @@
 <template>
   <div class="w-full max-w-[480px] mx-auto pb-24 px-4">
-    <!-- 1. 헤더 -->
     <div class="py-4 text-center">
       <h1 class="text-lg font-bold">랭킹</h1>
     </div>
 
-    <!-- 탭 -->
     <TabSwitcher
       :tabs="[
         { label: '투자 랭킹 보기', route: '/ranking' },
@@ -13,63 +11,126 @@
       ]"
     />
 
-    <!-- 조건부 분석 or 안내 -->
     <div class="mt-4">
       <NoInvestmentGuide v-if="!hasInvestmentData" />
       <template v-else>
-        <!-- 성향별 보유 비중 -->
-        <section class="mt-4">
-          <h2 class="text-base font-semibold mb-2">성향별 보유 비중 분석</h2>
-          <div class="flex space-x-4 overflow-x-auto py-2">
-            <TraitStockCard
-              v-for="(stock, idx) in traitStocks.slice(0, 5)"
-              :key="idx"
-              :name="stock.name"
-              :gain="stock.gain"
-              :traitRatio="getTraitRatio(stock)"
-              :logo="stock.logo"
-              class="flex-shrink-0"
-            />
-          </div>
-        </section>
-
-        <!-- 내 수익률 분포 위치 -->
-        <section class="mt-6">
-          <h2 class="text-base font-semibold mb-2">내 수익률 분포 위치</h2>
-          <div class="flex flex-col space-y-4">
-            <MyStockChart
-              v-for="(stock, idx) in displayedMyStocks"
-              :key="idx"
-              :name="stock.name"
-              :gain="stock.gain"
-              :positionIndex="stock.positionIndex"
-              :positionLabel="stock.positionLabel"
-              :distribution="stock.distribution"
-              :color="'#60a5fa'"
-            />
-          </div>
+        <!-- 세그먼트 -->
+        <div class="flex gap-2 sticky top-0 bg-white pb-2 z-10">
           <button
-            v-if="visibleMyStockCount < myStocks.length"
-            @click="loadMoreMyStocks"
-            class="mt-2 px-4 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+            class="flex-1 py-2 rounded-full border text-sm"
+            :class="
+              activeMain === 'ratio'
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-700'
+            "
+            @click="activeMain = 'ratio'"
           >
-            더보기
+            보유비중
           </button>
+          <button
+            class="flex-1 py-2 rounded-full border text-sm"
+            :class="
+              activeMain === 'distribution'
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-700'
+            "
+            @click="activeMain = 'distribution'"
+          >
+            수익률분포
+          </button>
+          <button
+            class="flex-1 py-2 rounded-full border text-sm"
+            :class="
+              activeMain === 'popular'
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-700'
+            "
+            @click="activeMain = 'popular'"
+          >
+            인기종목
+          </button>
+        </div>
+
+        <!-- 보유비중 -->
+        <section v-show="activeMain === 'ratio'" class="mt-4">
+          <h2 class="text-base font-semibold mb-2">성향별 보유 비중</h2>
+          <div class="flex gap-2 overflow-x-auto py-2">
+            <button
+              v-for="(s, i) in traitStocks"
+              :key="i"
+              class="px-3 py-1 rounded-full border text-sm whitespace-nowrap"
+              :class="
+                selectedRatioKey === (s?.name || '')
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'bg-white text-gray-700'
+              "
+              @click="selectedRatioKey = s?.name || ''"
+            >
+              {{ s.name }}
+            </button>
+          </div>
+          <div v-if="currentRatioItem" class="mt-3">
+            <TraitStockCard
+              :name="currentRatioItem.name"
+              :gain="currentRatioItem.gain"
+              :traitRatio="getTraitRatio(currentRatioItem)"
+              :logo="currentRatioItem.logo"
+              class="mx-auto w-full max-w-[420px]"
+            />
+          </div>
+          <div v-else class="text-center text-sm text-gray-500 py-8">
+            상단에서 종목을 선택하면 성향별 보유 비중 차트를 보여줄게요.
+          </div>
         </section>
 
-        <!-- 유사 성향 인기 종목 -->
-        <section class="mt-6">
+        <!-- 수익률분포 -->
+        <section v-show="activeMain === 'distribution'" class="mt-6">
+          <h2 class="text-base font-semibold mb-2">내 수익률 분포 위치</h2>
+          <div class="flex gap-2 overflow-x-auto py-2">
+            <button
+              v-for="(s, i) in myStocks"
+              :key="i"
+              class="px-3 py-1 rounded-full border text-sm whitespace-nowrap"
+              :class="
+                selectedDistKey === (s?.stockCode || s?.stockName || '')
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'bg-white text-gray-700'
+              "
+              @click="selectedDistKey = s?.stockCode || s?.stockName || ''"
+            >
+              {{ s.stockName }}
+            </button>
+          </div>
+          <div v-if="currentDistItem" class="mt-3 h-[300px] sm:h-[340px]">
+            <MyStockChart
+              :name="currentDistItem.stockName"
+              :gain="currentDistItem.gain ?? currentDistItem.gainRate ?? 0"
+              :positionIndex="currentDistItem.positionIndex"
+              :positionLabel="currentDistItem.positionLabel"
+              :distribution="
+                Array.isArray(currentDistItem.distributionBins)
+                  ? currentDistItem.distributionBins
+                  : currentDistItem.distribution || [0, 0, 0, 0, 0, 0]
+              "
+            />
+          </div>
+          <div v-else class="text-center text-sm text-gray-500 py-8">
+            상단에서 종목을 선택하면 수익률 분포 차트를 보여줄게요.
+          </div>
+        </section>
+
+        <!-- 인기종목 -->
+        <section v-show="activeMain === 'popular'" class="mt-6">
           <div class="flex justify-between items-center mb-2">
-            <h2 class="text-base font-semibold">유사 성향 투자자 인기 종목</h2>
+            <h2 class="text-base font-semibold">{{ traitGroupLabel }} 투자자 인기 종목</h2>
           </div>
           <div class="space-y-2">
             <PopularStockItem
               v-for="(stock, idx) in displayedPopularStocks"
               :key="idx"
               :name="stock.name"
-              :trait="stock.trait"
-              :gain="stock.gain"
               :logo="stock.logo"
+              :gain="stock.gain"
             />
           </div>
           <button
@@ -83,13 +144,13 @@
       </template>
     </div>
 
-    <!-- Footer Navigation 항상 표시 -->
     <FooterNavigation />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import debounce from 'lodash.debounce'
 import { useUserStore } from '@/stores/user'
 
 import TabSwitcher from '@/components/ranking/TabSwitcher.vue'
@@ -101,96 +162,123 @@ import NoInvestmentGuide from '@/components/ranking/NoInvestmentGuide.vue'
 
 import {
   fetchTraitStockAnalysis,
-  fetchMyStockDistribution,
+  fetchMyRealTimeStockDistribution,
   fetchPopularStocksByTrait,
-} from '@/services/rankingService'
+  saveMyStockDistribution,
+  normalizeTraitGroup,
+  TRAIT_LABELS,
+} from '@/services/stockAnalysisService'
 
-// Pinia store
 const userStore = useUserStore()
-
-// 유저 ID 반응형 참조
 const userId = computed(() => userStore.userId)
-console.log('🚩🚩 userId:', userId.value)
 
-// 데이터 상태
 const traitStocks = ref([])
 const myStocks = ref([])
 const popularStocks = ref([])
 
-// 수익률 분포 더보기
-const visibleMyStockCount = ref(3)
-const displayedMyStocks = computed(() => myStocks.value.slice(0, visibleMyStockCount.value))
-function loadMoreMyStocks() {
-  visibleMyStockCount.value += 3
-}
+const activeMain = ref('ratio')
+const selectedRatioKey = ref('')
+const selectedDistKey = ref('')
 
-// 인기 종목 더보기
-const visiblePopularCount = ref(5)
+const visiblePopularCount = ref(10)
 const displayedPopularStocks = computed(() =>
   popularStocks.value.slice(0, visiblePopularCount.value),
 )
 function loadMorePopular() {
-  visiblePopularCount.value += 5
+  visiblePopularCount.value += 10
 }
 
-// 투자 데이터 유무 판단
-const hasInvestmentData = computed(() => {
-  return traitStocks.value.length > 0 || myStocks.value.length > 0 || popularStocks.value.length > 0
+const hasInvestmentData = computed(
+  () => traitStocks.value.length > 0 || myStocks.value.length > 0 || popularStocks.value.length > 0,
+)
+
+const traitGroupLabel = computed(() => {
+  const raw = userStore.riskType || userStore.traitGroup
+  const group = normalizeTraitGroup(raw)
+  return TRAIT_LABELS[group] || '균형형'
 })
 
-// 성향 비율 추출
 function getTraitRatio(stock) {
   return {
     보수형: stock.traitRatio?.보수형 ?? 0,
     균형형: stock.traitRatio?.균형형 ?? 0,
     공격형: stock.traitRatio?.공격형 ?? 0,
     특수형: stock.traitRatio?.특수형 ?? 0,
+    기타: stock.traitRatio?.기타 ?? 0,
   }
 }
 
-// 분석 데이터 비동기 호출
+const currentRatioItem = computed(() =>
+  traitStocks.value.find((s) => (s?.name || '') === selectedRatioKey.value),
+)
+const currentDistItem = computed(() =>
+  myStocks.value.find((s) => (s?.stockCode || s?.stockName || '') === selectedDistKey.value),
+)
+
 async function fetchAnalysisData() {
-  const uid = userStore.userId
-  let traitGroup = userStore.riskType || userStore.traitGroup
-
-  if (!uid) {
-    console.error('[ERROR] userId 없음! Pinia에 유저 정보가 아직 세팅되지 않았을 수 있음')
-    return
-  }
-
-  if (!traitGroup) {
-    traitGroup = localStorage.getItem('userTraitType') || 'SPECIAL'
-    console.warn('[WARN] traitGroup 없음 → localStorage fallback:', traitGroup)
-  }
-
-  // 특수 케이스 보정
-  if (traitGroup === 'ANALYTICAL' || traitGroup === 'EMOTIONAL') {
-    traitGroup = 'SPECIAL'
-  }
+  const uid = userId.value
+  const traitGroup = normalizeTraitGroup(userStore.riskType || userStore.traitGroup)
 
   try {
     const [traitRes, myRes, popRes] = await Promise.all([
       fetchTraitStockAnalysis(uid),
-      fetchMyStockDistribution(uid),
+      fetchMyRealTimeStockDistribution(uid),
       fetchPopularStocksByTrait(traitGroup),
     ])
-    console.log('✅ 분석 API 결과:', { traitRes, myRes, popRes }) // <-- 이 로그 꼭 넣기
+
     traitStocks.value = traitRes
-    myStocks.value = myRes
+    myRes &&
+      (myStocks.value = myRes.map((s) => ({
+        ...s,
+        distribution: s.distributionBins || [0, 0, 0, 0, 0, 0],
+      })))
+
+    if (!selectedRatioKey.value && traitStocks.value.length) {
+      selectedRatioKey.value = traitStocks.value[0]?.name || ''
+    }
+    if (!selectedDistKey.value && myStocks.value.length) {
+      selectedDistKey.value = myStocks.value[0]?.stockCode || myStocks.value[0]?.stockName || ''
+    }
+
     popularStocks.value = popRes
   } catch (err) {
-    console.error('분석 데이터 로드 실패:', err)
+    console.error('분석 데이터 로드 실패:', err?.message || err)
   }
 }
 
-// ✅ userId가 존재할 때만 fetchAnalysisData 실행 (초기 mount 시점 포함)
+const debouncedSave = debounce(async (uid, stocks) => {
+  if (!uid || !stocks?.length) return
+  const payload = stocks.map((s) => ({
+    stockCode: s.stockCode,
+    stockName: s.stockName,
+    gainRate: s.gainRate,
+    positionIndex: s.positionIndex,
+    positionLabel: s.positionLabel,
+    bin0: s.distribution?.[0] ?? s.distributionBins?.[0] ?? 0,
+    bin1: s.distribution?.[1] ?? s.distributionBins?.[1] ?? 0,
+    bin2: s.distribution?.[2] ?? s.distributionBins?.[2] ?? 0,
+    bin3: s.distribution?.[3] ?? s.distributionBins?.[3] ?? 0,
+    bin4: s.distribution?.[4] ?? s.distributionBins?.[4] ?? 0,
+    bin5: s.distribution?.[5] ?? s.distributionBins?.[5] ?? 0,
+    color: s.color || '#3b82f6',
+  }))
+  try {
+    await saveMyStockDistribution(uid, payload)
+  } catch {}
+}, 1000)
+
+watch(
+  myStocks,
+  (v) => {
+    if (userId.value && v && v.length) debouncedSave(userId.value, v)
+  },
+  { deep: true },
+)
+
 watch(
   () => userStore.userId,
   (newUserId) => {
-    if (newUserId) {
-      console.log('✅ userId 감지됨:', newUserId)
-      fetchAnalysisData()
-    }
+    if (newUserId && typeof newUserId === 'number' && newUserId > 0) fetchAnalysisData()
   },
   { immediate: true },
 )

@@ -1,12 +1,11 @@
 <template>
-  <div>
-    <h3 class="font-semibold mb-1">{{ name }} ({{ positionLabel }})</h3>
-    <canvas ref="canvas" width="300" height="100"></canvas>
+  <div class="w-full h-[300px] sm:h-[340px] p-2">
+    <canvas ref="canvas" class="w-full h-full"></canvas>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch, onBeforeUnmount } from 'vue'
 import Chart from 'chart.js/auto'
 
 const props = defineProps({
@@ -14,11 +13,12 @@ const props = defineProps({
   gain: Number,
   positionIndex: Number,
   positionLabel: String,
-  distribution: Array,
-  color: String,
+  distribution: { type: Array, default: () => [0, 0, 0, 0, 0, 0] },
 })
 
 const canvas = ref(null)
+let chartInstance = null
+const labels = ['-20%↓', '-20~0%', '0~10%', '10~20%', '20~50%', '50%↑']
 
 const myPositionPlugin = {
   id: 'myPosition',
@@ -27,65 +27,67 @@ const myPositionPlugin = {
       ctx,
       scales: { x, y },
     } = chart
+    const idx = props.positionIndex
+    if (idx === undefined || idx < 0 || idx >= labels.length) return
 
-    const index = props.positionIndex
-    if (index === undefined || index < 0 || index >= 6) return
-
-    const xPos = x.getPixelForValue(index)
-    const dataValue = props.distribution?.[index] ?? 0
-    const yPos = y.getPixelForValue(dataValue)
+    const valueAtIdx = chart.data.datasets?.[0]?.data?.[idx] ?? 0
+    const xPos = x.getPixelForValue(idx)
+    const yTop = y.getPixelForValue(valueAtIdx)
 
     ctx.save()
-
-    // 🔴 빨간 점
-    ctx.fillStyle = 'red'
     ctx.beginPath()
-    ctx.arc(xPos, yPos - 10, 6, 0, 2 * Math.PI)
+    ctx.arc(xPos, yTop - 5, 6, 0, Math.PI * 2)
+    ctx.fillStyle = '#ef4444'
     ctx.fill()
-
-    // 🔴 텍스트 ("내 위치")
-    ctx.font = 'bold 12px Arial'
-    ctx.fillStyle = 'red'
+    ctx.font = 'bold 12px sans-serif'
     ctx.textAlign = 'center'
-    ctx.fillText('내 위치', xPos, yPos - 20)
-
+    ctx.fillStyle = '#111827'
+    ctx.fillText('내 위치', xPos, yTop - 16)
     ctx.restore()
   },
 }
 
-onMounted(() => {
+function buildChart() {
   if (!canvas.value) return
+  const data = Array.isArray(props.distribution) ? props.distribution : [0, 0, 0, 0, 0, 0]
+  const maxVal = Math.max(1, ...data)
 
-  new Chart(canvas.value.getContext('2d'), {
+  if (chartInstance) chartInstance.destroy()
+
+  chartInstance = new Chart(canvas.value.getContext('2d'), {
     type: 'bar',
-    data: {
-      labels: ['-10% 이하', '-10~0%', '0~10%', '10~20%', '20~30%', '30% 초과'],
-      datasets: [
-        {
-          label: '수익률 분포',
-          data: props.distribution?.length === 6 ? props.distribution : [0, 0, 0, 0, 0, 0],
-          backgroundColor: props.color || '#60a5fa',
-          borderRadius: 4,
-        },
-      ],
-    },
+    data: { labels, datasets: [{ data, borderWidth: 0, backgroundColor: '#3b82f6' }] },
     options: {
       responsive: true,
-      scales: {
-        y: { beginAtZero: true, ticks: { stepSize: 5 } },
-      },
+      maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label(context) {
-              return `수익률 구간 투자자 수: ${context.parsed.y}`
-            },
+            title: () => `${props.name || ''}`,
+            label: (ctx) => `${labels[ctx.dataIndex]}: ${data[ctx.dataIndex]}명`,
           },
         },
       },
+      layout: { padding: { top: 12 } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+        y: {
+          beginAtZero: true,
+          suggestedMax: maxVal + Math.ceil(maxVal * 0.15) + 1,
+          grid: { color: 'rgba(0,0,0,0.06)' },
+          ticks: { stepSize: Math.max(1, Math.ceil(maxVal / 5)), font: { size: 12 } },
+        },
+      },
+      animation: { duration: 250 },
     },
     plugins: [myPositionPlugin],
   })
+}
+
+watch(() => [props.distribution, props.positionIndex, props.positionLabel], buildChart, {
+  deep: true,
 })
+onMounted(buildChart)
+onBeforeUnmount(() => chartInstance?.destroy())
 </script>

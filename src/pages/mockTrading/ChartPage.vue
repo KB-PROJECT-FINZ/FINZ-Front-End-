@@ -259,6 +259,14 @@
 </template>
 
 <script setup>
+// 콘솔 에러/경고/미처리 예외 완전 무시 (이 페이지 한정)
+if (typeof window !== 'undefined') {
+  // console.warn = () => {}
+  // console.error = () => {}
+  window.onerror = () => true
+  window.onunhandledrejection = () => true
+}
+
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Chart, registerables } from 'chart.js'
@@ -298,14 +306,56 @@ const stockInfo = reactive({
 })
 
 // 사용자 보유 정보 (실제로는 API에서 가져올 데이터)
-const userHoldings = reactive({
-  '005930': {
-    // 삼성전자 보유
-    quantity: 1,
-    averagePrice: 0, // 평균 매입가
-  },
-  // 다른 종목들...
+const userHoldings = ref({
+  accountId: 0,
+  avgPrice: 0,
+  quantity: 0,
 })
+
+// 사용자 보유 종목에서 현재 종목 정보 가져오기
+const loadHoldings = async () => {
+  try {
+    const response = await axios.get('/api/mocktrading/holdings')
+
+    if (response.data && Array.isArray(response.data)) {
+      // 현재 종목코드와 일치하는 보유 종목 찾기
+      const currentStockHolding = response.data.find(
+        (holding) => holding.stockCode === stockInfo.stockCode,
+      )
+      // console.log('보유 종목 정보:', currentStockHolding)
+
+      if (currentStockHolding) {
+        // 해당 종목을 보유하고 있는 경우
+        userHoldings.value = {
+          ...userHoldings.value, // 기존 값 유지
+          accountId: currentStockHolding.accountId,
+          avgPrice: currentStockHolding.averagePrice,
+          quantity: currentStockHolding.quantity,
+        }
+      } else {
+        // 해당 종목을 보유하지 않은 경우
+        userHoldings.value = {
+          ...userHoldings.value, // 기존 값 유지
+          avgPrice: 0,
+          quantity: 0,
+        }
+        console.log('현재 종목을 보유하지 않음:', stockInfo.stockCode)
+      }
+    }
+  } catch (error) {
+    console.error('보유 종목 정보 로드 실패:', error)
+    if (error.response?.status === 401) {
+      alert('로그인이 필요합니다.')
+      router.push('/login-form')
+    }
+    // 오류 발생 시 기본값 설정
+    userHoldings.value = {
+      ...userHoldings.value,
+      avgPrice: 0,
+      quantity: 0,
+    }
+  }
+}
 
 // 현재 종목 보유 여부
 const hasStock = computed(() => {
@@ -354,47 +404,44 @@ const goBack = () => {
   router.push('/mock-trading')
 }
 
-// 백엔드 서버에서 주식 차트 데이터 조회 (새로운 API 형식)
-const fetchStockChartData = async (stockCode) => {
-  try {
-    // 프록시를 통한 상대 경로 사용 (CORS 문제 해결)
-    const url = `/api/chart/minute/${stockCode}`
-
-    console.log(`[API 요청] ${stockCode} 차트 데이터 조회 시작`)
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`[API 오류] ${response.status} ${response.statusText}:`, errorText)
-      throw new Error(`백엔드 API 호출 실패: ${response.status} ${response.statusText}`)
-    }
-
-    const result = await response.json()
-
-    // 한국투자증권 API 오류 체크 (rt_cd가 "0"이 아니면 오류)
-    if (result.rt_cd && result.rt_cd !== '0') {
-      console.error('[API 오류] 응답 오류:', result.msg1)
-      throw new Error(`API 오류: ${result.msg1 || 'Unknown error'}`)
-    }
-
-    // output2 데이터 확인
-    if (!result.output2 || !Array.isArray(result.output2)) {
-      console.error('[API 오류] 차트 데이터가 없습니다')
-      throw new Error(`API 오류: 차트 데이터가 없습니다`)
-    }
-    console.log(result)
-    console.log(`[API 성공] ${result.output2.length}개 데이터 수신`)
-    return result
-  } catch (error) {
-    console.error('[API 오류] 주식 차트 데이터 조회 실패:', error.message)
-    throw error
+function convertApiDataTo1MinChartData(apiResponse) {
+  // 구조 변경 대응: { date, data } 형태
+  const chartDataArray = Array.isArray(apiResponse)
+    ? apiResponse
+    : apiResponse?.data || apiResponse?.stk_min_pole_chart_qry || []
+  if (!Array.isArray(chartDataArray) || chartDataArray.length === 0) {
+    console.warn('[데이터 변환] API 응답에 차트 데이터가 없습니다')
+    return []
   }
+
+  // date 값도 구조에 맞게 가져오기
+  const dateStr = apiResponse?.date // "YYYYMMDD" 형태
+
+  const converted = chartDataArray.map((item, idx) => {
+    // 시간 문자열 조합 (API 응답의 date + stck_cntg_hour)
+    const timeStr = dateStr + item.stck_cntg_hour // "YYYYMMDDHHMMSS"
+    const year = parseInt(timeStr.substr(0, 4))
+    const month = parseInt(timeStr.substr(4, 2)) - 1
+    const day = parseInt(timeStr.substr(6, 2))
+    const hour = parseInt(timeStr.substr(8, 2))
+    const minute = parseInt(timeStr.substr(10, 2))
+    const second = parseInt(timeStr.substr(12, 2))
+    const dateTime = new Date(year, month, day, hour, minute, second)
+
+    return {
+      x: idx,
+      dateTime: dateTime.getTime(),
+      dateString: timeStr,
+      o: parseInt(item.stck_oprc),
+      h: parseInt(item.stck_hgpr),
+      l: parseInt(item.stck_lwpr),
+      c: parseInt(item.stck_prpr),
+      volume: parseInt(item.cntg_vol),
+    }
+  })
+
+  converted.sort((a, b) => a.dateTime - b.dateTime)
+  return converted.map((item, idx) => ({ ...item, x: idx }))
 }
 
 // 새로운 API 응답을 Chart.js 형식으로 변환
@@ -475,10 +522,66 @@ const convertApiDataToChartData = (apiResponse) => {
 
 // 차트 데이터를 가져오는 함수
 const generateCandlestickData = async () => {
+  isChartLoading.value = true
+
   try {
-    // 실제 백엔드 API 호출
-    const apiResponse = await fetchStockChartData(stockInfo.stockCode, selectedTimeFrame.value)
-    const chartData = convertApiDataToChartData(apiResponse)
+    let apiResponse
+
+    // stockCode가 바뀌었으면 모든 캐시 초기화
+    if (cachedStockCode !== stockInfo.stockCode) {
+      cachedMinuteApiResponse = null
+      cachedDayApiResponse = null
+      cachedWeekApiResponse = null
+      cachedMonthApiResponse = null
+      cachedYearApiResponse = null
+      cachedStockCode = stockInfo.stockCode
+    }
+
+    // 시간대별로 다른 API 호출 및 캐싱
+    if (selectedTimeFrame.value.includes('min')) {
+      // 분봉 데이터
+      if (!cachedMinuteApiResponse) {
+        apiResponse = await fetchStockChartData(stockInfo.stockCode)
+
+        cachedMinuteApiResponse = apiResponse
+      } else {
+        apiResponse = cachedMinuteApiResponse
+      }
+    } else if (selectedTimeFrame.value === 'day') {
+      // 일봉 데이터
+      if (!cachedDayApiResponse) {
+        apiResponse = await fetchVariousChartData(stockInfo.stockCode, 'D')
+        cachedDayApiResponse = apiResponse
+      } else {
+        apiResponse = cachedDayApiResponse
+      }
+    } else if (selectedTimeFrame.value === 'week') {
+      // 주봉 데이터
+      if (!cachedWeekApiResponse) {
+        apiResponse = await fetchVariousChartData(stockInfo.stockCode, 'W')
+        cachedWeekApiResponse = apiResponse
+      } else {
+        apiResponse = cachedWeekApiResponse
+      }
+    } else if (selectedTimeFrame.value === 'month') {
+      // 월봉 데이터
+      if (!cachedMonthApiResponse) {
+        apiResponse = await fetchVariousChartData(stockInfo.stockCode, 'M')
+        cachedMonthApiResponse = apiResponse
+      } else {
+        apiResponse = cachedMonthApiResponse
+      }
+    } else if (selectedTimeFrame.value === 'year') {
+      // 년봉 데이터
+      if (!cachedYearApiResponse) {
+        apiResponse = await fetchVariousChartData(stockInfo.stockCode, 'Y')
+        cachedYearApiResponse = apiResponse
+      } else {
+        apiResponse = cachedYearApiResponse
+      }
+    }
+
+    const chartData = convertApiDataToChartData(apiResponse, selectedTimeFrame.value)
 
     // 차트 오른쪽 끝 시간 업데이트
     if (chartData.length > 0) {
