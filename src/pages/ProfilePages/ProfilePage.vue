@@ -128,24 +128,22 @@
         </div>
         <span class="text-xl text-gray-300 ml-2">&#8250;</span>
       </router-link>
-      <!-- 달력: 투자 일지/성향 알아보기 바로 위 -->
-      <div class="flex justify-center">
-        <Calendar
-          class="custom-calendar w-full max-w-md mb-2"
-          :attributes="calendarAttrs"
-          :title-position="'center'"
-          :show-arrows="true"
-          :first-day-of-week="0"
-          @dayclick="
-            (day, event) => {
-              event.target.blur()
-              onCalendarDayClick(day)
-            }
-          "
-        />
-      </div>
     </section>
-    <hr class="my-2 border-gray-200" />
+    <hr class="my-4 border-gray-200" />
+    <section class="flex flex-col gap-3 mx-4 mb-5">
+      <router-link
+        to="/mock-trading/ai-report"
+        class="flex items-center bg-white rounded-xl px-4 py-4 text-inherit no-underline"
+      >
+        <span class="text-xl mr-4">🤖</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-base font-bold text-gray-900 mb-0.5">AI 분석 리포트</div>
+          <div class="text-sm text-gray-500">AI가 분석한 투자 리포트를 확인해보세요</div>
+        </div>
+        <span class="text-xl text-gray-300 ml-2">&#8250;</span>
+      </router-link>
+    </section>
+    <hr class="my-4 border-gray-200" />
     <section class="flex flex-col gap-3 mx-4 mb-5">
       <router-link
         to="/risk-profile"
