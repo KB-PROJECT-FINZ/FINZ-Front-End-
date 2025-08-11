@@ -156,7 +156,7 @@
         </div>
       </div>
 
-      <!-- 내 종목 간단 카드 리스트 (상세 아님) -->
+      <!-- 내 종목 간단 카드 리스트 -->
       <div v-if="holdingsData && holdingsData.length > 0" class="mx-6 mb-5">
         <div
           v-for="holding in sortedHoldings"
@@ -193,7 +193,11 @@
             </div>
             <div class="flex flex-col items-end justify-center min-w-[110px]">
               <span class="text-base text-gray-900 font-semibold mb-0.5">
-                {{ holding.currentPrice.toLocaleString() }}원
+                {{
+                  showPriceType === 'current'
+                    ? holding.currentPrice.toLocaleString()
+                    : (holding.currentPrice * holding.quantity).toLocaleString()
+                }}원
               </span>
               <template v-if="showPriceType === 'value'">
                 <!-- 기존 평가손익/수익률 표시 -->
@@ -381,24 +385,86 @@ function changeSortOption(key) {
 }
 
 const sortedHoldings = computed(() => {
-  if (!holdingsData.value || holdingsData.value.length === 0) return []
-  let arr = [...holdingsData.value]
-  switch (currentSort.value) {
+  const holdings = holdingsData.value || []
+  const prices = stockPrices.value || {}
+  if (!holdings.length) return []
+  const priceType = showPriceType.value
+  const sortKey = currentSort.value
+
+  let arr = [...holdings]
+  switch (sortKey) {
     case 'name':
       arr.sort((a, b) => (a.stockName || '').localeCompare(b.stockName || '', 'ko'))
       break
+
     case 'profitRateDesc':
-      arr.sort((a, b) => (b.profitRate ?? -Infinity) - (a.profitRate ?? -Infinity))
+      arr.sort((a, b) => {
+        if (priceType === 'value') {
+          // 평가금 기준 수익률: (평가금-매입금)/매입금*100
+          const aBuy = a.avgBuyPrice * a.quantity
+          const bBuy = b.avgBuyPrice * b.quantity
+          const aEval = a.currentPrice * a.quantity
+          const bEval = b.currentPrice * b.quantity
+          const aRate = aBuy ? ((aEval - aBuy) / aBuy) * 100 : -Infinity
+          const bRate = bBuy ? ((bEval - bBuy) / bBuy) * 100 : -Infinity
+          return bRate - aRate
+        } else {
+          // 현재가 기준: 실시간 prdy_ctrt
+          const aRate = Number(prices[a.stockCode]?.prdy_ctrt ?? -Infinity)
+          const bRate = Number(prices[b.stockCode]?.prdy_ctrt ?? -Infinity)
+          return bRate - aRate
+        }
+      })
       break
+
     case 'profitRateAsc':
-      arr.sort((a, b) => (b.profitRate ?? -Infinity) - (a.profitRate ?? -Infinity)).reverse()
+      arr.sort((a, b) => {
+        if (priceType === 'value') {
+          const aBuy = a.avgBuyPrice * a.quantity
+          const bBuy = b.avgBuyPrice * b.quantity
+          const aEval = a.currentPrice * a.quantity
+          const bEval = b.currentPrice * b.quantity
+          const aRate = aBuy ? ((aEval - aBuy) / aBuy) * 100 : Infinity
+          const bRate = bBuy ? ((bEval - bBuy) / bBuy) * 100 : Infinity
+          return aRate - bRate
+        } else {
+          const aRate = Number(prices[a.stockCode]?.prdy_ctrt ?? Infinity)
+          const bRate = Number(prices[b.stockCode]?.prdy_ctrt ?? Infinity)
+          return aRate - bRate
+        }
+      })
       break
+
     case 'valueDesc':
-      arr.sort((a, b) => (b.profitLoss ?? -Infinity) - (a.profitLoss ?? -Infinity))
+      arr.sort((a, b) => {
+        if (priceType === 'value') {
+          // 평가손익: (평가금 - 매입금)
+          const aVal = a.currentPrice * a.quantity - a.avgBuyPrice * a.quantity
+          const bVal = b.currentPrice * b.quantity - b.avgBuyPrice * b.quantity
+          return bVal - aVal
+        } else {
+          // 현재가 기준: 실시간 inter2_prdy_vrss
+          const aVal = Number(prices[a.stockCode]?.inter2_prdy_vrss ?? -Infinity)
+          const bVal = Number(prices[b.stockCode]?.inter2_prdy_vrss ?? -Infinity)
+          return bVal - aVal
+        }
+      })
       break
+
     case 'valueAsc':
-      arr.sort((a, b) => (b.profitLoss ?? -Infinity) - (a.profitLoss ?? -Infinity)).reverse()
+      arr.sort((a, b) => {
+        if (priceType === 'value') {
+          const aVal = a.currentPrice * a.quantity - a.avgBuyPrice * a.quantity
+          const bVal = b.currentPrice * b.quantity - b.avgBuyPrice * b.quantity
+          return aVal - bVal
+        } else {
+          const aVal = Number(prices[a.stockCode]?.inter2_prdy_vrss ?? Infinity)
+          const bVal = Number(prices[b.stockCode]?.inter2_prdy_vrss ?? Infinity)
+          return aVal - bVal
+        }
+      })
       break
+
     default:
       break
   }
@@ -526,6 +592,7 @@ onMounted(async () => {
     await fetchCompletedLearningCount()
     await fetchTotalCredit()
     await loadUserData() // 자산 데이터 로드
+
   } catch (e) {
     console.error('❌ 초기 로딩 실패:', e)
     router.push('/login-form')
