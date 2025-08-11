@@ -4,20 +4,20 @@
     <div class="px-5 pt-6">
       <img src="@/assets/finz.png" alt="finz" class="mx-5 w-12 mb-2" />
       <p class="text-lg font-normal mx-5">
-        안녕하세요, <span class="font-black">{{ name }}</span
+        안녕하세요, <span class="font-black">{{ nickname }}</span
         >님!
       </p>
 
       <!-- 안내사항 컴포넌트로 분리 -->
-      <NoticeCard @goToStudy="goToStudy">
+      <NoticeCard v-if="showNotice" @close="showNotice = false" @goToLearning="goToLearning">
         <div class="w-full flex flex-col items-left">
           <p class="text-base mb-2 text-gray-800">
-            <span class="font-extrabold">{{ name }}</span
+            <span class="font-extrabold">{{ nickname }}</span
             ><span class="font-medium">님,</span><br />
-            <span class="font-medium">오늘의 학습 목표예요</span>
+            <span class="font-medium">퀴즈를 풀면 8000P를 드려요!</span>
           </p>
           <div class="my-2 flex justify-center">
-            <svg
+            <!-- <svg
               class="w-12 h-12 animate-bounce-smooth"
               viewBox="0 0 48 48"
               fill="none"
@@ -27,14 +27,20 @@
               <rect x="14" y="22" width="20" height="8" rx="3" fill="#fff" />
               <path d="M24 16v-4" stroke="#0063f7" stroke-width="2.5" stroke-linecap="round" />
               <circle cx="24" cy="10" r="3" fill="#0063f7" />
-            </svg>
+            </svg> -->
+            <img
+              src="@/assets/krw_image.png"
+              alt="KRW"
+              class="w-48 h-48 object-contain"
+              style="max-width: 220px; max-height: 220px"
+            />
           </div>
         </div>
         <template #button> 오늘의 퀴즈 풀기 </template>
       </NoticeCard>
 
       <!-- 내 투자 상태 카드 -->
-      <div class="grid grid-cols-2 gap-3 px-5 mt-2 mb-4">
+      <!-- <div class="grid grid-cols-2 gap-3 px-5 mt-2 mb-4">
         <div class="bg-gray-100 p-4 rounded-xl border-black">
           <p class="text-sm text-gray-600 font-medium text-black mb-1">보유 현금</p>
           <p class="font-bold text-gray-700">
@@ -45,7 +51,7 @@
           <p class="text-sm text-gray-600 font-medium text-black mb-1">보유 크레딧</p>
           <p class="font-bold text-gray-700">{{ asset.amount }}C</p>
         </div>
-      </div>
+      </div> -->
 
       <!-- 내 종목보기 카드 전체를 버튼으로, 좌측 정렬 및 아이콘 추가 -->
       <button
@@ -55,7 +61,7 @@
       >
         <div class="py-4">
           <div class="flex items-center mb-1">
-            <span class="font-bold text-base text-gray-900">내 자산현황</span>
+            <span class="font-bold text-base text-gray-900">총 자산</span>
             <svg
               class="w-5 h-5 text-gray-700"
               fill="none"
@@ -105,6 +111,30 @@
         </div>
       </button>
 
+      <!-- 총 자산 카드 아래에 자산 현황/거래 내역/체결 대기 목록 버튼 -->
+      <div class="mx-6 mb-4">
+        <div class="flex gap-2">
+          <button
+            @click="goToAssetStatus"
+            class="flex-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-lg py-2 transition-colors duration-150 shadow-sm border border-gray-200"
+          >
+            자산 현황
+          </button>
+          <button
+            @click="router.push('/mock-trading/transactions')"
+            class="flex-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-lg py-2 transition-colors duration-150 shadow-sm border border-gray-200"
+          >
+            거래 내역
+          </button>
+          <button
+            @click="router.push('/mock-trading/pending-orders')"
+            class="flex-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-lg py-2 transition-colors duration-150 shadow-sm border border-gray-200"
+          >
+            체결 대기 목록
+          </button>
+        </div>
+      </div>
+
       <!-- 종목 정렬 옵션 셀렉트 + 자세히 보기 버튼 + 현재가/평가금 토글 -->
       <div v-if="holdingsData && holdingsData.length > 0" class="mx-6 mb-5">
         <div class="flex items-center justify-between">
@@ -152,7 +182,7 @@
             <!-- 자세히보기 버튼 -->
             <button
               type="button"
-              class="flex items-center text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap h-6 px-2 py-0.5 bg-gray-100"
+              class="flex items-center text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap h-7 px-2 py-0.5 bg-gray-100"
               :class="[showDetail ? 'text-black-600' : 'text-gray-500']"
               style="box-shadow: 0 1px 2px 0 rgb(16 30 115 / 0.04)"
               @click="showDetail = !showDetail"
@@ -196,7 +226,7 @@
             v-for="holding in sortedHoldings"
             :key="holding.stockCode"
             class="p-0 mb-5 bg-white rounded-xl cursor-pointer transition-colors hover:bg-gray-50 hover:rounded-xl"
-            @click="goToStockDetail(holding.stockCode, holding.stockName)"
+            @click="goToStockChart(holding.stockCode, holding.stockName)"
           >
             <!-- 카드 상단: 기존과 동일하게 -->
             <div class="flex items-center justify-between gap-2">
@@ -361,11 +391,14 @@ import { useHoldingsData } from '@/services/useHoldingsData'
 import PendingOrders from '@/components/mockTrading/PendingOrders.vue'
 import NoticeCard from '@/components/NoticeCard.vue'
 
+const router = useRouter()
+
 // --- 내 투자내역 카드 관련 상태 및 함수 ---
 const asset = ref({ amount: 0 })
 const buyHistory = ref([])
 const sellHistory = ref([])
 const imageErrors = ref({})
+const showNotice = ref(true)
 
 const handleImageError = (code) => {
   imageErrors.value[code] = true
@@ -419,6 +452,14 @@ const sortOptions = [
   { key: 'valueAsc', label: '평가손익 낮은 순' },
   { key: 'valueDesc', label: '평가손익 높은 순' },
 ]
+
+const goToStockChart = (stockCode, stockName) => {
+  router.push(`/mock-trading/${stockCode}/chart?stockName=${encodeURIComponent(stockName)}`)
+}
+
+const goToLearning = () => {
+  router.push('/learning')
+}
 
 const currentSort = ref('name')
 function changeSortOption(key) {
@@ -508,8 +549,6 @@ onMounted(async () => {
 
 const selectedContent = ref(null)
 
-const router = useRouter()
-
 // 자산 데이터 스토어 (for total asset section)
 const {
   dataLoaded,
@@ -531,7 +570,7 @@ const calculatedProfitAmount = computed(() => {
 const goToAssetStatus = () => router.push('/mock-trading/asset-status')
 
 // 상태 변수
-const name = ref('')
+const nickname = ref('')
 const riskTypeName = ref('')
 const totalEarnedCredit = ref(0)
 const completedLearningCount = ref(0)
@@ -585,7 +624,7 @@ const fetchUserInfo = async () => {
   try {
     const res = await axios.get('/api/auth/me', { withCredentials: true })
     const user = res.data
-    name.value = user.name
+    nickname.value = user.nickname
     riskTypeName.value = convertRiskTypeToName(user.riskType)
     return user.riskType // riskType 코드 (예: 'TEC') 반환
   } catch (e) {
