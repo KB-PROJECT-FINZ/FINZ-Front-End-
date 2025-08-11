@@ -116,6 +116,13 @@
               <TermExplanationCard :content="msg.content" />
             </div>
 
+            <!-- 종목 분석 응답 (카드 형식으로 표시) -->
+            <div
+              v-else-if="isStockAnalysisResponse(msg.content) || (msg.intentType === 'STOCK_ANALYZE')"
+            >
+              <StockAnalysisCard :content="msg.content" />
+            </div>
+
             <!-- 키워드 기반 주식 추천 카드 -->
             <div v-else-if="isStockRecommendationResponse(msg.content)">
               <StockRecommendationCards :content="msg.content" />
@@ -241,6 +248,7 @@ import BackIcon from '../icons/BackIcon.vue'
 import ExternalLinkIcon from '../icons/ExternalLinkIcon.vue'
 import AnalysisIcon from '../icons/AnalysisIcon.vue'
 import RefreshIcon from '../icons/RefreshIcon.vue'
+import StockAnalysisCard from './StockAnalysisCard.vue'
 
 const chatStore = useChatStore()
 const userStore = useUserStore()
@@ -295,6 +303,44 @@ const isStockRecommendationResponse = (content) => {
     return false
   }
 
+  console.log('🎯 isStockRecommendationResponse 호출됨:', content.substring(0, 100) + '...')
+
+  // 투자 성향 기반 추천이나 키워드 기반 추천인지 확인
+  if (content.startsWith('🧠 투자 성향 기반 추천드릴게요!') || content.startsWith('🎯 키워드 기반 추천드릴게요!')) {
+    console.log('✅ 투자 성향/키워드 기반 추천 감지됨')
+    return true
+  }
+
+  // 종목 분석 응답인지 먼저 확인 (종목명이 포함된 경우)
+  if (content.includes('위험도:') && content.includes('AI 분석 Tip') && content.includes('향후 전망')) {
+    // 종목 분석 응답은 키워드 기반 추천이 아님
+    return false
+  }
+
+  // 종목 분석 응답의 다른 패턴들도 확인
+  if (content.includes('테슬라') || content.includes('삼성전자') || content.includes('SK하이닉스')) {
+    if (content.includes('위험도:') || content.includes('AI 분석 Tip') || content.includes('향후 전망')) {
+      return false
+    }
+  }
+
+  // 종목 분석 응답의 다른 패턴들도 확인 (더 구체적으로)
+  if (content.includes('위험도:') && (content.includes('테슬라') || content.includes('TSLA') || content.includes('삼성전자') || content.includes('005930'))) {
+    return false
+  }
+
+  // 종목 분석 응답의 특징적인 패턴들 확인
+  const stockAnalysisPatterns = [
+    '위험도:',
+    'AI 분석 Tip',
+    '향후 전망'
+  ]
+
+  const hasStockAnalysisPatterns = stockAnalysisPatterns.some((pattern) => content.includes(pattern))
+  if (hasStockAnalysisPatterns) {
+    return false
+  }
+
   try {
     const parsed = JSON.parse(content)
     if (
@@ -312,6 +358,67 @@ const isStockRecommendationResponse = (content) => {
     console.log('❌ JSON 파싱 실패:', error)
   }
 
+  console.log('❌ 키워드 기반 추천이 아님')
+  return false
+}
+
+// 종목 분석 응답 감지 함수
+const isStockAnalysisResponse = (content) => {
+  if (!content || typeof content !== 'string') {
+    return false
+  }
+
+  console.log('🔍 isStockAnalysisResponse 호출됨:', content.substring(0, 100) + '...')
+
+  // 투자 성향 기반 추천이나 키워드 기반 추천인지 먼저 확인
+  if (content.startsWith('🧠 투자 성향 기반 추천드릴게요!') || content.startsWith('🎯 키워드 기반 추천드릴게요!')) {
+    console.log('❌ 투자 성향/키워드 기반 추천이므로 종목 분석이 아님')
+    return false
+  }
+
+  // JSON 형태의 종목 분석 응답인지 확인
+  try {
+    const jsonStart = content.indexOf('[')
+    if (jsonStart !== -1) {
+      const jsonContent = content.substring(jsonStart)
+      const parsed = JSON.parse(jsonContent)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const firstItem = parsed[0]
+        if (firstItem.ticker && firstItem.reason && firstItem.riskLevel && firstItem.timingComment && firstItem.futureOutlook) {
+          console.log('✅ JSON 형태 종목 분석 응답 감지됨')
+          return true
+        }
+      }
+    }
+  } catch (error) {
+    // JSON 파싱 실패 시 텍스트 패턴으로 확인
+  }
+
+  // 종목 분석 응답의 특징적인 패턴들 확인
+  if (content.includes('위험도:') && content.includes('AI 분석 Tip') && content.includes('향후 전망')) {
+    console.log('✅ 종목 분석 응답 감지됨')
+    return true
+  }
+
+  // 종목명이 포함되어 있고 위험도가 포함된 경우
+  if (content.includes('위험도:') && (content.includes('테슬라') || content.includes('TSLA') || content.includes('삼성전자') || content.includes('005930'))) {
+    console.log('✅ 종목 분석 응답 감지됨 (종목명 + 위험도)')
+    return true
+  }
+
+  // 종목 분석 응답의 다른 패턴들도 확인
+  if (content.includes('위험도:') && content.includes('AI 분석 Tip')) {
+    console.log('✅ 종목 분석 응답 감지됨 (위험도 + AI 분석 Tip)')
+    return true
+  }
+
+  // 종목 분석 응답의 다른 패턴들도 확인
+  if (content.includes('위험도:') && content.includes('향후 전망')) {
+    console.log('✅ 종목 분석 응답 감지됨 (위험도 + 향후 전망)')
+    return true
+  }
+
+  console.log('❌ 종목 분석 응답이 아님')
   return false
 }
 
@@ -485,11 +592,14 @@ async function fetchGPT(prompt, explicitIntent = null) {
     })
 
     if (res?.data?.content) {
+      console.log('📦 받은 응답 내용:', res.data.content)
+      console.log('📦 받은 intentType:', res.data.intentType)
+      
       chatStore.messages.push({
         role: 'bot',
         content: res.data.content,
         requestedPeriod: res.data.requestedPeriod,
-        intentType: res.data.intentType,
+        intentType: intentType || res.data.intentType, // intentType을 명시적으로 설정
       })
       console.log('📦 requestedPeriod in response:', res.data.requestedPeriod)
 
@@ -572,7 +682,7 @@ async function handleButtonIntent(btn) {
             href: '/investment-test/retest',
           },
           {
-            label: '📊 내 성향 기반 추천 받아보기',
+            label: '�� 내 성향 기반 추천 받아보기',
             intent: 'RECOMMEND_PROFILE',
             message: '내 투자 성향으로 종목 추천해줘',
           },

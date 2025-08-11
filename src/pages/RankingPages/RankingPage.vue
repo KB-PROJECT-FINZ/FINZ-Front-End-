@@ -168,12 +168,12 @@ const traitCodeMap = {
   기타: 'EMOTIONAL',
 }
 
-// fallback 날짜: 이번주 월요일 (YYYY-MM-DD)
+// ✅ fallback 날짜: **지난주 월요일** (YYYY-MM-DD)
 const fallbackDate = (() => {
   const d = new Date()
-  const day = d.getDay()
-  const diff = (day === 0 ? -6 : 1) - day
-  d.setDate(d.getDate() + diff)
+  const day = d.getDay() || 7 // Sun=0 → 7
+  d.setDate(d.getDate() - day + 1 - 7) // 지난주 월요일
+  d.setHours(0, 0, 0, 0)
   return d.toISOString().substring(0, 10)
 })()
 
@@ -257,6 +257,7 @@ watch(
     }
 
     try {
+      // ✅ 지난주 월요일로 호출
       const my = await fetchMyRanking(newUserId, fallbackDate)
       if (!my) return
 
@@ -268,6 +269,7 @@ watch(
       }
       userTraitType.value = traitKor
 
+      // ✅ 실시간이 비어있으면 지난주 데이터 사용(기존 로직 유지)
       popularStocksRealtime.value = await fetchTop10StocksRealtime()
       popularStocksLastWeek.value = await fetchTop10Stocks(selectedBaseDate.value)
 
