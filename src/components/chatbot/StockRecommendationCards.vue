@@ -14,9 +14,9 @@
         class="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-white/40 transform hover:-translate-y-1"
       >
         <!-- 헤더 -->
-        <div class="flex justify-between items-start mb-4">
-          <div>
-            <h4 class="font-bold text-gray-900 text-xl">{{ stock.name }}</h4>
+        <div class="flex justify-between items-start mb-4 gap-4">
+          <div class="flex-1 min-w-0">
+            <h4 class="font-bold text-gray-900 text-xl break-words">{{ stock.name }}</h4>
             <span class="text-sm text-gray-500 font-medium">{{ stock.code }}</span>
           </div>
           <span
@@ -78,9 +78,9 @@ const props = defineProps({
 // 추천 타입 감지
 const getRecommendationType = () => {
   // 메시지 앞부분의 안내 메시지를 기반으로 추천 타입 감지
-  if (props.content.startsWith('🧠 투자 성향 기반 추천드릴게요!')) {
+  if (props.content.startsWith('투자 성향 기반 추천드릴게요!')) {
     return '투자 성향 기반 추천'
-  } else if (props.content.startsWith('🎯 키워드 기반 추천드릴게요!')) {
+  } else if (props.content.startsWith('키워드 기반 추천드릴게요!')) {
     return '키워드 기반 추천'
   }
 
@@ -97,14 +97,14 @@ const getRecommendationType = () => {
   try {
     // 메시지 앞부분의 안내 메시지 제거
     let jsonContent = props.content
-    
+
     // "🧠 투자 성향 기반 추천드릴게요!" 또는 "🎯 키워드 기반 추천드릴게요!" 제거
     if (jsonContent.startsWith('🧠 투자 성향 기반 추천드릴게요!')) {
       jsonContent = jsonContent.replace('🧠 투자 성향 기반 추천드릴게요!\n\n', '')
     } else if (jsonContent.startsWith('🎯 키워드 기반 추천드릴게요!')) {
       jsonContent = jsonContent.replace('🎯 키워드 기반 추천드릴게요!\n\n', '')
     }
-    
+
     const analysisData = JSON.parse(jsonContent)
     // JSON 형태에서 추천 타입 감지
     if (analysisData && analysisData.length > 0) {
@@ -129,37 +129,36 @@ const getRecommendationType = () => {
 }
 
 
-// reason 텍스트에서 종목 이름 추출
-const extractStockName = (reason) => {
-  if (!reason) return ''
-  
-  // "종목명은" 또는 "종목명이" 패턴에서 종목명 추출
-  const match = reason.match(/^([가-힣A-Za-z]+)(은|는|이|가)/)
-  if (match) {
-    return match[1]
-  }
-  
-  return ''
-}
+// // reason 텍스트에서 종목 이름 추출
+// const extractStockName = (reason) => {
+//   if (!reason) return ''
+//
+//   // "종목명은" 또는 "종목명이" 패턴에서 종목명 추출
+//   const match = reason.match(/^([가-힣A-Za-z]+)(은|는|이|가)/)
+//   if (match) {
+//     return match[1]
+//   }
+//
+//   return ''
+// }
 
 // JSON 파싱 및 카드 데이터 변환
 const stocks = computed(() => {
   try {
     // 메시지 앞부분의 안내 메시지 제거
     let jsonContent = props.content
-    
+
     // "🧠 투자 성향 기반 추천드릴게요!" 또는 "🎯 키워드 기반 추천드릴게요!" 제거
     if (jsonContent.startsWith('🧠 투자 성향 기반 추천드릴게요!')) {
       jsonContent = jsonContent.replace('🧠 투자 성향 기반 추천드릴게요!\n\n', '')
     } else if (jsonContent.startsWith('🎯 키워드 기반 추천드릴게요!')) {
       jsonContent = jsonContent.replace('🎯 키워드 기반 추천드릴게요!\n\n', '')
     }
-    
+
     const analysisData = JSON.parse(jsonContent)
     console.log('📊 JSON 파싱된 종목 데이터:', analysisData)
-
     return analysisData.map((stock) => ({
-      name: extractStockName(stock.reason) || stock.ticker, // reason에서 종목명 추출
+      name: stock.name || stock.ticker, // reason에서 종목명 추출
       code: stock.ticker,
       description: stock.reason || '',
       riskLevel: stock.riskLevel || '중간',
