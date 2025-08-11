@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../pages/HomePage.vue'
 import LoginPage from '@/pages/LoginPages/LoginPage.vue'
 import ProfilePage from '@/pages//ProfilePages/ProfilePage.vue'
+import CustomContentsPage from '@/pages/ProfilePages/CustomContentsPage.vue'
 import JournalPage from '@/pages/ProfilePages//JournalPage.vue'
 import FeedbackPage from '@/pages/ProfilePages/FeedbackPage.vue'
 import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
@@ -32,6 +33,11 @@ import KakaoSignupPage from '@/pages/LoginPages/KakaoSignupPage.vue'
 import ProtfolioAnalysis from '@/pages/mockTrading/ProtfolioAnalysis.vue'
 import DailyQuizePage from '@/pages/Learning/DailyQuizePage.vue'
 const routes = [
+  {
+    path: '/profile/custom-contents',
+    name: 'CustomContentsPage',
+    component: CustomContentsPage,
+  },
   {
     path: '/',
     name: 'Loginpage',
