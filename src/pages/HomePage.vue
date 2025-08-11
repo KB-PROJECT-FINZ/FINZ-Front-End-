@@ -127,19 +127,6 @@
             <div class="flex bg-gray-100 rounded-lg p-0.5 gap-0.5 flex-nowrap">
               <button
                 :class="[
-                  showPriceType === 'current'
-                    ? 'bg-white text-blue-600 shadow-sm border border-blue-100 hover:bg-blue-50 hover:border-blue-300'
-                    : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200',
-                  'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap min-w-[56px] h-7',
-                ]"
-                @click="showPriceType = 'current'"
-                type="button"
-                style="box-shadow: 0 1px 2px 0 rgb(16 30 115 / 0.04)"
-              >
-                현재가
-              </button>
-              <button
-                :class="[
                   showPriceType === 'value'
                     ? 'bg-white text-blue-600 shadow-sm border border-blue-100 hover:bg-blue-50 hover:border-blue-300'
                     : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200',
@@ -151,88 +138,102 @@
               >
                 평가금
               </button>
+              <button
+                :class="[
+                  showPriceType === 'current'
+                    ? 'bg-white text-blue-600 shadow-sm border border-blue-100 hover:bg-blue-50 hover:border-blue-300'
+                    : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200',
+                  'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap min-w-[56px] h-7',
+                ]"
+                @click="showPriceType = 'current'"
+                type="button"
+                style="box-shadow: 0 1px 2px 0 rgb(16 30 115 / 0.04)"
+              >
+                현재가
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 내 종목 간단 카드 리스트 -->
+      <!-- 내 종목 간단 카드 리스트 (전체 스크롤) -->
       <div v-if="holdingsData && holdingsData.length > 0" class="mx-6 mb-5">
-        <div
-          v-for="holding in sortedHoldings"
-          :key="holding.stockCode"
-          class="p-0 mb-5 bg-white rounded-xl cursor-pointer transition-colors hover:bg-gray-50 hover:rounded-xl"
-          @click="goToStockDetail(holding.stockCode, holding.stockName)"
-        >
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2 min-w-0 flex-1">
-              <span
-                class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden"
-              >
-                <img
-                  v-if="holding.imageUrl && !imageErrors[holding.stockCode]"
-                  :src="holding.imageUrl"
-                  :alt="`${holding.stockName} 로고`"
-                  class="w-full h-full object-cover rounded-full"
-                  @error="handleImageError(holding.stockCode)"
-                />
+        <div class="max-h-75 overflow-y-auto pr-1 bg-white" style="padding: 0px">
+          <div
+            v-for="holding in sortedHoldings"
+            :key="holding.stockCode"
+            class="p-0 mb-5 bg-white rounded-xl cursor-pointer transition-colors hover:bg-gray-50 hover:rounded-xl"
+            @click="goToStockDetail(holding.stockCode, holding.stockName)"
+          >
+            <!-- 카드 내용은 기존과 동일하게 복사 -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0 flex-1">
                 <span
-                  v-else
-                  class="w-full h-full rounded-full flex items-center justify-center text-[13px] font-bold border-2 text-center flex-shrink-0"
-                  style="border-color: #2272eb; color: #2272eb; background: #fff"
+                  class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden"
                 >
-                  {{ getStockInitial(holding.stockName) }}
+                  <img
+                    v-if="holding.imageUrl && !imageErrors[holding.stockCode]"
+                    :src="holding.imageUrl"
+                    :alt="`${holding.stockName} 로고`"
+                    class="w-full h-full object-cover rounded-full"
+                    @error="handleImageError(holding.stockCode)"
+                  />
+                  <span
+                    v-else
+                    class="w-full h-full rounded-full flex items-center justify-center text-[13px] font-bold border-2 text-center flex-shrink-0"
+                    style="border-color: #2272eb; color: #2272eb; background: #fff"
+                  >
+                    {{ getStockInitial(holding.stockName) }}
+                  </span>
                 </span>
-              </span>
-              <div class="flex flex-col min-w-0">
-                <div class="text-base font-semibold text-gray-900 truncate">
-                  {{ holding.stockName }}
+                <div class="flex flex-col min-w-0">
+                  <div class="text-base font-semibold text-gray-900 truncate">
+                    {{ holding.stockName }}
+                  </div>
+                  <div class="text-xs text-gray-500 mt-0.5">{{ holding.quantity }}주</div>
                 </div>
-                <div class="text-xs text-gray-500 mt-0.5">{{ holding.quantity }}주</div>
               </div>
-            </div>
-            <div class="flex flex-col items-end justify-center min-w-[110px]">
-              <span class="text-base text-gray-900 font-semibold mb-0.5">
-                {{
-                  showPriceType === 'current'
-                    ? holding.currentPrice.toLocaleString()
-                    : (holding.currentPrice * holding.quantity).toLocaleString()
-                }}원
-              </span>
-              <template v-if="showPriceType === 'value'">
-                <!-- 기존 평가손익/수익률 표시 -->
-                <span
-                  v-if="holding.profitLoss !== null && holding.profitRate !== null"
-                  :class="holding.profitLoss >= 0 ? 'text-red-600' : 'text-blue-600'"
-                  class="text-xs"
-                >
-                  {{ holding.profitRate >= 0 ? '+' : '-' }}
-                  {{ Math.abs(holding.profitLoss).toLocaleString() }}원 ({{
-                    holding.profitRate >= 0 ? '+' : ''
-                  }}{{ holding.profitRate }}%)
+              <div class="flex flex-col items-end justify-center min-w-[110px]">
+                <span class="text-base text-gray-900 font-semibold mb-0.5">
+                  {{
+                    showPriceType === 'current'
+                      ? holding.currentPrice.toLocaleString()
+                      : (holding.currentPrice * holding.quantity).toLocaleString()
+                  }}원
                 </span>
-                <span v-else class="text-xs text-gray-400">계산 중...</span>
-              </template>
-              <template v-else>
-                <!-- 전일 대비 변동 금액/변동률 표시 -->
-                <span
-                  v-if="stockPrices[holding.stockCode]"
-                  class="text-xs"
-                  :class="
-                    Number(stockPrices[holding.stockCode].inter2_prdy_vrss) > 0
-                      ? 'text-red-600'
-                      : Number(stockPrices[holding.stockCode].inter2_prdy_vrss) < 0
-                        ? 'text-blue-600'
-                        : 'text-gray-600'
-                  "
-                >
-                  {{ Number(stockPrices[holding.stockCode].inter2_prdy_vrss) > 0 ? '+' : '' }}
-                  {{ Number(stockPrices[holding.stockCode].inter2_prdy_vrss).toLocaleString() }}원
-                  ({{ Number(stockPrices[holding.stockCode].prdy_ctrt) > 0 ? '+' : ''
-                  }}{{ stockPrices[holding.stockCode].prdy_ctrt }}%)
-                </span>
-                <span v-else class="text-xs text-gray-400">-</span>
-              </template>
+                <template v-if="showPriceType === 'value'">
+                  <span
+                    v-if="holding.profitLoss !== null && holding.profitRate !== null"
+                    :class="holding.profitLoss >= 0 ? 'text-red-600' : 'text-blue-600'"
+                    class="text-xs"
+                  >
+                    {{ holding.profitRate >= 0 ? '+' : '-' }}
+                    {{ Math.abs(holding.profitLoss).toLocaleString() }}원 ({{
+                      holding.profitRate >= 0 ? '+' : ''
+                    }}{{ holding.profitRate }}%)
+                  </span>
+                  <span v-else class="text-xs text-gray-400">계산 중...</span>
+                </template>
+                <template v-else>
+                  <span
+                    v-if="stockPrices[holding.stockCode]"
+                    class="text-xs"
+                    :class="
+                      Number(stockPrices[holding.stockCode].inter2_prdy_vrss) > 0
+                        ? 'text-red-600'
+                        : Number(stockPrices[holding.stockCode].inter2_prdy_vrss) < 0
+                          ? 'text-blue-600'
+                          : 'text-gray-600'
+                    "
+                  >
+                    {{ Number(stockPrices[holding.stockCode].inter2_prdy_vrss) > 0 ? '+' : '' }}
+                    {{ Number(stockPrices[holding.stockCode].inter2_prdy_vrss).toLocaleString() }}원
+                    ({{ Number(stockPrices[holding.stockCode].prdy_ctrt) > 0 ? '+' : ''
+                    }}{{ stockPrices[holding.stockCode].prdy_ctrt }}%)
+                  </span>
+                  <span v-else class="text-xs text-gray-400">-</span>
+                </template>
+              </div>
             </div>
           </div>
         </div>
@@ -342,7 +343,7 @@ const {
 } = useHoldingsData()
 
 // 현재가/평가금 토글 상태
-const showPriceType = ref('current') // 'current' | 'value'
+const showPriceType = ref('value') // 'current' | 'value'
 
 // 보유 종목 코드 추출
 const stockCodes = computed(() =>
@@ -383,9 +384,7 @@ function changeSortOption(key) {
 
 const sortedHoldings = computed(() => {
   const holdings = holdingsData.value || []
-  const prices = stockPrices.value || {}
   if (!holdings.length) return []
-  const priceType = showPriceType.value
   const sortKey = currentSort.value
 
   let arr = [...holdings]
@@ -393,75 +392,18 @@ const sortedHoldings = computed(() => {
     case 'name':
       arr.sort((a, b) => (a.stockName || '').localeCompare(b.stockName || '', 'ko'))
       break
-
     case 'profitRateDesc':
-      arr.sort((a, b) => {
-        if (priceType === 'value') {
-          // 평가금 기준 수익률: (평가금-매입금)/매입금*100
-          const aBuy = a.avgBuyPrice * a.quantity
-          const bBuy = b.avgBuyPrice * b.quantity
-          const aEval = a.currentPrice * a.quantity
-          const bEval = b.currentPrice * b.quantity
-          const aRate = aBuy ? ((aEval - aBuy) / aBuy) * 100 : -Infinity
-          const bRate = bBuy ? ((bEval - bBuy) / bBuy) * 100 : -Infinity
-          return bRate - aRate
-        } else {
-          // 현재가 기준: 실시간 prdy_ctrt
-          const aRate = Number(prices[a.stockCode]?.prdy_ctrt ?? -Infinity)
-          const bRate = Number(prices[b.stockCode]?.prdy_ctrt ?? -Infinity)
-          return bRate - aRate
-        }
-      })
+      arr.sort((a, b) => (b.profitRate ?? -Infinity) - (a.profitRate ?? -Infinity))
       break
-
     case 'profitRateAsc':
-      arr.sort((a, b) => {
-        if (priceType === 'value') {
-          const aBuy = a.avgBuyPrice * a.quantity
-          const bBuy = b.avgBuyPrice * b.quantity
-          const aEval = a.currentPrice * a.quantity
-          const bEval = b.currentPrice * b.quantity
-          const aRate = aBuy ? ((aEval - aBuy) / aBuy) * 100 : Infinity
-          const bRate = bBuy ? ((bEval - bBuy) / bBuy) * 100 : Infinity
-          return aRate - bRate
-        } else {
-          const aRate = Number(prices[a.stockCode]?.prdy_ctrt ?? Infinity)
-          const bRate = Number(prices[b.stockCode]?.prdy_ctrt ?? Infinity)
-          return aRate - bRate
-        }
-      })
+      arr.sort((a, b) => (a.profitRate ?? Infinity) - (b.profitRate ?? Infinity))
       break
-
     case 'valueDesc':
-      arr.sort((a, b) => {
-        if (priceType === 'value') {
-          // 평가손익: (평가금 - 매입금)
-          const aVal = a.currentPrice * a.quantity - a.avgBuyPrice * a.quantity
-          const bVal = b.currentPrice * b.quantity - b.avgBuyPrice * b.quantity
-          return bVal - aVal
-        } else {
-          // 현재가 기준: 실시간 inter2_prdy_vrss
-          const aVal = Number(prices[a.stockCode]?.inter2_prdy_vrss ?? -Infinity)
-          const bVal = Number(prices[b.stockCode]?.inter2_prdy_vrss ?? -Infinity)
-          return bVal - aVal
-        }
-      })
+      arr.sort((a, b) => (b.profitLoss ?? -Infinity) - (a.profitLoss ?? -Infinity))
       break
-
     case 'valueAsc':
-      arr.sort((a, b) => {
-        if (priceType === 'value') {
-          const aVal = a.currentPrice * a.quantity - a.avgBuyPrice * a.quantity
-          const bVal = b.currentPrice * b.quantity - b.avgBuyPrice * b.quantity
-          return aVal - bVal
-        } else {
-          const aVal = Number(prices[a.stockCode]?.inter2_prdy_vrss ?? Infinity)
-          const bVal = Number(prices[b.stockCode]?.inter2_prdy_vrss ?? Infinity)
-          return aVal - bVal
-        }
-      })
+      arr.sort((a, b) => (a.profitLoss ?? Infinity) - (b.profitLoss ?? Infinity))
       break
-
     default:
       break
   }
@@ -589,7 +531,6 @@ onMounted(async () => {
     await fetchCompletedLearningCount()
     await fetchTotalCredit()
     await loadUserData() // 자산 데이터 로드
-
   } catch (e) {
     console.error('❌ 초기 로딩 실패:', e)
     router.push('/login-form')
@@ -663,6 +604,22 @@ const fetchTotalCredit = async () => {
     totalEarnedCredit.value = 0
   }
 }
+
+watch(
+  holdingsData,
+  (val) => {
+    console.log('holdingsData:', JSON.parse(JSON.stringify(val)))
+  },
+  { immediate: true, deep: true },
+)
+
+watch(
+  stockPrices,
+  (val) => {
+    console.log('stockPrices:', JSON.parse(JSON.stringify(val)))
+  },
+  { immediate: true, deep: true },
+)
 </script>
 
 <style scoped>
