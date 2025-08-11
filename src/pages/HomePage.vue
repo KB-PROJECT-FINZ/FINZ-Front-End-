@@ -589,6 +589,7 @@ onMounted(async () => {
     await fetchCompletedLearningCount()
     await fetchTotalCredit()
     await loadUserData() // 자산 데이터 로드
+
   } catch (e) {
     console.error('❌ 초기 로딩 실패:', e)
     router.push('/login-form')
