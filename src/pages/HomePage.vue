@@ -300,7 +300,9 @@
           </div>
         </div>
       </transition>
-
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <PendingOrders />
+      </div>
       <BottomNav />
     </div>
   </div>
@@ -314,6 +316,7 @@ import axios from 'axios'
 import { useAssetDataStore } from '@/services/useAssetData'
 import BottomNav from '@/components/FooterNavigation.vue'
 import { useHoldingsData } from '@/services/useHoldingsData'
+import PendingOrders from '@/components/mockTrading/PendingOrders.vue'
 
 // --- 내 투자내역 카드 관련 상태 및 함수 ---
 const asset = ref({ amount: 0 })
