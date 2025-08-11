@@ -8,10 +8,8 @@
         >님!
       </p>
 
-      <!-- 학습 안내 컨테이너 -->
-      <div
-        class="bg-white rounded-2xl shadow mx-5 px-5 py-4 flex flex-col items-center mb-4 max-w-[360px]"
-      >
+      <!-- 안내사항 컴포넌트로 분리 -->
+      <NoticeCard @goToStudy="goToStudy">
         <div class="w-full flex flex-col items-left">
           <p class="text-base mb-2 text-gray-800">
             <span class="font-extrabold">{{ name }}</span
@@ -32,14 +30,8 @@
             </svg>
           </div>
         </div>
-        <button
-          class="mt-3 bg-[#0063f7] text-white font-semibold px-6 py-2 rounded-md shadow-sm hover:bg-yellow-500 transition-all text-sm w-full max-w-xs"
-          style="border-radius: 0.5rem"
-          @click="goToStudy"
-        >
-          퀴즈 풀러가기
-        </button>
-      </div>
+        <template #button> 오늘의 퀴즈 풀기 </template>
+      </NoticeCard>
 
       <!-- 내 투자 상태 카드 -->
       <div class="grid grid-cols-2 gap-3 px-5 mt-2 mb-4">
@@ -367,6 +359,7 @@ import { useAssetDataStore } from '@/services/useAssetData'
 import BottomNav from '@/components/FooterNavigation.vue'
 import { useHoldingsData } from '@/services/useHoldingsData'
 import PendingOrders from '@/components/mockTrading/PendingOrders.vue'
+import NoticeCard from '@/components/NoticeCard.vue'
 
 // --- 내 투자내역 카드 관련 상태 및 함수 ---
 const asset = ref({ amount: 0 })
