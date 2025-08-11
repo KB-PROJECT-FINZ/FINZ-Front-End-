@@ -19,7 +19,7 @@
       :to="item.to"
       class="flex flex-col items-center text-xs w-full"
       :class="isActive(item.to) ? 'font-bold' : 'font-bold'"
-      :style="isActive(item.to) ? 'color: #f8a70c' : 'color: black'"
+      :style="isActive(item.to) ? 'color: #0063f7' : 'color: black'"
     >
       <!-- 아이콘 렌더링 분기 -->
       <div class="mb-1">

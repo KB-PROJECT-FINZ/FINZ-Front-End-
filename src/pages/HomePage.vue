@@ -8,6 +8,31 @@
         >님!
       </p>
 
+      <!-- 안내사항 컴포넌트로 분리 -->
+      <NoticeCard @goToStudy="goToStudy">
+        <div class="w-full flex flex-col items-left">
+          <p class="text-base mb-2 text-gray-800">
+            <span class="font-extrabold">{{ name }}</span
+            ><span class="font-medium">님,</span><br />
+            <span class="font-medium">오늘의 학습 목표예요</span>
+          </p>
+          <div class="my-2 flex justify-center">
+            <svg
+              class="w-12 h-12 animate-bounce-smooth"
+              viewBox="0 0 48 48"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect x="8" y="16" width="32" height="20" rx="6" fill="#0063f7" />
+              <rect x="14" y="22" width="20" height="8" rx="3" fill="#fff" />
+              <path d="M24 16v-4" stroke="#0063f7" stroke-width="2.5" stroke-linecap="round" />
+              <circle cx="24" cy="10" r="3" fill="#0063f7" />
+            </svg>
+          </div>
+        </div>
+        <template #button> 오늘의 퀴즈 풀기 </template>
+      </NoticeCard>
+
       <!-- 내 투자 상태 카드 -->
       <div class="grid grid-cols-2 gap-3 px-5 mt-2 mb-4">
         <div class="bg-gray-100 p-4 rounded-xl border-black">
@@ -30,7 +55,7 @@
       >
         <div class="py-4">
           <div class="flex items-center mb-1">
-            <span class="font-bold text-base text-gray-900">내 종목보기</span>
+            <span class="font-bold text-base text-gray-900">내 자산현황</span>
             <svg
               class="w-5 h-5 text-gray-700"
               fill="none"
@@ -80,8 +105,8 @@
         </div>
       </button>
 
-      <!-- 종목 정렬 옵션 셀렉트 + 현재가/평가금 토글 -->
-      <div v-if="holdingsData && holdingsData.length > 0" class="mx-6 mb-2">
+      <!-- 종목 정렬 옵션 셀렉트 + 자세히 보기 버튼 + 현재가/평가금 토글 -->
+      <div v-if="holdingsData && holdingsData.length > 0" class="mx-6 mb-5">
         <div class="flex items-center justify-between">
           <!-- 정렬 드롭다운 -->
           <div class="relative inline-block" ref="sortDropdownRoot">
@@ -122,15 +147,26 @@
               </ul>
             </div>
           </div>
-          <!-- 현재가/평가금 토글 버튼 (오른쪽 정렬) -->
-          <div class="flex items-center ml-2">
+          <!-- 오른쪽: 자세히보기 + 평가금/현재가 토글 버튼 묶음 -->
+          <div class="flex items-center ml-auto gap-1">
+            <!-- 자세히보기 버튼 -->
+            <button
+              type="button"
+              class="flex items-center text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap h-6 px-2 py-0.5 bg-gray-100"
+              :class="[showDetail ? 'text-black-600' : 'text-gray-500']"
+              style="box-shadow: 0 1px 2px 0 rgb(16 30 115 / 0.04)"
+              @click="showDetail = !showDetail"
+            >
+              자세히 보기
+            </button>
+            <!-- 평가금/현재가 토글 버튼 -->
             <div class="flex bg-gray-100 rounded-lg p-0.5 gap-0.5 flex-nowrap">
               <button
                 :class="[
                   showPriceType === 'value'
-                    ? 'bg-white text-blue-600 shadow-sm border border-blue-100 hover:bg-blue-50 hover:border-blue-300'
-                    : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200',
-                  'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap min-w-[56px] h-7',
+                    ? 'bg-white text-black-600'
+                    : 'bg-gray-100 text-gray-500',
+                  'px-2 py-0.5 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap min-w-[44px] h-6',
                 ]"
                 @click="showPriceType = 'value'"
                 type="button"
@@ -141,9 +177,9 @@
               <button
                 :class="[
                   showPriceType === 'current'
-                    ? 'bg-white text-blue-600 shadow-sm border border-blue-100 hover:bg-blue-50 hover:border-blue-300'
-                    : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200',
-                  'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap min-w-[56px] h-7',
+                    ? 'bg-white text-black-600'
+                    : 'bg-gray-100 text-gray-500',
+                  'px-2 py-0.5 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap min-w-[44px] h-6',
                 ]"
                 @click="showPriceType = 'current'"
                 type="button"
@@ -154,18 +190,15 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- 내 종목 간단 카드 리스트 (전체 스크롤) -->
-      <div v-if="holdingsData && holdingsData.length > 0" class="mx-6 mb-5">
-        <div class="max-h-75 overflow-y-auto pr-1 bg-white" style="padding: 0px">
+        <!-- 내 종목 간단 카드 리스트 (전체 스크롤) -->
+        <div class="max-h-75 overflow-y-auto pr-1 bg-white rounded-2xl">
           <div
             v-for="holding in sortedHoldings"
             :key="holding.stockCode"
             class="p-0 mb-5 bg-white rounded-xl cursor-pointer transition-colors hover:bg-gray-50 hover:rounded-xl"
             @click="goToStockDetail(holding.stockCode, holding.stockName)"
           >
-            <!-- 카드 내용은 기존과 동일하게 복사 -->
+            <!-- 카드 상단: 기존과 동일하게 -->
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2 min-w-0 flex-1">
                 <span
@@ -235,40 +268,44 @@
                 </template>
               </div>
             </div>
+
+            <!-- 자세히보기: 추가 정보만 아래에 표시 -->
+            <div v-if="showDetail" class="grid grid-cols-2 gap-2 text-sm mt-2">
+              <div>
+                <span class="text-gray-500">종목코드</span>
+                <span class="ml-2 font-medium text-gray-900">{{ holding.stockCode }}</span>
+              </div>
+              <div>
+                <span class="text-gray-500">평균단가</span>
+                <span class="ml-2 font-medium text-gray-900"
+                  >{{ holding.averagePrice.toLocaleString() }}원</span
+                >
+              </div>
+              <div>
+                <span class="text-gray-500">평가금액</span>
+                <span class="ml-2 font-medium text-gray-900">
+                  <span v-if="holding.totalValue > 0"
+                    >{{ holding.totalValue.toLocaleString() }}원</span
+                  >
+                  <span v-else class="text-gray-400">계산 중...</span>
+                </span>
+              </div>
+              <div>
+                <span class="text-gray-500">평가손익</span>
+                <span
+                  v-if="holding.profitLoss !== null && holding.profitLoss !== undefined"
+                  class="ml-2 font-medium"
+                  :class="holding.profitLoss >= 0 ? 'text-red-600' : 'text-blue-600'"
+                >
+                  {{ holding.profitLoss >= 0 ? '+' : ''
+                  }}{{ Math.abs(holding.profitLoss).toLocaleString() }}원
+                </span>
+                <span v-else class="ml-2 font-medium text-gray-400">계산 중...</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      <!-- 학습 안내 컨테이너 -->
-      <!-- <div class="bg-white rounded-2xl shadow px-5 py-4 flex flex-col items-center mb-4">
-        <div class="w-full flex flex-col items-left">
-          <p class="text-base mb-2 text-gray-800">
-            <span class="font-extrabold">{{ name }}</span
-            ><span class="font-medium">님,</span><br />
-            <span class="font-medium">오늘의 학습 목표예요</span>
-          </p>
-          <div class="my-2 flex justify-center">
-            <svg
-              class="w-12 h-12 animate-bounce-smooth"
-              viewBox="0 0 48 48"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect x="8" y="16" width="32" height="20" rx="6" fill="#fbbf24" />
-              <rect x="14" y="22" width="20" height="8" rx="3" fill="#fff" />
-              <path d="M24 16v-4" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" />
-              <circle cx="24" cy="10" r="3" fill="#fbbf24" />
-            </svg>
-          </div>
-        </div>
-        <button
-          class="mt-3 bg-yellow-400 text-white font-semibold px-6 py-2 rounded-md shadow-sm hover:bg-yellow-500 transition-all text-sm w-full max-w-xs"
-          style="border-radius: 0.5rem"
-          @click="goToStudy"
-        >
-          학습 시작하기
-        </button>
-      </div> -->
 
       <!-- 여기에 최근 거래 내역, 거래 대기 중인 목록 가져오는 가로 버튼 만들기 -->
     </div>
@@ -322,6 +359,7 @@ import { useAssetDataStore } from '@/services/useAssetData'
 import BottomNav from '@/components/FooterNavigation.vue'
 import { useHoldingsData } from '@/services/useHoldingsData'
 import PendingOrders from '@/components/mockTrading/PendingOrders.vue'
+import NoticeCard from '@/components/NoticeCard.vue'
 
 // --- 내 투자내역 카드 관련 상태 및 함수 ---
 const asset = ref({ amount: 0 })
@@ -372,10 +410,12 @@ const fetchStockPrices = async () => {
 // 종목코드 변경 시마다 시세 데이터 갱신
 watch(stockCodes, fetchStockPrices, { immediate: true })
 
+const showDetail = ref(false)
+
 const sortOptions = [
   { key: 'name', label: '가나다 순' },
-  { key: 'profitRateAsc', label: '총 수익률 낮은 순' },
-  { key: 'profitRateDesc', label: '총 수익률 높은 순' },
+  { key: 'profitRateAsc', label: '수익률 낮은 순' },
+  { key: 'profitRateDesc', label: '수익률 높은 순' },
   { key: 'valueAsc', label: '평가손익 낮은 순' },
   { key: 'valueDesc', label: '평가손익 높은 순' },
 ]
