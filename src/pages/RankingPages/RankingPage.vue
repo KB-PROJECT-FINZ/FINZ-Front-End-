@@ -1,11 +1,7 @@
 <template>
   <div class="w-full max-w-[480px] mx-auto pb-24 px-4">
-    <!-- 헤더 -->
-    <div class="py-4 text-center">
-      <h1 class="text-lg font-bold">랭킹</h1>
-    </div>
-
-    <!-- 상단 탭 -->
+    <div class="mt-6"></div>
+    <!-- 상단 탭 (투자 랭킹 보기 / 종목 분석) -->
     <TabSwitcher
       :tabs="[
         { label: '투자 랭킹 보기', route: '/ranking' },
@@ -13,17 +9,17 @@
       ]"
     />
 
-    <div class="h-[3px]"></div>
+    <div class="mt-3"></div>
 
     <!-- 인기 종목 Top10 -->
-    <div class="mb-6">
+    <div class="mt-3 mb-6 overflow-visible">
       <Top10StockList v-if="stocks.length" :stocks="stocks" :isRealtime="true" />
     </div>
 
     <!-- 랭킹 날짜 및 내 성과 -->
     <div class="text-center my-4">
-      <p class="text-sm text-gray-500">🔥 {{ rankingDateRangeText }}</p>
-      <p class="text-lg font-bold">나의 투자 성과는?</p>
+      <p class="text-m font-semibold text-gray-700">🔥 {{ rankingDateRangeText }} 🔥</p>
+      <p class="text-lg font-bold">투자 성과는?</p>
     </div>
 
     <!-- 내 랭킹 카드 -->
@@ -35,24 +31,34 @@
       :trait="myRanking.trait"
     />
 
-    <!-- 주간/성향별 탭 -->
-    <div class="flex gap-3 max-w-md mx-auto mt-6 mb-4">
-      <button
-        v-for="tab in mainRankingTabs"
-        :key="tab"
-        @click="selectMainRankingTab(tab)"
-        :class="[
-          'flex-1 py-2 rounded-md text-sm font-semibold transition',
-          currentRankingType === tab
-            ? 'bg-blue-600 text-white shadow'
-            : 'bg-white text-gray-800 border border-gray-300 hover:bg-blue-100',
-        ]"
-      >
-        {{ tab }}
-      </button>
+    <!-- 주간/성향별 탭 (이미지처럼: 텍스트 + 밑줄 인디케이터) -->
+    <div class="relative max-w-md mx-auto mt-6 mb-2">
+      <div class="grid grid-cols-2 text-center text-sm font-semibold">
+        <button
+          v-for="tab in mainRankingTabs"
+          :key="tab"
+          @click="selectMainRankingTab(tab)"
+          class="py-2 transition-colors"
+          :class="
+            currentRankingType === tab ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'
+          "
+        >
+          {{ tab }}
+        </button>
+      </div>
+
+      <div class="border-b border-gray-200"></div>
+
+      <div
+        class="absolute bottom-0 left-0 h-[2px] bg-blue-600 transition-transform duration-300"
+        :style="{
+          width: 100 / mainRankingTabs.length + '%',
+          transform: `translateX(${activeMainIndex * 100}%)`,
+        }"
+      />
     </div>
 
-    <!-- 성향별 버튼 -->
+    <!-- 성향별 버튼 (원래 스타일 유지) -->
     <div v-if="currentRankingType === '성향별'" class="flex gap-2 max-w-md mx-auto mb-4">
       <button
         v-for="trait in traitTypes"
@@ -142,6 +148,10 @@ const originalTraitToGroup = {
   VAL: '가치 투자형',
 }
 
+const activeMainIndex = computed(() =>
+  Math.max(0, mainRankingTabs.indexOf(currentRankingType.value)),
+)
+
 // 유저 스토어에서 userId 가져오기
 const userStore = useUserStore()
 const userId = computed(() => userStore.userId)
@@ -168,16 +178,16 @@ const traitCodeMap = {
   기타: 'EMOTIONAL',
 }
 
-// ✅ fallback 날짜: **지난주 월요일** (YYYY-MM-DD)
+// 지난주 월요일
 const fallbackDate = (() => {
   const d = new Date()
-  const day = d.getDay() || 7 // Sun=0 → 7
-  d.setDate(d.getDate() - day + 1 - 7) // 지난주 월요일
+  const day = d.getDay() || 7
+  d.setDate(d.getDate() - day + 1 - 7)
   d.setHours(0, 0, 0, 0)
   return d.toISOString().substring(0, 10)
 })()
 
-// 인기 종목은 실시간 데이터가 있으면 우선 사용, 없으면 지난주 데이터 사용
+// 인기 종목은 실시간 우선, 없으면 지난주
 const stocks = computed(() =>
   popularStocksRealtime.value.length > 0
     ? popularStocksRealtime.value
@@ -192,7 +202,7 @@ const rankingDateRangeText = computed(() => {
 const filteredUsers = computed(() => allUsers.value)
 const limitedUsers = computed(() => filteredUsers.value.slice(0, visibleCount.value))
 
-// 랭킹 데이터 불러오기 (주간 전체 랭킹)
+// 랭킹 데이터 불러오기
 async function loadRankingByDate(baseDate) {
   selectedBaseDate.value = baseDate
   popularStocksLastWeek.value = await fetchTop10Stocks(baseDate)
@@ -202,10 +212,8 @@ async function loadRankingByDate(baseDate) {
     allUsers.value = users.map((user) => {
       let traitCode = user.trait
       if (traitCode && originalTraitToGroup[traitCode]) {
-        // 약어인 경우 한글로 변환
         traitCode = originalTraitToGroup[traitCode]
       } else if (!traitCode && user.originalTrait) {
-        // 없으면 originalTrait에서 변환 (필요시)
         traitCode = originalTraitToGroup[user.originalTrait] || '기타'
       }
       const traitKor = traitGroupToKor[traitCode] || '기타'
@@ -217,12 +225,12 @@ async function loadRankingByDate(baseDate) {
   visibleCount.value = 10
 }
 
-// 성향별 랭킹 불러오기
+// 성향별 랭킹
 async function loadGroupedRanking() {
   const grouped = await fetchGroupedWeeklyRanking(selectedBaseDate.value)
   const groupKey = traitCodeMap[currentTraitType.value] || 'EMOTIONAL'
   allUsers.value = (grouped[groupKey] || []).map((user) => {
-    const traitKor = user.trait || '기타' // 대분류 한글명
+    const traitKor = user.trait || '기타'
     const originalTraitKor =
       originalTraitToGroup[user.originalTrait] || user.originalTrait || '기타'
     return { ...user, trait: traitKor, originalTraitKor }
@@ -230,46 +238,37 @@ async function loadGroupedRanking() {
   visibleCount.value = 10
 }
 
-// 메인 탭 선택 시 처리
+// 메인 탭 선택
 async function selectMainRankingTab(tab) {
   currentRankingType.value = tab
   if (tab === '성향별') {
-    currentTraitType.value = '보수형' // 무조건 보수형으로 설정
+    currentTraitType.value = '보수형'
     await loadGroupedRanking()
   } else {
     await loadRankingByDate(selectedBaseDate.value || fallbackDate)
   }
 }
 
-// 성향 버튼 선택 시 처리
+// 성향 버튼 선택
 async function selectTraitType(trait) {
   currentTraitType.value = trait
   await loadGroupedRanking()
 }
 
-// userId가 준비되면 초기 데이터 로딩
+// 초기 로딩
 watch(
   userId,
   async (newUserId) => {
-    if (!newUserId) {
-      console.warn('❗ userId가 아직 설정되지 않았습니다.')
-      return
-    }
-
+    if (!newUserId) return
     try {
-      // ✅ 지난주 월요일로 호출
       const my = await fetchMyRanking(newUserId, fallbackDate)
       if (!my) return
 
       const traitKor = originalTraitToGroup[my.trait] || '미지정'
       selectedBaseDate.value = my.baseDate || fallbackDate
-      myRanking.value = {
-        ...my,
-        trait: traitKor,
-      }
+      myRanking.value = { ...my, trait: traitKor }
       userTraitType.value = traitKor
 
-      // ✅ 실시간이 비어있으면 지난주 데이터 사용(기존 로직 유지)
       popularStocksRealtime.value = await fetchTop10StocksRealtime()
       popularStocksLastWeek.value = await fetchTop10Stocks(selectedBaseDate.value)
 
