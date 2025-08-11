@@ -60,30 +60,24 @@
         >
           <div class="flex items-center gap-4">
             <div class="flex items-center gap-2">
-              <!-- 매수/매도 아이콘 -->
-              <div
-                :class="
-                  order.orderType === 'BUY'
-                    ? 'w-8 h-8 bg-red-100 rounded-full flex items-center justify-center'
-                    : 'w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'
-                "
+              <!-- 종목 이미지/이니셜 -->
+              <span
+                class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0"
               >
-                <svg
-                  :class="
-                    order.orderType === 'BUY' ? 'w-4 h-4 text-red-500' : 'w-4 h-4 text-blue-500'
-                  "
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <img
+                  v-if="order.stockCode && !imageErrors[order.stockCode]"
+                  :src="`https://file.alphasquare.co.kr/media/images/stock_logo/kr/${order.stockCode}.png`"
+                  :alt="`${order.stockName} 로고`"
+                  class="w-full h-full object-cover rounded-full"
+                  @error="handleImageError(order.stockCode)"
+                />
+                <span
+                  v-else
+                  class="w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold"
                 >
-                  <polyline
-                    v-if="order.orderType === 'BUY'"
-                    points="23,6 13.5,15.5 8.5,10.5 1,18"
-                  />
-                  <polyline v-else points="23,18 13.5,8.5 8.5,13.5 1,6" />
-                </svg>
-              </div>
-
+                  {{ getStockInitial(order.stockName) }}
+                </span>
+              </span>
               <div>
                 <div class="flex items-center gap-2">
                   <span class="font-medium text-gray-900">
@@ -166,6 +160,7 @@ export default {
       loading: true,
       error: null,
       intervalId: null,
+      imageErrors: {},
     }
   },
   computed: {
@@ -266,6 +261,22 @@ export default {
 
     formatPrice(price) {
       return new Intl.NumberFormat('ko-KR').format(price)
+    },
+
+    // 이미지 로딩 에러 처리
+    handleImageError(stockCode) {
+      this.imageErrors[stockCode] = true
+    },
+
+    // 종목명에서 이니셜 추출 (이미지 대체용)
+    getStockInitial(stockName) {
+      if (!stockName) return '?'
+      // 한글 종목명의 경우 첫 글자 사용
+      if (/[가-힣]/.test(stockName)) {
+        return stockName.charAt(0)
+      }
+      // 영문의 경우 첫 글자 대문자 사용
+      return stockName.charAt(0).toUpperCase()
     },
   },
 }
