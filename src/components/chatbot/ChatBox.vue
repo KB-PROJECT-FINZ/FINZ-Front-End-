@@ -111,50 +111,57 @@
           </div>
 
           <div class="flex-1 max-w-xs">
-            <!-- 용어 설명 카드 -->
+            <!-- 메시지 타입별 렌더링 -->
             <div v-if="isTermExplanationResponse(msg.content)">
               <TermExplanationCard :content="msg.content" />
             </div>
 
-            <!-- 종목 분석 응답 (카드 형식으로 표시) -->
             <div
               v-else-if="isStockAnalysisResponse(msg.content) || (msg.intentType === 'STOCK_ANALYZE')"
             >
               <StockAnalysisCard :content="msg.content" />
             </div>
 
-            <!-- 키워드 기반 주식 추천 카드 -->
-            <div v-else-if="isStockRecommendationResponse(msg.content)">
+            <!-- 투자 성향 기반 추천 카드 (메시지 내용으로 직접 확인) -->
+            <div v-else-if="msg.content && msg.content.startsWith('🧠 투자 성향 기반 추천드릴게요!')">
               <StockRecommendationCards :content="msg.content" />
             </div>
 
-            <!-- 피드백 분석 카드 -->
+            <!-- 키워드 기반 주식 추천 카드 (메시지 내용으로 직접 확인) -->
+            <div v-else-if="msg.content && msg.content.startsWith('🎯 키워드 기반 추천드릴게요!')">
+              <StockRecommendationCards :content="msg.content" />
+            </div>
+
             <div v-else-if="isFeedbackAnalysisResponse(msg.content)">
               <FeedbackAnalysisCard :content="msg.content" />
             </div>
 
-            <!-- 일반 메시지 (PORTFOLIO_ANALYZE 등 포함) -->
+            <!-- 일반 메시지 -->
             <div
               v-else-if="!msg.type"
               class="bg-white/90 backdrop-blur-md rounded-3xl p-4 max-w-sm shadow-lg border border-white/40"
             >
-              <p
+              <!-- 분석 기간 표시 -->
+              <div
                 v-if="msg.requestedPeriod && msg.intentType === 'PORTFOLIO_ANALYZE'"
                 class="text-xs text-purple-600 font-medium mb-2 bg-purple-50/80 px-2 py-1 rounded-full inline-block backdrop-blur-sm"
               >
                 📅 사용자 지정 분석 기간: {{ msg.requestedPeriod }}일
-              </p>
+              </div>
               <p class="text-gray-700 text-sm">{{ msg.content }}</p>
             </div>
 
             <!-- 버튼 메시지 -->
             <div v-else-if="msg.type === 'buttons'" class="space-y-3">
+              <!-- 메시지 텍스트 -->
               <div
                 v-if="msg.text"
                 class="bg-white/90 backdrop-blur-md rounded-3xl p-4 max-w-sm shadow-lg border border-white/40"
               >
                 <p class="text-gray-700 text-sm">{{ msg.text }}</p>
               </div>
+              
+              <!-- 버튼 그리드 -->
               <div class="grid grid-cols-2 gap-2">
                 <button
                   v-for="(btn, idx) in msg.buttons"
@@ -169,7 +176,7 @@
                       <component :is="getButtonIcon(btn.intent)" class="text-blue-600 w-3 h-3" />
                     </div>
                     <span class="text-gray-700 font-medium text-xs">{{
-                      btn.label.replace(/[🎯🔍🔙🧠🧪📊]/g, '').trim()
+                      btn.label.replace(/[🎯🔍🔙🧠🧪📊📅🗓📈]/g, '').trim()
                     }}</span>
                   </div>
                 </button>
@@ -297,6 +304,23 @@ const isTermExplanationResponse = (content) => {
   return false
 }
 
+// 투자 성향 기반 추천 응답 감지 함수
+const isProfileBasedRecommendationResponse = (content) => {
+  if (!content || typeof content !== 'string') {
+    return false
+  }
+
+  console.log('🧠 isProfileBasedRecommendationResponse 호출됨:', content.substring(0, 100) + '...')
+
+  // 투자 성향 기반 추천인지 확인
+  if (content.startsWith('🧠 투자 성향 기반 추천드릴게요!')) {
+    console.log('✅ 투자 성향 기반 추천 감지됨')
+    return true
+  }
+
+  return false
+}
+
 // 키워드 기반 주식 추천 응답 감지 함수
 const isStockRecommendationResponse = (content) => {
   if (!content || typeof content !== 'string') {
@@ -305,9 +329,15 @@ const isStockRecommendationResponse = (content) => {
 
   console.log('🎯 isStockRecommendationResponse 호출됨:', content.substring(0, 100) + '...')
 
-  // 투자 성향 기반 추천이나 키워드 기반 추천인지 확인
-  if (content.startsWith('🧠 투자 성향 기반 추천드릴게요!') || content.startsWith('🎯 키워드 기반 추천드릴게요!')) {
-    console.log('✅ 투자 성향/키워드 기반 추천 감지됨')
+  // 투자 성향 기반 추천인지 먼저 확인 (이것은 키워드 기반 추천이 아님)
+  if (content.startsWith('🧠 투자 성향 기반 추천드릴게요!')) {
+    console.log('❌ 투자 성향 기반 추천이므로 키워드 기반 추천이 아님')
+    return false
+  }
+
+  // 키워드 기반 추천인지 확인
+  if (content.startsWith('🎯 키워드 기반 추천드릴게요!')) {
+    console.log('✅ 키워드 기반 추천 감지됨')
     return true
   }
 
@@ -564,36 +594,66 @@ onMounted(async () => {
 async function fetchGPT(prompt, explicitIntent = null) {
   loading.value = true
   chatStore.messages.push({ role: 'user', content: prompt })
+  
+  console.log('🚀 ====== fetchGPT 시작 ======')
   console.log('📤 서버로 보낼 userId:', userId.value)
+  console.log('📤 explicitIntent:', explicitIntent)
+  console.log('📤 prompt:', prompt)
 
   let intentType = null
 
   if (explicitIntent) {
     intentType = explicitIntent
+    console.log('✅ explicitIntent 사용:', intentType)
   } else if (awaitingTermExplain.value) {
     intentType = 'TERM_EXPLAIN'
     awaitingTermExplain.value = false
+    console.log('✅ TERM_EXPLAIN intent 설정')
   } else if (awaitingKeyword.value) {
     intentType = 'RECOMMEND_KEYWORD'
     awaitingKeyword.value = false
+    console.log('✅ RECOMMEND_KEYWORD intent 설정')
   } else if (awaitingStockAnalyze.value) {
     intentType = 'STOCK_ANALYZE'
     awaitingStockAnalyze.value = false
+    console.log('✅ STOCK_ANALYZE intent 설정')
   }
 
   try {
     console.log('🧾 최종 intentType 전송값:', intentType)
-
-    const res = await axios.post('/api/chatbot/message', {
+    
+    const requestData = {
       userId: userId.value,
       sessionId: chatStore.sessionId,
       message: prompt,
       intentType: intentType,
-    })
+    }
+    
+    console.log('🧾 서버로 보낼 데이터:', JSON.stringify(requestData, null, 2))
+
+    const res = await axios.post('/api/chatbot/message', requestData)
+
+    console.log('📦 서버 응답 전체:', res.data)
+    console.log('📦 응답 데이터 타입:', typeof res.data)
+    console.log('📦 응답 키들:', Object.keys(res.data))
 
     if (res?.data?.content) {
       console.log('📦 받은 응답 내용:', res.data.content)
       console.log('📦 받은 intentType:', res.data.intentType)
+      console.log('📦 응답 내용 길이:', res.data.content.length)
+      console.log('📦 응답 내용 시작 부분:', res.data.content.substring(0, 100))
+      console.log('📦 응답 내용 끝 부분:', res.data.content.substring(res.data.content.length - 100))
+      
+      // 응답 내용에 키워드 기반 추천 메시지가 포함되어 있는지 확인
+      if (res.data.content.includes('키워드 기반 추천드릴게요')) {
+        console.log('⚠️ 경고: 키워드 기반 추천 메시지가 포함됨!')
+        console.log('⚠️ 요청한 intentType:', intentType)
+        console.log('⚠️ 서버 응답 intentType:', res.data.intentType)
+      }
+      
+      if (res.data.content.includes('투자 성향 기반 추천드릴게요')) {
+        console.log('✅ 성공: 투자 성향 기반 추천 메시지가 포함됨!')
+      }
       
       chatStore.messages.push({
         role: 'bot',
@@ -619,14 +679,17 @@ async function fetchGPT(prompt, explicitIntent = null) {
       chatStore.intentType = res.data.intentType
       console.log('📦 응답 전체:', res.data)
     } else {
+      console.log('❌ 응답 내용이 비어있음')
       chatStore.messages.push({ role: 'bot', content: '❌ GPT 응답이 비어 있습니다.' })
     }
   } catch (error) {
-    console.log(userId)
+    console.log('❌ 에러 발생 - userId:', userId.value)
+    console.log('❌ 에러 발생 - intentType:', intentType)
     chatStore.messages.push({ role: 'bot', content: '⚠️ 서버 오류가 발생했어요.' })
     console.error('❌ GPT fetch 실패:', error)
   } finally {
     loading.value = false
+    console.log('🚀 ====== fetchGPT 종료 ======')
   }
 }
 
@@ -682,7 +745,7 @@ async function handleButtonIntent(btn) {
             href: '/investment-test/retest',
           },
           {
-            label: '�� 내 성향 기반 추천 받아보기',
+            label: '🧠 내 성향 기반 추천 받아보기',
             intent: 'RECOMMEND_PROFILE',
             message: '내 투자 성향으로 종목 추천해줘',
           },
@@ -691,6 +754,8 @@ async function handleButtonIntent(btn) {
       })
       return
     }
+    
+    // 투자 성향 확인
     const risk = userStore.riskType
     if (!risk) {
       chatStore.messages.push({
@@ -699,8 +764,14 @@ async function handleButtonIntent(btn) {
       })
       return
     }
+    
+    // 투자 성향 기반 추천 요청 - 더 명확한 메시지로
     const message = `나의 투자 성향인 ${risk}에 맞는 종목을 추천해줘`
-    await fetchGPT(message, btn.intent)
+    console.log('🎯 투자 성향 기반 추천 요청:', message)
+    console.log('🎯 전송할 intentType: RECOMMEND_PROFILE')
+    
+    // 명시적으로 RECOMMEND_PROFILE 전달
+    await fetchGPT(message, 'RECOMMEND_PROFILE')
     return
   }
 

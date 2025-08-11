@@ -77,10 +77,10 @@ const props = defineProps({
 
 // 추천 타입 감지
 const getRecommendationType = () => {
-  // 메시지 앞부분의 안내 메시지를 기반으로 추천 타입 감지
-  if (props.content.startsWith('투자 성향 기반 추천드릴게요!')) {
+  // 메시지 앞부분의 안내 메시지를 기반으로 추천 타입 감지 (이모지 포함)
+  if (props.content.startsWith('🧠 투자 성향 기반 추천드릴게요!')) {
     return '투자 성향 기반 추천'
-  } else if (props.content.startsWith('키워드 기반 추천드릴게요!')) {
+  } else if (props.content.startsWith('🎯 키워드 기반 추천드릴게요!')) {
     return '키워드 기반 추천'
   }
 
