@@ -4,7 +4,7 @@
       class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl p-4 border border-blue-200/30"
     >
       <p class="text-base text-gray-700 font-semibold">
-        📈 {{ getRecommendationType() }}을 추천드릴게요!
+        📈 {{ getRecommendationType() }}{{ getRecommendationType() === '키워드 기반 추천' ? '드릴게요!' : '을 추천드릴게요!' }}
       </p>
     </div>
     <div class="grid gap-4">
@@ -27,7 +27,7 @@
                 stock.riskLevel === '중간',
               'bg-gradient-to-r from-red-400 to-pink-500 text-white': stock.riskLevel === '높음',
             }"
-            class="px-3 py-1 text-xs rounded-full font-semibold shadow-sm"
+            class="px-3 py-1 text-xs rounded-full font-semibold shadow-sm min-w-[80px] text-center flex-shrink-0"
           >
             위험도: {{ stock.riskLevel }}
           </span>
@@ -77,8 +77,35 @@ const props = defineProps({
 
 // 추천 타입 감지
 const getRecommendationType = () => {
+  // 메시지 앞부분의 안내 메시지를 기반으로 추천 타입 감지
+  if (props.content.startsWith('🧠 투자 성향 기반 추천드릴게요!')) {
+    return '투자 성향 기반 추천'
+  } else if (props.content.startsWith('🎯 키워드 기반 추천드릴게요!')) {
+    return '키워드 기반 추천'
+  }
+
+  // 종목 분석 응답인지 먼저 확인
+  if (props.content.includes('위험도:') && props.content.includes('AI 분석 Tip') && props.content.includes('향후 전망')) {
+    return '' // 종목 분석 응답은 추천 타입이 아님
+  }
+
+  // 종목명이 포함되어 있고 위험도가 포함된 경우도 확인
+  if (props.content.includes('위험도:') && (props.content.includes('테슬라') || props.content.includes('TSLA') || props.content.includes('삼성전자') || props.content.includes('005930'))) {
+    return '' // 종목 분석 응답은 추천 타입이 아님
+  }
+
   try {
-    const analysisData = JSON.parse(props.content)
+    // 메시지 앞부분의 안내 메시지 제거
+    let jsonContent = props.content
+    
+    // "🧠 투자 성향 기반 추천드릴게요!" 또는 "🎯 키워드 기반 추천드릴게요!" 제거
+    if (jsonContent.startsWith('🧠 투자 성향 기반 추천드릴게요!')) {
+      jsonContent = jsonContent.replace('🧠 투자 성향 기반 추천드릴게요!\n\n', '')
+    } else if (jsonContent.startsWith('🎯 키워드 기반 추천드릴게요!')) {
+      jsonContent = jsonContent.replace('🎯 키워드 기반 추천드릴게요!\n\n', '')
+    }
+    
+    const analysisData = JSON.parse(jsonContent)
     // JSON 형태에서 추천 타입 감지
     if (analysisData && analysisData.length > 0) {
       const firstStock = analysisData[0]
@@ -118,7 +145,17 @@ const extractStockName = (reason) => {
 // JSON 파싱 및 카드 데이터 변환
 const stocks = computed(() => {
   try {
-    const analysisData = JSON.parse(props.content)
+    // 메시지 앞부분의 안내 메시지 제거
+    let jsonContent = props.content
+    
+    // "🧠 투자 성향 기반 추천드릴게요!" 또는 "🎯 키워드 기반 추천드릴게요!" 제거
+    if (jsonContent.startsWith('🧠 투자 성향 기반 추천드릴게요!')) {
+      jsonContent = jsonContent.replace('🧠 투자 성향 기반 추천드릴게요!\n\n', '')
+    } else if (jsonContent.startsWith('🎯 키워드 기반 추천드릴게요!')) {
+      jsonContent = jsonContent.replace('🎯 키워드 기반 추천드릴게요!\n\n', '')
+    }
+    
+    const analysisData = JSON.parse(jsonContent)
     console.log('📊 JSON 파싱된 종목 데이터:', analysisData)
 
     return analysisData.map((stock) => ({
