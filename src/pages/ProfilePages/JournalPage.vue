@@ -445,9 +445,13 @@ function refreshJournals() {
 <style>
 @import 'v-calendar/style.css';
 
+/* 선택된 날짜의 타원형 테두리(하이라이트) 숨김 처리 */
 .selected-date-circle {
-  color: #fff !important;
-  border-radius: 50% !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+  color: inherit !important;
 }
 .vc-container {
   width: 100% !important;
@@ -473,5 +477,26 @@ function refreshJournals() {
 }
 .stock-item:active {
   cursor: grabbing;
+}
+/* v-calendar dot 위치 조정: dot을 날짜 아래로 내림 */
+/* v-calendar dot 위치 조정: dot을 날짜 아래로 내림 */
+.vc-day-content .vc-day-dots {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -8px; /* dot을 더 아래로 내림 */
+  top: auto !important;
+  z-index: 1;
+}
+.vc-day-content {
+  position: relative;
+  min-height: 44px; /* 날짜 셀 높이 확보 */
+}
+/* 한 주(week row) 간격 넓히기 */
+.vc-weeks {
+  row-gap: 18px !important;
+}
+.vc-week {
+  margin-bottom: 10px !important;
 }
 </style>

@@ -59,8 +59,8 @@
             </div>
           </div>
 
-          <div class="text-sm text-gray-900 mb-1">{{ profile.nickname }}</div>
-          <div class="text-xs text-gray-700 mb-6">{{ profile.type }} {{ nameKr }}</div>
+          <div class="text-base font-bold text-gray-900">{{ profile.nickname }}</div>
+          <div class="text-xs font-bold text-gray-700 mb-6">{{ profile.type }} {{ nameKr }}</div>
         </div>
       </section>
     </div>
@@ -147,17 +147,16 @@
       </router-link>
     </section>
 
-    <footer-navigation></footer-navigation>
-
     <!-- 로그아웃 버튼 (네비게이션 아래) -->
-    <div class="w-full flex justify-center mt-4 mb-8">
+    <div class="w-full flex justify-center mt-8 mb-8">
       <button
         @click="handleLogout"
-        class="w-[90%] max-w-md h-12 bg-gray-100 text-gray-500 font-bold rounded-xl shadow-sm hover:bg-gray-200 transition-colors"
+        class="w-[90%] max-w-md h-12 bg-gray-100 text-gray-500 rounded-xl shadow-sm hover:bg-gray-200 transition-colors"
       >
         Log out
       </button>
     </div>
+    <footer-navigation></footer-navigation>
   </div>
 </template>
 
