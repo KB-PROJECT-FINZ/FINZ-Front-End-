@@ -127,6 +127,7 @@ import {
   getRankingWeekLabel,
 } from '@/services/rankingService'
 
+/** 영문 그룹키 -> 한글 간단 라벨 */
 const traitGroupToKor = {
   AGGRESSIVE: '공격형',
   BALANCED: '균형형',
@@ -134,6 +135,55 @@ const traitGroupToKor = {
   ANALYTICAL: '특수형',
   EMOTIONAL: '기타',
 }
+
+/** 탭 라벨 -> 영문 그룹키 */
+const traitCodeMap = {
+  보수형: 'CONSERVATIVE',
+  균형형: 'BALANCED',
+  공격형: 'AGGRESSIVE',
+  특수형: 'ANALYTICAL',
+  기타: 'EMOTIONAL',
+}
+
+/** 세부 성향 코드 -> 세부 한글명 (닉네임 옆 괄호용) */
+const originalTraitKo = {
+  AGR: '적극적 성장형',
+  AID: '적극적 안정형',
+  BGT: '균형 잡힌 도전형',
+  BSS: '균형 잡힌 수익 추구형',
+  CAG: '신중한 성장형',
+  CSD: '신중한 안정형',
+  DTA: '단타 추구형',
+  EXP: '실험적 모험가형',
+  IND: '인덱스 수동형',
+  INF: '정보 수집형',
+  SOC: '사회 책임형',
+  SYS: '시스템 트레이더형',
+  TEC: '기술적 분석형',
+  THE: '테마 투자형',
+  VAL: '가치 투자형',
+}
+
+/** 세부 성향 코드 -> 그룹키(영문) */
+const originalToGroupKey = {
+  AGR: 'AGGRESSIVE',
+  DTA: 'AGGRESSIVE',
+  EXP: 'AGGRESSIVE',
+  THE: 'AGGRESSIVE',
+  AID: 'BALANCED',
+  BGT: 'BALANCED',
+  BSS: 'BALANCED',
+  CAG: 'CONSERVATIVE',
+  CSD: 'CONSERVATIVE',
+  IND: 'CONSERVATIVE',
+  VAL: 'CONSERVATIVE',
+  INF: 'ANALYTICAL',
+  SYS: 'ANALYTICAL',
+  TEC: 'ANALYTICAL',
+  SOC: 'EMOTIONAL',
+}
+
+/** (기존) 세부 코드 -> 세부 한글명 매핑: 주간 쪽에서 사용 중이면 유지 */
 const originalTraitToGroup = {
   AGR: '적극적 성장형',
   AID: '적극적 안정형',
@@ -169,15 +219,7 @@ const visibleCount = ref(10)
 const mainRankingTabs = ['주간', '성향별']
 const currentRankingType = ref('주간')
 const traitTypes = ['보수형', '균형형', '공격형', '특수형', '기타']
-const currentTraitType = ref('')
-
-const traitCodeMap = {
-  보수형: 'CONSERVATIVE',
-  균형형: 'BALANCED',
-  공격형: 'AGGRESSIVE',
-  특수형: 'ANALYTICAL',
-  기타: 'EMOTIONAL',
-}
+const currentTraitType = ref('보수형')
 
 const fallbackDate = (() => {
   const d = new Date()
@@ -223,28 +265,45 @@ async function loadRankingByDate(baseDate) {
   visibleCount.value = 10
 }
 
+/** ✅ 성향별 로딩 함수 — 이 부분만 교체 */
 async function loadGroupedRanking() {
   const grouped = await fetchGroupedWeeklyRanking(selectedBaseDate.value)
+
+  // 현재 탭(한글 라벨) → 그룹 키(영문)
   const groupKey = traitCodeMap[currentTraitType.value] || 'EMOTIONAL'
+
+  // 해당 그룹의 유저 리스트를 표준화해서 화면 표시용으로 매핑
   allUsers.value = (grouped[groupKey] || []).map((user) => {
-    const traitKor = user.trait || '기타'
-    const originalTraitKor =
-      originalTraitToGroup[user.originalTrait] || user.originalTrait || '기타'
-    return { ...user, trait: traitKor, originalTraitKor }
+    // user.trait가 이미 그룹 키(영문)일 수도 있고, 세부 코드만 있을 수도 있음
+    const deducedGroupKey =
+      user.trait || (user.originalTrait ? originalToGroupKey[user.originalTrait] : null) || groupKey
+
+    const traitKor = traitGroupToKor[deducedGroupKey] || currentTraitType.value
+    const originalTraitKor = user.originalTrait
+      ? originalTraitKo[user.originalTrait] || user.originalTrait
+      : ''
+
+    return {
+      ...user,
+      // 카드 배지용 간단 라벨(보수형/균형형/공격형/특수형/기타)
+      trait: traitKor,
+      // 닉네임 옆 세부 한글명 (컴포넌트 props는 originalTrait 그대로 사용)
+      originalTrait: originalTraitKor,
+    }
   })
+
   visibleCount.value = 10
 }
 
 async function selectMainRankingTab(tab) {
   currentRankingType.value = tab
   if (tab === '성향별') {
-    currentTraitType.value = '보수형'
+    currentTraitType.value = '보수형' // ✅ 항상 보수형부터
     await loadGroupedRanking()
   } else {
     await loadRankingByDate(selectedBaseDate.value || fallbackDate)
   }
 }
-
 async function selectTraitType(trait) {
   currentTraitType.value = trait
   await loadGroupedRanking()
@@ -255,19 +314,32 @@ watch(
   async (newUserId) => {
     if (!newUserId) return
     try {
+      // 1) 내 랭킹 조회
       const my = await fetchMyRanking(newUserId, fallbackDate)
+      console.log('my raw:', my)
       if (!my) return
 
-      const traitKor = originalTraitToGroup[my.trait] || '미지정'
-      selectedBaseDate.value = my.baseDate || fallbackDate
-      myRanking.value = { ...my, trait: traitKor }
-      userTraitType.value = traitKor
+      // 2) 표시용 성향 텍스트 계산
+      // - detailed: 세부 성향 한글명(예: 적극적 성장형). originalTrait 없으면 그룹 라벨로 폴백
+      // - groupLabel: 그룹 라벨(보수형/균형형/공격형/특수형/기타)
+      const groupLabel = traitGroupToKor[(my.trait || '').toUpperCase()] || '미지정'
+      const detailed = (my.originalTrait && originalTraitKo[my.originalTrait]) || groupLabel
 
+      // 3) 상태 갱신
+      selectedBaseDate.value = my.baseDate || fallbackDate
+      myRanking.value = { ...my, trait: detailed } // 카드에는 세부 성향 표시
+      userTraitType.value = groupLabel // 성향별 탭 기본 선택용(그룹 라벨)
+
+      // 4) 인기 종목(실시간/지난주) 로딩
       popularStocksRealtime.value = await fetchTop10StocksRealtime()
       popularStocksLastWeek.value = await fetchTop10Stocks(selectedBaseDate.value)
 
+      // 5) 주간/성향별 랭킹 로딩
       await loadRankingByDate(selectedBaseDate.value)
-      currentTraitType.value = userTraitType.value || traitTypes[0]
+
+      // 6) 성향별 탭 기본 선택 (보수형 등 그룹 라벨)
+      //    만약 성향별 탭으로 바로 들어갈 수 있다면, 아래 한 줄이면 보수형/균형형… 중 내 그룹으로 기본 선택됨
+      currentTraitType.value = userTraitType.value || '보수형'
     } catch (error) {
       console.error('❌ 초기 데이터 로딩 에러:', error)
     }

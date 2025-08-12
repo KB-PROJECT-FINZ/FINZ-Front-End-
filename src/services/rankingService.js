@@ -48,7 +48,8 @@ export async function fetchMyRanking(userId, baseDate) {
       rank: data.ranking,
       gainRate: data.gainRate,
       topPercent: data.topPercent,
-      trait: data.riskType || '미지정',
+      trait: data.riskType, // 그룹키 (AGGRESSIVE 등) 그대로 보관
+      originalTrait: data.originalTrait, // ✅ 세부 성향 코드 (AGR 등)
       baseDate: data.baseDate ?? fallbackBaseDate,
     }
   } catch {
@@ -77,6 +78,7 @@ export async function fetchWeeklyRanking(baseDate) {
 export async function fetchGroupedWeeklyRanking(baseDate) {
   try {
     const { data } = await axios.get('/api/ranking/weekly/grouped', { params: { baseDate } })
+    console.log('grouped ranking keys:', Object.keys(data))
     const parsed = {}
     for (const [groupKey, users] of Object.entries(data || {})) {
       parsed[groupKey] = (users || []).map(mapUser)
