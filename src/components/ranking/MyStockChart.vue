@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-[300px] sm:h-[340px] p-2">
+  <div class="w-full h-[300px] sm:h-[340px] p-2 rounded-md shadow-md">
     <canvas ref="canvas" class="w-full h-full"></canvas>
   </div>
 </template>

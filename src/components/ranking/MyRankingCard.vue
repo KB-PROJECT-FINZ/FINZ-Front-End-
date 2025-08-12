@@ -1,39 +1,59 @@
 <template>
-  <div
-    class="w-full overflow-hidden bg-gradient-to-r from-blue-400 to-blue-600 text-white rounded-2xl p-4 shadow-md"
-  >
-    <!-- 상단: 타이틀과 성향 -->
-    <div class="flex justify-between items-start">
-      <p class="text-sm">내 투자 현황</p>
-      <span class="bg-white text-blue-600 text-xs px-2 py-1 rounded-md font-semibold">
+  <!-- 연한 파란색 배경 카드 -->
+  <div class="w-full bg-blue-50 rounded-2xl p-4 shadow">
+    <!-- 헤더: 제목 + 성향 pill -->
+    <div class="flex items-start justify-between">
+      <p class="text-sm text-gray-700">내 투자 현황</p>
+      <span
+        class="px-2 py-1 text-xs font-semibold rounded-md border border-blue-100 bg-white text-blue-700"
+      >
         {{ trait || '미지정' }}
       </span>
     </div>
 
-    <!-- 본문 -->
-    <div class="mt-4 flex justify-around text-center">
-      <div>
-        <div class="text-2xl font-bold">{{ rank ?? '-' }}위</div>
-        <div class="text-sm">전체 순위</div>
+    <!-- 본문: 3칸 -->
+    <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+      <!-- 전체 순위 -->
+      <div class="bg-white rounded-xl p-3">
+        <div class="text-[11px] text-gray-500">전체 순위</div>
+        <div class="mt-1 text-lg font-bold text-gray-900 leading-tight">{{ rank ?? '-' }}위</div>
       </div>
-      <div>
-        <div class="text-green-200 text-lg font-semibold">
-          {{ gainRate >= 0 ? '+' : '' }}{{ gainRate ?? 0 }}%
+
+      <!-- 총 수익률 -->
+      <div class="bg-white rounded-xl p-3">
+        <div class="text-[11px] text-gray-500">총 수익률</div>
+        <div :class="rateClass" class="mt-1 text-lg font-bold leading-tight">
+          {{ signedPercent(gainRate) }}
         </div>
-        <div class="text-sm">총 수익률</div>
       </div>
-      <div>
-        <div class="text-sm">상위 {{ topPercent ?? 0 }}%</div>
-        <div class="text-sm">백분위</div>
+
+      <!-- 백분위 -->
+      <div class="bg-white rounded-xl p-3">
+        <div class="text-[11px] text-gray-500">백분위</div>
+        <div class="mt-1 text-lg font-bold text-gray-900 leading-tight">
+          상위 {{ topPercent ?? 0 }}%
+        </div>
       </div>
     </div>
   </div>
 </template>
+
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   rank: Number,
   gainRate: Number,
   topPercent: Number,
   trait: String,
 })
+
+const rateClass = computed(() => ((props.gainRate ?? 0) >= 0 ? 'text-red-500' : 'text-blue-600'))
+
+function signedPercent(v) {
+  if (v === null || v === undefined) return '-'
+  const n = Number(v)
+  const sign = n > 0 ? '+' : ''
+  return `${sign}${n.toFixed(2)}%`
+}
 </script>
