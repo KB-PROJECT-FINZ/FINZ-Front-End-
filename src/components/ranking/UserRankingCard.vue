@@ -1,11 +1,23 @@
 <template>
-  <div class="w-full bg-white rounded-xl p-4 shadow flex items-center gap-4">
-    <!-- 순위 표시 -->
-    <div class="text-lg font-bold w-10 text-center text-gray-700 whitespace-nowrap">
-      {{ rank !== null && rank !== undefined ? rank + '위' : '' }}
+  <!-- 왕관이 밖으로 나와도 보이도록 overflow-visible -->
+  <div
+    class="w-full bg-white rounded-xl p-4 shadow flex items-center gap-4 relative overflow-visible"
+  >
+    <!-- 순위 + 왕관 기준점 -->
+    <div class="relative w-12 text-center">
+      <!-- 👑 1위 왕관: '1위' 바로 위 중앙, 크게 -->
+      <img
+        v-if="rank === 1"
+        :src="crownIcon"
+        alt="crown"
+        class="absolute -top-8 left-[18px] w-18 h-18 z-10"
+      />
+      <div class="text-lg font-bold text-gray-700 whitespace-nowrap">
+        {{ rank !== null && rank !== undefined ? rank + '위' : '' }}
+      </div>
     </div>
 
-    <!-- 프로필 이미지 또는 SVG 아이콘 -->
+    <!-- 프로필 -->
     <div
       class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gray-100"
     >
@@ -32,13 +44,13 @@
       </svg>
     </div>
 
-    <!-- 닉네임 + 원래 성향 -->
+    <!-- 닉네임 + 원래 성향 (그대로 유지) -->
     <div class="flex-1">
       <p class="text-sm font-bold">
         {{ nickname }}
-        <span class="text-gray-500"
-          >( {{ this.originalTraitToKor[originalTrait] || originalTrait }})</span
-        >
+        <span class="text-gray-500">
+          ( {{ originalTraitToKor[originalTrait] || originalTrait }} )
+        </span>
       </p>
       <span class="text-xs text-white px-2 py-0.5 rounded" :class="traitBgClass">
         {{ trait }}
@@ -53,6 +65,8 @@
 </template>
 
 <script>
+import crownIcon from '@/assets/crown.svg'
+
 export default {
   props: {
     rank: Number,
@@ -64,6 +78,7 @@ export default {
   },
   data() {
     return {
+      crownIcon,
       imageError: false,
       originalTraitToKor: {
         AGR: '적극적 성장형',
@@ -86,7 +101,6 @@ export default {
   },
   computed: {
     hasValidImage() {
-      // 이미지가 없거나 에러가 난 경우 false 반환해서 SVG 보이도록
       return (
         this.image &&
         this.image !== 'null' &&
@@ -126,7 +140,7 @@ export default {
   },
   methods: {
     onImageError() {
-      this.imageError = true // 이미지 로딩 실패하면 에러 플래그 설정해서 fallback 보여줌
+      this.imageError = true
     },
   },
 }
