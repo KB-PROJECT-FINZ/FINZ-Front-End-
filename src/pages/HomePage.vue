@@ -1,13 +1,10 @@
 <template>
   <div class="min-h-screen pb-20 bg-gray-100">
+    <!-- <div class="min-h-screen pb-20 bg-[#f2f6fd]"> -->
     <div class="flex flex-col items-center px-6 pt-6">
-      <!-- 상단 로고 + 인사말 -->
-      <div class="w-full max-w-[420px]">
-        <img src="@/assets/finz.png" alt="finz" class="w-12 mb-2" />
-        <p class="text-lg font-normal">
-          안녕하세요, <span class="font-black">{{ nickname }}</span
-          >님!
-        </p>
+      <div class="w-full max-w-[420px] flex items-center justify-between mb-2">
+        <img src="@/assets/finz.png" alt="finz" class="w-12 ml-1" />
+        <BellIcon class="w-7 h-7 text-gray-500 cursor-pointer" />
       </div>
 
       <!-- 안내사항 카드 -->
@@ -15,22 +12,22 @@
         v-if="showNotice"
         @close="showNotice = false"
         @goToLearning="goToLearning"
-        class="w-full max-w-[420px] mx-auto p-5 mb-4 bg-white rounded-2xl shadow"
+        class="w-full max-w-[420px] p-4 mb-4 bg-white rounded-2xl shadow"
       >
         <div class="w-full flex flex-col items-left">
-          <p class="text-base mb-2 text-gray-800">
-            <span class="font-extrabold">{{ nickname }}</span
-            ><span class="font-medium">님,</span><br />
-            <span class="font-medium">
-              퀴즈를 풀면 <span class="font-extrabold">8000P</span>를 드려요!
+          <p class="text-lg mb-2 text-gray-800 text-center mt-6">
+            <span class="font-medium block">퀴즈를 풀면</span>
+            <span class="font-medium block">
+              <span class="text-blue-600 font-bold">8000C</span>를 드려요!
             </span>
           </p>
-          <div class="flex justify-center">
-            <img
-              src="@/assets/krw_image.png"
-              alt="KRW"
-              class="w-48 h-48 object-contain"
-              style="max-width: 220px; max-height: 220px"
+          <div class="flex justify-center w-full">
+            <DotLottieVue
+              style="height: 200px; width: 200px"
+              speed="0.9"
+              autoplay
+              loop
+              src="https://lottie.host/c404786e-2d84-4239-a092-5fa55366d5a7/DRPRrsgJH4.json"
             />
           </div>
         </div>
@@ -38,35 +35,47 @@
       </NoticeCard>
 
       <!-- 서비스 기능 연결 카드 Swiper -->
-      <div class="w-full max-w-[420px] mx-auto mb-4">
+      <div class="w-full max-w-[420px] mx-auto mt-2 mb-4">
         <div class="bg-white rounded-2xl shadow p-5">
-          <p class="text-base font-bold mb-1">
-            <span class="text-blue-600">{{ nickname }}</span
-            >님, Finz가 처음이신가요?
+          <p class="text-base font-medium mb-1">
+            <span class="text-blue-600 font-bold">{{ nickname }}</span
+            >님, finz가 처음이신가요?
           </p>
-          <p class="text-base font-bold mb-4">아래 내용을 차근차근 살펴보세요.</p>
-          <swiper :slides-per-view="1.9" :space-between="12" :loop="false" class="w-full">
-            <swiper-slide v-for="feature in serviceFeatures" :key="feature.title">
-              <button
-                class="flex items-center bg-gray-50 rounded-xl px-4 py-3 mb-2 shadow-sm hover:bg-blue-50 transition-all min-h-[64px]"
-                @click="feature.onClick"
+          <p class="text-base font-medium mb-4">아래 내용을 차근차근 살펴보세요.</p>
+          <div v-if="swiperReady">
+            <Swiper
+              :slides-per-view="2"
+              :space-between="5"
+              :loop="true"
+              :initial-slide="0"
+              :autoplay="{ delay: 1000, disableOnInteraction: false, pauseOnMouseEnter: true }"
+              :speed="4000"
+              :allow-touch-move="true"
+              class="w-full"
+            >
+              <SwiperSlide
+                v-for="(feature, idx) in serviceFeatures"
+                :key="feature.title + '-' + idx"
               >
-                <span
-                  class="flex items-center justify-center w-10 h-10 rounded-lg bg-white mr-3 border border-gray-200"
+                <button
+                  class="flex items-center bg-gray-50 rounded-xl px-2 py-3 mb-2 shadow-sm hover:bg-blue-50 transition-all min-h-[64px]"
+                  @click="feature.onClick"
                 >
-                  <img
-                    :src="feature.icon"
-                    :alt="feature.title + ' 아이콘'"
-                    class="w-6 h-6 object-contain"
-                  />
-                </span>
-                <span class="flex flex-col items-start text-left">
-                  <span class="font-semibold text-sm text-gray-900">{{ feature.title }}</span>
-                  <span class="text-xs text-gray-500 mt-0.5">{{ feature.desc }}</span>
-                </span>
-              </button>
-            </swiper-slide>
-          </swiper>
+                  <span class="flex items-center justify-center w-10 h-10 rounded-lg mr-1">
+                    <img
+                      :src="feature.icon"
+                      :alt="feature.title + ' 아이콘'"
+                      class="w-9 h-9 object-contain"
+                    />
+                  </span>
+                  <span class="flex flex-col items-start text-left">
+                    <span class="font-semibold text-sm text-gray-900">{{ feature.title }}</span>
+                    <span class="text-xs text-gray-500 mt-0.5">{{ feature.desc }}</span>
+                  </span>
+                </button>
+              </SwiperSlide>
+            </Swiper>
+          </div>
         </div>
       </div>
 
@@ -136,9 +145,8 @@
           <div class="relative inline-block flex-shrink-0" ref="sortDropdownRoot">
             <button
               @click="showSortDropdown = !showSortDropdown"
-              class="py-2 text-xs font-medium rounded-md bg-white text-gray-700 flex items-center gap-1 min-w-[120px] h-10"
+              class="py-2 text-sm font-medium text-gray-700 flex items-center gap-1 min-w-[120px] h-10"
               type="button"
-              style="box-shadow: 0 1px 2px 0 rgb(16 30 115 / 0.04)"
             >
               <span>{{ sortOptions.find((opt) => opt.key === currentSort)?.label || '정렬' }}</span>
               <svg
@@ -163,7 +171,7 @@
                 <li v-for="sort in sortOptions" :key="sort.key">
                   <button
                     @click="selectSortOption(sort.key)"
-                    class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 rounded-md"
+                    class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-md"
                     :class="currentSort === sort.key ? 'text-blue-600 font-bold' : 'text-gray-700'"
                   >
                     {{ sort.label }}
@@ -176,7 +184,7 @@
           <div class="flex items-center gap-2 flex-1 justify-end min-h-[40px]">
             <button
               type="button"
-              class="flex items-center text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap h-8 px-2 bg-gray-100"
+              class="flex items-center text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap h-7 px-2 bg-gray-100"
               :class="[showDetail ? 'text-black-600' : 'text-gray-500']"
               style="box-shadow: 0 1px 2px 0 rgb(16 30 115 / 0.04)"
               @click="showDetail = !showDetail"
@@ -332,59 +340,25 @@
         </div>
       </div>
 
-      <!-- 자산 현황/거래 내역/체결 대기 목록 세로형 카드 -->
+      <!-- 자산 현황/거래 내역/체결 대기 목록 세로형 카드 (배열 기반) -->
       <div class="w-full max-w-[420px] mx-auto mb-4 bg-white rounded-2xl shadow overflow-hidden">
         <button
-          @click="goToAssetStatus"
-          class="w-full flex items-center justify-between px-5 py-4 bg-white/60 hover:bg-blue-50 transition-colors duration-150 text-gray-800 text-base font-medium focus:outline-none"
+          v-for="(item, idx) in assetMenuButtons"
+          :key="item.label"
+          @click="item.onClick"
+          class="w-full flex items-center justify-between px-5 py-4 bg-white/60 hover:bg-blue-50 transition-colors duration-150 text-black text-base font-medium focus:outline-none"
           style="backdrop-filter: blur(2px)"
         >
-          <span class="flex items-center gap-1">
-            <img src="@/assets/krw_image.png" alt="KRW" class="w-6 h-6 object-contain" />
-            자산 현황
+          <span class="flex items-center gap-2">
+            <img
+              v-if="typeof item.icon === 'string' && item.icon"
+              :src="item.icon"
+              :alt="item.label + ' 아이콘'"
+              class="w-6 h-6 object-contain"
+            />
+            <component v-else-if="item.icon" :is="item.icon" class="w-6 h-6" />
+            {{ item.label }}
           </span>
-          <svg
-            class="w-5 h-5 text-gray-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            style="transform: scaleX(-1)"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-        <button
-          @click="router.push('/mock-trading/transactions')"
-          class="w-full flex items-center justify-between px-5 py-4 bg-white/60 hover:bg-blue-50 transition-colors duration-150 text-gray-800 text-base font-medium focus:outline-none"
-          style="backdrop-filter: blur(2px)"
-        >
-          <span>거래 내역</span>
-          <svg
-            class="w-5 h-5 text-gray-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            style="transform: scaleX(-1)"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-        <button
-          @click="router.push('/mock-trading/pending-orders')"
-          class="w-full flex items-center justify-between px-5 py-4 bg-white/60 hover:bg-blue-50 transition-colors duration-150 text-gray-800 text-base font-medium focus:outline-none"
-          style="backdrop-filter: blur(2px)"
-        >
-          <span>체결 대기 목록</span>
           <svg
             class="w-5 h-5 text-gray-500"
             fill="none"
@@ -440,39 +414,10 @@
 
 <script setup>
 import { Swiper, SwiperSlide } from 'swiper/vue'
+import { register } from 'swiper/element/bundle'
 import 'swiper/css'
+import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 
-import finzIcon from '@/assets/finz.png'
-import krwIcon from '@/assets/krw_image.png'
-
-// 서비스 기능 연결 카드 데이터
-const serviceFeatures = [
-  {
-    icon: finzIcon,
-    title: '핀즈 알아보기',
-    desc: '서비스 소개',
-    onClick: () => router.push('/about'),
-  },
-  {
-    icon: krwIcon,
-    title: '직접 비교하기',
-    desc: '핀즈 투자전략',
-    onClick: () => router.push('/compare'),
-  },
-  {
-    icon: finzIcon,
-    title: '핀즈 알아보기',
-    desc: '서비스 소개',
-    onClick: () => router.push('/about'),
-  },
-  {
-    icon: krwIcon,
-    title: '직접 비교하기',
-    desc: '핀즈 투자전략',
-    onClick: () => router.push('/compare'),
-  },
-  // 추가 기능은 여기에 계속 추가 가능
-]
 import { getUserCredit } from '@/services/learning'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -480,10 +425,71 @@ import axios from 'axios'
 import { useAssetDataStore } from '@/services/useAssetData'
 import BottomNav from '@/components/FooterNavigation.vue'
 import { useHoldingsData } from '@/services/useHoldingsData'
-import PendingOrders from '@/components/mockTrading/PendingOrders.vue'
+// import PendingOrders from '@/components/mockTrading/PendingOrders.vue'
 import NoticeCard from '@/components/NoticeCard.vue'
 
+// import finzIcon from '@/assets/finz.png'
+// import krwIcon from '@/assets/krw_image.png'
+
+import introIcon from '@/assets/intro_image.png'
+import quizIcon from '@/assets/quiz_image.png'
+import suggestionIcon from '@/assets/suggestion_image.png'
+import noteIcon from '@/assets/note_image.png'
+
+import AssetIcon from '@/components/icons/AssetIcon.vue'
+import transactionIcon from '@/components/icons/transactionIcon.vue'
+import ListIcon from '@/components/icons/ListIcon.vue'
+import BellIcon from '@/components/icons/BellIcon.vue'
+
 const router = useRouter()
+
+register()
+
+// 서비스 기능 연결 카드 데이터
+const serviceFeatures = [
+  {
+    icon: introIcon,
+    title: '핀즈 알아보기',
+    desc: '서비스 소개',
+    onClick: () => router.push('/'),
+  },
+  {
+    icon: quizIcon,
+    title: '퀴즈 풀러가기',
+    desc: '투자 개념 학습',
+    onClick: () => router.push('/'),
+  },
+  {
+    icon: suggestionIcon,
+    title: '추천 받아보기',
+    desc: 'AI 종목 추천',
+    onClick: () => router.push('/'),
+  },
+  {
+    icon: noteIcon,
+    title: '일지 작성하기',
+    desc: '투자 일지 작성',
+    onClick: () => router.push('/'),
+  },
+]
+
+const assetMenuButtons = [
+  {
+    label: '자산 현황',
+    icon: AssetIcon,
+    onClick: () => router.push('/mock-trading/asset-status'),
+  },
+  {
+    label: '거래 내역',
+    icon: transactionIcon,
+    onClick: () => router.push('/mock-trading/transactions'),
+  },
+  {
+    label: '체결 대기 목록',
+    icon: ListIcon,
+    onClick: () => router.push('/mock-trading/pending-orders'),
+  },
+]
 
 // --- 내 투자내역 카드 관련 상태 및 함수 ---
 const asset = ref({ amount: 0 })
@@ -604,10 +610,14 @@ function handleClickOutside(event) {
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+const swiperReady = ref(false)
 
 onMounted(async () => {
   await fetchHoldings()
   document.addEventListener('click', handleClickOutside)
+  setTimeout(() => {
+    swiperReady.value = true
+  }, 0) // 또는 데이터 fetch 후 true
 })
 
 // 데이터 로딩 (내 투자내역)
@@ -658,8 +668,6 @@ const calculatedProfitAmount = computed(() => {
   // 평가금액 - 투자원금
   return safeNumber(stockValue.value, 0) - safeNumber(totalInvestment.value, 0)
 })
-
-const goToAssetStatus = () => router.push('/mock-trading/asset-status')
 
 // 상태 변수
 const nickname = ref('')
@@ -828,5 +836,8 @@ watch(
   50% {
     transform: translateY(-12px);
   }
+}
+.swiper-wrapper {
+  transition-timing-function: linear;
 }
 </style>

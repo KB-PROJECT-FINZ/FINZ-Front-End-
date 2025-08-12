@@ -18,7 +18,7 @@
       :key="item.name"
       :to="item.to"
       class="flex flex-col items-center text-xs w-full"
-      :class="isActive(item.to) ? 'font-bold' : 'font-bold'"
+      :class="isActive(item.to) ? 'font-normal' : 'font-normal'"
       :style="isActive(item.to) ? 'color: #0063f7' : 'color: black'"
     >
       <!-- 아이콘 렌더링 분기 -->
@@ -40,7 +40,7 @@ import RankingIcon from './icons/RankingIcon.vue'
 import MypageIcon from './icons/MypageIcon.vue'
 
 const route = useRoute()
-const router = useRouter()
+// const router = useRouter()
 
 const navItems = [
   { name: 'home', label: '홈', to: '/home', icon: HomeIcon },
