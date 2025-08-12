@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white w-full h-[79vh] flex flex-col overflow-hidden">
     <!-- 헤더와 탭 -->
-    <div class="px-5 py-4 border-b border-gray-100 bg-transparent">
+    <div class="px-5 py-2 border-b border-gray-100 bg-transparent">
       <div class="flex justify-between items-center mb-3">
         <h3 class="text-[18px] font-semibold text-gray-800 m-0 bg-transparent">거래 순위</h3>
         <span class="text-[12px] text-gray-500">{{ updateTime }}</span>
@@ -43,7 +43,7 @@
         <div class="flex items-center gap-1 flex-1">
           <span
             class="flex items-center justify-center w-7 h-7 text-blue-500 rounded-full text-[14px] font-bold mr-1"
-          >{{ index + 1 }}</span
+            >{{ index + 1 }}</span
           >
           <span
             class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-2"
@@ -85,9 +85,13 @@
         </div>
       </div>
       <button
-        v-if="activeTab !== 'market_cap' && visibleCount < stockRanking.length"
+        v-if="visibleCount < stockRanking.length"
         class="block w-full py-3 bg-gray-100 text-gray-800 border-none border-t border-gray-200 text-[14px] font-medium cursor-pointer transition-colors hover:bg-gray-200"
-        @click="visibleCount = Math.min(visibleCount + 10, stockRanking.length)"
+        @click="
+          activeTab === 'market_cap'
+            ? (visibleCount = Math.min(visibleCount + 90, stockRanking.length))
+            : (visibleCount = Math.min(visibleCount + 10, stockRanking.length))
+        "
       >
         더보기
       </button>
@@ -106,8 +110,8 @@ const updateTime = ref('')
 const isLoading = ref(false)
 const visibleCount = ref(10)
 
-// 시가총액 탭일 때는 100개, 나머지는 10개씩
-const getInitialVisibleCount = () => (activeTab.value === 'market_cap' ? 100 : 10)
+// 모든 탭에서 기본 10개씩만 보이도록 수정
+const getInitialVisibleCount = () => 10
 const imageErrors = ref({})
 const activeTab = ref('market_cap') // 기본값: 시가총액순
 
@@ -177,9 +181,11 @@ const fetchVolumeRanking = async () => {
           volume: parseFloat(stock.acml_vol), // 거래량
           marketCap: parseFloat(stock.stotprice) * 100000000, // 시가총액 (억원 단위를 원 단위로)
           // 백엔드에서 제공하는 imageUrl 사용, 없으면 기본 URL
-          imageUrl: stock.imageUrl || `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.code}.png`,
+          imageUrl:
+            stock.imageUrl ||
+            `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.code}.png`,
         }))
-        visibleCount.value = 100
+        visibleCount.value = getInitialVisibleCount()
         updateTime.value = new Date().toLocaleTimeString('ko-KR', {
           hour: '2-digit',
           minute: '2-digit',

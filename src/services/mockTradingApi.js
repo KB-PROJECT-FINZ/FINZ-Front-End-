@@ -54,14 +54,6 @@ export const getMarketIndices = async () => {
   } catch (error) {
     console.error('❌ 시장 지수 조회 오류:', error)
 
-    // 개발 환경에서는 에러 상세 정보 표시
-    if (import.meta.env.MODE === 'development') {
-      console.error('🔍 개발 환경 디버깅 정보:')
-      console.error('- 백엔드 서버가 실행 중인지 확인: http://localhost:8080')
-      console.error('- 프록시 설정 확인: vite.config.js')
-      console.error('- CORS 설정 확인: ServletConfig.java')
-    }
-
     // 에러 시 더미 데이터 반환 (fallback)
     return {
       success: false,
@@ -110,13 +102,6 @@ export const getVolumeRanking = async (limit = 10, blngClsCode = '3') => {
     }
   } catch (error) {
     console.error('❌ 거래 순위 조회 오류:', error)
-
-    // 개발 환경에서는 에러 상세 정보 표시
-    if (import.meta.env.MODE === 'development') {
-      console.error('🔍 개발 환경 디버깅 정보:')
-      console.error('- 백엔드 서버 상태:', 'http://localhost:8080/api/market/health')
-      console.error('- 프록시 로그를 확인하세요')
-    }
 
     // 에러 시 더미 데이터 반환 (fallback)
     const dummyData = generateDummyVolumeRanking(limit, blngClsCode)
@@ -193,20 +178,19 @@ const generateDummyVolumeRanking = (limit, blngClsCode = '3') => {
       isPositive: Math.random() > 0.5,
       tradingVolume: volume * currentPrice,
       volume: volume,
-      volumeRate: Math.random() * 200 + 50, // 거래량 증가율
-      turnoverRate: Math.random() * 60 + 5, // 거래회전율
-      amountTurnoverRate: Math.random() * 40 + 5, // 대금회전율
+      volumeRate: Math.random() * 200 + 50,
+      turnoverRate: Math.random() * 60 + 5,
+      amountTurnoverRate: Math.random() * 40 + 5,
       rank: index + 1,
       imageUrl: `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stockCodes[index]}.png`,
 
-      // 탭별 특화 값
       specialValue: specialValue,
       rankingType: blngClsCode,
     }
   })
 }
 
-// 종목 검색 (실제 백엔드 연동)
+// 종목 검색
 export const searchStocks = async (query, limit = 10) => {
   try {
     if (!query || !query.trim()) {
@@ -231,13 +215,6 @@ export const searchStocks = async (query, limit = 10) => {
     }
   } catch (error) {
     console.error('❌ 종목 검색 오류:', error)
-
-    // 개발 환경에서는 에러 상세 정보 표시
-    if (import.meta.env.MODE === 'development') {
-      console.error('🔍 개발 환경 디버깅 정보:')
-      console.error('- 백엔드 서버가 실행 중인지 확인: http://localhost:8080')
-      console.error('- 종목 검색 API 엔드포인트 확인')
-    }
 
     // 에러 시 더미 데이터 반환 (fallback)
     const { stockList } = await import('@/utils/dummyData')

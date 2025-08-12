@@ -201,18 +201,19 @@
 
   <SuccessModal :visible="showSuccess" :message="successMessage" />
   <ConfirmModal :visible="showConfirm" @confirm="handleDelete" @cancel="showConfirm = false" />
+  <FooterNavigation />
 </template>
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { Calendar } from 'v-calendar'
 import SuccessModal from '@/components/SuccessModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import { fetchJournals, deleteJournalById } from '@/services/journal.js'
 import { useTransactionsData } from '@/services/useTranscationsData.js'
 import JournalWriteModal from './JournalWriteModal.vue'
-
+import FooterNavigation from '@/components/FooterNavigation.vue'
 const showWriteModal = ref(false)
 const { transactionsData, fetchTransactions } = useTransactionsData()
 const router = useRouter()
@@ -230,6 +231,7 @@ const isDragging = ref(false)
 const startX = ref(0)
 const currentX = ref(0)
 const imageErrors = ref({})
+const route = useRoute()
 
 function onDayClick(day) {
   selectedDate.value = day.id
@@ -308,6 +310,11 @@ function getStockInitial(stockName) {
 
 onMounted(async () => {
   try {
+    // URL 쿼리 파라미터에서 날짜 가져오기
+    if (route.query.date) {
+      selectedDate.value = route.query.date
+    }
+
     await fetchTransactions()
     transactions.value = transactionsData.value || []
     journals.value = await fetchJournals()

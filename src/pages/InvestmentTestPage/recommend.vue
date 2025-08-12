@@ -1,32 +1,33 @@
 <template>
-  <!-- 뒤로가기 헤더 -->
-  <div class="flex items-center px-5 mb-4">
-    <button @click="goBack" class="text-gray-600 hover:text-black text-xl mr-2">←</button>
-    <h1 class="text-lg font-bold">추천 콘텐츠</h1>
-  </div>
-  <div class="px-5 py-6">
-    <div v-for="(contentList, typeName) in groupedContents" :key="typeName" class="mb-8">
+  <!-- 뒤로가기 헤더  -->
+  <header class="flex items-center justify-between bg-white px-4 pt-4 pb-3 sticky top-0 z-10">
+    <button @click="goBack" class="p-2 hover:bg-gray-100 rounded-lg text-black">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+    <span class="ml-3 flex-1 text-left text-base font-semibold text-gray-900">추천 콘텐츠</span>
+  </header>
+  <div class="px-4 py-4">
+    <div v-for="(contentList, typeName) in groupedContents" :key="typeName" class="mb-10">
       <!-- 성향 제목 -->
-      <h2 class="text-lg font-bold text-purple-600 mb-2">🔹 {{ typeName }} 추천 콘텐츠</h2>
+      <h2 class="text-lg font-bold text-indigo-700 mb-4 flex items-center">
+        <span class="text-2xl mr-2">{{ riskTypeIcon(typeName) }}</span>
+        {{ typeName }} 추천 콘텐츠 ({{ getRiskCode(typeName) }})
+      </h2>
 
-      <!-- 2개씩 묶어 카드 스타일로 렌더링 -->
-      <div
-        v-for="(pair, index) in chunk(contentList, 2)"
-        :key="index"
-        class="grid grid-cols-2 gap-4 mb-4"
-      >
+      <div class="grid grid-cols-2 gap-4">
         <div
-          v-for="item in pair"
+          v-for="item in contentList"
           :key="item.id"
-          class="border rounded-xl p-4 shadow-sm cursor-pointer hover:bg-gray-50 w-full"
+          class="bg-white rounded-xl shadow flex flex-col items-center justify-center p-4 cursor-pointer hover:bg-indigo-50 transition border border-gray-100 min-h-[120px]"
           @click="openContent(item)"
         >
-          <p class="text-xs font-bold text-gray-500 mb-1 break-words whitespace-normal">
-            {{ item.label }}
-          </p>
-          <p class="text-sm font-semibold break-words whitespace-normal">
+          <div
+            class="font-semibold text-gray-900 text-center text-base break-words whitespace-normal"
+          >
             {{ item.title }}
-          </p>
+          </div>
         </div>
       </div>
     </div>
@@ -56,6 +57,40 @@ import axios from 'axios'
 const groupedContents = ref({})
 const selectedContent = ref(null)
 
+// 성향 코드별 아이콘 매핑
+const riskTypeIcons = {
+  AGR: '🚀',
+  AID: '🛡️',
+  BGT: '⚖️',
+  BSS: '💰',
+  CAG: '🌱',
+  CSD: '🏡',
+  DTA: '💨',
+  EXP: '🧪',
+  IND: '📊',
+  INF: '🔎',
+  SOC: '🌍',
+  SYS: '🖥️',
+  TEC: '📈',
+  THE: '🎯',
+  VAL: '🏆',
+  FAD: '😮',
+}
+function riskTypeIcon(typeName) {
+  // typeName이 한글이므로 riskMap에서 코드 추출
+  for (const [code, name] of Object.entries(riskMap)) {
+    if (name === typeName) return riskTypeIcons[code] || '❓'
+  }
+  return '❓'
+}
+
+function getRiskCode(typeName) {
+  for (const [code, name] of Object.entries(riskMap)) {
+    if (name === typeName) return code
+  }
+  return ''
+}
+
 function chunk(array, size) {
   const chunks = []
   for (let i = 0; i < array.length; i += size) {
@@ -73,13 +108,14 @@ const riskMap = {
   CSD: '신중한 안정형',
   DTA: '단타 추구형',
   EXP: '실험적 모험가형',
+  IND: '인덱스 수동형',
   INF: '정보 수집형',
+  SOC: '사회 책임형',
   SYS: '시스템 트레이더형',
   TEC: '기술적 분석형',
-  FAD: '감정적 결정형',
-  VAL: '가치 투자형',
-  IND: '인덱스 수동형',
   THE: '테마 투자형',
+  VAL: '가치 투자형',
+  FAD: '감정적 결정형',
 }
 
 onMounted(async () => {
@@ -123,7 +159,7 @@ const goBack = () => {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: transparent; /* ✅ 완전 투명 배경 */
+  background-color: rgba(0, 0, 0, 0.08);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -133,24 +169,17 @@ const goBack = () => {
 .modal-content {
   background: white;
   padding: 2rem;
-  width: 80%;
-  max-width: 600px;
+  width: 90%;
+  max-width: 420px;
   border-radius: 1rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
   transform: scale(1);
 }
 
-.btn {
-  background: #2d6cdf;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-}
-
 .fade-scale-enter-active,
 .fade-scale-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
 }
 .fade-scale-enter-from {
   opacity: 0;

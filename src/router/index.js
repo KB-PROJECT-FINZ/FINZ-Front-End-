@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../pages/HomePage.vue'
 import LoginPage from '@/pages/LoginPages/LoginPage.vue'
 import ProfilePage from '@/pages//ProfilePages/ProfilePage.vue'
+import CustomContentsPage from '@/pages/ProfilePages/CustomContentsPage.vue'
 import JournalPage from '@/pages/ProfilePages//JournalPage.vue'
 import FeedbackPage from '@/pages/ProfilePages/FeedbackPage.vue'
 import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
@@ -194,6 +195,11 @@ const routes = [
     path: '/daily-quiz',
     name: 'DailyQuizPage',
     component: DailyQuizePage,
+  },
+  {
+    path: '/profile/custom-contents',
+    name: 'CustomContentsPage',
+    component: CustomContentsPage,
   },
 ]
 
