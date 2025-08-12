@@ -25,11 +25,11 @@
       </div>
       <!-- 이메일 -->
       <div class="mt-8">
-        <label class="block text-sm font-semibold text-gray-700 mb-2">이메일</label>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">아이디</label>
         <input
           v-model="email"
           type="email"
-          placeholder="oliviablue@gmail.com"
+          placeholder="이메일을 입력하세요"
           class="w-full h-12 px-4 rounded-xl bg-gray-100 border border-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
         />
       </div>
@@ -41,7 +41,7 @@
           <input
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
-            placeholder="Enter your password"
+            placeholder="비밀번호를 입력하세요"
             class="w-full h-12 px-4 pr-11 rounded-xl bg-gray-100 border border-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
           />
           <button
@@ -114,7 +114,9 @@ const password = ref('')
 const showPassword = ref(false)
 const togglePassword = () => (showPassword.value = !showPassword.value)
 
-const goBack = () => router.back()
+const goBack = () => {
+  router.push('/')
+}
 
 const handleLogin = async () => {
   try {
