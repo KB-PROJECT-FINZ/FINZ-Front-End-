@@ -1,64 +1,56 @@
 <template>
   <div class="space-y-4">
-    <div
-      class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl p-4 border border-blue-200/30"
-    >
-      <p class="text-base text-gray-700 font-semibold">
-        📈 {{ getRecommendationType() }}{{ getRecommendationType() === '키워드 기반 추천' ? '드릴게요!' : '을 추천드릴게요!' }}
+    <!-- 추천 타입 표시 -->
+    <div class="bg-gray-100 rounded-2xl px-4 py-3">
+      <p class="text-sm text-gray-700 font-medium">
+        {{ getRecommendationType() }}{{ getRecommendationType() === '키워드 기반 추천' ? '드릴게요!' : '을 추천드릴게요!' }}
       </p>
     </div>
-    <div class="grid gap-4">
+    
+    <!-- 종목 카드들 -->
+    <div class="space-y-4">
       <div
         v-for="stock in stocks"
         :key="stock.code"
-        class="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-white/40 transform hover:-translate-y-1"
+        class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200"
       >
         <!-- 헤더 -->
-        <div class="flex justify-between items-start mb-4 gap-4">
+        <div class="flex justify-between items-start mb-3 gap-3">
           <div class="flex-1 min-w-0">
-            <h4 class="font-bold text-gray-900 text-xl break-words">{{ stock.name }}</h4>
-            <span class="text-sm text-gray-500 font-medium">{{ stock.code }}</span>
+            <h4 class="font-semibold text-gray-900 text-lg break-words">{{ stock.name }}</h4>
+            <span class="text-sm text-gray-500">{{ stock.code }}</span>
           </div>
           <span
             :class="{
-              'bg-gradient-to-r from-green-400 to-emerald-500 text-white':
-                stock.riskLevel === '낮음',
-              'bg-gradient-to-r from-yellow-400 to-orange-500 text-white':
-                stock.riskLevel === '중간',
-              'bg-gradient-to-r from-red-400 to-pink-500 text-white': stock.riskLevel === '높음',
+              'bg-green-100 text-green-800': stock.riskLevel === '낮음',
+              'bg-yellow-100 text-yellow-800': stock.riskLevel === '중간',
+              'bg-red-100 text-red-800': stock.riskLevel === '높음',
             }"
-            class="px-3 py-1 text-xs rounded-full font-semibold shadow-sm min-w-[80px] text-center flex-shrink-0"
+            class="px-2 py-1 text-xs rounded-full font-medium min-w-[60px] text-center flex-shrink-0"
           >
             위험도: {{ stock.riskLevel }}
           </span>
         </div>
 
         <!-- 추천 이유 -->
-        <div class="mb-4">
-          <p
-            class="text-sm text-gray-700 leading-relaxed"
-            v-html="formatReason(stock.description)"
-          ></p>
+        <div class="mb-3">
+          <div class="text-sm text-gray-700 leading-relaxed" v-html="parseMarkdown(stock.description)"></div>
         </div>
 
-        <!-- 매수 타이밍 -->
-        <div
-          class="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200/30"
-        >
-          <h5 class="text-sm font-semibold text-blue-800 mb-2 flex items-center">
+        <!-- AI 분석 Tip -->
+        <div class="mb-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+          <h5 class="text-sm font-medium text-blue-800 mb-1 flex items-center">
             <span class="mr-2">💡</span>AI 분석 Tip
           </h5>
-          <p class="text-sm text-blue-700">{{ stock.timingComment }}</p>
+          <div class="text-sm text-blue-700" v-html="parseMarkdown(stock.timingComment)"></div>
         </div>
 
         <!-- 향후 전망 -->
-        <div
-          class="p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl border border-gray-200/30"
-        >
-          <h5 class="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+        <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+          <h5 class="text-sm font-medium text-gray-800 mb-1 flex items-center">
             <span class="mr-2">🔮</span>향후 전망
           </h5>
-          <p class="text-sm text-gray-600">{{ stock.futureOutlook }}</p>
+          <div class="text-sm text-gray-600" v-html="parseMarkdown(stock.futureOutlook)"></div>
         </div>
       </div>
     </div>
@@ -67,6 +59,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { marked } from 'marked'
 
 const props = defineProps({
   content: {
@@ -74,6 +67,22 @@ const props = defineProps({
     required: true,
   },
 })
+
+// 마크다운을 HTML로 변환하는 함수
+const parseMarkdown = (text) => {
+  try {
+    // **굵은 글씨** 패턴을 <strong> 태그로 변환
+    let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    
+    // 줄바꿈을 <br> 태그로 변환
+    html = html.replace(/\n/g, '<br>')
+    
+    return html
+  } catch (error) {
+    console.error('마크다운 파싱 오류:', error)
+    return text
+  }
+}
 
 // 추천 타입 감지
 const getRecommendationType = () => {
