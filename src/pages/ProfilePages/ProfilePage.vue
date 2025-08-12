@@ -46,7 +46,7 @@
           <div class="relative">
             <div
               :class="[
-                'w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mb-2 border border-black',
+                'w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden mb-2',
                 getProfileImageSrc().includes('finz.png') ? 'p-1' : '',
               ]"
             >

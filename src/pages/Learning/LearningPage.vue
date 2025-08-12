@@ -1,155 +1,141 @@
 <template>
-  <div class="min-h-screen bg-white">
-    <!-- 헤더 -->
-    <header class="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
-      <div class="flex items-center justify-center">
-        <h1 class="text-lg font-semibold text-gray-900">개념 학습</h1>
-      </div>
-    </header>
+  <div class="min-h-screen bg-[#f2f6fd]">
     <div class="px-4 py-6 pb-20">
-      <!-- 사용자 맞춤 추천 타이틀 -->
-      <!-- <h2 class="text-lg font-semibold text-indigo-900 mb-4">{{ user.name }}님</h2> -->
-
-      <!-- 추천 학습 콘텐츠 -->
       <div class="mb-8">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">추천 학습 콘텐츠</h2>
+        <!-- 타이틀 -->
+        <h1 class="text-xl font-semibold text-gray-900 mb-3 mt-3 ml-1">오늘의 콘텐츠</h1>
+
+        <div
+          class="flex items-center justify-between bg-white rounded-xl border border-gray-200 px-4 py-3 shadow-sm mb-6"
+        >
+          <!-- 왼쪽: 아이콘 + 텍스트 -->
+          <div class="flex items-center gap-2">
+            <img :src="coinIcon" alt="" class="w-5 h-5 shrink-0" />
+            <span class="text-sm font-semibold text-gray-800">
+              보유 크레딧 | {{ asset.amount }}P
+            </span>
+          </div>
+
+          <!-- 오른쪽: 전환하기 -->
+          <RouterLink
+            to="/mock-trading/asset-status"
+            class="text-sm font-semibold text-blue-600 hover:underline"
+          >
+            전환하기
+          </RouterLink>
+        </div>
+
+        <!-- 로딩 -->
         <div v-if="recommendedContents.length === 0" class="text-center py-12">
           <div
             class="w-12 h-12 border-3 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"
           ></div>
           <p class="text-gray-600">콘텐츠를 불러오는 중입니다...</p>
         </div>
-        <div v-else class="space-y-3">
-          <div
-            v-for="item in formattedRecommendedContents.slice(0, recommendedViewCount)"
-            :key="item.contentId"
-            class="bg-white rounded-xl p-5 cursor-pointer hover:shadow-md transition border-t border-b border-r border-gray-200 border-l-4 border-indigo-300"
-            @click="goToDetail(item.contentId)"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-1 mb-2">
-                  <span class="text-xs text-gray-500 bg-gray-100 rounded-full px-1 py-1">추천</span>
-                  <span
-                    v-if="item.creditReward"
-                    class="inline-block text-xs font-semibold text-yellow-700 bg-yellow-50 rounded-full px-3 py-1"
-                  >
-                    {{ item.creditReward }}크레딧
-                  </span>
-                </div>
-                <h3 class="text-base font-medium text-gray-900 truncate">
-                  {{ item.title }}
-                </h3>
-              </div>
-              <svg
-                class="w-5 h-5 text-gray-400 ml-3 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </div>
-          </div>
 
+        <!-- 추천 캐러셀 -->
+        <div v-else>
           <div
-            v-if="recommendedViewCount < formattedRecommendedContents.length"
-            class="flex justify-center pt-2"
+            ref="recoTrack"
+            class="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory py-1 px-4 hide-scrollbar cursor-grab active:cursor-grabbing"
+            @pointerdown="onPointerDown"
+            @pointermove="onPointerMove"
+            @pointerup="onPointerUp"
+            @pointerleave="onPointerUp"
           >
-            <button
-              class="w-full text-gray-600 font-medium border border-gray-200 rounded-lg px-6 py-3 hover:text-gray-800 hover:bg-gray-50 transition"
-              @click="recommendedViewCount += 3"
+            <article
+              v-for="item in formattedRecommendedContents"
+              :key="item.contentId"
+              class="min-w-[225px] h-[200px] snap-start rounded-2xl p-4 relative shadow-sm bg-[#b9d1f3]"
+              @click="goToDetail(item.contentId)"
             >
-              더보기
-            </button>
+              <div class="flex items-center gap-1 mb-2">
+                <span
+                  class="text-[11px] text-gray-600 bg-white/70 border border-gray-200 rounded-full px-2 py-0.5"
+                  >추천</span
+                >
+                <span
+                  v-if="item.creditReward"
+                  class="text-[11px] font-semibold text-yellow-800 bg-amber-100 border border-amber-200 rounded-full px-2.5 py-0.5"
+                >
+                  {{ item.creditReward }} 크레딧
+                </span>
+              </div>
+              <h3 class="text-m font-semibold text-gray-900 leading-5 line-clamp-3">
+                {{ item.title }}
+              </h3>
+            </article>
           </div>
         </div>
       </div>
+      <!-- 성향별 콘텐츠 -->
+      <div class="mt-10 -mx-4 -mb-5">
+        <div class="bg-white rounded-2xl border border-gray-200 px-5 py-5">
+          <h2 class="text-xl font-semibold text-gray-900 mb-3">성향별 콘텐츠</h2>
 
-      <!-- 완료한 학습 콘텐츠 -->
-      <div>
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">완료한 학습 콘텐츠</h2>
-        <div v-if="completedContents.length === 0" class="text-center py-12">
-          <div
-            class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"
-          >
-            <svg
-              class="w-8 h-8 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          <p class="text-gray-600">완료한 콘텐츠가 없습니다.</p>
-        </div>
-        <div v-else class="space-y-3">
-          <div
-            v-for="item in formattedCompletedContents.slice(0, completedViewCount)"
-            :key="item.contentId"
-            class="bg-gray-50 rounded-xl border border-gray-200 p-5 cursor-pointer transition hover:bg-gray-100 border-l-4 border-gray-300"
-            @click="goToDetail(item.contentId)"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center flex-1 min-w-0">
-                <div
-                  class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-3 flex-shrink-0"
+          <!-- 탭바 -->
+          <!-- 탭바 (아티클 폭과 동일, 풀-폭 베이스라인) -->
+          <div class="pt-1 mb-4">
+            <div class="relative w-full">
+              <div class="grid grid-cols-5 text-base md:text-base font-semibold">
+                <button
+                  v-for="t in riskTabs"
+                  :key="t"
+                  @click="onChangeTab(t)"
+                  class="relative py-2 text-center"
+                  :class="
+                    activeRiskTab === t ? 'text-blue-700' : 'text-gray-500 hover:text-gray-700'
+                  "
                 >
-                  <svg
-                    class="w-4 h-4 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <h3 class="text-base font-medium text-gray-900 truncate">{{ item.title }}</h3>
-                  <p class="text-sm text-gray-500 mt-1">학습 완료</p>
-                </div>
+                  {{ t }}
+                  <!-- 활성 탭 언더바(탭 셀 내부 거의 꽉 차게) -->
+                  <span
+                    v-if="activeRiskTab === t"
+                    class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-0 w-11/12 h-[3px] md:h-[4px] rounded-full bg-blue-600"
+                  ></span>
+                </button>
               </div>
-              <svg
-                class="w-5 h-5 text-gray-400 ml-3 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
             </div>
           </div>
-          <div
-            v-if="completedViewCount < formattedCompletedContents.length"
-            class="flex justify-center pt-2"
-          >
-            <button
-              class="w-full text-gray-600 font-medium border border-gray-200 rounded-lg px-6 py-3 hover:text-gray-800 hover:bg-gray-50 transition"
-              @click="completedViewCount += 3"
+
+          <div v-if="isRiskLoading" class="text-center py-10">
+            <div
+              class="w-10 h-10 border-3 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto"
+            ></div>
+          </div>
+
+          <div v-else-if="filteredByRisk.length === 0" class="text-center py-10">
+            <p class="text-gray-500">해당 성향의 콘텐츠가 없습니다.</p>
+          </div>
+          <div v-else class="space-y-3">
+            <div
+              v-for="item in filteredByRisk.slice(0, riskViewCount)"
+              :key="item.contentId"
+              class="bg-gray-50 rounded-2xl border border-gray-200 px-4 py-4 shadow-sm cursor-pointer hover:shadow-md transition"
+              @click="goToDetail(item.contentId)"
             >
-              더보기
-            </button>
+              <div class="flex items-center gap-2 mb-2">
+                <span
+                  v-if="item.creditReward"
+                  class="text-[11px] font-semibold text-yellow-800 bg-amber-100 border border-amber-200 rounded-full px-2.5 py-0.5"
+                >
+                  {{ item.creditReward }}크레딧
+                </span>
+              </div>
+              <h3 class="text-base font-medium text-gray-900 leading-6 truncate">
+                {{ item.title }}
+              </h3>
+            </div>
+
+            <!-- 더보기 -->
+            <div v-if="riskViewCount < filteredByRisk.length" class="flex justify-center pt-2">
+              <button
+                class="w-full text-gray-600 font-medium border border-gray-200 rounded-lg px-6 py-3 hover:text-gray-800 hover:bg-gray-50 transition"
+                @click="riskViewCount += 3"
+              >
+                더보기
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -159,28 +145,109 @@
   </div>
 </template>
 
+<style scoped>
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+</style>
+
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '../../components/FooterNavigation.vue'
 import axios from 'axios'
-import ticketIcon from '../../components/icons/ticket-box.svg'
-
+import {
+  getUserCredit,
+  fetchLearningContentsByGroup,
+  fetchLearningContents,
+} from '@/services/learning'
+import coinIcon from '@/components/icons/coin.svg'
 const router = useRouter()
+
+/* ------------ state ------------ */
 const recommendedContents = ref([])
 const completedContents = ref([])
+const recommendedCount = ref(0)
+const riskContents = ref([])
+const isRiskLoading = ref(false)
+
+const groupCodeMap = {
+  보수형: 'CONSERVATIVE',
+  균형형: 'BALANCED',
+  공격형: 'AGGRESSIVE',
+  분석형: 'ANALYTICAL',
+  감정형: 'EMOTIONAL',
+}
+
 const user = ref({
   name: '',
   riskType: '',
   userId: 0,
   groupCode: '',
 })
-const recommendedCount = ref(0)
-const completedViewCount = ref(3)
+const asset = ref({
+  amount: 0,
+})
+/* 캐러셀 드래그 */
+const recoTrack = ref(null)
+const isDragging = ref(false)
+let startX = 0
+let startLeft = 0
 
-const recommendedViewCount = ref(3)
+/* 탭 & 더보기 */
+const riskTabs = ['보수형', '균형형', '공격형', '분석형', '감정형']
+const activeRiskTab = ref('보수형')
+const riskViewCount = ref(3)
 
-// 제목에서 \n 문자 제거하는 computed 속성들
+/* ------------ handlers ------------ */
+function onPointerDown(e) {
+  if (!recoTrack.value) return
+  isDragging.value = true
+  startX = e.clientX
+  startLeft = recoTrack.value.scrollLeft
+  if (recoTrack.value.setPointerCapture) {
+    recoTrack.value.setPointerCapture(e.pointerId)
+  }
+}
+function onPointerMove(e) {
+  if (!isDragging.value || !recoTrack.value) return
+  const delta = startX - e.clientX
+  recoTrack.value.scrollLeft = startLeft + delta
+}
+function onPointerUp(e) {
+  if (!recoTrack.value) return
+  isDragging.value = false
+  if (recoTrack.value.releasePointerCapture) {
+    recoTrack.value.releasePointerCapture(e.pointerId)
+  }
+}
+async function loadRiskContentsByTab() {
+  try {
+    isRiskLoading.value = true
+    const code = groupCodeMap[activeRiskTab.value]
+    const data = await fetchLearningContentsByGroup(code)
+    riskContents.value = Array.isArray(data) ? data : []
+    await fetchCreditRewards(riskContents.value)
+  } catch (e) {
+    console.error('❌ 성향별 콘텐츠 로딩 실패:', e)
+    riskContents.value = []
+  } finally {
+    isRiskLoading.value = false
+  }
+}
+
+async function onChangeTab(t) {
+  activeRiskTab.value = t
+  riskViewCount.value = 3
+  await loadRiskContentsByTab()
+}
+
+/* ------------ computed (순서 중요) ------------ */
+
 const formattedRecommendedContents = computed(() => {
   return recommendedContents.value.map((content) => ({
     ...content,
@@ -188,13 +255,12 @@ const formattedRecommendedContents = computed(() => {
   }))
 })
 
-const formattedCompletedContents = computed(() => {
-  return completedContents.value.map((content) => ({
-    ...content,
-    title: content.title?.replace(/\\n|\n/g, '') || '',
-  }))
-})
+const formattedRiskContents = computed(() =>
+  riskContents.value.map((c) => ({ ...c, title: c.title?.replace(/\\n|\n/g, '') || '' })),
+)
+const filteredByRisk = computed(() => formattedRiskContents.value)
 
+/* ------------ api ------------ */
 const fetchCreditRewards = async (contents) => {
   await Promise.all(
     contents.map(async (content) => {
@@ -204,7 +270,7 @@ const fetchCreditRewards = async (contents) => {
         })
         content.creditReward = res.data?.creditReward ?? 0
       } catch (e) {
-        console.warn(`❌ contentId=${content.contentId}에 대한 크레딧 조회 실패`, e)
+        console.warn(`❌ credit load fail contentId=${content.contentId}`, e)
         content.creditReward = 0
       }
     }),
@@ -213,24 +279,13 @@ const fetchCreditRewards = async (contents) => {
 
 const fetchContents = async () => {
   try {
-    console.log('[📡] /recommend/list + /complete/list 요청 시작')
-
     const [recommendRes, completeRes] = await Promise.all([
-      axios.get('/api/learning/recommend/list', {
-        withCredentials: true,
-      }),
-      axios.get('/api/learning/history/complete/list', {
-        withCredentials: true,
-      }),
+      axios.get('/api/learning/recommend/list', { withCredentials: true }),
+      axios.get('/api/learning/history/complete/list', { withCredentials: true }),
     ])
-
     recommendedContents.value = recommendRes.data
     completedContents.value = completeRes.data
     recommendedCount.value = recommendedContents.value.length
-
-    console.log(
-      `[📦] 추천 콘텐츠 ${recommendedCount.value}개, 완료 콘텐츠 ${completedContents.value.length}개`,
-    )
 
     await Promise.all([
       fetchCreditRewards(recommendedContents.value),
@@ -240,31 +295,29 @@ const fetchContents = async () => {
     console.error('❌ 콘텐츠 로딩 실패:', e)
   }
 }
-
-// 👉 polling으로 추천 콘텐츠 확보
+async function loadCredit() {
+  try {
+    const credit = await getUserCredit() // 컨트롤러가 Integer 반환 → 숫자
+    asset.value.amount = typeof credit === 'number' ? credit : (credit?.amount ?? 0)
+  } catch (err) {
+    console.error('❌ 크레딧 조회 실패:', err)
+    asset.value.amount = 0
+  }
+}
+/* polling으로 추천 콘텐츠 확보 */
 const pollUntilContentReady = async (maxRetry = 5, delay = 3500) => {
   let retry = 0
-  console.log('[🔁] Polling 시작')
   while (retry < maxRetry) {
-    console.log(`[⏳] 시도 ${retry + 1}/${maxRetry}...`)
     await fetchContents()
-    console.log(`[📊] 현재 추천 콘텐츠 개수: ${recommendedCount.value}`)
-    if (recommendedCount.value >= 5) {
-      console.log('[✅] 추천 콘텐츠 5개 이상 확보됨 → polling 종료')
-      break
-    }
+    if (recommendedCount.value >= 5) break
     retry++
-    await new Promise((resolve) => setTimeout(resolve, delay))
-  }
-  if (retry >= maxRetry) {
-    console.warn('[⚠️] polling 끝났지만 추천 콘텐츠가 부족함')
+    await new Promise((r) => setTimeout(r, delay))
   }
 }
 
-// 👉 진입 시 초기화
+/* ------------ lifecycle ------------ */
 onMounted(async () => {
   try {
-    console.log('[🚀] mounted 실행')
     const res = await axios.get('/api/auth/me', { withCredentials: true })
     const data = res.data
     user.value = {
@@ -273,21 +326,19 @@ onMounted(async () => {
       userId: data.userId,
       groupCode: data.groupCode,
     }
-    console.log('[👤] 사용자 정보:', user.value)
-
-    await pollUntilContentReady()
+    await Promise.all([loadCredit(), pollUntilContentReady()])
+    await loadRiskContentsByTab()
   } catch (e) {
     console.error('❌ 사용자 정보 로딩 실패:', e)
   }
 })
 
-// 👉 상세 페이지로 이동
+/* ------------ nav ------------ */
 function goToDetail(id) {
   router.push(`/learning/${id}`)
 }
-
-// 👉 프로필 페이지로 이동
-function goToProfile() {
-  router.push('/profile')
+function goToExchange() {
+  // TODO: 전환하기 페이지/모달 이동 로직
+  console.log('전환하기 클릭')
 }
 </script>
