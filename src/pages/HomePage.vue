@@ -1,33 +1,31 @@
 <template>
-  <div class="min-h-screen pb-20">
-    <!-- 상단 로고 + 인사말 -->
-    <div class="px-5 pt-6">
-      <img src="@/assets/finz.png" alt="finz" class="mx-5 w-12 mb-2" />
-      <p class="text-lg font-normal mx-5">
-        안녕하세요, <span class="font-black">{{ nickname }}</span
-        >님!
-      </p>
+  <div class="min-h-screen pb-20 bg-gray-100">
+    <div class="flex flex-col items-center px-6 pt-6">
+      <!-- 상단 로고 + 인사말 -->
+      <div class="w-full max-w-[420px]">
+        <img src="@/assets/finz.png" alt="finz" class="w-12 mb-2" />
+        <p class="text-lg font-normal">
+          안녕하세요, <span class="font-black">{{ nickname }}</span
+          >님!
+        </p>
+      </div>
 
-      <!-- 안내사항 컴포넌트로 분리 -->
-      <NoticeCard v-if="showNotice" @close="showNotice = false" @goToLearning="goToLearning">
+      <!-- 안내사항 카드 -->
+      <NoticeCard
+        v-if="showNotice"
+        @close="showNotice = false"
+        @goToLearning="goToLearning"
+        class="w-full max-w-[420px] mx-auto p-5 mb-4 bg-white rounded-2xl shadow"
+      >
         <div class="w-full flex flex-col items-left">
           <p class="text-base mb-2 text-gray-800">
             <span class="font-extrabold">{{ nickname }}</span
             ><span class="font-medium">님,</span><br />
-            <span class="font-medium">퀴즈를 풀면 8000P를 드려요!</span>
+            <span class="font-medium">
+              퀴즈를 풀면 <span class="font-extrabold">8000P</span>를 드려요!
+            </span>
           </p>
-          <div class="my-2 flex justify-center">
-            <!-- <svg
-              class="w-12 h-12 animate-bounce-smooth"
-              viewBox="0 0 48 48"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect x="8" y="16" width="32" height="20" rx="6" fill="#0063f7" />
-              <rect x="14" y="22" width="20" height="8" rx="3" fill="#fff" />
-              <path d="M24 16v-4" stroke="#0063f7" stroke-width="2.5" stroke-linecap="round" />
-              <circle cx="24" cy="10" r="3" fill="#0063f7" />
-            </svg> -->
+          <div class="flex justify-center">
             <img
               src="@/assets/krw_image.png"
               alt="KRW"
@@ -36,114 +34,111 @@
             />
           </div>
         </div>
-        <template #button> 오늘의 퀴즈 풀기 </template>
+        <template #button> 퀴즈 풀고 크레딧 받기 </template>
       </NoticeCard>
 
-      <!-- 내 투자 상태 카드 -->
-      <!-- <div class="grid grid-cols-2 gap-3 px-5 mt-2 mb-4">
-        <div class="bg-gray-100 p-4 rounded-xl border-black">
-          <p class="text-sm text-gray-600 font-medium text-black mb-1">보유 현금</p>
-          <p class="font-bold text-gray-700">
-            {{ safeNumber(userAccount.currentBalance).toLocaleString() }}원
+      <!-- 서비스 기능 연결 카드 Swiper -->
+      <div class="w-full max-w-[420px] mx-auto mb-4">
+        <div class="bg-white rounded-2xl shadow p-5">
+          <p class="text-base font-bold mb-1">
+            <span class="text-blue-600">{{ nickname }}</span
+            >님, Finz가 처음이신가요?
           </p>
-        </div>
-        <div class="bg-gray-100 p-4 rounded-xl border-black">
-          <p class="text-sm text-gray-600 font-medium text-black mb-1">보유 크레딧</p>
-          <p class="font-bold text-gray-700">{{ asset.amount }}C</p>
-        </div>
-      </div> -->
-
-      <!-- 내 종목보기 카드 전체를 버튼으로, 좌측 정렬 및 아이콘 추가 -->
-      <button
-        class="mx-6 w-80 max-w-[420px] bg-white rounded-xl mb-2 overflow-hidden"
-        @click="goToAssetStatus"
-        style="display: block"
-      >
-        <div class="py-4">
-          <div class="flex items-center mb-1">
-            <span class="font-bold text-base text-gray-900">총 자산</span>
-            <svg
-              class="w-5 h-5 text-gray-700"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              style="transform: scaleX(-1)"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </div>
-          <div v-if="!dataLoaded" class="w-40 h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
-          <div v-else class="w-full flex flex-col items-start">
-            <div class="text-2xl font-bold text-gray-900 mb-1">
-              {{ stockValue.toLocaleString() }}원
-            </div>
-            <div class="text-base font-medium mb-1">
-              <span
-                :class="
-                  calculatedProfitAmount > 0
-                    ? 'text-red-600'
-                    : calculatedProfitAmount < 0
-                      ? 'text-blue-600'
-                      : 'text-gray-600'
-                "
+          <p class="text-base font-bold mb-4">아래 내용을 차근차근 살펴보세요.</p>
+          <swiper :slides-per-view="1.9" :space-between="12" :loop="false" class="w-full">
+            <swiper-slide v-for="feature in serviceFeatures" :key="feature.title">
+              <button
+                class="flex items-center bg-gray-50 rounded-xl px-4 py-3 mb-2 shadow-sm hover:bg-blue-50 transition-all min-h-[64px]"
+                @click="feature.onClick"
               >
-                {{ calculatedProfitAmount > 0 ? '+' : ''
-                }}{{ calculatedProfitAmount.toLocaleString() }}원
-              </span>
-              <span
-                :class="
-                  calculatedProfitAmount > 0
-                    ? 'text-red-600'
-                    : calculatedProfitAmount < 0
-                      ? 'text-blue-600'
-                      : 'text-gray-600'
-                "
-              >
-                ({{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%)
-              </span>
-            </div>
-          </div>
-        </div>
-      </button>
-
-      <!-- 총 자산 카드 아래에 자산 현황/거래 내역/체결 대기 목록 버튼 -->
-      <div class="mx-6 mb-4">
-        <div class="flex gap-2">
-          <button
-            @click="goToAssetStatus"
-            class="flex-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-lg py-2 transition-colors duration-150 shadow-sm border border-gray-200"
-          >
-            자산 현황
-          </button>
-          <button
-            @click="router.push('/mock-trading/transactions')"
-            class="flex-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-lg py-2 transition-colors duration-150 shadow-sm border border-gray-200"
-          >
-            거래 내역
-          </button>
-          <button
-            @click="router.push('/mock-trading/pending-orders')"
-            class="flex-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-lg py-2 transition-colors duration-150 shadow-sm border border-gray-200"
-          >
-            체결 대기 목록
-          </button>
+                <span
+                  class="flex items-center justify-center w-10 h-10 rounded-lg bg-white mr-3 border border-gray-200"
+                >
+                  <img
+                    :src="feature.icon"
+                    :alt="feature.title + ' 아이콘'"
+                    class="w-6 h-6 object-contain"
+                  />
+                </span>
+                <span class="flex flex-col items-start text-left">
+                  <span class="font-semibold text-sm text-gray-900">{{ feature.title }}</span>
+                  <span class="text-xs text-gray-500 mt-0.5">{{ feature.desc }}</span>
+                </span>
+              </button>
+            </swiper-slide>
+          </swiper>
         </div>
       </div>
 
-      <!-- 종목 정렬 옵션 셀렉트 + 자세히 보기 버튼 + 현재가/평가금 토글 -->
-      <div v-if="holdingsData && holdingsData.length > 0" class="mx-6 mb-5">
-        <div class="flex items-center justify-between">
+      <!-- 총 자산 카드 -->
+      <div class="w-full max-w-[420px] mx-auto p-5 mb-4 bg-white rounded-2xl shadow">
+        <button class="w-full text-left" @click="goToAssetStatus" style="display: block">
+          <div class="py-2">
+            <div class="flex items-center mb-1">
+              <span class="font-bold text-base text-gray-900">총 자산</span>
+              <svg
+                class="w-5 h-5 text-gray-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                style="transform: scaleX(-1)"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </div>
+            <div v-if="!dataLoaded" class="w-40 h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
+            <div v-else class="w-full flex flex-col items-start">
+              <div class="text-2xl font-bold text-gray-900 mb-1">
+                {{ stockValue.toLocaleString() }}원
+              </div>
+              <div class="text-base font-medium mb-1">
+                <span
+                  :class="
+                    calculatedProfitAmount > 0
+                      ? 'text-red-600'
+                      : calculatedProfitAmount < 0
+                        ? 'text-blue-600'
+                        : 'text-gray-600'
+                  "
+                >
+                  {{ calculatedProfitAmount > 0 ? '+' : ''
+                  }}{{ calculatedProfitAmount.toLocaleString() }}원
+                </span>
+                <span
+                  :class="
+                    calculatedProfitAmount > 0
+                      ? 'text-red-600'
+                      : calculatedProfitAmount < 0
+                        ? 'text-blue-600'
+                        : 'text-gray-600'
+                  "
+                >
+                  ({{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%)
+                </span>
+              </div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- 종목 정렬 옵션 + 리스트 카드 -->
+      <div
+        v-if="holdingsData && holdingsData.length > 0"
+        class="w-full max-w-[420px] mx-auto p-5 mb-4 bg-white rounded-2xl shadow"
+      >
+        <div class="flex flex-row items-center justify-between gap-2 min-h-[40px]">
           <!-- 정렬 드롭다운 -->
-          <div class="relative inline-block" ref="sortDropdownRoot">
+          <div class="relative inline-block flex-shrink-0" ref="sortDropdownRoot">
             <button
               @click="showSortDropdown = !showSortDropdown"
-              class="px-0 py-2 text-sm font-medium rounded-md bg-white text-gray-700 flex items-center gap-1 min-w-[120px]"
+              class="py-2 text-xs font-medium rounded-md bg-white text-gray-700 flex items-center gap-1 min-w-[120px] h-10"
               type="button"
+              style="box-shadow: 0 1px 2px 0 rgb(16 30 115 / 0.04)"
             >
               <span>{{ sortOptions.find((opt) => opt.key === currentSort)?.label || '정렬' }}</span>
               <svg
@@ -178,25 +173,25 @@
             </div>
           </div>
           <!-- 오른쪽: 자세히보기 + 평가금/현재가 토글 버튼 묶음 -->
-          <div class="flex items-center ml-auto gap-1">
-            <!-- 자세히보기 버튼 -->
+          <div class="flex items-center gap-2 flex-1 justify-end min-h-[40px]">
             <button
               type="button"
-              class="flex items-center text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap h-7 px-2 py-0.5 bg-gray-100"
+              class="flex items-center text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap h-8 px-2 bg-gray-100"
               :class="[showDetail ? 'text-black-600' : 'text-gray-500']"
               style="box-shadow: 0 1px 2px 0 rgb(16 30 115 / 0.04)"
               @click="showDetail = !showDetail"
             >
               자세히 보기
             </button>
-            <!-- 평가금/현재가 토글 버튼 -->
-            <div class="flex bg-gray-100 rounded-lg p-0.5 gap-0.5 flex-nowrap">
+            <div
+              class="flex bg-gray-100 rounded-lg p-0 gap-0 flex-nowrap h-8 items-center overflow-hidden"
+            >
               <button
                 :class="[
                   showPriceType === 'value'
                     ? 'bg-white text-black-600'
                     : 'bg-gray-100 text-gray-500',
-                  'px-2 py-0.5 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap min-w-[44px] h-6',
+                  'px-2 py-0 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap min-w-[36px] h-6',
                 ]"
                 @click="showPriceType = 'value'"
                 type="button"
@@ -209,7 +204,7 @@
                   showPriceType === 'current'
                     ? 'bg-white text-black-600'
                     : 'bg-gray-100 text-gray-500',
-                  'px-2 py-0.5 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap min-w-[44px] h-6',
+                  'px-2 py-0 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap min-w-[36px] h-6',
                 ]"
                 @click="showPriceType = 'current'"
                 type="button"
@@ -221,7 +216,7 @@
           </div>
         </div>
         <!-- 내 종목 간단 카드 리스트 (전체 스크롤) -->
-        <div class="max-h-75 overflow-y-auto pr-1 bg-white rounded-2xl">
+        <div class="max-h-75 overflow-y-auto pr-1">
           <div
             v-for="holding in sortedHoldings"
             :key="holding.stockCode"
@@ -337,10 +332,76 @@
         </div>
       </div>
 
-      <!-- 여기에 최근 거래 내역, 거래 대기 중인 목록 가져오는 가로 버튼 만들기 -->
-    </div>
+      <!-- 자산 현황/거래 내역/체결 대기 목록 세로형 카드 -->
+      <div class="w-full max-w-[420px] mx-auto mb-4 bg-white rounded-2xl shadow overflow-hidden">
+        <button
+          @click="goToAssetStatus"
+          class="w-full flex items-center justify-between px-5 py-4 bg-white/60 hover:bg-blue-50 transition-colors duration-150 text-gray-800 text-base font-medium focus:outline-none"
+          style="backdrop-filter: blur(2px)"
+        >
+          <span class="flex items-center gap-1">
+            <img src="@/assets/krw_image.png" alt="KRW" class="w-6 h-6 object-contain" />
+            자산 현황
+          </span>
+          <svg
+            class="w-5 h-5 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            style="transform: scaleX(-1)"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+        <button
+          @click="router.push('/mock-trading/transactions')"
+          class="w-full flex items-center justify-between px-5 py-4 bg-white/60 hover:bg-blue-50 transition-colors duration-150 text-gray-800 text-base font-medium focus:outline-none"
+          style="backdrop-filter: blur(2px)"
+        >
+          <span>거래 내역</span>
+          <svg
+            class="w-5 h-5 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            style="transform: scaleX(-1)"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+        <button
+          @click="router.push('/mock-trading/pending-orders')"
+          class="w-full flex items-center justify-between px-5 py-4 bg-white/60 hover:bg-blue-50 transition-colors duration-150 text-gray-800 text-base font-medium focus:outline-none"
+          style="backdrop-filter: blur(2px)"
+        >
+          <span>체결 대기 목록</span>
+          <svg
+            class="w-5 h-5 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            style="transform: scaleX(-1)"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+      </div>
 
-    <div>
       <router-view />
       <transition name="fade-scale">
         <div
@@ -372,15 +433,46 @@
           </div>
         </div>
       </transition>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PendingOrders />
-      </div>
       <BottomNav />
     </div>
   </div>
 </template>
 
 <script setup>
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import 'swiper/css'
+
+import finzIcon from '@/assets/finz.png'
+import krwIcon from '@/assets/krw_image.png'
+
+// 서비스 기능 연결 카드 데이터
+const serviceFeatures = [
+  {
+    icon: finzIcon,
+    title: '핀즈 알아보기',
+    desc: '서비스 소개',
+    onClick: () => router.push('/about'),
+  },
+  {
+    icon: krwIcon,
+    title: '직접 비교하기',
+    desc: '핀즈 투자전략',
+    onClick: () => router.push('/compare'),
+  },
+  {
+    icon: finzIcon,
+    title: '핀즈 알아보기',
+    desc: '서비스 소개',
+    onClick: () => router.push('/about'),
+  },
+  {
+    icon: krwIcon,
+    title: '직접 비교하기',
+    desc: '핀즈 투자전략',
+    onClick: () => router.push('/compare'),
+  },
+  // 추가 기능은 여기에 계속 추가 가능
+]
 import { getUserCredit } from '@/services/learning'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
