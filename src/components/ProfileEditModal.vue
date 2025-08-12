@@ -16,44 +16,15 @@
           <div
             :class="[
               'w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mb-2 ml-[3px]',
-              getProfileImageSrc() === '/src/assets/finz.png' ? 'p-2' : '',
+              getCurrentProfileImageSrc().includes('finz.png') ? 'p-2' : '',
             ]"
           >
             <img
-              :src="getProfileImageSrc()"
+              :src="getCurrentProfileImageSrc()"
               alt="프로필"
-              :class="[
-                'w-full h-full object-center',
-                getProfileImageSrc() === '/src/assets/finz.png' ? 'object-contain' : 'object-cover',
-              ]"
+              :class="['w-full h-full object-center object-contain p-2']"
               @error="handleImageError"
             />
-            <!-- 사진 변경 버튼 -->
-            <button
-              @click="triggerFileInput"
-              class="absolute bottom-0 right-0 w-7 h-7 bg-white border border-black rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 transition-colors"
-              style="transform: translate(33%, 10%)"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="2"
-                stroke="black"
-                class="w-4 h-4"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
-                />
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
-                />
-              </svg>
-            </button>
             <!-- X(기본 이미지) 버튼 -->
             <button
               type="button"
@@ -74,19 +45,37 @@
               </svg>
             </button>
           </div>
-          <!-- 숨겨진 파일 입력 -->
-          <input
-            ref="fileInput"
-            type="file"
-            accept="image/*"
-            @change="handleFileChange"
-            class="hidden"
-          />
+        </div>
+
+        <!-- 이미지 선택기: 항상 표시, 기본 이미지는 제외 (2~7번만) -->
+        <div class="mt-4 w-full">
+          <div class="text-sm text-gray-600 mb-3 text-center">프로필 이미지를 선택해주세요</div>
+          <div class="grid grid-cols-3 gap-3">
+            <button
+              v-for="(image, index) in availableImages.slice(1)"
+              :key="index + 2"
+              @click="selectProfileImage(index + 2)"
+              :class="[
+                'w-16 h-16 rounded-full overflow-hidden border-2 transition-all duration-200',
+                getSelectedImageNumber() === index + 2
+                  ? 'border-blue-500 ring-2 ring-blue-200'
+                  : 'border-gray-200 hover:border-gray-300',
+                image.includes('finz.png') ? 'p-1' : '',
+              ]"
+              :disabled="isUpdatingImage"
+            >
+              <img
+                :src="image"
+                :alt="`프로필 이미지 ${index + 2}`"
+                :class="['w-full h-full object-center object-contain p-2']"
+              />
+            </button>
+          </div>
         </div>
 
         <!-- 닉네임 표시 및 수정 -->
-        <div class="text-base text-gray-900 mt-5 flex items-center gap-1">
-          <span v-if="!isEditingNickname">{{ profile.nickname }}님</span>
+        <div class="text-base text-gray-900 mt-5 flex items-center">
+          <span v-if="!isEditingNickname">{{ profile.nickname }}</span>
           <input
             v-else
             ref="nicknameInput"
@@ -172,8 +161,20 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'update-profile-image', 'update-nickname'])
 
-const fileInput = ref(null)
-const isUploading = ref(false)
+// 사용 가능한 프로필 이미지들 (assets 경로)
+const availableImages = [
+  '/src/assets/finz.png', // 1번 - 기본 이미지
+  '/src/assets/FINZ_고양이.png', // 2번
+  '/src/assets/FINZ_곰.png', // 3번
+  '/src/assets/FINZ_병아리.png', // 4번
+  '/src/assets/FINZ_원숭이.png', // 5번
+  '/src/assets/FINZ_코끼리.png', // 6번
+  '/src/assets/FINZ_토끼.png', // 7번
+]
+
+// 이미지 선택 관련 상태
+const showImageSelector = ref(false)
+const isUpdatingImage = ref(false)
 
 // 닉네임 편집 관련 상태
 const isEditingNickname = ref(false)
@@ -181,22 +182,55 @@ const editingNickname = ref('')
 const nicknameInput = ref(null)
 const isUpdatingNickname = ref(false)
 
-const getProfileImageSrc = () => {
-  if (props.profile.image && props.profile.image.trim() !== '') {
-    if (props.profile.image.startsWith('/uploads/')) {
-      return `http://localhost:8080${props.profile.image}`
-    }
-    return props.profile.image
+// 현재 프로필 이미지 소스 반환
+const getCurrentProfileImageSrc = () => {
+  const availableImages = [
+    '/src/assets/finz.png', // 1번
+    '/src/assets/FINZ_고양이.png', // 2번
+    '/src/assets/FINZ_곰.png', // 3번
+    '/src/assets/FINZ_병아리.png', // 4번
+    '/src/assets/FINZ_원숭이.png', // 5번
+    '/src/assets/FINZ_코끼리.png', // 6번
+    '/src/assets/FINZ_토끼.png', // 7번
+  ]
+
+  // UserVo의 profileImage는 Integer
+  const imageNumber = props.profile.profileImage
+
+  // 유효한 이미지 번호인 경우
+  if (typeof imageNumber === 'number' && imageNumber >= 1 && imageNumber <= 7) {
+    return availableImages[imageNumber - 1]
   }
-  return '/src/assets/finz.png'
+
+  // 기본 이미지 (null이거나 유효하지 않은 경우)
+  return availableImages[0]
 }
 
-// 기본 이미지로 변경
-const setDefaultProfileImage = async () => {
+// 선택된 이미지 번호 반환
+const getSelectedImageNumber = () => {
+  const imageNumber = props.profile.profileImage
+  if (typeof imageNumber === 'number' && imageNumber >= 1 && imageNumber <= 7) {
+    return imageNumber
+  }
+  return 1 // 기본값
+}
+// 이미지 선택기 토글
+const toggleImageSelector = () => {
+  showImageSelector.value = !showImageSelector.value
+}
+
+// 프로필 이미지 선택
+const selectProfileImage = async (imageNumber) => {
+  if (isUpdatingImage.value) return
+
   try {
+    isUpdatingImage.value = true
+
     const response = await axios.post(
-      '/api/user/reset-profile-image',
-      {},
+      '/api/user/update-profile-image',
+      {
+        profile_image: imageNumber,
+      },
       {
         withCredentials: true,
         headers: {
@@ -207,76 +241,29 @@ const setDefaultProfileImage = async () => {
 
     if (response.data.success) {
       // 성공 시 부모로 emit
-      emit('update-profile-image', null)
-      alert('프로필 사진이 기본 이미지로 변경되었습니다.')
+      emit('update-profile-image', imageNumber)
+      showImageSelector.value = false
     }
   } catch (error) {
-    console.error('프로필 사진 초기화 실패:', error)
+    console.error('프로필 이미지 변경 실패:', error)
 
     if (error.response && error.response.data && error.response.data.error) {
       alert(error.response.data.error)
     } else {
-      alert('프로필 사진 변경에 실패했습니다. 다시 시도해주세요.')
+      alert('프로필 이미지 변경에 실패했습니다. 다시 시도해주세요.')
     }
-  }
-}
-const handleImageError = (event) => {
-  event.target.src = '/src/assets/finz.png'
-}
-
-const triggerFileInput = () => {
-  fileInput.value?.click()
-}
-
-const handleFileChange = async (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-
-  // 파일 크기 검증 (5MB 제한)
-  const maxSize = 5 * 1024 * 1024 // 5MB
-  if (file.size > maxSize) {
-    alert('파일 크기는 5MB 이하여야 합니다.')
-    return
-  }
-
-  // 파일 타입 검증
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-  if (!allowedTypes.includes(file.type)) {
-    alert('JPG, PNG, WEBP 형식의 이미지만 업로드 가능합니다.')
-    return
-  }
-
-  try {
-    isUploading.value = true
-
-    // FormData 생성
-    const formData = new FormData()
-    formData.append('image', file)
-
-    // 서버에 업로드
-    const response = await axios.post('/api/user/upload-profile-image', formData, {
-      withCredentials: true,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-
-    // 성공 시 프로필 이미지 업데이트
-    if (response.data.imageUrl) {
-      // 부모로 emit
-      emit('update-profile-image', response.data.imageUrl)
-      alert('프로필 사진이 성공적으로 변경되었습니다.')
-    } else {
-      console.error('서버 응답에 imageUrl이 없습니다:', response.data)
-    }
-  } catch (error) {
-    console.error('프로필 사진 업로드 실패:', error)
-    alert('프로필 사진 업로드에 실패했습니다. 다시 시도해주세요.')
   } finally {
-    isUploading.value = false
-    // 파일 입력 초기화
-    if (fileInput.value) fileInput.value.value = ''
+    isUpdatingImage.value = false
   }
+}
+
+// 기본 이미지로 변경
+const setDefaultProfileImage = async () => {
+  await selectProfileImage(1) // 1번이 기본 이미지
+}
+
+const handleImageError = (event) => {
+  event.target.src = availableImages[0] // 기본 이미지로 폴백
 }
 
 // 닉네임 편집 관련 메서드
