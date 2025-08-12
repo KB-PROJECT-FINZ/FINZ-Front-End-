@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="flex items-center space-x-3 p-2 border rounded-md shadow-sm bg-white max-w-md w-full text-sm"
-  >
+  <div class="flex items-center space-x-3 p-2 rounded-md shadow-md max-w-md w-full text-sm">
     <img
       :src="logo || '/images/stocks/default.png'"
       alt="logo"
