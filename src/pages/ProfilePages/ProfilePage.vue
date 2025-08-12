@@ -1,252 +1,276 @@
 <template>
   <div class="bg-white min-h-screen pb-16">
-    <!-- 상단 헤더 -->
-    <header
-      class="flex items-center justify-between bg-white px-4 pt-4 pb-3 sticky top-0 z-10 border-b border-gray-200"
-    >
-      <div class="w-10"></div>
-      <span class="text-lg font-bold text-gray-800">마이페이지</span>
-      <img
-        src="https://cdn-icons-png.flaticon.com/512/157/157316.png"
-        alt="설정 아이콘"
-        class="w-6 h-6 cursor-pointer"
-        @click="handleLogout"
-      />
-    </header>
-
-    <!-- 프로필 박스 -->
-    <section class="rounded-2xl mt-5 px-5 py-5 bg-white">
-      <!-- 이모지 + 이름 -->
-      <div class="flex items-center mb-3">
-        <div
-          class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-lg text-gray-400 mr-2"
-        >
-          👤
-        </div>
-        <div class="text-base font-bold text-gray-900">{{ profile.name }}</div>
-      </div>
-
-      <!-- 투자 성향 & 포인트 박스 (줄바꿈 없이, 여백 좁게) -->
-      <div class="flex flex-nowrap gap-2">
-        <div class="w-1/2 bg-white shadow rounded-lg px-4 py-2 text-sm text-gray-700">
-          <div class="text-gray-500 text-xs mb-0.5">투자 성향</div>
-          <div class="font-semibold text-indigo-600 truncate">{{ profile.type }} {{ nameKr }}</div>
-        </div>
-
-        <div class="w-1/2 bg-white shadow rounded-lg px-4 py-2 text-sm text-gray-700">
-          <div class="text-gray-500 text-xs mb-0.5">크레딧</div>
-          <div class="font-semibold text-yellow-600 truncate">{{ asset.amount }}C</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 자산 섹션 -->
-    <section class="bg-white rounded-xl mx-4 mb-5 px-5 py-5 border border-gray-200">
-      <div class="text-gray-500 text-sm mb-2">총 보유자산</div>
-
-      <div v-if="!dataLoaded" class="flex items-center justify-between mb-1">
-        <div class="w-40 h-8 bg-gray-200 rounded animate-pulse"></div>
-        <div class="w-32 h-9 bg-gray-200 rounded animate-pulse"></div>
-      </div>
-
-      <div v-else class="flex items-baseline gap-x-4 mb-4">
-        <span class="text-[28px] font-bold text-gray-900 leading-none">
-          {{ calculatedTotalAssetValue.toLocaleString() }}원
-        </span>
-        <span
-          :class="
-            calculatedProfitRate > 0
-              ? 'text-red-600'
-              : calculatedProfitRate < 0
-                ? 'text-blue-600'
-                : 'text-gray-600'
-          "
-          class="text-base font-medium leading-none"
-        >
-          {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
-        </span>
-      </div>
-
-      <div class="flex justify-center">
+    <ToastMessage :show="showToast" :message="toastMessage" :duration="2000" />
+    <!-- 헤더+프로필 공통 배경 -->
+    <div style="background: #f2f6fd">
+      <!-- 상단 헤더 -->
+      <header
+        class="flex items-center justify-end px-4 pt-4 pb-3 rounded-t-2xl sticky top-0 z-10"
+        style="background: #f2f6fd; border-bottom: none"
+      >
         <button
-          class="bg-blue-600 text-white rounded px-6 py-2 text-sm font-semibold hover:bg-blue-800 transition"
-          style="width: 320px"
-          @click="goToAssetStatus"
+          class="w-8 h-8 flex items-center justify-center"
+          aria-label="프로필 수정"
+          @click="openProfileEditModal"
         >
-          내 자산 현황 바로가기
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="#222"
+            class="w-6 h-6"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M16.862 4.487a2.25 2.25 0 1 1 3.182 3.182l-9.75 9.75a2 2 0 0 1-.708.464l-4.25 1.417a.5.5 0 0 1-.632-.632l1.417-4.25a2 2 0 0 1 .464-.708l9.75-9.75Z"
+            />
+          </svg>
         </button>
-      </div>
-    </section>
+        <!-- 프로필 수정 모달 -->
+        <profile-edit-modal
+          v-if="showProfileEditModal"
+          @close="showProfileEditModal = false"
+          :profile="profile"
+          @update-profile-image="onProfileImageUpdated"
+          @update-nickname="onNicknameUpdated"
+          @show-toast="handleShowToast"
+        />
+      </header>
 
-    <!-- 메뉴 -->
+      <!-- 프로필 박스 -->
+      <section class="rounded-b-2xl px-5 mt-5" style="background: #f2f6fd">
+        <!-- 프로필 이미지 + 투자 성향 + 이름 (가운데 정렬) -->
+        <div class="flex flex-col items-center">
+          <div class="relative">
+            <div
+              :class="[
+                'w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mb-2 border border-black',
+                getProfileImageSrc().includes('finz.png') ? 'p-1' : '',
+              ]"
+            >
+              <img
+                :src="getProfileImageSrc()"
+                alt="프로필"
+                class="w-full h-full object-center object-contain p-2"
+                @error="handleImageError"
+              />
+            </div>
+          </div>
+
+          <div class="text-sm text-gray-900 mb-1">{{ profile.nickname }}</div>
+          <div class="text-xs text-gray-700 mb-6">{{ profile.type }} {{ nameKr }}</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 로딩 오버레이는 ProfileEditModal에서 처리 -->
+
+    <!-- 맞춤 콘텐츠 카드형 메뉴 -->
+    <section class="flex flex-col gap-3 mx-4 mb-5 mt-6">
+      <router-link
+        to="/mock-trading/ai-report"
+        class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
+      >
+        <img
+          src="https://cdn-icons-png.flaticon.com/128/12400/12400883.png"
+          alt="뉴스 아이콘"
+          width="24"
+          height="24"
+          class="mr-4"
+        />
+        <div class="flex-1 min-w-0">
+          <div class="text-base text-gray-900 mb-0.5">AI 분석 리포트</div>
+          <div class="text-sm text-gray-500">AI가 분석한 투자 리포트를 확인해보세요</div>
+        </div>
+        <span class="text-2xl text-black ml-2">&#8250;</span>
+      </router-link>
+    </section>
+    <!-- 투자 일지 & 나의 투자 성향 알아보기 -->
     <section class="flex flex-col gap-3 mx-4 mb-5">
       <router-link
         to="/journal"
-        class="flex items-center bg-white rounded-xl px-4 py-4 border border-gray-200 text-inherit no-underline"
+        class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
-        <span class="text-xl mr-4">📒</span>
+        <img
+          src="https://cdn-icons-png.flaticon.com/128/7653/7653160.png"
+          alt="뉴스 아이콘"
+          width="24"
+          height="24"
+          class="mr-4"
+        />
         <div class="flex-1 min-w-0">
-          <div class="text-base font-bold text-gray-900 mb-0.5">투자 일지</div>
+          <div class="text-base text-gray-900 mb-0.5">투자 일지</div>
           <div class="text-sm text-gray-500">나의 투자 기록을 확인해보세요</div>
         </div>
-        <span class="text-xl text-gray-300 ml-2">&#8250;</span>
+        <span class="text-2xl text-black ml-2">&#8250;</span>
       </router-link>
+    </section>
+    <section class="flex flex-col gap-3 mx-4 mb-5">
+      <div
+        class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
+        @click="goToCustomContents"
+      >
+        <img
+          src="https://cdn-icons-png.flaticon.com/128/7931/7931221.png"
+          alt="뉴스 아이콘"
+          width="24"
+          height="24"
+          class="mr-4"
+        />
+        <div class="flex-1 min-w-0">
+          <div class="text-base text-gray-900 mb-0.5">맞춤 콘텐츠</div>
+          <div class="text-sm text-gray-500">나만을 위한 추천 콘텐츠를 확인해보세요</div>
+        </div>
+        <span class="text-2xl text-black ml-2">&#8250;</span>
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-3 mx-4 mb-5">
       <router-link
         to="/risk-profile"
-        class="flex items-center bg-white rounded-xl px-4 py-4 border border-gray-200 text-inherit no-underline"
+        class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
-        <span class="text-xl mr-4">📝</span>
+        <img
+          src="https://cdn-icons-png.flaticon.com/128/14700/14700716.png"
+          alt="뉴스 아이콘"
+          width="24"
+          height="24"
+          class="mr-4"
+        />
         <div class="flex-1 min-w-0">
-          <div class="text-base font-bold text-gray-900 mb-0.5">나의 투자 성향 알아보기</div>
+          <div class="text-base text-gray-900 mb-0.5">나의 투자 성향 알아보기</div>
           <div class="text-sm text-gray-500">투자 성향을 분석해보세요</div>
         </div>
-        <span class="text-xl text-gray-300 ml-2">&#8250;</span>
+        <span class="text-2xl text-black ml-2">&#8250;</span>
       </router-link>
     </section>
 
-    <!-- 내 투자내역 카드 -->
-    <section class="bg-white rounded-xl mx-4 mb-5 overflow-hidden border border-gray-200">
-      <div class="flex items-center justify-between bg-gray-50 px-5 py-4 border-b border-gray-200">
-        <div class="text-base font-bold text-gray-900">내 투자내역</div>
-        <button
-          class="bg-white text-black border border-gray-300 rounded px-3 py-1 text-sm font-medium hover:bg-gray-100 transition"
-          @click="goToTransactions"
-        >
-          최근 투자 내역 바로가기
-        </button>
-      </div>
+    <footer-navigation></footer-navigation>
 
-      <div class="px-5 py-4">
-        <!-- 로딩 중 -->
-        <div v-if="!dataLoaded">
-          <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
-          <div class="flex flex-col gap-2 mb-4">
-            <div
-              v-for="i in 2"
-              :key="i"
-              class="w-full h-10 bg-gray-200 rounded animate-pulse"
-            ></div>
-          </div>
-          <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
-          <div class="flex flex-col gap-2">
-            <div
-              v-for="i in 2"
-              :key="i"
-              class="w-full h-10 bg-gray-200 rounded animate-pulse"
-            ></div>
-          </div>
-        </div>
-
-        <!-- 실제 데이터 -->
-        <div v-else>
-          <!-- 매수 -->
-          <div class="mb-4">
-            <div class="text-sm font-bold text-red-600 mb-2 pl-1">매수 내역</div>
-            <div v-if="buyHistory.length === 0" class="text-sm text-gray-500 text-center py-4">
-              매수 내역이 없습니다
-            </div>
-            <div v-else>
-              <div
-                v-for="(item, index) in buyHistory"
-                :key="`buy-${index}`"
-                class="flex items-center justify-between px-3 py-3 shadow border-l-4 border-red-600 rounded-lg mb-2"
-              >
-                <div class="flex items-center">
-                  <div
-                    class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3"
-                  >
-                    <img
-                      v-if="item.imageUrl && !imageErrors[item.stockCode]"
-                      :src="item.imageUrl"
-                      class="w-full h-full object-cover"
-                      @error="handleImageError(item.stockCode)"
-                    />
-                    <span v-else class="text-xs font-bold" style="color: #2272eb">
-                      {{ getStockInitial(item.name) }}
-                    </span>
-                  </div>
-                  <div class="flex flex-col">
-                    <div class="text-sm font-bold text-gray-900">{{ item.name }}</div>
-                    <div class="text-xs text-gray-500">{{ item.desc }}</div>
-                  </div>
-                </div>
-                <div class="text-sm font-bold text-gray-900">
-                  {{ item.amount.toLocaleString() }}원
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 매도 -->
-          <div>
-            <div class="text-sm font-bold text-blue-600 mb-2 pl-1">매도 내역</div>
-            <div v-if="sellHistory.length === 0" class="text-sm text-gray-500 text-center py-4">
-              매도 내역이 없습니다
-            </div>
-            <div v-else>
-              <div
-                v-for="(item, index) in sellHistory"
-                :key="`sell-${index}`"
-                class="flex items-center justify-between px-3 py-3 shadow border-l-4 border-blue-600 rounded-lg mb-2"
-              >
-                <div class="flex items-center">
-                  <div
-                    class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3"
-                  >
-                    <img
-                      v-if="item.imageUrl && !imageErrors[item.stockCode]"
-                      :src="item.imageUrl"
-                      class="w-full h-full object-cover"
-                      @error="handleImageError(item.stockCode)"
-                    />
-                    <span v-else class="text-xs font-bold" style="color: #2272eb">
-                      {{ getStockInitial(item.name) }}
-                    </span>
-                  </div>
-                  <div class="flex flex-col">
-                    <div class="text-sm font-bold text-gray-900">{{ item.name }}</div>
-                    <div class="text-xs text-gray-500">{{ item.desc }}</div>
-                  </div>
-                </div>
-                <div class="text-sm font-bold text-gray-900">
-                  {{ item.amount.toLocaleString() }}원
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <FooterNavigation />
+    <!-- 로그아웃 버튼 (네비게이션 아래) -->
+    <div class="w-full flex justify-center mt-4 mb-8">
+      <button
+        @click="handleLogout"
+        class="w-[90%] max-w-md h-12 bg-gray-100 text-gray-500 font-bold rounded-xl shadow-sm hover:bg-gray-200 transition-colors"
+      >
+        Log out
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import FooterNavigation from '@/components/FooterNavigation.vue'
-import { ref, onMounted, computed } from 'vue'
+import ToastMessage from '@/components/ToastMessage.vue'
+import { nextTick } from 'vue'
+const showToast = ref(false)
+const toastMessage = ref('')
+
+// ToastMessage 핸들러
+const handleShowToast = (msg) => {
+  toastMessage.value = msg
+  showToast.value = false
+  nextTick(() => {
+    showToast.value = true
+  })
+}
+// 맞춤 콘텐츠 카드 클릭 시 전체 보기로 이동
+const goToCustomContents = () => {
+  router.push('/profile/custom-contents')
+}
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import { getUserCredit } from '@/services/learning'
 import { useUserStore } from '@/stores/user'
 import { useAssetDataStore } from '@/services/useAssetData'
+import FooterNavigation from '@/components/FooterNavigation.vue'
+
+// 프로필 수정 모달 컴포넌트 import (경로에 맞게 조정 필요)
+import ProfileEditModal from '@/components/ProfileEditModal.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
-const imageErrors = ref({})
+const { loadUserData } = useAssetDataStore()
 
-const { dataLoaded, userAccount, calculatedProfitRate, loadUserData, safeNumber } =
-  useAssetDataStore()
-
-const profile = ref({ image: '', name: '', type: '', level: 3 })
-const asset = ref({ amount: 0 })
-const buyHistory = ref([])
-const sellHistory = ref([])
+// 🔥 수정: profile 구조 변경 (image -> profileImage로 변경)
+const profile = ref({
+  profileImage: 1, // Integer 타입으로 변경
+  name: '',
+  nickname: '',
+  type: '',
+  level: 3,
+})
+const riskTypeName = ref('')
+const recommendedContentsByRisk = ref([])
+const selectedContent = ref(null)
 const nameKr = ref('')
-const calculatedTotalAssetValue = computed(() => safeNumber(userAccount.value.totalAssetValue, 0))
 
-const goToAssetStatus = () => router.push('/mock-trading/asset-status')
-const goToTransactions = () => router.push('/mock-trading/transactions')
+// 프로필 수정 모달 상태
+const showProfileEditModal = ref(false)
+
+const openProfileEditModal = () => {
+  showProfileEditModal.value = true
+}
+
+// 🔥 수정: 프로필 이미지 소스 가져오기 (assets 이미지 시스템)
+const getProfileImageSrc = () => {
+  const availableImages = [
+    '/src/assets/finz.png', // 1번
+    '/src/assets/FINZ_고양이.png', // 2번
+    '/src/assets/FINZ_곰.png', // 3번
+    '/src/assets/FINZ_병아리.png', // 4번
+    '/src/assets/FINZ_원숭이.png', // 5번
+    '/src/assets/FINZ_코끼리.png', // 6번
+    '/src/assets/FINZ_토끼.png', // 7번
+  ]
+
+  const imageNumber = profile.value.profileImage
+
+  // 유효한 이미지 번호인 경우
+  if (typeof imageNumber === 'number' && imageNumber >= 1 && imageNumber <= 7) {
+    return availableImages[imageNumber - 1]
+  }
+
+  // 기본 이미지
+  return availableImages[0]
+}
+
+// 🔥 삭제: getImageStyle 함수 제거 (더 이상 필요 없음)
+
+// 🔥 수정: 이미지 로드 에러 처리
+const handleImageError = (event) => {
+  event.target.src = '/src/assets/finz.png'
+  profile.value.profileImage = 1 // 기본 이미지 번호로 설정
+}
+
+// 🔥 수정: ProfileEditModal에서 이미지 변경 시 반영 (Integer 처리)
+const onProfileImageUpdated = (newImageNumber) => {
+  profile.value.profileImage = newImageNumber || 1
+}
+
+// ProfileEditModal에서 닉네임 변경 시 반영
+const onNicknameUpdated = (newNickname) => {
+  profile.value.nickname = newNickname
+}
+
+// 기존 함수들
+const goToContents = () => router.push('/recommend')
+const openContentModal = (item) => {
+  selectedContent.value = item
+}
+
+const fetchRecommendedContentsByRiskType = async (riskType) => {
+  try {
+    const res = await axios.get(`/api/contents/recommend?riskType=${riskType}`, {
+      withCredentials: true,
+    })
+    recommendedContentsByRisk.value = res.data
+  } catch (e) {
+    console.error('❌ 추천 콘텐츠 조회 실패:', e)
+    recommendedContentsByRisk.value = []
+  }
+}
 
 const handleLogout = async () => {
   try {
@@ -255,69 +279,63 @@ const handleLogout = async () => {
     console.warn('서버 세션 종료 실패', e)
   }
 
-  userStore.clearUser()
   localStorage.removeItem('user')
   router.push('/login-form')
 }
 
-const handleImageError = (code) => {
-  imageErrors.value[code] = true
+// 🔥 수정: 서버 데이터를 받아서 처리하는 함수 추가
+const processProfileData = (userData) => {
+  // profileImage를 Integer로 변환
+  let profileImageNumber = userData.profileImage
+
+  if (typeof profileImageNumber === 'string') {
+    profileImageNumber = parseInt(profileImageNumber)
+  }
+
+  // 유효하지 않은 값이면 기본값 1로 설정
+  if (!profileImageNumber || profileImageNumber < 1 || profileImageNumber > 7) {
+    profileImageNumber = 1
+  }
+
+  return {
+    name: userData.name || '',
+    nickname: userData.nickname || '',
+    type: userData.riskType || '',
+    level: typeof userData.level === 'number' ? userData.level : 3,
+    profileImage: profileImageNumber,
+  }
 }
 
-const getStockInitial = (name) => {
-  return name ? name[0] : '?'
-}
-
+// 🔥 수정: onMounted에서 데이터 처리 방식 변경
 onMounted(async () => {
   try {
     const me = await axios.get('/api/auth/me', { withCredentials: true })
-    profile.value = {
-      name: me.data.name,
-      type: me.data.riskType,
-      level: typeof me.data.level === 'number' ? me.data.level : 3,
-      image: me.data.profileImage || '',
-    }
 
-    const credit = await getUserCredit(me.data.userId)
-    asset.value.amount = credit
+    // 🔥 수정: processProfileData 함수 사용
+    profile.value = processProfileData(me.data)
 
-    await loadUserData()
+    // 투자 성향 한글명 가져오기
     const detailRes = await axios.get(`/api/user/risk-type-detail/${profile.value.type}`, {
       withCredentials: true,
     })
     nameKr.value = detailRes.data.nameKr
+    riskTypeName.value = detailRes.data.nameKr
 
-    const txRes = await axios.get('/api/mocktrading/transactions', { withCredentials: true })
-    if (txRes.data && txRes.data.length > 0) {
-      const buyTx = txRes.data.filter((t) => t.transactionType === 'BUY')
-      const sellTx = txRes.data.filter((t) => t.transactionType === 'SELL')
-
-      buyHistory.value = buyTx.slice(0, 2).map((tx) => ({
-        name: tx.stockName,
-        desc: `매수 ${tx.quantity}주`,
-        amount: tx.totalAmount,
-        stockCode: tx.stockCode,
-        imageUrl: tx.imageUrl,
-      }))
-      sellHistory.value = sellTx.slice(0, 2).map((tx) => ({
-        name: tx.stockName,
-        desc: `매도 ${tx.quantity}주`,
-        amount: tx.totalAmount,
-        stockCode: tx.stockCode,
-        imageUrl: tx.imageUrl,
-      }))
-    }
+    // 추천 콘텐츠 불러오기
+    await fetchRecommendedContentsByRiskType(profile.value.type)
+    await loadUserData()
   } catch (e) {
     console.error('로딩 실패:', e)
     // 세션 실패 시 로컬스토리지 fallback
     try {
-      profile.value.name = localStorage.getItem('name') || '사용자'
-      profile.value.type = localStorage.getItem('riskType') || '정보 없음'
-
-      const userId = Number(localStorage.getItem('userId') || 1)
-      const credit = await getUserCredit(userId)
-      asset.value.amount = credit
-
+      profile.value = {
+        name: localStorage.getItem('name') || '사용자',
+        nickname: localStorage.getItem('nickname') || '',
+        type: localStorage.getItem('riskType') || '정보 없음',
+        level: 3,
+        profileImage: 1, // 기본값
+      }
+      riskTypeName.value = profile.value.type
       await loadUserData()
     } catch (fallbackError) {
       console.error('Fallback 로딩도 실패:', fallbackError)
@@ -327,9 +345,12 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+@import 'v-calendar/style.css';
+
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
 @keyframes pulse {
   0%,
   100% {
@@ -338,5 +359,16 @@ onMounted(async () => {
   50% {
     opacity: 0.5;
   }
+}
+
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
 }
 </style>

@@ -189,16 +189,12 @@ const fetchAnalysis = async () => {
   error.value = null
 
   try {
-    console.log('AI 분석 리포트 조회 시작...')
-
     // 실제 API 호출
     const response = await analysisService.fetchLatestAnalysisReport()
 
     if (response.data) {
-      console.log('API 응답 데이터:', response.data)
       // 백엔드 데이터를 Vue 컴포넌트 형태로 변환
       analysisData.value = analysisService.transformReportData(response)
-      console.log('변환된 분석 데이터:', analysisData.value)
     } else {
       // 분석 결과가 없는 경우
       console.log('분석 결과가 없어 목데이터 사용')
