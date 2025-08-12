@@ -42,7 +42,6 @@
       <div
         class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-4"
       ></div>
-      <p class="text-gray-700">AI가 포트폴리오를 분석하고 있습니다...</p>
     </div>
 
     <!-- 에러 상태 -->
@@ -62,88 +61,170 @@
 
     <!-- 분석 결과 -->
     <div v-else-if="analysisData" ref="pdfContent">
+      <!-- 헤더와 투자 성과 요약 사이 구분선 -->
+      <hr class="border-t-2 border-gray-200 my-2" />
       <!-- 통계 요약 카드들 -->
-      <section class="bg-white px-0 pt-6 mx-0 mb-0">
-        <h2 class="text-xl font-bold text-gray-900 px-6">투자 성과 요약</h2>
-        <div class="flex flex-col gap-3 p-5">
-          <div class="flex justify-between items-center px-3">
-            <span class="text-sm text-gray-500">분석 대상 거래</span>
-            <span class="text-base text-gray-900">{{ analysisData.stats.transactionCount }}건</span>
-          </div>
-          <div class="flex justify-between items-center px-3">
-            <span class="text-sm text-gray-500">분석 기간</span>
-            <span class="flex flex-col items-end">
-              <span class="text-base text-gray-900"
-                >{{ analysisData.stats.analysisStart }} ~ {{ analysisData.stats.analysisEnd }}</span
+      <section class="bg-white mt-6">
+        <div class="px-4">
+          <div class="bg-white rounded-xl p-5 flex flex-col gap-4 border border-gray-200">
+            <h2 class="text-xl font-bold text-gray-900 mb-2">투자 성과 요약</h2>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-500">분석 대상 거래</span>
+              <span class="text-base text-gray-900 font-semibold"
+                >{{ analysisData.stats.transactionCount }}건</span
               >
-              <span class="text-xs text-gray-400 font-normal"
-                >{{ analysisData.stats.analysisPeriod }}일</span
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-500">분석 기간</span>
+              <span class="flex flex-col items-end">
+                <span class="text-base text-gray-900 font-semibold"
+                  >{{ analysisData.stats.analysisStart }} ~
+                  {{ analysisData.stats.analysisEnd }}</span
+                >
+                <span class="text-xs text-gray-400 font-normal"
+                  >{{ analysisData.stats.analysisPeriod }}일</span
+                >
+              </span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-500">총 수익률</span>
+              <span
+                class="text-base font-semibold"
+                :class="analysisData.stats.totalReturn >= 0 ? 'text-red-600' : 'text-blue-600'"
               >
-            </span>
-          </div>
-          <div class="flex justify-between items-center px-3">
-            <span class="text-sm text-gray-500">총 수익률</span>
-            <span
-              class="text-base"
-              :class="analysisData.stats.totalReturn >= 0 ? 'text-red-600' : 'text-blue-600'"
-            >
-              {{ analysisData.stats.totalReturn > 0 ? '+' : ''
-              }}{{ analysisData.stats.totalReturn }}%
-            </span>
+                {{ analysisData.stats.totalReturn > 0 ? '+' : ''
+                }}{{ analysisData.stats.totalReturn }}%
+              </span>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- 회색 구분선(gap) -->
-      <div class="w-full h-4 bg-gray-50"></div>
       <!-- AI 분석 리포트 (탭 없이 모두 나열) -->
       <section class="bg-white px-0 pt-6 pb-0 mx-0 mb-0">
         <h2 class="text-xl font-bold text-gray-900 px-6 mb-4">AI 분석 리포트</h2>
-        <div class="px-6 mb-1">
-          <div class="text-sm font-semibold text-blue-700 mb-2">투자 전략의 특징</div>
-        </div>
-        <div class="px-6">
-          <div class="bg-blue-50 border-l-4 border-blue-400 rounded p-4 min-h-[60px]">
+        <div class="flex flex-col gap-4 px-4">
+          <div class="bg-white rounded-xl p-4 border border-gray-200">
+            <div class="flex items-center">
+              <span
+                class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-400 shadow"
+                style="margin-left: 10px"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  class="w-5 h-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M3 17L9 11L13 15L21 7"
+                    stroke="white"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M21 7H16M21 7V12"
+                    stroke="white"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path d="M3 21H21" stroke="white" stroke-width="1.5" stroke-linecap="round" />
+                  <path d="M3 3V21" stroke="white" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+              </span>
+              <div class="text-base font-medium ml-2">투자 전략의 특징</div>
+            </div>
             <div
-              v-if="analysisData.aiAnalysis?.strategy"
-              v-html="formatContent(analysisData.aiAnalysis.strategy)"
-            ></div>
-            <div v-else class="flex flex-col gap-2 animate-pulse">
-              <div class="h-4 bg-blue-100 rounded w-3/4"></div>
-              <div class="h-4 bg-blue-100 rounded w-2/3"></div>
-              <div class="h-4 bg-blue-100 rounded w-1/2"></div>
+              class="rounded p-3 min-h-[60px] font-normal text-gray-700"
+              style="word-break: keep-all"
+            >
+              <div
+                v-if="analysisData.aiAnalysis?.strategy"
+                v-html="formatContent(analysisData.aiAnalysis.strategy)"
+              ></div>
+              <div v-else class="flex flex-col gap-2 animate-pulse">
+                <div class="h-4 bg-gray-100 rounded w-3/4"></div>
+                <div class="h-4 bg-gray-100 rounded w-2/3"></div>
+                <div class="h-4 bg-gray-100 rounded w-1/2"></div>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="px-6 mb-1 mt-6">
-          <div class="text-sm font-semibold text-red-600 mb-2">리스크 요인 및 개선점</div>
-        </div>
-        <div class="px-6">
-          <div class="bg-red-50 border-l-4 border-red-400 rounded p-4 min-h-[60px]">
-            <div
-              v-if="analysisData.aiAnalysis?.risks"
-              v-html="formatContent(analysisData.aiAnalysis.risks)"
-            ></div>
-            <div v-else class="flex flex-col gap-2 animate-pulse">
-              <div class="h-4 bg-red-100 rounded w-3/4"></div>
-              <div class="h-4 bg-red-100 rounded w-2/3"></div>
-              <div class="h-4 bg-red-100 rounded w-1/2"></div>
+          <div class="bg-white rounded-xl p-4 border border-gray-200">
+            <div class="flex items-center">
+              <span
+                class="flex items-center justify-center w-8 h-8 rounded-full bg-red-400 shadow"
+                style="margin-left: 10px"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  class="w-5 h-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M12 9V13" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+                  <circle cx="12" cy="17" r="1" fill="white" />
+                  <path
+                    d="M10.29 3.86L1.82 18A2 2 0 003.64 21H20.36A2 2 0 0022.18 18L13.71 3.86A2 2 0 0010.29 3.86Z"
+                    stroke="white"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              <div class="text-base font-medium ml-2">리스크 요인 및 개선점</div>
+            </div>
+            <div class="rounded p-3 min-h-[60px] text-gray-700" style="word-break: keep-all">
+              <div
+                v-if="analysisData.aiAnalysis?.risks"
+                v-html="formatContent(analysisData.aiAnalysis.risks)"
+              ></div>
+              <div v-else class="flex flex-col gap-2 animate-pulse">
+                <div class="h-4 bg-gray-100 rounded w-3/4"></div>
+                <div class="h-4 bg-gray-100 rounded w-2/3"></div>
+                <div class="h-4 bg-gray-100 rounded w-1/2"></div>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="px-6 mb-1 mt-6">
-          <div class="text-sm font-semibold text-green-700 mb-2">초보 투자자에게 맞는 조언</div>
-        </div>
-        <div class="px-6">
-          <div class="bg-green-50 border-l-4 border-green-400 rounded p-4 min-h-[60px]">
-            <div
-              v-if="analysisData.aiAnalysis?.advice"
-              v-html="formatContent(analysisData.aiAnalysis.advice)"
-            ></div>
-            <div v-else class="flex flex-col gap-2 animate-pulse">
-              <div class="h-4 bg-green-100 rounded w-3/4"></div>
-              <div class="h-4 bg-green-100 rounded w-2/3"></div>
-              <div class="h-4 bg-green-100 rounded w-1/2"></div>
+          <div class="bg-white rounded-xl p-4 border border-gray-200">
+            <div class="flex items-center">
+              <span
+                class="flex items-center justify-center w-8 h-8 rounded-full bg-green-400 shadow"
+                style="margin-left: 10px"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  class="w-5 h-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 2C8.13 2 5 5.13 5 9C5 11.38 6.19 13.47 8 14.74V17A1 1 0 009 18H15A1 1 0 0016 17V14.74C17.81 13.47 19 11.38 19 9C19 5.13 15.87 2 12 2Z"
+                    stroke="white"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path d="M9 21H15" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+                  <path d="M10 19H14" stroke="white" stroke-width="2" stroke-linecap="round" />
+                  <path d="M12 6V9" stroke="white" stroke-width="2" stroke-linecap="round" />
+                  <circle cx="12" cy="11" r="1" fill="white" />
+                </svg>
+              </span>
+              <div class="text-base font-medium ml-2">초보 투자자에게 맞는 조언</div>
+            </div>
+            <div class="rounded p-3 min-h-[60px] text-gray-700" style="word-break: keep-all">
+              <div
+                v-if="analysisData.aiAnalysis?.advice"
+                v-html="formatContent(analysisData.aiAnalysis.advice)"
+              ></div>
+              <div v-else class="flex flex-col gap-2 animate-pulse">
+                <div class="h-4 bg-gray-100 rounded w-3/4"></div>
+                <div class="h-4 bg-gray-100 rounded w-2/3"></div>
+                <div class="h-4 bg-gray-100 rounded w-1/2"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -172,12 +253,15 @@ const goBack = () => {
 
 const formatContent = (content) => {
   if (!content) return ''
-  return content
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/\n/g, '<br>')
-    .replace(/- (.*?)(?=\n|$)/g, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+  return (
+    content
+      // .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // bold 변환 제거
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>')
+      .replace(/([^.])\.(?=\s|$)/g, '$1.<br>') // 마침표 기준 줄바꿈 추가 (단, ... 등은 제외)
+      .replace(/- (.*?)(?=\n|$)/g, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/s, '<ul>$1<\/ul>')
+  )
 }
 
 /**
@@ -189,16 +273,12 @@ const fetchAnalysis = async () => {
   error.value = null
 
   try {
-    console.log('AI 분석 리포트 조회 시작...')
-
     // 실제 API 호출
     const response = await analysisService.fetchLatestAnalysisReport()
 
     if (response.data) {
-      console.log('API 응답 데이터:', response.data)
       // 백엔드 데이터를 Vue 컴포넌트 형태로 변환
       analysisData.value = analysisService.transformReportData(response)
-      console.log('변환된 분석 데이터:', analysisData.value)
     } else {
       // 분석 결과가 없는 경우
       console.log('분석 결과가 없어 목데이터 사용')
@@ -368,6 +448,15 @@ onMounted(() => {
   100% {
     transform: rotate(360deg);
   }
+}
+
+body {
+  background: #fff !important;
+}
+
+/* 그림자 제거 */
+.bg-white {
+  box-shadow: none !important;
 }
 
 /* PDF 전용 스타일 */

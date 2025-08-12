@@ -13,8 +13,6 @@ export const analysisService = {
       const response = await axios.get('/api/feedback/behavior', {
         withCredentials: true, // 세션 기반 인증을 위해 필요
       })
-
-      console.log('API 응답:', response.data)
       return response.data
     } catch (error) {
       console.error('AI 분석 리포트 조회 실패:', error)

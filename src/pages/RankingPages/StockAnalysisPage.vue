@@ -1,9 +1,7 @@
 <template>
-  <div class="w-full max-w-[480px] mx-auto pb-24 px-4">
-    <div class="py-4 text-center">
-      <h1 class="text-lg font-bold">랭킹</h1>
-    </div>
-
+  <div class="w-full max-w-[480px] mx-auto pb-24 px-4 overflow-x-hidden">
+    <div class="mt-6"></div>
+    <!-- 상단 탭 -->
     <TabSwitcher
       :tabs="[
         { label: '투자 랭킹 보기', route: '/ranking' },
@@ -11,64 +9,71 @@
       ]"
     />
 
-    <div class="mt-4">
+    <div class="mt-3">
       <NoInvestmentGuide v-if="!hasInvestmentData" />
       <template v-else>
-        <!-- 세그먼트 -->
-        <div class="flex gap-2 sticky top-0 bg-white pb-2 z-10">
-          <button
-            class="flex-1 py-2 rounded-full border text-sm"
-            :class="
-              activeMain === 'ratio'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-700'
-            "
-            @click="activeMain = 'ratio'"
+        <!-- 세그먼트: sticky + 내부 컨테이너로 폭 통일 -->
+        <div class="sticky top-0 bg-white z-10">
+          <div
+            class="w-full max-w-[480px] mx-auto shadow-md rounded-md overflow-hidden bg-white grid grid-cols-3"
           >
-            보유비중
-          </button>
-          <button
-            class="flex-1 py-2 rounded-full border text-sm"
-            :class="
-              activeMain === 'distribution'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-700'
-            "
-            @click="activeMain = 'distribution'"
-          >
-            수익률분포
-          </button>
-          <button
-            class="flex-1 py-2 rounded-full border text-sm"
-            :class="
-              activeMain === 'popular'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-700'
-            "
-            @click="activeMain = 'popular'"
-          >
-            인기종목
-          </button>
+            <button
+              class="h-10 whitespace-nowrap px-2 text-sm flex items-center justify-center"
+              :class="
+                activeMain === 'ratio'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'bg-white text-gray-700 hover:bg-blue-50'
+              "
+              @click="activeMain = 'ratio'"
+            >
+              성향별 비중
+            </button>
+
+            <button
+              class="h-10 whitespace-nowrap px-2 text-sm flex items-center justify-center"
+              :class="
+                activeMain === 'distribution'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'bg-white text-gray-700 hover:bg-blue-50'
+              "
+              @click="activeMain = 'distribution'"
+            >
+              내 수익률 분포
+            </button>
+
+            <button
+              class="h-10 whitespace-nowrap px-2 text-sm flex items-center justify-center"
+              :class="
+                activeMain === 'popular'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'bg-white text-gray-700 hover:bg-blue-50'
+              "
+              @click="activeMain = 'popular'"
+            >
+              성향별 인기 종목
+            </button>
+          </div>
         </div>
 
-        <!-- 보유비중 -->
+        <!-- 성향별 비중 -->
         <section v-show="activeMain === 'ratio'" class="mt-4">
-          <h2 class="text-base font-semibold mb-2">성향별 보유 비중</h2>
+          <!-- 종목 선택 버튼 -->
           <div class="flex gap-2 overflow-x-auto py-2">
             <button
               v-for="(s, i) in traitStocks"
               :key="i"
-              class="px-3 py-1 rounded-full border text-sm whitespace-nowrap"
+              class="px-3 py-1 rounded-md shadow-sm whitespace-nowrap transition-colors"
               :class="
                 selectedRatioKey === (s?.name || '')
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-700'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-blue-200'
               "
               @click="selectedRatioKey = s?.name || ''"
             >
               {{ s.name }}
             </button>
           </div>
+
           <div v-if="currentRatioItem" class="mt-3">
             <TraitStockCard
               :name="currentRatioItem.name"
@@ -83,24 +88,24 @@
           </div>
         </section>
 
-        <!-- 수익률분포 -->
+        <!-- 내 수익률 분포 -->
         <section v-show="activeMain === 'distribution'" class="mt-6">
-          <h2 class="text-base font-semibold mb-2">내 수익률 분포 위치</h2>
           <div class="flex gap-2 overflow-x-auto py-2">
             <button
               v-for="(s, i) in myStocks"
               :key="i"
-              class="px-3 py-1 rounded-full border text-sm whitespace-nowrap"
+              class="px-3 py-1 rounded-md shadow-sm whitespace-nowrap transition-colors"
               :class="
                 selectedDistKey === (s?.stockCode || s?.stockName || '')
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-700'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-blue-200'
               "
               @click="selectedDistKey = s?.stockCode || s?.stockName || ''"
             >
               {{ s.stockName }}
             </button>
           </div>
+
           <div v-if="currentDistItem" class="mt-3 h-[300px] sm:h-[340px]">
             <MyStockChart
               :name="currentDistItem.stockName"
@@ -119,27 +124,33 @@
           </div>
         </section>
 
-        <!-- 인기종목 -->
+        <!-- 성향별 인기 종목 -->
         <section v-show="activeMain === 'popular'" class="mt-6">
           <div class="flex justify-between items-center mb-2">
-            <h2 class="text-base font-semibold">{{ traitGroupLabel }} 투자자 인기 종목</h2>
+            <h2 class="text-base font-semibold">{{ traitGroupLabel }} 인기 종목</h2>
           </div>
-          <div class="space-y-2">
-            <PopularStockItem
-              v-for="(stock, idx) in displayedPopularStocks"
-              :key="idx"
-              :name="stock.name"
-              :logo="stock.logo"
-              :gain="stock.gain"
-            />
+
+          <!-- 섹션 전체 박스(배경 없음 + 섀도우만) -->
+          <div class="rounded-md shadow-md" role="group" aria-label="인기 종목 목록">
+            <div class="p-2">
+              <PopularStockItem
+                v-for="(stock, idx) in displayedPopularStocks"
+                :key="idx"
+                :name="stock.name"
+                :logo="stock.logo"
+                :gain="stock.gain"
+              />
+            </div>
+            <div class="p-2 pt-0">
+              <button
+                v-if="visiblePopularCount < Math.min(popularStocks.length, 50)"
+                @click="loadMorePopular"
+                class="w-full px-4 py-2 rounded-md shadow-sm bg-blue-600 text-white hover:bg-blue-700"
+              >
+                더보기
+              </button>
+            </div>
           </div>
-          <button
-            v-if="visiblePopularCount < Math.min(popularStocks.length, 50)"
-            @click="loadMorePopular"
-            class="mt-2 px-4 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-          >
-            더보기
-          </button>
         </section>
       </template>
     </div>

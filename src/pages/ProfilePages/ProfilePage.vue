@@ -1,5 +1,6 @@
 <template>
   <div class="bg-white min-h-screen pb-16">
+    <ToastMessage :show="showToast" :message="toastMessage" :duration="2000" />
     <!-- 헤더+프로필 공통 배경 -->
     <div style="background: #f2f6fd">
       <!-- 상단 헤더 -->
@@ -34,6 +35,7 @@
           :profile="profile"
           @update-profile-image="onProfileImageUpdated"
           @update-nickname="onNicknameUpdated"
+          @show-toast="handleShowToast"
         />
       </header>
 
@@ -44,7 +46,7 @@
           <div class="relative">
             <div
               :class="[
-                'w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mb-2 border border-black',
+                'w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden mb-2',
                 getProfileImageSrc().includes('finz.png') ? 'p-1' : '',
               ]"
             >
@@ -57,8 +59,8 @@
             </div>
           </div>
 
-          <div class="text-sm text-gray-900 mb-1">{{ profile.nickname }}</div>
-          <div class="text-xs text-gray-700 mb-6">{{ profile.type }} {{ nameKr }}</div>
+          <div class="text-base font-bold text-gray-900">{{ profile.nickname }}</div>
+          <div class="text-xs font-bold text-gray-700 mb-6">{{ profile.type }} {{ nameKr }}</div>
         </div>
       </section>
     </div>
@@ -145,21 +147,33 @@
       </router-link>
     </section>
 
-    <footer-navigation></footer-navigation>
-
     <!-- 로그아웃 버튼 (네비게이션 아래) -->
-    <div class="w-full flex justify-center mt-4 mb-8">
+    <div class="w-full flex justify-center mt-8 mb-8">
       <button
         @click="handleLogout"
-        class="w-[90%] max-w-md h-12 bg-gray-100 text-gray-500 font-bold rounded-xl shadow-sm hover:bg-gray-200 transition-colors"
+        class="w-[90%] max-w-md h-12 bg-gray-100 text-gray-500 rounded-xl shadow-sm hover:bg-gray-200 transition-colors"
       >
         Log out
       </button>
     </div>
+    <footer-navigation></footer-navigation>
   </div>
 </template>
 
 <script setup>
+import ToastMessage from '@/components/ToastMessage.vue'
+import { nextTick } from 'vue'
+const showToast = ref(false)
+const toastMessage = ref('')
+
+// ToastMessage 핸들러
+const handleShowToast = (msg) => {
+  toastMessage.value = msg
+  showToast.value = false
+  nextTick(() => {
+    showToast.value = true
+  })
+}
 // 맞춤 콘텐츠 카드 클릭 시 전체 보기로 이동
 const goToCustomContents = () => {
   router.push('/profile/custom-contents')
@@ -232,7 +246,6 @@ const handleImageError = (event) => {
 // 🔥 수정: ProfileEditModal에서 이미지 변경 시 반영 (Integer 처리)
 const onProfileImageUpdated = (newImageNumber) => {
   profile.value.profileImage = newImageNumber || 1
-  console.log('프로필 이미지 업데이트됨:', newImageNumber)
 }
 
 // ProfileEditModal에서 닉네임 변경 시 반영

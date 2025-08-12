@@ -2,7 +2,7 @@
   <transition name="fade">
     <div
       v-if="visible"
-      class="fixed bottom-8 left-1/2 transform -translate-x-1/2 text-white px-6 py-3 rounded-lg shadow-lg z-[2000] text-base min-w-[180px] text-center pointer-events-none"
+      class="fixed bottom-24 left-1/2 transform -translate-x-1/2 text-white px-6 py-3 rounded-lg shadow-lg z-[2000] text-base min-w-[180px] text-center pointer-events-none"
       :style="'background: rgba(103, 114, 116, 0.92);'"
     >
       {{ message }}
