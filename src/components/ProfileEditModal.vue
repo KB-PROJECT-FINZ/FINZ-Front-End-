@@ -1,4 +1,5 @@
 <template>
+  <!-- ToastMessage는 상위에서 관리 -->
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-xs p-6 relative">
       <!-- 닫기 버튼 -->
@@ -11,11 +12,11 @@
       </button>
 
       <!-- 프로필 이미지 -->
-      <div class="flex flex-col items-center mb-4">
+      <div class="flex flex-col items-center">
         <div class="relative">
           <div
             :class="[
-              'w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mb-2 ml-[3px]',
+              'w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden ml-[3px]',
               getCurrentProfileImageSrc().includes('finz.png') ? 'p-2' : '',
             ]"
           >
@@ -30,7 +31,7 @@
               type="button"
               class="absolute top-0 right-0 w-7 h-7 bg-white border border-black rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 transition-colors"
               style="transform: translate(35%, -35%)"
-              @click="setDefaultProfileImage"
+              @click="selectTemporaryImage(1)"
               aria-label="기본 이미지로 변경"
             >
               <svg
@@ -48,21 +49,23 @@
         </div>
 
         <!-- 이미지 선택기: 항상 표시, 기본 이미지는 제외 (2~7번만) -->
-        <div class="mt-4 w-full">
-          <div class="text-sm text-gray-600 mb-3 text-center">프로필 이미지를 선택해주세요</div>
-          <div class="grid grid-cols-3 gap-3">
+        <div class="mt-2 w-full ml-[3px]">
+          <div class="text-sm text-gray-600 mb-3 text-center ml-[3px]">
+            프로필 이미지를 선택해주세요
+          </div>
+          <div class="grid grid-cols-3 gap-3 ml-[3px]">
             <button
               v-for="(image, index) in availableImages.slice(1)"
               :key="index + 2"
-              @click="selectProfileImage(index + 2)"
+              @click="selectTemporaryImage(index + 2)"
               :class="[
                 'w-16 h-16 rounded-full overflow-hidden border-2 transition-all duration-200',
-                getSelectedImageNumber() === index + 2
+                selectedImageNumber === index + 2
                   ? 'border-blue-500 ring-2 ring-blue-200'
                   : 'border-gray-200 hover:border-gray-300',
                 image.includes('finz.png') ? 'p-1' : '',
+                'ml-[3px]',
               ]"
-              :disabled="isUpdatingImage"
             >
               <img
                 :src="image"
@@ -74,18 +77,16 @@
         </div>
 
         <!-- 닉네임 표시 및 수정 -->
-        <div class="text-base text-gray-900 mt-5 flex items-center">
-          <span v-if="!isEditingNickname">{{ profile.nickname }}</span>
+        <div class="text-base text-gray-900 mt-3 flex items-center ml-[3px]">
+          <span v-if="!isEditingNickname">{{ temporaryNickname }}</span>
           <input
             v-else
             ref="nicknameInput"
             v-model="editingNickname"
-            @keyup.enter="saveNickname"
-            @keyup.escape="cancelNicknameEdit"
-            @blur="cancelNicknameEdit"
+            @keyup.enter="confirmNicknameEdit"
+            @blur="confirmNicknameEdit"
             class="text-base text-gray-900 bg-gray-50 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             maxlength="10"
-            :disabled="isUpdatingNickname"
           />
           <button
             v-if="!isEditingNickname"
@@ -109,42 +110,28 @@
               />
             </svg>
           </button>
-          <div v-if="isEditingNickname" class="flex gap-1">
-            <button
-              @mousedown.prevent="saveNickname"
-              :disabled="isUpdatingNickname"
-              class="p-1 rounded hover:bg-green-100 focus:outline-none text-green-600 disabled:opacity-50"
-              aria-label="저장"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 20 20"
-                stroke-width="2"
-                stroke="currentColor"
-                class="w-4 h-4"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </button>
-            <button
-              @click="cancelNicknameEdit"
-              :disabled="isUpdatingNickname"
-              class="p-1 rounded hover:bg-red-100 focus:outline-none text-red-600 disabled:opacity-50"
-              aria-label="취소"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 20 20"
-                stroke-width="2"
-                stroke="currentColor"
-                class="w-4 h-4"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+        </div>
+
+        <!-- 확인/취소 버튼 (확인 왼쪽, 취소 오른쪽) -->
+        <div class="flex gap-3 mt-4 w-full">
+          <button
+            @click="saveChanges"
+            :disabled="isUpdating || !hasChanges"
+            :class="[
+              'flex-1 py-2 px-4 rounded-lg transition-colors',
+              isUpdating || !hasChanges
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-500 text-white hover:bg-blue-600',
+            ]"
+          >
+            {{ isUpdating ? '저장 중...' : '확인' }}
+          </button>
+          <button
+            @click="$emit('close')"
+            class="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            취소
+          </button>
         </div>
       </div>
     </div>
@@ -152,14 +139,15 @@
 </template>
 
 <script setup>
-import { computed, ref, nextTick } from 'vue'
+// ToastMessage는 상위에서 관리
+import { computed, ref, nextTick, watch } from 'vue'
 import axios from 'axios'
 
 const props = defineProps({
   profile: { type: Object, required: true },
 })
 
-const emit = defineEmits(['close', 'update-profile-image', 'update-nickname'])
+const emit = defineEmits(['close', 'update-profile-image', 'update-nickname', 'show-toast'])
 
 // 사용 가능한 프로필 이미지들 (assets 경로)
 const availableImages = [
@@ -172,41 +160,19 @@ const availableImages = [
   '/src/assets/FINZ_토끼.png', // 7번
 ]
 
-// 이미지 선택 관련 상태
-const showImageSelector = ref(false)
-const isUpdatingImage = ref(false)
+// 임시 상태 (확인 버튼 누르기 전까지는 임시 저장)
+const selectedImageNumber = ref(1)
+const temporaryNickname = ref('')
 
 // 닉네임 편집 관련 상태
 const isEditingNickname = ref(false)
 const editingNickname = ref('')
 const nicknameInput = ref(null)
-const isUpdatingNickname = ref(false)
 
-// 현재 프로필 이미지 소스 반환
-const getCurrentProfileImageSrc = () => {
-  const availableImages = [
-    '/src/assets/finz.png', // 1번
-    '/src/assets/FINZ_고양이.png', // 2번
-    '/src/assets/FINZ_곰.png', // 3번
-    '/src/assets/FINZ_병아리.png', // 4번
-    '/src/assets/FINZ_원숭이.png', // 5번
-    '/src/assets/FINZ_코끼리.png', // 6번
-    '/src/assets/FINZ_토끼.png', // 7번
-  ]
+// 업데이트 상태
+const isUpdating = ref(false)
 
-  // UserVo의 profileImage는 Integer
-  const imageNumber = props.profile.profileImage
-
-  // 유효한 이미지 번호인 경우
-  if (typeof imageNumber === 'number' && imageNumber >= 1 && imageNumber <= 7) {
-    return availableImages[imageNumber - 1]
-  }
-
-  // 기본 이미지 (null이거나 유효하지 않은 경우)
-  return availableImages[0]
-}
-
-// 선택된 이미지 번호 반환
+// 선택된 이미지 번호 반환 (원본 프로필에서)
 const getSelectedImageNumber = () => {
   const imageNumber = props.profile.profileImage
   if (typeof imageNumber === 'number' && imageNumber >= 1 && imageNumber <= 7) {
@@ -214,52 +180,44 @@ const getSelectedImageNumber = () => {
   }
   return 1 // 기본값
 }
-// 이미지 선택기 토글
-const toggleImageSelector = () => {
-  showImageSelector.value = !showImageSelector.value
-}
 
-// 프로필 이미지 선택
-const selectProfileImage = async (imageNumber) => {
-  if (isUpdatingImage.value) return
+// 현재 프로필 이미지 소스 반환 (임시 선택된 이미지 반영)
+const getCurrentProfileImageSrc = () => {
+  const imageNumber = selectedImageNumber.value
 
-  try {
-    isUpdatingImage.value = true
-
-    const response = await axios.post(
-      '/api/user/update-profile-image',
-      {
-        profile_image: imageNumber,
-      },
-      {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      },
-    )
-
-    if (response.data.success) {
-      // 성공 시 부모로 emit
-      emit('update-profile-image', imageNumber)
-      showImageSelector.value = false
-    }
-  } catch (error) {
-    console.error('프로필 이미지 변경 실패:', error)
-
-    if (error.response && error.response.data && error.response.data.error) {
-      alert(error.response.data.error)
-    } else {
-      alert('프로필 이미지 변경에 실패했습니다. 다시 시도해주세요.')
-    }
-  } finally {
-    isUpdatingImage.value = false
+  if (typeof imageNumber === 'number' && imageNumber >= 1 && imageNumber <= 7) {
+    return availableImages[imageNumber - 1]
   }
+
+  return availableImages[0]
 }
 
-// 기본 이미지로 변경
-const setDefaultProfileImage = async () => {
-  await selectProfileImage(1) // 1번이 기본 이미지
+// 초기값 설정
+watch(
+  () => props.profile,
+  (newProfile) => {
+    if (newProfile) {
+      selectedImageNumber.value = getSelectedImageNumber()
+      temporaryNickname.value = newProfile.nickname || ''
+    }
+  },
+  { immediate: true },
+)
+
+// 변경사항이 있는지 확인
+const hasChanges = computed(() => {
+  const originalImageNumber = getSelectedImageNumber()
+  const originalNickname = props.profile.nickname || ''
+
+  return (
+    selectedImageNumber.value !== originalImageNumber ||
+    temporaryNickname.value !== originalNickname
+  )
+})
+
+// 임시로 이미지 선택 (아직 저장하지 않음)
+const selectTemporaryImage = (imageNumber) => {
+  selectedImageNumber.value = imageNumber
 }
 
 const handleImageError = (event) => {
@@ -269,7 +227,7 @@ const handleImageError = (event) => {
 // 닉네임 편집 관련 메서드
 const startNicknameEdit = () => {
   isEditingNickname.value = true
-  editingNickname.value = props.profile.nickname
+  editingNickname.value = temporaryNickname.value
   nextTick(() => {
     if (nicknameInput.value) {
       nicknameInput.value.focus()
@@ -283,60 +241,93 @@ const cancelNicknameEdit = () => {
   editingNickname.value = ''
 }
 
-const saveNickname = async () => {
-  if (isUpdatingNickname.value) return
-
+const confirmNicknameEdit = () => {
   const newNickname = editingNickname.value.trim()
 
   // 유효성 검사
   if (!newNickname) {
-    alert('닉네임을 입력해주세요.')
+    toastMessage.value = '닉네임을 입력해주세요.'
+    showToast.value = false
+    nextTick(() => {
+      showToast.value = true
+    })
     return
   }
 
   if (newNickname.length < 2 || newNickname.length > 10) {
-    alert('닉네임은 2-10자로 입력해주세요.')
+    toastMessage.value = '닉네임은 2-10자로 입력해주세요.'
+    showToast.value = false
+    nextTick(() => {
+      showToast.value = true
+    })
     return
   }
 
-  if (newNickname === props.profile.nickname) {
-    // 변경사항이 없으면 편집 모드 종료
-    cancelNicknameEdit()
-    return
-  }
+  // 임시 닉네임 업데이트
+  temporaryNickname.value = newNickname
+  isEditingNickname.value = false
+}
+
+// 모든 변경사항 저장
+const saveChanges = async () => {
+  if (isUpdating.value || !hasChanges.value) return
 
   try {
-    isUpdatingNickname.value = true
+    isUpdating.value = true
 
-    const response = await axios.post(
-      '/api/user/update-nickname',
-      {
-        nickname: newNickname,
-      },
-      {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
+    // 이미지 변경이 있는 경우
+    if (selectedImageNumber.value !== getSelectedImageNumber()) {
+      const imageResponse = await axios.post(
+        '/api/user/update-profile-image',
+        {
+          profile_image: selectedImageNumber.value,
         },
-      },
-    )
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      )
 
-    if (response.data.nickname) {
-      // 성공 시 부모 컴포넌트에 알림
-      emit('update-nickname', response.data.nickname)
-      alert('닉네임이 성공적으로 변경되었습니다.')
-      isEditingNickname.value = false
+      if (imageResponse.data.success) {
+        emit('update-profile-image', selectedImageNumber.value)
+      }
     }
+
+    // 닉네임 변경이 있는 경우
+    if (temporaryNickname.value !== props.profile.nickname) {
+      const nicknameResponse = await axios.post(
+        '/api/user/update-nickname',
+        {
+          nickname: temporaryNickname.value,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      )
+
+      if (nicknameResponse.data.nickname) {
+        emit('update-nickname', nicknameResponse.data.nickname)
+      }
+    }
+
+    // 성공 메시지: 상위에 전달
+    emit('show-toast', '프로필이 성공적으로 변경되었습니다.')
+    emit('close')
   } catch (error) {
-    console.error('닉네임 변경 실패:', error)
+    console.error('프로필 변경 실패:', error)
 
     if (error.response && error.response.data && error.response.data.error) {
-      alert(error.response.data.error)
+      emit('show-toast', error.response.data.error)
     } else {
-      alert('닉네임 변경에 실패했습니다. 다시 시도해주세요.')
+      emit('show-toast', '프로필 변경에 실패했습니다. 다시 시도해주세요.')
     }
   } finally {
-    isUpdatingNickname.value = false
+    isUpdating.value = false
   }
 }
 </script>

@@ -1,5 +1,6 @@
 <template>
   <div class="bg-white min-h-screen pb-16">
+    <ToastMessage :show="showToast" :message="toastMessage" :duration="2000" />
     <!-- 헤더+프로필 공통 배경 -->
     <div style="background: #f2f6fd">
       <!-- 상단 헤더 -->
@@ -34,6 +35,7 @@
           :profile="profile"
           @update-profile-image="onProfileImageUpdated"
           @update-nickname="onNicknameUpdated"
+          @show-toast="handleShowToast"
         />
       </header>
 
@@ -160,6 +162,19 @@
 </template>
 
 <script setup>
+import ToastMessage from '@/components/ToastMessage.vue'
+import { nextTick } from 'vue'
+const showToast = ref(false)
+const toastMessage = ref('')
+
+// ToastMessage 핸들러
+const handleShowToast = (msg) => {
+  toastMessage.value = msg
+  showToast.value = false
+  nextTick(() => {
+    showToast.value = true
+  })
+}
 // 맞춤 콘텐츠 카드 클릭 시 전체 보기로 이동
 const goToCustomContents = () => {
   router.push('/profile/custom-contents')
@@ -232,7 +247,6 @@ const handleImageError = (event) => {
 // 🔥 수정: ProfileEditModal에서 이미지 변경 시 반영 (Integer 처리)
 const onProfileImageUpdated = (newImageNumber) => {
   profile.value.profileImage = newImageNumber || 1
-  console.log('프로필 이미지 업데이트됨:', newImageNumber)
 }
 
 // ProfileEditModal에서 닉네임 변경 시 반영
