@@ -201,6 +201,7 @@
 
   <SuccessModal :visible="showSuccess" :message="successMessage" />
   <ConfirmModal :visible="showConfirm" @confirm="handleDelete" @cancel="showConfirm = false" />
+  <FooterNavigation />
 </template>
 
 <script setup>
@@ -212,6 +213,7 @@ import ConfirmModal from '@/components/ConfirmModal.vue'
 import { fetchJournals, deleteJournalById } from '@/services/journal.js'
 import { useTransactionsData } from '@/services/useTranscationsData.js'
 import JournalWriteModal from './JournalWriteModal.vue'
+import FooterNavigation from '@/components/FooterNavigation.vue'
 const showWriteModal = ref(false)
 const { transactionsData, fetchTransactions } = useTransactionsData()
 const router = useRouter()

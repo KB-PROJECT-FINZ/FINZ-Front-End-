@@ -34,11 +34,6 @@ import ProtfolioAnalysis from '@/pages/mockTrading/ProtfolioAnalysis.vue'
 import DailyQuizePage from '@/pages/Learning/DailyQuizePage.vue'
 const routes = [
   {
-    path: '/profile/custom-contents',
-    name: 'CustomContentsPage',
-    component: CustomContentsPage,
-  },
-  {
     path: '/',
     name: 'Loginpage',
     component: LoginPage,
@@ -200,6 +195,11 @@ const routes = [
     path: '/daily-quiz',
     name: 'DailyQuizPage',
     component: DailyQuizePage,
+  },
+  {
+    path: '/profile/custom-contents',
+    name: 'CustomContentsPage',
+    component: CustomContentsPage,
   },
 ]
 

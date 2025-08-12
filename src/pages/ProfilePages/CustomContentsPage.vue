@@ -26,7 +26,7 @@
     <div class="px-5 mt-6">
       <div class="mb-2">
         <h2 class="text-md font-bold text-center w-full">{{ riskTypeName }} 맞춤 콘텐츠</h2>
-        <div class="flex justify-end w-full mt-1">
+        <div class="flex justify-end w-full mt-5 mb-5">
           <button class="text-xs text-gray-600 underline" @click="goToContents">
             다른 성향도 알아보기 &gt;
           </button>
@@ -39,8 +39,7 @@
             .filter((item) => !item.quizId && !item.hasQuiz)
             .slice(0, 2)"
           :key="item.contentId"
-          class="w-full min-w-[160px] h-28 bg-white p-3 rounded-xl shadow-sm shrink-0 cursor-pointer flex flex-col justify-center mb-2 border border-gray-200"
-          @click="openContentModal(item)"
+          class="w-full min-w-[160px] bg-white p-3 rounded-xl shadow-sm shrink-0 flex flex-col justify-center mb-2 border border-gray-200"
         >
           <p
             :class="
@@ -52,7 +51,9 @@
           >
             {{ item.label || '추천' }}
           </p>
-          <p class="text-sm font-semibold">{{ item.title }}</p>
+          <p class="text-sm font-semibold mb-1">{{ item.title }}</p>
+          <div class="border-b border-gray-200 my-2"></div>
+          <p class="text-xs text-gray-700 whitespace-pre-wrap">{{ item.content }}</p>
         </div>
         <div
           v-if="
@@ -64,34 +65,7 @@
         </div>
       </div>
     </div>
-
-    <!-- 추천 콘텐츠 상세 모달 -->
-    <transition name="fade-scale">
-      <div
-        v-if="selectedContent"
-        class="fixed inset-0 bg-gray-300/40 z-50 flex items-center justify-center"
-      >
-        <div
-          class="bg-white p-6 rounded-xl w-[90%] max-w-md relative shadow-2xl ring-1 ring-gray-200 transition-all duration-300 ease-in-out"
-        >
-          <p
-            v-if="selectedContent.label"
-            class="text-xs text-gray-500 mb-1 uppercase tracking-wide"
-          >
-            {{ selectedContent.label }}
-          </p>
-          <h2 class="text-lg font-bold mb-1 text-gray-800">{{ selectedContent.title }}</h2>
-          <div class="border-b border-gray-300 my-3"></div>
-          <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ selectedContent.content }}</p>
-          <button
-            class="absolute top-3 right-4 text-gray-500 hover:text-black"
-            @click="selectedContent = null"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-    </transition>
+    <footer-navigation />
   </div>
 </template>
 
@@ -99,17 +73,14 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import FooterNavigation from '@/components/FooterNavigation.vue'
 
 const router = useRouter()
 const riskTypeName = ref('')
 const recommendedContentsByRisk = ref([])
-const selectedContent = ref(null)
 
 const goBack = () => router.back()
 const goToContents = () => router.push('/recommend')
-const openContentModal = (item) => {
-  selectedContent.value = item
-}
 
 onMounted(async () => {
   try {

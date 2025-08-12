@@ -9,58 +9,88 @@
       >
         &times;
       </button>
+
       <!-- 프로필 이미지 -->
       <div class="flex flex-col items-center mb-4">
         <div class="relative">
           <div
-            class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mb-2"
+            :class="[
+              'w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mb-2 ml-[3px]',
+              getCurrentProfileImageSrc().includes('finz.png') ? 'p-2' : '',
+            ]"
           >
             <img
-              :src="getProfileImageSrc()"
+              :src="getCurrentProfileImageSrc()"
               alt="프로필"
-              class="w-full h-full object-cover object-center"
+              :class="['w-full h-full object-center object-contain p-2']"
               @error="handleImageError"
             />
-          </div>
-          <!-- 사진 변경 버튼 -->
-          <button
-            @click="triggerFileInput"
-            class="absolute -bottom-2 -right-2 w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="2"
-              stroke="white"
-              class="w-4 h-4"
+            <!-- X(기본 이미지) 버튼 -->
+            <button
+              type="button"
+              class="absolute top-0 right-0 w-7 h-7 bg-white border border-black rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 transition-colors"
+              style="transform: translate(35%, -35%)"
+              @click="setDefaultProfileImage"
+              aria-label="기본 이미지로 변경"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
-              />
-            </svg>
-          </button>
-          <!-- 숨겨진 파일 입력 -->
-          <input
-            ref="fileInput"
-            type="file"
-            accept="image/*"
-            @change="handleFileChange"
-            class="hidden"
-          />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 20 20"
+                stroke-width="2"
+                stroke="black"
+                class="w-4 h-4"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l8 8M6 14L14 6" />
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="text-base text-gray-900 mt-2 mb-1 flex items-center gap-1">
-          {{ profile.name }}님
+
+        <!-- 이미지 선택기: 항상 표시, 기본 이미지는 제외 (2~7번만) -->
+        <div class="mt-4 w-full">
+          <div class="text-sm text-gray-600 mb-3 text-center">프로필 이미지를 선택해주세요</div>
+          <div class="grid grid-cols-3 gap-3">
+            <button
+              v-for="(image, index) in availableImages.slice(1)"
+              :key="index + 2"
+              @click="selectProfileImage(index + 2)"
+              :class="[
+                'w-16 h-16 rounded-full overflow-hidden border-2 transition-all duration-200',
+                getSelectedImageNumber() === index + 2
+                  ? 'border-blue-500 ring-2 ring-blue-200'
+                  : 'border-gray-200 hover:border-gray-300',
+                image.includes('finz.png') ? 'p-1' : '',
+              ]"
+              :disabled="isUpdatingImage"
+            >
+              <img
+                :src="image"
+                :alt="`프로필 이미지 ${index + 2}`"
+                :class="['w-full h-full object-center object-contain p-2']"
+              />
+            </button>
+          </div>
+        </div>
+
+        <!-- 닉네임 표시 및 수정 -->
+        <div class="text-base text-gray-900 mt-5 flex items-center">
+          <span v-if="!isEditingNickname">{{ profile.nickname }}</span>
+          <input
+            v-else
+            ref="nicknameInput"
+            v-model="editingNickname"
+            @keyup.enter="saveNickname"
+            @keyup.escape="cancelNicknameEdit"
+            @blur="cancelNicknameEdit"
+            class="text-base text-gray-900 bg-gray-50 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            maxlength="10"
+            :disabled="isUpdatingNickname"
+          />
           <button
+            v-if="!isEditingNickname"
             class="ml-1 p-1 rounded hover:bg-gray-200 focus:outline-none"
-            @click="emit('edit-nickname')"
+            @click="startNicknameEdit"
             aria-label="닉네임 수정"
             type="button"
           >
@@ -79,103 +109,234 @@
               />
             </svg>
           </button>
+          <div v-if="isEditingNickname" class="flex gap-1">
+            <button
+              @mousedown.prevent="saveNickname"
+              :disabled="isUpdatingNickname"
+              class="p-1 rounded hover:bg-green-100 focus:outline-none text-green-600 disabled:opacity-50"
+              aria-label="저장"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 20 20"
+                stroke-width="2"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </button>
+            <button
+              @click="cancelNicknameEdit"
+              :disabled="isUpdatingNickname"
+              class="p-1 rounded hover:bg-red-100 focus:outline-none text-red-600 disabled:opacity-50"
+              aria-label="취소"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 20 20"
+                stroke-width="2"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="text-xs text-gray-700 mb-2">{{ profile.type }} {{ nameKr }}</div>
-      </div>
-      <div class="flex flex-col gap-2">
-        <button
-          class="w-full h-10 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
-          @click="$emit('close')"
-        >
-          닫기
-        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, nextTick } from 'vue'
+import axios from 'axios'
+
 const props = defineProps({
   profile: { type: Object, required: true },
 })
 
-const emit = defineEmits(['close', 'update-profile-image'])
+const emit = defineEmits(['close', 'update-profile-image', 'update-nickname'])
 
-import { ref } from 'vue'
-const nameKr = computed(() => props.profile.nameKr || '')
+// 사용 가능한 프로필 이미지들 (assets 경로)
+const availableImages = [
+  '/src/assets/finz.png', // 1번 - 기본 이미지
+  '/src/assets/FINZ_고양이.png', // 2번
+  '/src/assets/FINZ_곰.png', // 3번
+  '/src/assets/FINZ_병아리.png', // 4번
+  '/src/assets/FINZ_원숭이.png', // 5번
+  '/src/assets/FINZ_코끼리.png', // 6번
+  '/src/assets/FINZ_토끼.png', // 7번
+]
 
-const fileInput = ref(null)
+// 이미지 선택 관련 상태
+const showImageSelector = ref(false)
+const isUpdatingImage = ref(false)
 
-const getProfileImageSrc = () => {
-  if (props.profile.image && props.profile.image.trim() !== '') {
-    if (props.profile.image.startsWith('/uploads/')) {
-      return `http://localhost:8080${props.profile.image}`
-    }
-    return props.profile.image
+// 닉네임 편집 관련 상태
+const isEditingNickname = ref(false)
+const editingNickname = ref('')
+const nicknameInput = ref(null)
+const isUpdatingNickname = ref(false)
+
+// 현재 프로필 이미지 소스 반환
+const getCurrentProfileImageSrc = () => {
+  const availableImages = [
+    '/src/assets/finz.png', // 1번
+    '/src/assets/FINZ_고양이.png', // 2번
+    '/src/assets/FINZ_곰.png', // 3번
+    '/src/assets/FINZ_병아리.png', // 4번
+    '/src/assets/FINZ_원숭이.png', // 5번
+    '/src/assets/FINZ_코끼리.png', // 6번
+    '/src/assets/FINZ_토끼.png', // 7번
+  ]
+
+  // UserVo의 profileImage는 Integer
+  const imageNumber = props.profile.profileImage
+
+  // 유효한 이미지 번호인 경우
+  if (typeof imageNumber === 'number' && imageNumber >= 1 && imageNumber <= 7) {
+    return availableImages[imageNumber - 1]
   }
-  return '/src/assets/finz.png'
+
+  // 기본 이미지 (null이거나 유효하지 않은 경우)
+  return availableImages[0]
+}
+
+// 선택된 이미지 번호 반환
+const getSelectedImageNumber = () => {
+  const imageNumber = props.profile.profileImage
+  if (typeof imageNumber === 'number' && imageNumber >= 1 && imageNumber <= 7) {
+    return imageNumber
+  }
+  return 1 // 기본값
+}
+// 이미지 선택기 토글
+const toggleImageSelector = () => {
+  showImageSelector.value = !showImageSelector.value
+}
+
+// 프로필 이미지 선택
+const selectProfileImage = async (imageNumber) => {
+  if (isUpdatingImage.value) return
+
+  try {
+    isUpdatingImage.value = true
+
+    const response = await axios.post(
+      '/api/user/update-profile-image',
+      {
+        profile_image: imageNumber,
+      },
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    if (response.data.success) {
+      // 성공 시 부모로 emit
+      emit('update-profile-image', imageNumber)
+      showImageSelector.value = false
+    }
+  } catch (error) {
+    console.error('프로필 이미지 변경 실패:', error)
+
+    if (error.response && error.response.data && error.response.data.error) {
+      alert(error.response.data.error)
+    } else {
+      alert('프로필 이미지 변경에 실패했습니다. 다시 시도해주세요.')
+    }
+  } finally {
+    isUpdatingImage.value = false
+  }
+}
+
+// 기본 이미지로 변경
+const setDefaultProfileImage = async () => {
+  await selectProfileImage(1) // 1번이 기본 이미지
 }
 
 const handleImageError = (event) => {
-  event.target.src = '/src/assets/finz.png'
+  event.target.src = availableImages[0] // 기본 이미지로 폴백
 }
 
-import axios from 'axios'
-const isUploading = ref(false)
-
-const triggerFileInput = () => {
-  fileInput.value?.click()
+// 닉네임 편집 관련 메서드
+const startNicknameEdit = () => {
+  isEditingNickname.value = true
+  editingNickname.value = props.profile.nickname
+  nextTick(() => {
+    if (nicknameInput.value) {
+      nicknameInput.value.focus()
+      nicknameInput.value.select()
+    }
+  })
 }
 
-const handleFileChange = async (event) => {
-  const file = event.target.files[0]
-  if (!file) return
+const cancelNicknameEdit = () => {
+  isEditingNickname.value = false
+  editingNickname.value = ''
+}
 
-  // 파일 크기 검증 (5MB 제한)
-  const maxSize = 5 * 1024 * 1024 // 5MB
-  if (file.size > maxSize) {
-    alert('파일 크기는 5MB 이하여야 합니다.')
+const saveNickname = async () => {
+  if (isUpdatingNickname.value) return
+
+  const newNickname = editingNickname.value.trim()
+
+  // 유효성 검사
+  if (!newNickname) {
+    alert('닉네임을 입력해주세요.')
     return
   }
 
-  // 파일 타입 검증
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-  if (!allowedTypes.includes(file.type)) {
-    alert('JPG, PNG, WEBP 형식의 이미지만 업로드 가능합니다.')
+  if (newNickname.length < 2 || newNickname.length > 10) {
+    alert('닉네임은 2-10자로 입력해주세요.')
+    return
+  }
+
+  if (newNickname === props.profile.nickname) {
+    // 변경사항이 없으면 편집 모드 종료
+    cancelNicknameEdit()
     return
   }
 
   try {
-    isUploading.value = true
+    isUpdatingNickname.value = true
 
-    // FormData 생성
-    const formData = new FormData()
-    formData.append('image', file)
-
-    // 서버에 업로드
-    const response = await axios.post('/api/user/upload-profile-image', formData, {
-      withCredentials: true,
-      headers: {
-        'Content-Type': 'multipart/form-data',
+    const response = await axios.post(
+      '/api/user/update-nickname',
+      {
+        nickname: newNickname,
       },
-    })
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
 
-    // 성공 시 프로필 이미지 업데이트
-    if (response.data.imageUrl) {
-      // 부모로 emit
-      emit('update-profile-image', response.data.imageUrl)
-      alert('프로필 사진이 성공적으로 변경되었습니다.')
-    } else {
-      console.error('서버 응답에 imageUrl이 없습니다:', response.data)
+    if (response.data.nickname) {
+      // 성공 시 부모 컴포넌트에 알림
+      emit('update-nickname', response.data.nickname)
+      alert('닉네임이 성공적으로 변경되었습니다.')
+      isEditingNickname.value = false
     }
   } catch (error) {
-    console.error('프로필 사진 업로드 실패:', error)
-    alert('프로필 사진 업로드에 실패했습니다. 다시 시도해주세요.')
+    console.error('닉네임 변경 실패:', error)
+
+    if (error.response && error.response.data && error.response.data.error) {
+      alert(error.response.data.error)
+    } else {
+      alert('닉네임 변경에 실패했습니다. 다시 시도해주세요.')
+    }
   } finally {
-    isUploading.value = false
-    // 파일 입력 초기화
-    if (fileInput.value) fileInput.value.value = ''
+    isUpdatingNickname.value = false
   }
 }
 </script>

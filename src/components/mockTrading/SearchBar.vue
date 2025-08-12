@@ -1,5 +1,5 @@
 <template>
-  <div class="p-3 bg-white max-w-full">
+  <div class="p-3 mt-3 bg-white max-w-full">
     <div class="flex gap-3 items-start max-w-full">
       <div class="relative flex-3 w-full">
         <div
