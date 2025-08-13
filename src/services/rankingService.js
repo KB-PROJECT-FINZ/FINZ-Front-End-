@@ -29,13 +29,31 @@ const mapStock = (stock) => ({
     : '/images/stocks/default.png',
 })
 
+/** 서버 응답 → 표준화 */
+const ALLOWED_GROUPS = ['AGGRESSIVE', 'BALANCED', 'CONSERVATIVE', 'ANALYTICAL', 'EMOTIONAL']
+
+function normalizeTraitGroup(user) {
+  const key = (user.traitGroup || user.trait || user.groupCode || user.riskType || '')
+    .toString()
+    .toUpperCase()
+  return ALLOWED_GROUPS.includes(key) ? key : ''
+}
+
+function normalizeProfileImage(v) {
+  if (v === null || v === undefined || v === 'null' || v === 'undefined') return null
+  const n = typeof v === 'string' ? parseInt(v, 10) : v
+  if (Number.isNaN(n) || n < 1 || n > 7) return null
+  return n
+}
+
 const mapUser = (user) => ({
-  userId: user.userId,
+  userId: user.userId ?? user.id ?? null,
   nickname: user.nickname || 'N/A',
   gainRate: user.gainRate,
-  trait: user.traitGroup || '기타',
-  originalTrait: user.originalTrait,
-  image: `/images/profile${(user.userId % 5) + 1}.png`,
+  ranking: user.ranking ?? null,
+  trait: normalizeTraitGroup(user), // 영문 그룹코드
+  originalTrait: user.originalTrait ?? null, // 세부 코드 (AGR/TEC…)
+  profileImage: normalizeProfileImage(user.profileImage), // 1~7 또는 null
 })
 
 export async function fetchMyRanking(userId, baseDate) {
@@ -48,7 +66,8 @@ export async function fetchMyRanking(userId, baseDate) {
       rank: data.ranking,
       gainRate: data.gainRate,
       topPercent: data.topPercent,
-      trait: data.riskType || '미지정',
+      trait: data.riskType, // 영문 그룹코드
+      originalTrait: data.originalTrait, // 세부 코드
       baseDate: data.baseDate ?? fallbackBaseDate,
     }
   } catch {
