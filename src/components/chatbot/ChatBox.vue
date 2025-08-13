@@ -15,7 +15,9 @@
               안녕하세요! 무엇을 도와드릴까요?
             </p>
           </div>
-          <p class="text-xs text-gray-500 mt-1 ml-2">{{ formatMessageTime(new Date().toISOString()) }}</p>
+          <p class="text-xs text-gray-500 mt-1 ml-2">
+            {{ formatMessageTime(new Date().toISOString()) }}
+          </p>
         </div>
       </div>
 
@@ -27,10 +29,13 @@
       >
         <!-- 사용자 메시지 -->
         <div v-if="msg.role === 'user'" class="flex flex-col items-end">
-                      <div class="bg-blue-500 text-white rounded-3xl px-4 py-3 max-w-xs shadow-sm">
-                            <div class="text-sm font-normal leading-relaxed" v-html="parseMarkdown(msg.content)"></div>
+          <div class="bg-blue-500 text-white rounded-3xl px-4 py-3 max-w-xs shadow-sm">
+            <div
+              class="text-sm font-normal leading-relaxed"
+              v-html="parseMarkdown(msg.content)"
+            ></div>
           </div>
-                        <p class="text-xs text-gray-500 mt-1 mr-2">{{ formatMessageTime(msg.timestamp) }}</p>
+          <p class="text-xs text-gray-500 mt-1 mr-2">{{ formatMessageTime(msg.timestamp) }}</p>
         </div>
 
         <!-- 봇 메시지 -->
@@ -101,7 +106,7 @@
                 </button>
               </div>
             </div>
-            
+
             <!-- 봇 메시지 시간 표시 -->
             <p class="text-xs text-gray-500 mt-1 ml-2">{{ formatMessageTime(msg.timestamp) }}</p>
           </div>
@@ -132,7 +137,9 @@
               <p class="text-gray-600 text-sm">답변을 준비하고 있어요...</p>
             </div>
           </div>
-          <p class="text-xs text-gray-500 mt-1 ml-2">{{ formatMessageTime(new Date().toISOString()) }}</p>
+          <p class="text-xs text-gray-500 mt-1 ml-2">
+            {{ formatMessageTime(new Date().toISOString()) }}
+          </p>
         </div>
       </div>
     </div>
@@ -299,7 +306,7 @@ const messageContainer = ref(null)
 // 메시지 시간을 포맷팅하는 함수
 const formatMessageTime = (timestamp) => {
   if (!timestamp) return ''
-  
+
   try {
     const date = new Date(timestamp)
     const hours = date.getHours()
@@ -318,13 +325,13 @@ const formatMessageTime = (timestamp) => {
 const parseMarkdown = (text) => {
   try {
     console.log('🔍 parseMarkdown 호출됨:', text)
-    
+
     // **굵은 글씨** 패턴을 <strong> 태그로 변환
     let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    
+
     // 줄바꿈을 <br> 태그로 변환
     html = html.replace(/\n/g, '<br>')
-    
+
     console.log('✅ 변환 결과:', html)
     return html
   } catch (error) {
@@ -676,11 +683,11 @@ onMounted(async () => {
 
 async function fetchGPT(prompt, explicitIntent = null) {
   loading.value = true
-          chatStore.messages.push({ 
-          role: 'user', 
-          content: prompt,
-          timestamp: new Date().toISOString()
-        })
+  chatStore.messages.push({
+    role: 'user',
+    content: prompt,
+    timestamp: new Date().toISOString(),
+  })
 
   console.log('🚀 ====== fetchGPT 시작 ======')
   console.log('📤 서버로 보낼 userId:', userId.value)
@@ -762,7 +769,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
             { label: '다시 분석하기', intent: 'REANALYZE_OPTIONS' },
             { label: '뒤로가기', intent: 'BACK_TO_MAIN' },
           ],
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         })
       }
 
@@ -771,19 +778,19 @@ async function fetchGPT(prompt, explicitIntent = null) {
       console.log('📦 응답 전체:', res.data)
     } else {
       console.log('❌ 응답 내용이 비어있음')
-      chatStore.messages.push({ 
-        role: 'bot', 
+      chatStore.messages.push({
+        role: 'bot',
         content: '❌ GPT 응답이 비어 있습니다.',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       })
     }
   } catch (error) {
     console.log('❌ 에러 발생 - userId:', userId.value)
     console.log('❌ 에러 발생 - intentType:', intentType)
-    chatStore.messages.push({ 
-      role: 'bot', 
+    chatStore.messages.push({
+      role: 'bot',
       content: '⚠️ 서버 오류가 발생했어요.',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     })
     console.error('❌ GPT fetch 실패:', error)
   } finally {
@@ -969,4 +976,3 @@ async function handleButtonIntent(btn) {
   }
 }
 </script>
-
