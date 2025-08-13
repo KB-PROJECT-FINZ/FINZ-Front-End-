@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
+    user: null,
     userId: '',
     username: '',
     name: '',
@@ -24,6 +25,12 @@ export const useUserStore = defineStore('user', {
       this.username = null
       this.name = null
       this.riskType = null
+    },
+    updateProfileImage(imageUrl) {
+      if (this.user) {
+        this.user.profileImage = imageUrl
+        localStorage.setItem('user', JSON.stringify(this.user))
+      }
     },
   },
 })

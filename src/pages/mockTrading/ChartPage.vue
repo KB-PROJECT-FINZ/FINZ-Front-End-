@@ -529,7 +529,7 @@ const realTimeChangeText = computed(() => {
 
 // 메서드들
 const goBack = () => {
-  router.push('/mock-trading')
+  router.back()
 }
 
 function convertApiDataTo1MinChartData(apiResponse) {
