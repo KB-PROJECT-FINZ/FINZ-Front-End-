@@ -33,7 +33,11 @@
         class="w-full max-w-[420px] rounded-xl mb-5 mx-auto shadow"
       />
       <h2 class="text-lg font-bold text-gray-900 mb-3">{{ formattedTitle }}</h2>
-      <div class="text-gray-700 text-base leading-7" v-html="formattedBody"></div>
+      <div
+        class="text-gray-700 text-base leading-7"
+        v-html="formattedBody"
+        style="word-break: keep-all; white-space: pre-line"
+      ></div>
     </div>
 
     <!-- 퀴즈 풀러가기 버튼 -->
@@ -326,8 +330,11 @@ function removeOX(text) {
 const formattedBody = computed(() => {
   if (!content.value?.body) return ''
 
-  // 줄바꿈 통일: \n, \\n, \r\n → \n
-  const normalized = content.value.body.replace(/\\n|\\\\n|\r\n/g, '\n')
+  // 줄바꿈 통일: \n, \\\n, \r\n → \n
+  let normalized = content.value.body.replace(/\\n|\\\\n|\r\n/g, '\n')
+
+  // 문장 끝 마침표 뒤에 <br> 추가 (단, 이미 <br>이 있으면 중복 방지)
+  normalized = normalized.replace(/([^.])\.\s*/g, '$1.<br>')
 
   // 문단 나누기: \n\n 이상 기준으로 분리
   const paragraphs = normalized

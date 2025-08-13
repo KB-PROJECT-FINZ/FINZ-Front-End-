@@ -74,11 +74,9 @@
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
         <img
-          src="https://cdn-icons-png.flaticon.com/128/12400/12400883.png"
-          alt="뉴스 아이콘"
-          width="24"
-          height="24"
-          class="mr-4"
+          src="/src/assets/report_image.png"
+          alt="AI 분석 리포트 아이콘"
+          class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
         <div class="flex-1 min-w-0">
           <div class="text-base text-gray-900 mb-0.5">AI 분석 리포트</div>
@@ -94,11 +92,9 @@
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
         <img
-          src="https://cdn-icons-png.flaticon.com/128/7653/7653160.png"
-          alt="뉴스 아이콘"
-          width="24"
-          height="24"
-          class="mr-4"
+          src="/src/assets/note_image.png"
+          alt="일지 작성하기 아이콘"
+          class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
         <div class="flex-1 min-w-0">
           <div class="text-base text-gray-900 mb-0.5">투자 일지</div>
@@ -113,11 +109,9 @@
         @click="goToCustomContents"
       >
         <img
-          src="https://cdn-icons-png.flaticon.com/128/7931/7931221.png"
-          alt="뉴스 아이콘"
-          width="24"
-          height="24"
-          class="mr-4"
+          src="/src/assets/suggestion_image.png"
+          alt="추천 받아보기 아이콘"
+          class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
         <div class="flex-1 min-w-0">
           <div class="text-base text-gray-900 mb-0.5">맞춤 콘텐츠</div>
@@ -133,11 +127,9 @@
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
         <img
-          src="https://cdn-icons-png.flaticon.com/128/14700/14700716.png"
-          alt="뉴스 아이콘"
-          width="24"
-          height="24"
-          class="mr-4"
+          src="/src/assets/propensity_image.png"
+          alt="투자 성향 아이콘"
+          class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
         <div class="flex-1 min-w-0">
           <div class="text-base text-gray-900 mb-0.5">나의 투자 성향 알아보기</div>

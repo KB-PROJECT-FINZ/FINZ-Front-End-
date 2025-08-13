@@ -170,11 +170,17 @@ function refreshJournals(type = 'create') {
           @click="selectJournal(journal)"
         >
           <div class="mb-1 flex justify-between items-center">
-            <p class="text-gray-800"><strong>감정 |</strong> {{ journal.emotion }}</p>
+            <p class="text-gray-800">
+              <strong>감정 |</strong> <span v-html="formatNewline(journal.emotion)"></span>
+            </p>
             <p class="font-semibold text-sm text-gray-600">{{ journal.journalDate }}</p>
           </div>
-          <p class="text-gray-800 mb-1"><strong>이유 |</strong> {{ journal.reason }}</p>
-          <p class="text-gray-800 mb-1"><strong>실수 |</strong> {{ journal.mistake }}</p>
+          <p class="text-gray-800 mb-1">
+            <strong>이유 |</strong> <span v-html="formatNewline(journal.reason)"></span>
+          </p>
+          <p class="text-gray-800 mb-1">
+            <strong>실수 |</strong> <span v-html="formatNewline(journal.mistake)"></span>
+          </p>
           <!-- 액션 바: 아래에 딱 붙는 버튼 행 -->
           <div
             v-if="isSelected(journal)"
@@ -228,6 +234,12 @@ import { useTransactionsData } from '@/services/useTranscationsData.js'
 import JournalWriteModal from './JournalWriteModal.vue'
 import FooterNavigation from '@/components/FooterNavigation.vue'
 const showWriteModal = ref(false)
+
+// 줄바꿈(\n)을 <br>로 변환하는 함수
+function formatNewline(text) {
+  if (!text) return ''
+  return text.replace(/\n/g, '<br>')
+}
 const { transactionsData, fetchTransactions } = useTransactionsData()
 const router = useRouter()
 const journals = ref([])
