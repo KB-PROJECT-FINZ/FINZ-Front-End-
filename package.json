@@ -19,6 +19,7 @@
     "chartjs-plugin-crosshair": "^2.0.0",
     "chartjs-plugin-zoom": "^2.2.0",
     "date-fns": "^4.1.0",
+    "marked": "^16.1.2",
     "modern-css-reset": "^1.4.0",
     "pinia": "^3.0.1",
     "swiper": "^11.2.10",

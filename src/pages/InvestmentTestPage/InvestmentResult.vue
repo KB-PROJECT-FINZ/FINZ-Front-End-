@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRoute, useRouter } from 'vue-router'
+import OnboardingGuide from '@/components/OnboardingGuide.vue'
 
 const route = useRoute()
 const typeCode = route.query.type || 'UNKNOWN'
@@ -9,6 +10,7 @@ const router = useRouter()
 const name = ref('')
 const username = ref('')
 const result = ref(null) // 동적으로 결과 업데이트용
+const showOnboarding = ref(false) // 온보딩 표시 상태
 
 // 투자 성향 저장
 const saveRiskType = async () => {
@@ -58,6 +60,12 @@ onMounted(async () => {
     router.push('/login-form')
   }
 })
+
+// 온보딩 완료 후 로그인 페이지로 이동
+const handleOnboardingComplete = () => {
+  showOnboarding.value = false
+  router.push('/login-form')
+}
 
 const resultMap = {
   CSD: {
@@ -164,7 +172,7 @@ const resultMap = {
 
     <button
       class="bg-green-500 text-white py-2 px-4 rounded-full w-full font-semibold mb-3 hover:bg-green-600"
-      @click="() => $router.push('/login-form')"
+      @click="showOnboarding = true"
     >
       로그인
     </button>
@@ -182,6 +190,12 @@ const resultMap = {
       <p>{{ result.tip }}</p>
     </div>
   </div>
+
+  <!-- 온보딩 가이드 -->
+  <OnboardingGuide 
+    :showOnboarding="showOnboarding"
+    @close="handleOnboardingComplete"
+  />
 </template>
 
 <style scoped>
