@@ -25,6 +25,7 @@ import TradingPage from '@/pages/mockTrading/TradingPage.vue'
 import { useUserStore } from '@/stores/user'
 import MockTradingHome from '@/pages/mockTrading/MockTradingHome.vue'
 import AssetStatus from '@/pages/mockTrading/AssetStatus.vue'
+import PendingOrdersPage from '@/pages/mockTrading/PendingOrdersPage.vue'
 import HoldingsPage from '@/pages/mockTrading/HoldingsPage.vue'
 import TransactionsPage from '@/pages/mockTrading/TransactionsPage.vue'
 import RiskProfile from '@/pages/ProfilePages/RiskProfile.vue'
@@ -154,6 +155,11 @@ const routes = [
     path: '/mock-trading/asset-status',
     name: 'AssetStatus',
     component: AssetStatus,
+  },
+  {
+    path: '/mock-trading/pending-orders',
+    name: 'PendingOrders',
+    component: PendingOrdersPage,
   },
   {
     path: '/mock-trading/holdings',
