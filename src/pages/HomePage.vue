@@ -421,11 +421,15 @@ import introIcon from '@/assets/intro_image.png'
 import quizIcon from '@/assets/quiz_image.png'
 import suggestionIcon from '@/assets/suggestion_image.png'
 import noteIcon from '@/assets/note_image.png'
+import dictionaryIcon from '@/assets/dictionary_image.png'
+import analyzeIcon from '@/assets/analyze_image.png'
 
 import AssetIcon from '@/components/icons/AssetIcon.vue'
 import transactionIcon from '@/components/icons/transactionIcon.vue'
 import ListIcon from '@/components/icons/ListIcon.vue'
 import BellIcon from '@/components/icons/BellIcon.vue'
+import { useUserStore } from '@/stores/user.js'
+const userStore = useUserStore()
 
 const router = useRouter()
 
@@ -435,7 +439,23 @@ function openRecommendChat() {
   // riskType은 fetchUserInfo 등에서 받아온 값 사용
   window.dispatchEvent(
     new CustomEvent('openChatBot', {
-      detail: { risk: riskTypeName.value }, // 또는 user.riskType 등 실제 코드에 맞게
+      detail: { risk: userStore.riskType }, // 또는 user.riskType 등 실제 코드에 맞게
+    }),
+  )
+}
+
+function openAnalyzeChat() {
+  window.dispatchEvent(
+    new CustomEvent('openChatBot', {
+      detail: { intent: 'STOCK_ANALYZE' },
+    }),
+  )
+}
+
+function openDictionaryChat() {
+  window.dispatchEvent(
+    new CustomEvent('openChatBot', {
+      detail: { intent: 'TERM_EXPLAIN' },
     }),
   )
 }
@@ -449,17 +469,30 @@ const serviceFeatures = [
     onClick: () => router.push('/home'),
   },
   {
-    icon: quizIcon,
-    title: '퀴즈 풀러가기',
-    desc: '투자 개념 학습',
-    onClick: () => router.push('/learning'),
-  },
-  {
     icon: suggestionIcon,
     title: '추천 받아보기',
     desc: 'AI 종목 추천',
     onClick: openRecommendChat,
   },
+  {
+    icon: analyzeIcon,
+    title: '기업 분석하기',
+    desc: 'AI 기업 분석',
+    onClick: openAnalyzeChat,
+  },
+  {
+    icon: dictionaryIcon,
+    title: '용어 질문하기',
+    desc: 'AI 용어 학습',
+    onClick: openDictionaryChat,
+  },
+  {
+    icon: quizIcon,
+    title: '퀴즈 풀러가기',
+    desc: '투자 개념 학습',
+    onClick: () => router.push('/learning'),
+  },
+
   {
     icon: noteIcon,
     title: '일지 작성하기',

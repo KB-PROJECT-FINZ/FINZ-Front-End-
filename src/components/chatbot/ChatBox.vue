@@ -598,9 +598,30 @@ onMounted(async () => {
     }
   }
 })
-const props = defineProps({ risk: String })
+const props = defineProps({ risk: String, fixedIntent: String })
 
 onMounted(() => {
+  if (props.fixedIntent === 'STOCK_ANALYZE') {
+    chatStore.clearMessages()
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '분석할 종목명을 입력해주세요. 예: 삼성전자, 테슬라 등',
+      buttons: [{ label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' }],
+    })
+    awaitingStockAnalyze.value = true
+  }
+  if (props.fixedIntent === 'TERM_EXPLAIN') {
+    // 용어 설명 안내 메시지와 입력 모드로 진입
+    chatStore.clearMessages()
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '설명을 원하는 용어를 입력해주세요. 예: PER, EPS, ROE 등',
+      buttons: [{ label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' }],
+    })
+    awaitingTermExplain.value = true
+  }
   if (props.risk) {
     fetchGPT(`나의 투자 성향인 ${props.risk}에 맞는 종목을 추천해줘`, 'RECOMMEND_PROFILE')
   }
