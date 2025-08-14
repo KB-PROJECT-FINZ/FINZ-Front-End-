@@ -437,13 +437,13 @@ const serviceFeatures = [
     icon: introIcon,
     title: '핀즈 알아보기',
     desc: '서비스 소개',
-    onClick: () => router.push('/'),
+    onClick: () => router.push('/home'),
   },
   {
     icon: quizIcon,
     title: '퀴즈 풀러가기',
     desc: '투자 개념 학습',
-    onClick: () => router.push('/'),
+    onClick: () => router.push('/learning'),
   },
   {
     icon: suggestionIcon,
@@ -455,7 +455,7 @@ const serviceFeatures = [
     icon: noteIcon,
     title: '일지 작성하기',
     desc: '투자 일지 작성',
-    onClick: () => router.push('/'),
+    onClick: () => router.push('/journal'),
   },
 ]
 
