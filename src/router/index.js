@@ -32,6 +32,8 @@ import RiskTypesList from '@/pages/ProfilePages/RiskTypesList.vue'
 import KakaoSignupPage from '@/pages/LoginPages/KakaoSignupPage.vue'
 import ProtfolioAnalysis from '@/pages/mockTrading/ProtfolioAnalysis.vue'
 import DailyQuizePage from '@/pages/Learning/DailyQuizePage.vue'
+import LearningStart from '@/components/LearningStart.vue'
+import LearningEnd from '@/components/LearningEnd.vue'
 const routes = [
   {
     path: '/',
@@ -200,6 +202,16 @@ const routes = [
     path: '/profile/custom-contents',
     name: 'CustomContentsPage',
     component: CustomContentsPage,
+  },
+  {
+    path: '/learning-start',
+    name: 'LearningStart',
+    component: LearningStart,
+  },
+  {
+    path: '/learning-end',
+    name: 'LearningEnd',
+    component: LearningEnd,
   },
 ]
 

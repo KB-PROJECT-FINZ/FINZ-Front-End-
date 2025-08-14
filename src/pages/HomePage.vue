@@ -550,7 +550,7 @@ const goToStockChart = (stockCode, stockName) => {
 }
 
 const goToLearning = () => {
-  router.push('/learning')
+  router.push('/learning-start')
 }
 
 const currentSort = ref('name')
