@@ -248,7 +248,6 @@
     </section>
     <div class="w-full h-px bg-gray-200 mx-auto" />
 
-
     <!-- 충전 중일 때만 로딩 오버레이 표시 -->
     <div
       v-if="chargingLoading"
