@@ -59,8 +59,12 @@
             </div>
           </div>
 
-          <div class="text-sm text-gray-900 mb-1">{{ profile.nickname }}</div>
-          <div class="text-xs text-gray-700 mb-6">{{ profile.type }} {{ nameKr }}</div>
+          <div class="text-base font-bold text-gray-900">{{ profile.nickname }}</div>
+          <div class="text-xs font-bold text-gray-700 mt-2 mb-4">
+            <span class="bg-blue-100 text-blue-600 rounded px-3 py-1 text-xs font-bold">
+              {{ nameKr }} ({{ profile.type }})</span
+            >
+          </div>
         </div>
       </section>
     </div>
@@ -74,17 +78,28 @@
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
         <img
-          src="https://cdn-icons-png.flaticon.com/128/12400/12400883.png"
-          alt="뉴스 아이콘"
-          width="24"
-          height="24"
-          class="mr-4"
+          src="/src/assets/report_image.png"
+          alt="AI 분석 리포트 아이콘"
+          class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
         <div class="flex-1 min-w-0">
-          <div class="text-base text-gray-900 mb-0.5">AI 분석 리포트</div>
+          <div class="text-base font-medium text-gray-900 mb-0.5">AI 분석 리포트</div>
           <div class="text-sm text-gray-500">AI가 분석한 투자 리포트를 확인해보세요</div>
         </div>
-        <span class="text-2xl text-black ml-2">&#8250;</span>
+        <svg
+          class="w-5 h-5 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          style="transform: scaleX(-1)"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
       </router-link>
     </section>
     <!-- 투자 일지 & 나의 투자 성향 알아보기 -->
@@ -94,17 +109,28 @@
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
         <img
-          src="https://cdn-icons-png.flaticon.com/128/7653/7653160.png"
-          alt="뉴스 아이콘"
-          width="24"
-          height="24"
-          class="mr-4"
+          src="/src/assets/note_image.png"
+          alt="일지 작성하기 아이콘"
+          class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
         <div class="flex-1 min-w-0">
-          <div class="text-base text-gray-900 mb-0.5">투자 일지</div>
+          <div class="text-base font-medium text-gray-900 mb-0.5">투자 일지</div>
           <div class="text-sm text-gray-500">나의 투자 기록을 확인해보세요</div>
         </div>
-        <span class="text-2xl text-black ml-2">&#8250;</span>
+        <svg
+          class="w-5 h-5 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          style="transform: scaleX(-1)"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
       </router-link>
     </section>
     <section class="flex flex-col gap-3 mx-4 mb-5">
@@ -113,17 +139,28 @@
         @click="goToCustomContents"
       >
         <img
-          src="https://cdn-icons-png.flaticon.com/128/7931/7931221.png"
-          alt="뉴스 아이콘"
-          width="24"
-          height="24"
-          class="mr-4"
+          src="/src/assets/suggestion_image.png"
+          alt="추천 받아보기 아이콘"
+          class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
         <div class="flex-1 min-w-0">
-          <div class="text-base text-gray-900 mb-0.5">맞춤 콘텐츠</div>
+          <div class="text-base font-medium text-gray-900 mb-0.5">맞춤 콘텐츠</div>
           <div class="text-sm text-gray-500">나만을 위한 추천 콘텐츠를 확인해보세요</div>
         </div>
-        <span class="text-2xl text-black ml-2">&#8250;</span>
+        <svg
+          class="w-5 h-5 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          style="transform: scaleX(-1)"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
       </div>
     </section>
 
@@ -133,31 +170,41 @@
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
         <img
-          src="https://cdn-icons-png.flaticon.com/128/14700/14700716.png"
-          alt="뉴스 아이콘"
-          width="24"
-          height="24"
-          class="mr-4"
+          src="/src/assets/propensity_image.png"
+          alt="투자 성향 아이콘"
+          class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
         <div class="flex-1 min-w-0">
-          <div class="text-base text-gray-900 mb-0.5">나의 투자 성향 알아보기</div>
+          <div class="text-base font-medium text-gray-900 mb-0.5">나의 투자 성향 알아보기</div>
           <div class="text-sm text-gray-500">투자 성향을 분석해보세요</div>
         </div>
-        <span class="text-2xl text-black ml-2">&#8250;</span>
+        <svg
+          class="w-5 h-5 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          style="transform: scaleX(-1)"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
       </router-link>
     </section>
 
-    <footer-navigation></footer-navigation>
-
     <!-- 로그아웃 버튼 (네비게이션 아래) -->
-    <div class="w-full flex justify-center mt-4 mb-8">
+    <div class="w-full flex justify-center mt-8 mb-8">
       <button
         @click="handleLogout"
-        class="w-[90%] max-w-md h-12 bg-gray-100 text-gray-500 font-bold rounded-xl shadow-sm hover:bg-gray-200 transition-colors"
+        class="w-[90%] max-w-md h-12 bg-gray-100 text-gray-500 rounded-xl shadow-sm hover:bg-gray-200 transition-colors"
       >
-        Log out
+        로그아웃
       </button>
     </div>
+    <footer-navigation></footer-navigation>
   </div>
 </template>
 

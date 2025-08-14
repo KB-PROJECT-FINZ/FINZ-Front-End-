@@ -248,29 +248,6 @@
     </section>
     <div class="w-full h-px bg-gray-200 mx-auto" />
 
-    <!-- 보유 종목 바로가기 -->
-    <section class="my-2 px-6">
-      <button
-        class="w-full flex justify-between items-center text-base font-semibold text-gray-700 py-4 px-1 hover:bg-gray-100"
-        @click="goHoldingsPage"
-      >
-        <span>보유 종목 전체 보기</span>
-        <span class="ml-2">&gt;</span>
-      </button>
-    </section>
-    <div class="w-full h-px bg-gray-200 mx-auto" />
-
-    <!-- 최근 거래 내역 바로가기 -->
-    <section class="my-2 px-6">
-      <button
-        class="w-full flex justify-between items-center text-base font-semibold text-gray-700 py-4 px-1 hover:bg-gray-100"
-        @click="goTransactionsPage"
-      >
-        <span>최근 거래 내역 전체 보기</span>
-        <span class="ml-2">&gt;</span>
-      </button>
-    </section>
-
     <!-- 충전 중일 때만 로딩 오버레이 표시 -->
     <div
       v-if="chargingLoading"
@@ -355,14 +332,6 @@ watch(
 // ===== 메서드들 =====
 const goBack = () => {
   router.back()
-}
-
-const goHoldingsPage = () => {
-  router.push('/mock-trading/holdings')
-}
-
-const goTransactionsPage = () => {
-  router.push('/mock-trading/transactions')
 }
 
 // 크레딧 충전
