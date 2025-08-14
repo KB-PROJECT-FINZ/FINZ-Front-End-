@@ -79,10 +79,23 @@
           class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
         <div class="flex-1 min-w-0">
-          <div class="text-base text-gray-900 mb-0.5">AI 분석 리포트</div>
+          <div class="text-base font-medium text-gray-900 mb-0.5">AI 분석 리포트</div>
           <div class="text-sm text-gray-500">AI가 분석한 투자 리포트를 확인해보세요</div>
         </div>
-        <span class="text-2xl text-black ml-2">&#8250;</span>
+        <svg
+          class="w-5 h-5 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          style="transform: scaleX(-1)"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
       </router-link>
     </section>
     <!-- 투자 일지 & 나의 투자 성향 알아보기 -->
@@ -97,10 +110,23 @@
           class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
         <div class="flex-1 min-w-0">
-          <div class="text-base text-gray-900 mb-0.5">투자 일지</div>
+          <div class="text-base font-medium text-gray-900 mb-0.5">투자 일지</div>
           <div class="text-sm text-gray-500">나의 투자 기록을 확인해보세요</div>
         </div>
-        <span class="text-2xl text-black ml-2">&#8250;</span>
+        <svg
+          class="w-5 h-5 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          style="transform: scaleX(-1)"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
       </router-link>
     </section>
     <section class="flex flex-col gap-3 mx-4 mb-5">
@@ -114,10 +140,23 @@
           class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
         <div class="flex-1 min-w-0">
-          <div class="text-base text-gray-900 mb-0.5">맞춤 콘텐츠</div>
+          <div class="text-base font-medium text-gray-900 mb-0.5">맞춤 콘텐츠</div>
           <div class="text-sm text-gray-500">나만을 위한 추천 콘텐츠를 확인해보세요</div>
         </div>
-        <span class="text-2xl text-black ml-2">&#8250;</span>
+        <svg
+          class="w-5 h-5 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          style="transform: scaleX(-1)"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
       </div>
     </section>
 
@@ -132,10 +171,23 @@
           class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
         <div class="flex-1 min-w-0">
-          <div class="text-base text-gray-900 mb-0.5">나의 투자 성향 알아보기</div>
+          <div class="text-base font-medium text-gray-900 mb-0.5">나의 투자 성향 알아보기</div>
           <div class="text-sm text-gray-500">투자 성향을 분석해보세요</div>
         </div>
-        <span class="text-2xl text-black ml-2">&#8250;</span>
+        <svg
+          class="w-5 h-5 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          style="transform: scaleX(-1)"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
       </router-link>
     </section>
 

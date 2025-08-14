@@ -191,13 +191,13 @@ function refreshJournals(type = 'create') {
               class="px-3 py-1.5 rounded-full text-sm font-medium bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 active:scale-[0.99] transition"
               @click="editJournal(journal)"
             >
-              ✏️ 수정하기
+              수정하기
             </button>
             <button
               class="px-3 py-1.5 rounded-full text-sm font-medium bg-white text-red-600 border border-red-200 hover:bg-red-50 active:scale-[0.99] transition"
               @click="deleteJournal(journal.id)"
             >
-              🗑 삭제하기
+              삭제하기
             </button>
           </div>
         </div>
