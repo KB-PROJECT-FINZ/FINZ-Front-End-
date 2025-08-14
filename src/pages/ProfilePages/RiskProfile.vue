@@ -7,7 +7,7 @@
     </button>
     <span class="ml-3 flex-1 text-left text-base font-semibold text-gray-900">나의 투자 성향</span>
   </header>
-
+  <hr class="border-t-2 border-gray-200 my-2" />
   <div class="flex justify-center px-4 py-6">
     <div class="w-full max-w-xl">
       <div v-if="loading" class="text-center text-gray-500 py-8">로딩 중...</div>

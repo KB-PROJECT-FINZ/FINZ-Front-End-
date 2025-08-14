@@ -7,7 +7,8 @@
     </button>
     <span class="ml-3 flex-1 text-left text-base font-semibold text-gray-900">투자 성향 목록</span>
   </header>
-  <div class="px-4 py-6">
+  <hr class="border-t-2 border-gray-200 my-2" />
+  <div class="px-4 py-4">
     <div class="grid grid-cols-2 gap-4">
       <div
         v-for="type in riskTypes"
@@ -40,7 +41,7 @@ const riskTypeSvgs = {
   INF: `<svg class="w-7 h-7" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="#06b6d4" stroke-width="2"/><path d="M21 21L16.65 16.65" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   SOC: `<svg class="w-7 h-7" viewBox="0 0 24 24" fill="none"><path d="M12 2L14.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="#10b981" stroke-width="2"/><path d="M12 10V14M10 12H14" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/></svg>`,
   SYS: `<svg class="w-7 h-7" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" stroke="#64748b" stroke-width="2"/><rect x="9" y="9" width="6" height="6" stroke="#64748b" stroke-width="2"/><path d="M9 1V3M15 1V3M9 21V23M15 21V23M1 9H3M1 15H3M21 9H23M21 15H23" stroke="#64748b" stroke-width="2" stroke-linecap="round"/></svg>`,
-  TEC: `<svg class="w-7 h-7" viewBox="0 0 24 24" fill="none"><path d="M3 3V21H21" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 9L12 6L16 10L20 6" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 17L12 14L16 18L20 14" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  TEC: `<svg class="w-7 h-7" viewBox="0 0 24 24" fill="none"><path d="M2 3V21H20" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 9L11 6L15 10L19 6" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 17L11 14L15 18L19 14" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   THE: `<svg class="w-7 h-7" viewBox="0 0 24 24" fill="none"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12,2" stroke="#f43f5e" stroke-width="2"/></svg>`,
   VAL: `<svg class="w-7 h-7" viewBox="0 0 24 24" fill="none"><path d="M12 2L3.09 8.26L9 9L7 14L13.18 15.02L12 22L18.18 15.02L21 14L19 9L21.91 8.26L12 2Z" stroke="#f59e42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 }
