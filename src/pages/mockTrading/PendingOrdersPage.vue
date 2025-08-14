@@ -88,11 +88,15 @@
           <div
             v-for="order in orders"
             :key="order.orderId"
-            class="bg-white p-3 rounded-lg flex items-center justify-between mb-1"
+            class="bg-white p-3 rounded-lg flex items-center justify-between mb-1 cursor-pointer transition-colors hover:bg-gray-50"
+            @click="goToStock(order)"
           >
-            <!-- 날짜 -->
-            <div class="flex-shrink-0 w-10 text-left">
-              <div class="text-xs text-gray-400">{{ formatDateDot(order.createdAt) }}</div>
+            <!-- 날짜 및 시간 -->
+            <div class="flex-shrink-0 w-10 text-left flex flex-col justify-center">
+              <div class="text-xs font-semibold">
+                {{ formatDateDot(order.createdAt) }}
+              </div>
+              <div class="text-[12px] text-gray-400 mt-1">{{ formatTime(order.createdAt) }}</div>
             </div>
             <!-- 종목명 및 상태 + 이미지 -->
             <div class="flex-1 min-w-0 flex items-center gap-2">
@@ -119,22 +123,21 @@
                   {{ order.stockName }}
                 </div>
                 <div class="text-xs mt-1 flex items-center gap-1">
-                  <span :class="order.orderType === 'BUY' ? 'text-red-600' : 'text-blue-600'">
+                  <span :class="order.orderType === 'BUY' ? 'text-red-600 ' : 'text-blue-600'">
                     {{ order.quantity }}주
                     {{ order.orderType === 'BUY' ? '매수' : '매도' }}
                   </span>
-                  <span class="text-gray-500"> 주당 {{ formatPrice(order.targetPrice) }}원 </span>
                 </div>
               </div>
             </div>
-            <!-- 주문단가 및 생성시간 -->
-            <div class="flex-shrink-0 text-right">
+            <!-- 주문단가 및 주당 n원 -->
+            <div class="flex-shrink-0 text-right flex flex-col justify-center h-full">
               <div>
                 <div class="text-base font-semibold text-gray-900 mb-0.5">
                   {{ formatPrice(order.targetPrice * order.quantity) }}원
                 </div>
-                <div class="mt-1 text-[12px] text-gray-500">
-                  {{ formatTime(order.createdAt) }}
+                <div class="text-[12px] text-gray-500 mt-1">
+                  주당 {{ formatPrice(order.targetPrice) }}원
                 </div>
               </div>
             </div>
@@ -183,12 +186,23 @@ async function fetchPendingOrders() {
     }
     const data = await response.json()
     orders.value = Array.isArray(data) ? data : []
+    console.log(orders.value.map((order) => order.stockCode))
   } catch (err) {
     error.value = err.message
     orders.value = []
     console.error('주문 목록 조회 실패:', err)
   } finally {
     loading.value = false
+  }
+}
+
+const goToStock = async (order) => {
+  try {
+    await router.push(
+      `/trading/?stockCode=${order.stockCode}&stockName=${encodeURIComponent(order.stockName)}&tab=waiting`,
+    )
+  } catch (error) {
+    console.error('❌ 라우팅 오류:', error)
   }
 }
 

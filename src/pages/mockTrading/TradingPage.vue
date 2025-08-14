@@ -1989,6 +1989,11 @@ const getVolumeRatio = (volume) => {
 
 // 메서드들
 const goBack = () => {
+  const from = router.options.history.state.back
+  if (from && from.endsWith('/mock-trading/pending-orders')) {
+    router.push('/mock-trading/pending-orders')
+    return
+  }
   const stockCode = route.query.stockCode || stockInfo.value.stockCode || ''
   const stockName = route.query.stockName || stockInfo.value.name || ''
   router.push({
@@ -2301,6 +2306,7 @@ onMounted(() => {
   loadHoldings()
   testApiCall()
   initWebSocket()
+  loadPendings()
 
   // 1초마다 시간 업데이트를 위한 타이머
   timeUpdateTimer.value = setInterval(() => {

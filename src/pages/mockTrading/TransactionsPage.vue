@@ -120,7 +120,9 @@
           <div class="flex items-center justify-between mb-1">
             <!-- 날짜 -->
             <div class="flex-shrink-0 w-10 text-left">
-              <div class="text-xs text-gray-400">{{ formatDateDot(transaction.executedAt) }}</div>
+              <div class="text-xs text-black font-semibold">
+                {{ formatDateDot(transaction.executedAt) }}
+              </div>
             </div>
             <!-- 종목명 및 상태 + 이미지 -->
             <div class="flex-1 min-w-0 flex items-center gap-2">
