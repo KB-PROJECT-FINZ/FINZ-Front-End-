@@ -81,24 +81,10 @@
 
       <!-- 총 자산 카드 -->
       <div class="w-full max-w-[420px] mx-auto p-5 mb-4 bg-white rounded-2xl shadow">
-        <button class="w-full text-left" @click="goToAssetStatus" style="display: block">
+        <button class="w-full text-left" style="display: block">
           <div class="py-2">
             <div class="flex items-center mb-1">
-              <span class="font-bold text-base text-gray-900">총 자산</span>
-              <svg
-                class="w-5 h-5 text-gray-700"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                style="transform: scaleX(-1)"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
+              <span class="font-bold text-base text-gray-900">투자 중인 금액</span>
             </div>
             <div v-if="!dataLoaded" class="w-40 h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
             <div v-else class="w-full flex flex-col items-start">
