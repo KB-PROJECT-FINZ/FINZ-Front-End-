@@ -26,37 +26,16 @@
 
     <!-- 필터 및 기간 선택 -->
     <section class="bg-white mx-4 mt-2 pt-4 px-4">
-      <div class="flex justify-between items-center mb-6">
-        <h3 class="text-base font-semibold text-gray-900">체결 대기 조회</h3>
-        <span class="text-sm text-gray-500">총 --건</span>
-      </div>
-      <!-- 기간 선택 -->
-      <div class="mb-3">
-        <button
-          class="flex items-center px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors bg-gray-100 text-gray-900"
-        >
-          <span>기간 선택</span>
-          <svg
-            class="w-4 h-4 ml-1 text-gray-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </button>
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-base font-semibold text-gray-900">대기 중인 주문</h3>
+        <span class="text-sm text-gray-500">총 {{ orders.length }}건</span>
       </div>
     </section>
 
     <!-- 체결 대기 리스트 -->
     <section class="mx-4 mt-0 space-y-1.5">
       <!-- 스켈레톤 UI: 로딩 중일 때 보여줌 -->
-      <template v-if="false">
+      <template v-if="loading">
         <div v-for="n in 5" :key="n" class="bg-white p-3 animate-pulse">
           <div class="flex items-center justify-between mb-1">
             <div class="flex-shrink-0 w-10 text-left">
@@ -81,45 +60,103 @@
 
       <!-- 실제 체결 대기 카드 -->
       <template v-else>
-        <!-- 데이터 바인딩은 추후 추가 -->
+        <div v-if="orders.length === 0" class="flex flex-col items-center justify-center py-16">
+          <div class="w-16 h-16 bg-gray-100 flex items-center justify-center mb-4">
+            <svg
+              class="w-8 h-8 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+          </div>
+          <p class="text-gray-500 text-center mb-4">체결 대기 중인 주문이 없습니다</p>
+          <button
+            @click="goToMockTrading"
+            class="bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+          >
+            모의투자 시작하기
+          </button>
+        </div>
+        <div v-else>
+          <div
+            v-for="order in orders"
+            :key="order.orderId"
+            class="bg-white p-3 rounded-lg flex items-center justify-between mb-1"
+          >
+            <!-- 날짜 -->
+            <div class="flex-shrink-0 w-10 text-left">
+              <div class="text-xs text-gray-400">{{ formatDateDot(order.createdAt) }}</div>
+            </div>
+            <!-- 종목명 및 상태 + 이미지 -->
+            <div class="flex-1 min-w-0 flex items-center gap-2">
+              <span
+                class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0"
+              >
+                <img
+                  v-if="order.stockCode && !imageErrors[order.stockCode]"
+                  :src="`https://file.alphasquare.co.kr/media/images/stock_logo/kr/${order.stockCode}.png`"
+                  :alt="`${order.stockName} 로고`"
+                  class="w-full h-full object-cover rounded-full"
+                  @error="handleImageError(order.stockCode)"
+                />
+                <span
+                  v-else
+                  class="w-full h-full rounded-full flex items-center justify-center text-[13px] font-bold border-2 text-center flex-shrink-0"
+                  style="border-color: #2272eb; color: #2272eb; background: #fff"
+                >
+                  {{ getStockInitial(order.stockName) }}
+                </span>
+              </span>
+              <div class="flex-1 min-w-0">
+                <div class="text-base font-semibold truncate text-gray-900">
+                  {{ order.stockName }}
+                </div>
+                <div class="text-xs mt-1 flex items-center gap-1">
+                  <span :class="order.orderType === 'BUY' ? 'text-red-600' : 'text-blue-600'">
+                    {{ order.quantity }}주
+                    {{ order.orderType === 'BUY' ? '매수' : '매도' }}
+                  </span>
+                  <span class="text-gray-500"> 주당 {{ formatPrice(order.targetPrice) }}원 </span>
+                </div>
+              </div>
+            </div>
+            <!-- 주문단가 및 생성시간 -->
+            <div class="flex-shrink-0 text-right">
+              <div>
+                <div class="text-base font-semibold text-gray-900 mb-0.5">
+                  {{ formatPrice(order.targetPrice * order.quantity) }}원
+                </div>
+                <div class="mt-1 text-[12px] text-gray-500">
+                  {{ formatTime(order.createdAt) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </template>
-
-      <!-- 더보기 버튼 -->
-      <button
-        class="block w-full py-3 bg-gray-100 text-gray-800 border-none border-t border-gray-200 text-[14px] font-medium cursor-pointer transition-colors hover:bg-gray-200 mt-2"
-        style="display: none"
-      >
-        더보기
-      </button>
     </section>
-
-    <!-- 빈 상태: 로딩 중이 아닐 때만 표시 -->
-    <div class="flex flex-col items-center justify-center py-16" style="display: none">
-      <div class="w-16 h-16 bg-gray-100 flex items-center justify-center mb-4">
-        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-          />
-        </svg>
-      </div>
-      <p class="text-gray-500 text-center mb-4">선택한 기간의 체결 대기 주문이 없습니다</p>
-      <button
-        class="bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors"
-      >
-        모의투자 시작하기
-      </button>
-    </div>
 
     <FooterNavigation />
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '@/components/FooterNavigation.vue'
+
+const orders = ref([])
+const loading = ref(true)
+const error = ref(null)
+const imageErrors = ref({})
+let intervalId = null
 
 const router = useRouter()
 
@@ -127,7 +164,86 @@ function goBack() {
   router.back()
 }
 
-function refreshData() {
-  // 데이터 새로고침 로직은 추후 구현
+function goToMockTrading() {
+  router.push({ name: 'MockTradingHome' })
 }
+
+async function fetchPendingOrders() {
+  try {
+    loading.value = true
+    error.value = null
+    const response = await fetch('/api/stock/orders', {
+      method: 'GET',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    if (!response.ok) {
+      if (response.status === 401) throw new Error('로그인이 필요합니다.')
+      throw new Error('주문 목록을 불러오는데 실패했습니다.')
+    }
+    const data = await response.json()
+    orders.value = Array.isArray(data) ? data : []
+  } catch (err) {
+    error.value = err.message
+    orders.value = []
+    console.error('주문 목록 조회 실패:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+function refreshData() {
+  fetchPendingOrders()
+}
+
+function handleImageError(stockCode) {
+  imageErrors.value[stockCode] = true
+}
+
+function getStockInitial(stockName) {
+  if (!stockName) return '?'
+  if (/[가-힣]/.test(stockName)) return stockName.charAt(0)
+  return stockName.charAt(0).toUpperCase()
+}
+
+function formatDateDot(dateString) {
+  const date = new Date(dateString)
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  return `${month}.${day}`
+}
+
+function formatPrice(price) {
+  return new Intl.NumberFormat('ko-KR').format(price)
+}
+
+function formatTime(dateString) {
+  const date = new Date(dateString)
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  return `${hours}:${minutes}`
+}
+
+onMounted(async () => {
+  await fetchPendingOrders()
+  intervalId = setInterval(fetchPendingOrders, 30000)
+})
+
+onUnmounted(() => {
+  if (intervalId) clearInterval(intervalId)
+})
 </script>
+
+<style scoped>
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
