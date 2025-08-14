@@ -20,15 +20,12 @@
         <div class="flex flex-col items-center gap-2 mb-6 w-full">
           <div class="flex items-center gap-2">
             <span v-html="iconSvg" class="inline-block"></span>
-            <span class="text-lg font-bold text-indigo-700">{{ nameKr }}</span>
+            <span class="text-lg font-bold">{{ nameKr }}</span>
           </div>
 
           <div class="flex items-center gap-2 mt-1">
-            <span class="bg-indigo-100 text-indigo-700 rounded px-3 py-1 text-xs font-bold"
+            <span class="bg-blue-100 text-blue-600 rounded px-3 py-1 text-xs font-bold"
               >성향: {{ riskType }}</span
-            >
-            <span class="bg-teal-100 text-teal-700 rounded px-3 py-1 text-xs font-bold"
-              >그룹: {{ groupCode }}</span
             >
           </div>
         </div>
@@ -36,17 +33,17 @@
         <div class="w-full mb-6">
           <div class="text-gray-700 text-base text-center mb-4">
             <template v-for="(line, idx) in mainDescription.split('\n')" :key="idx">
-              <p class="mb-2">{{ line }}</p>
+              <p class="mb-2 whitespace-pre-line break-keep text-justify">{{ line }}</p>
             </template>
           </div>
           <div v-if="features.length" class="flex flex-col gap-2">
-            <div class="text-indigo-700 font-bold mb-2 text-center text-base">특징</div>
+            <div class="font-medium mb-2 text-center text-base">특징</div>
             <div
               v-for="(feature, idx) in features"
               :key="idx"
               class="bg-indigo-50 rounded px-3 py-2 flex items-start gap-2 shadow-sm"
             >
-              <span class="font-bold text-indigo-700 text-base">{{ idx + 1 }}.</span>
+              <span class="font-bold text-blue-600 text-base">{{ idx + 1 }}.</span>
               <span class="text-gray-800 text-sm">{{ feature }}</span>
             </div>
           </div>
@@ -55,19 +52,15 @@
         <div class="flex flex-col gap-3 w-full mt-2">
           <router-link
             to="/investment-test/retest"
-            class="flex items-center bg-indigo-500 rounded-xl shadow px-4 py-4 hover:bg-indigo-600 transition text-white font-bold text-base justify-center"
+            class="flex items-center bg-blue-600 rounded-xl shadow px-4 py-4 hover:bg-blue-700 transition text-white font-bold text-base justify-center"
           >
-            <span class="text-xl mr-3">📝</span>
             재진단하기
-            <span class="text-xl text-indigo-200 ml-2">&#8250;</span>
           </router-link>
           <router-link
             to="/risk-types-list"
-            class="flex items-center bg-white rounded-xl shadow px-4 py-4 hover:bg-indigo-50 transition text-indigo-700 font-bold text-base justify-center border border-indigo-100"
+            class="flex items-center bg-white rounded-xl shadow px-4 py-4 hover:bg-indigo-50 transition text-blue-600 font-bold text-base justify-center border border-indigo-100"
           >
-            <span class="text-xl mr-3">🔍</span>
             다른 성향 보러가기
-            <span class="text-xl text-indigo-300 ml-2">&#8250;</span>
           </router-link>
         </div>
       </div>

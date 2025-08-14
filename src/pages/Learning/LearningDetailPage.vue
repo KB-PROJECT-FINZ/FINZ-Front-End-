@@ -364,7 +364,7 @@ const formattedBody = computed(() => {
     } else {
       // 일반 문단은 내부 줄바꿈은 <br>로 변환
       const withBreaks = paragraph.replace(/\n/g, '<br>')
-      return `<p>${withBreaks}</p>`
+      return `<p class='whitespace-pre-line break-keep '>${withBreaks}</p>`
     }
   })
 

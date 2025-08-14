@@ -11,10 +11,11 @@
   </header>
   <div class="feedback-page px-6 py-6">
     <div class="flex items-center font-bold text-[18px] mb-5 text-gray-800 gap-2">
-      <span
-        class="text-[20px] rounded-full p-1 bg-gradient-to-r from-indigo-500 to-indigo-300 text-white"
-        >🤖</span
-      >
+      <img
+        src="https://cdn-icons-png.flaticon.com/128/14700/14700716.png"
+        alt="분석 아이콘"
+        class="w-9 h-9"
+      />
       <span>지난 주 투자 분석</span>
     </div>
     <div v-if="loading" class="text-gray-500 font-bold my-6">피드백을 불러오는 중...</div>
@@ -29,7 +30,7 @@
     </div>
     <router-link
       :to="{ name: 'feedbacklist' }"
-      class="block w-full bg-white border border-gray-200 rounded-xl py-3 mt-6 mb-6 text-indigo-600 font-bold text-lg shadow text-center hover:bg-indigo-50 transition"
+      class="block w-full bg-white border border-gray-200 rounded-xl py-3 mt-6 mb-6 text-blue-600 font-semibold text-lg shadow text-center hover:bg-indigo-50 transition"
     >
       지난 피드백 보기
     </router-link>
