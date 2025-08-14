@@ -4,7 +4,7 @@
     <div class="flex flex-col items-center px-6 pt-6">
       <div class="w-full max-w-[420px] flex items-center justify-between mb-2">
         <img src="@/assets/finz.png" alt="finz" class="w-12 ml-1" />
-        <BellIcon class="w-7 h-7 text-gray-500 cursor-pointer" />
+        <!-- <BellIcon class="w-7 h-7 text-gray-500 cursor-pointer" /> -->
       </div>
 
       <!-- 안내사항 카드 -->

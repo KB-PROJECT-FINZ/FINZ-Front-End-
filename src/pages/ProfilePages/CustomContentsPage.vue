@@ -44,7 +44,7 @@
           </p>
           <p class="text-sm font-semibold mb-1">{{ item.title }}</p>
           <div class="border-b border-gray-200 my-2"></div>
-          <p class="text-xs text-gray-700 whitespace-pre-wrap">{{ item.content }}</p>
+          <p class="text-xs text-gray-700 whitespace-pre-wrap leading-6">{{ item.content }}</p>
         </div>
         <div
           v-if="
