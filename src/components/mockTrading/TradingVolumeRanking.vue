@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white w-full h-[79vh] flex flex-col overflow-hidden">
+  <div class="bg-white w-full flex flex-col flex-1 overflow-hidden">
     <!-- 헤더와 탭 -->
     <div class="px-5 py-2 border-b border-gray-100 bg-transparent">
       <div class="flex justify-between items-center mb-3">
@@ -37,7 +37,7 @@
       <div
         v-for="(stock, index) in visibleStocks"
         :key="stock.code"
-        class="flex justify-between items-center px-5 py-3 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 bg-transparent"
+        class="flex justify-between items-center px-5 py-4 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 bg-transparent"
         @click="selectStock(stock)"
       >
         <div class="flex items-center gap-1 flex-1">

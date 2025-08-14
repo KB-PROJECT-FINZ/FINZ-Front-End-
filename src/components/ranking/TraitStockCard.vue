@@ -35,11 +35,11 @@ const chartCanvas = ref(null)
 let chartInstance = null
 
 const COLORS = {
-  보수형: '#a855f7',
-  균형형: '#3b82f6',
-  공격형: '#ef4444',
-  특수형: '#10b981',
-  기타: '#6b7280',
+  보수형: '#2563EB',
+  균형형: '#16A34A',
+  공격형: '#DC2626',
+  특수형: '#9333EA',
+  기타: '#6B7280',
   미분류: 'rgba(0,0,0,0.08)',
 }
 

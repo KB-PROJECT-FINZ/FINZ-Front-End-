@@ -1,3 +1,4 @@
+function refreshJournals(type = 'create') {
 <template>
   <header
     class="flex items-center justify-between bg-white px-4 pt-4 pb-3 sticky top-0 z-10 border-b border-gray-200"
@@ -13,9 +14,10 @@
   <div class="journal-page px-4 py-4">
     <router-link
       to="/feedback"
-      class="flex items-center justify-center gap-4 w-full bg-gray-50 rounded-xl p-2 shadow transition hover:-translate-y-0.5 hover:shadow-lg"
+      class="flex items-center justify-center gap-4 w-full rounded-xl p-2 shadow transition hover:-translate-y-0.5 hover:shadow-lg"
+      style="background: #0063f7"
     >
-      <span class="text-base font-semibold text-black">주간 AI 피드백 보기</span>
+      <span class="text-base font-semibold text-white">주간 AI 피드백 보기</span>
     </router-link>
 
     <Calendar
@@ -29,15 +31,13 @@
     />
 
     <div class="today-transactions mt-2">
-      <h2 class="text-lg font-bold ml-1 mb-2">오늘의 투자 내역</h2>
+      <h2 class="text-lg font-bold ml-1 mb-2">{{ selectedDate }} 투자 내역</h2>
 
       <div v-if="todayGroupedTransactions.length" class="transactions-container">
         <!-- 스와이프 가능한 종목 카드 -->
         <div
           class="stock-display relative"
-          @touchstart="handleTouchStart"
-          @touchmove="handleTouchMove"
-          @touchend="handleTouchEnd"
+          ref="stockDisplayRef"
           @mousedown="handleMouseDown"
           @mousemove="handleMouseMove"
           @mouseup="handleMouseUp"
@@ -76,7 +76,9 @@
             <!-- 매수/매도 한 줄 리스트(시간순) -->
             <div class="space-y-2 mt-1">
               <div
-                v-for="(row, i) in mergedTransactions"
+                v-for="(row, i) in showAllTransactionsArr[currentStockIndex]
+                  ? mergedTransactions
+                  : mergedTransactions.slice(0, 3)"
                 :key="i"
                 :class="[
                   'flex items-center justify-between p-3 rounded-lg',
@@ -105,15 +107,23 @@
                   주당 {{ row.price.toLocaleString() }}원
                 </div>
               </div>
+              <div v-if="mergedTransactions.length > 3" class="flex justify-center mt-2">
+                <button
+                  class="px-4 py-1 rounded-full bg-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-300 transition"
+                  @click="toggleShowAll(currentStockIndex)"
+                >
+                  {{ showAllTransactionsArr[currentStockIndex] ? '간략히 보기' : '더보기' }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- 인디케이터 -->
-        <div v-if="todayGroupedTransactions.length > 1" class="flex justify-center mt-3">
+        <!-- 인디케이터 (더보기 적용) -->
+        <div v-if="visibleTransactions.length > 1" class="flex justify-center mt-3">
           <div class="flex space-x-2">
             <button
-              v-for="(_, index) in todayGroupedTransactions"
+              v-for="(_, index) in visibleTransactions"
               :key="index"
               class="w-2 h-2 rounded-full transition-colors"
               :class="{
@@ -125,6 +135,7 @@
             />
           </div>
         </div>
+        <!-- 더보기 버튼은 각 종목의 거래내역에서만 노출됨 -->
       </div>
 
       <div v-else class="flex flex-col items-center text-gray-400 text-base py-6">
@@ -132,7 +143,7 @@
       </div>
     </div>
 
-    <div class="today-journal mt-4 mb-2">
+    <div class="today-journal mt-4 mb-8">
       <h2 class="text-lg font-bold ml-1 mb-2">오늘의 일지</h2>
       <div
         v-if="selectedDateJournals.length === 0"
@@ -147,65 +158,73 @@
           글쓰기
         </button>
       </div>
-    </div>
-
-    <div v-if="selectedDateJournals.length" class="journal-list mt-3 flex flex-col gap-3 pb-24">
-      <div
-        v-for="journal in selectedDateJournals"
-        :key="journal.id"
-        class="journal-item relative p-3 rounded-xl bg-gray-50 transition-all duration-200 hover:shadow-sm cursor-pointer"
-        :class="isSelected(journal) ? 'shadow-md' : ''"
-        @click="selectJournal(journal)"
-      >
-        <div class="mb-1 flex justify-between items-center">
-          <p class="text-gray-800"><strong>감정 |</strong> {{ journal.emotion }}</p>
-          <p class="font-semibold text-sm text-gray-600">{{ journal.journalDate }}</p>
-        </div>
-
-        <p class="text-gray-800"><strong>이유 |</strong> {{ journal.reason }}</p>
-        <p class="text-gray-800"><strong>실수 |</strong> {{ journal.mistake }}</p>
-
-        <!-- 액션 바: 아래에 딱 붙는 버튼 행 -->
+      <!-- 아래는 일지 리스트 및 액션바 영역 -->
+      <div v-if="selectedDateJournals.length" class="journal-list mt-3 flex flex-col gap-3 pb-24">
         <div
-          v-if="isSelected(journal)"
-          class="mt-3 pt-2 border-t border-gray-200 flex items-center justify-end gap-2"
-          @click.stop
+          v-for="journal in selectedDateJournals"
+          :key="journal.id"
+          class="journal-item bg-white p-4 rounded-lg shadow-sm transition-all duration-200 hover:shadow-sm cursor-pointer"
+          style="width: 100%; max-width: 400px; margin-left: auto; margin-right: auto"
+          :style="{ transform: isSelected(journal) ? 'scale(1.01)' : 'none' }"
+          :class="isSelected(journal) ? 'shadow-md' : ''"
+          @click="selectJournal(journal)"
         >
-          <button
-            class="px-3 py-1.5 rounded-full text-sm font-medium bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 active:scale-[0.99] transition"
-            @click="editJournal(journal)"
+          <div class="mb-1 flex justify-between items-center">
+            <p class="text-gray-800">
+              <strong>감정 |</strong> <span v-html="formatNewline(journal.emotion)"></span>
+            </p>
+            <p class="font-semibold text-sm text-gray-600">{{ journal.journalDate }}</p>
+          </div>
+          <p class="text-gray-800 mb-1">
+            <strong>이유 |</strong> <span v-html="formatNewline(journal.reason)"></span>
+          </p>
+          <p class="text-gray-800 mb-1">
+            <strong>실수 |</strong> <span v-html="formatNewline(journal.mistake)"></span>
+          </p>
+          <!-- 액션 바: 아래에 딱 붙는 버튼 행 -->
+          <div
+            v-if="isSelected(journal)"
+            class="mt-3 pt-2 border-t border-gray-200 flex items-center justify-end gap-2"
+            @click.stop
           >
-            ✏️ 수정하기
-          </button>
-          <button
-            class="px-3 py-1.5 rounded-full text-sm font-medium bg-white text-red-600 border border-red-200 hover:bg-red-50 active:scale-[0.99] transition"
-            @click="deleteJournal(journal.id)"
-          >
-            🗑 삭제하기
-          </button>
+            <button
+              class="px-3 py-1.5 rounded-full text-sm font-medium bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 active:scale-[0.99] transition"
+              @click="editJournal(journal)"
+            >
+              수정하기
+            </button>
+            <button
+              class="px-3 py-1.5 rounded-full text-sm font-medium bg-white text-red-600 border border-red-200 hover:bg-red-50 active:scale-[0.99] transition"
+              @click="deleteJournal(journal.id)"
+            >
+              삭제하기
+            </button>
+          </div>
         </div>
       </div>
     </div>
+
+    <JournalWriteModal
+      v-if="showWriteModal"
+      :id="selectedJournal?.id != null ? String(selectedJournal.id) : undefined"
+      :emotion="selectedJournal?.emotion"
+      :reason="selectedJournal?.reason"
+      :mistake="selectedJournal?.mistake"
+      :journal-date="selectedDate"
+      @close="((showWriteModal = false), (selectedJournal = null))"
+      @saved="(type) => refreshJournals(type)"
+    />
+
+    <SuccessModal :visible="showSuccess" :message="successMessage" />
+    <ConfirmModal :visible="showConfirm" @confirm="handleDelete" @cancel="showConfirm = false" />
+    <ToastMessage :show="showToast" :message="toastMessage" />
+    <FooterNavigation />
   </div>
-
-  <JournalWriteModal
-    v-if="showWriteModal"
-    :id="selectedJournal?.id"
-    :emotion="selectedJournal?.emotion"
-    :reason="selectedJournal?.reason"
-    :mistake="selectedJournal?.mistake"
-    :journal-date="selectedDate"
-    @close="((showWriteModal = false), (selectedJournal = null))"
-    @saved="refreshJournals"
-  />
-
-  <SuccessModal :visible="showSuccess" :message="successMessage" />
-  <ConfirmModal :visible="showConfirm" @confirm="handleDelete" @cancel="showConfirm = false" />
-  <FooterNavigation />
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, onBeforeUnmount, watch } from 'vue'
+import ToastMessage from '@/components/ToastMessage.vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Calendar } from 'v-calendar'
 import SuccessModal from '@/components/SuccessModal.vue'
@@ -215,6 +234,12 @@ import { useTransactionsData } from '@/services/useTranscationsData.js'
 import JournalWriteModal from './JournalWriteModal.vue'
 import FooterNavigation from '@/components/FooterNavigation.vue'
 const showWriteModal = ref(false)
+
+// 줄바꿈(\n)을 <br>로 변환하는 함수
+function formatNewline(text) {
+  if (!text) return ''
+  return text.replace(/\n/g, '<br>')
+}
 const { transactionsData, fetchTransactions } = useTransactionsData()
 const router = useRouter()
 const journals = ref([])
@@ -223,6 +248,8 @@ const selectedDate = ref(new Date().toISOString().slice(0, 10))
 const selectedJournal = ref(null)
 const showSuccess = ref(false)
 const successMessage = ref('')
+const showToast = ref(false)
+const toastMessage = ref('')
 const showConfirm = ref(false)
 const targetJournalId = ref(null)
 const currentStockIndex = ref(0)
@@ -232,6 +259,7 @@ const startX = ref(0)
 const currentX = ref(0)
 const imageErrors = ref({})
 const route = useRoute()
+const stockDisplayRef = ref(null)
 
 function onDayClick(day) {
   selectedDate.value = day.id
@@ -321,6 +349,21 @@ onMounted(async () => {
   } catch (err) {
     console.error('❌ 데이터 로딩 실패:', err)
   }
+
+  // passive 옵션으로 touch 이벤트 등록
+  if (stockDisplayRef.value) {
+    stockDisplayRef.value.addEventListener('touchstart', handleTouchStart, { passive: true })
+    stockDisplayRef.value.addEventListener('touchmove', handleTouchMove, { passive: true })
+    stockDisplayRef.value.addEventListener('touchend', handleTouchEnd, { passive: true })
+  }
+})
+
+onBeforeUnmount(() => {
+  if (stockDisplayRef.value) {
+    stockDisplayRef.value.removeEventListener('touchstart', handleTouchStart)
+    stockDisplayRef.value.removeEventListener('touchmove', handleTouchMove)
+    stockDisplayRef.value.removeEventListener('touchend', handleTouchEnd)
+  }
 })
 
 const calendarAttrs = computed(() => {
@@ -382,6 +425,12 @@ const todayGroupedTransactions = computed(() => {
   }))
 })
 
+const showAllTransactionsArr = ref([])
+
+const visibleTransactions = computed(() => {
+  return todayGroupedTransactions.value
+})
+
 const currentStock = computed(() => {
   if (todayGroupedTransactions.value.length === 0) return null
   return todayGroupedTransactions.value[currentStockIndex.value]
@@ -420,9 +469,14 @@ async function handleDelete() {
     journals.value = journals.value.filter((j) => j.id !== targetJournalId.value)
     selectedJournal.value = null
     showConfirm.value = false
-    successMessage.value = '삭제 완료되었습니다.'
-    showSuccess.value = true
-    setTimeout(() => (showSuccess.value = false), 1500)
+    toastMessage.value = '삭제 완료되었습니다.'
+    showToast.value = false
+    setTimeout(() => {
+      showToast.value = true
+    }, 10)
+    setTimeout(() => {
+      showToast.value = false
+    }, 2000)
   } catch (err) {
     alert('삭제 실패')
   }
@@ -432,22 +486,55 @@ function goBack() {
   router.push({ name: 'profile' })
 }
 
-function refreshJournals() {
+function refreshJournals(type = 'create') {
   fetchTransactions().then(() => {
     transactions.value = transactionsData.value || []
   })
   fetchJournals().then((data) => {
     journals.value = data
+    // 수정/작성 완료 토스트 메시지
+    if (type === 'edit') {
+      toastMessage.value = '수정 완료되었습니다.'
+    } else {
+      toastMessage.value = '작성 완료되었습니다.'
+    }
+    showToast.value = false
+    setTimeout(() => {
+      showToast.value = true
+    }, 10)
+    setTimeout(() => {
+      showToast.value = false
+    }, 2000)
+    selectedJournal.value = null
   })
 }
+
+function toggleShowAll(idx) {
+  showAllTransactionsArr.value[idx] = !showAllTransactionsArr.value[idx]
+}
+
+// 종목이 바뀔 때 더보기 상태 초기화 (초기값 false)
+watch(currentStockIndex, (newIdx) => {
+  // 모든 종목의 더보기 상태를 false로 초기화
+  showAllTransactionsArr.value = []
+})
+
+// 날짜가 바뀌면 더보기 상태 전체 초기화
+watch(selectedDate, () => {
+  showAllTransactionsArr.value = []
+})
 </script>
 
 <style>
 @import 'v-calendar/style.css';
 
+/* 선택된 날짜의 타원형 테두리(하이라이트) 숨김 처리 */
 .selected-date-circle {
-  color: #fff !important;
-  border-radius: 50% !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+  color: inherit !important;
 }
 .vc-container {
   width: 100% !important;
@@ -473,5 +560,26 @@ function refreshJournals() {
 }
 .stock-item:active {
   cursor: grabbing;
+}
+/* v-calendar dot 위치 조정: dot을 날짜 아래로 내림 */
+/* v-calendar dot 위치 조정: dot을 날짜 아래로 내림 */
+.vc-day-content .vc-day-dots {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -8px; /* dot을 더 아래로 내림 */
+  top: auto !important;
+  z-index: 1;
+}
+.vc-day-content {
+  position: relative;
+  min-height: 44px; /* 날짜 셀 높이 확보 */
+}
+/* 한 주(week row) 간격 넓히기 */
+.vc-weeks {
+  row-gap: 18px !important;
+}
+.vc-week {
+  margin-bottom: 10px !important;
 }
 </style>

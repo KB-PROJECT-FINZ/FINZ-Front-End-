@@ -1,6 +1,5 @@
 <template>
   <div class="w-full max-w-[480px] mx-auto pb-24 px-4 overflow-x-hidden">
-    <!-- 상단 탭 (투자 랭킹 보기 / 종목 분석) -->
     <div class="mt-6"></div>
     <TabSwitcher
       :tabs="[
@@ -11,20 +10,17 @@
 
     <div class="mt-3"></div>
 
-    <!-- 인기 종목 Top10 (컨테이너 폭 고정) -->
     <div class="mt-3 mb-6">
       <div class="w-full max-w-[480px] mx-auto">
         <Top10StockList v-if="stocks.length" :stocks="stocks" :isRealtime="true" />
       </div>
     </div>
 
-    <!-- 랭킹 날짜 및 내 성과 -->
     <div class="text-center my-4">
       <p class="text-m font-semibold text-gray-700">🔥 {{ rankingDateRangeText }} 🔥</p>
       <p class="text-lg font-bold">투자 성과는?</p>
     </div>
 
-    <!-- 내 랭킹 카드 -->
     <MyRankingCard
       v-if="myRanking && myRanking.rank !== undefined"
       :rank="myRanking.rank"
@@ -33,7 +29,7 @@
       :trait="myRanking.trait"
     />
 
-    <!-- 주간/성향별 탭 (텍스트 + 밑줄 인디케이터) -->
+    <!-- 주간/성향별 탭 -->
     <div class="relative w-full max-w-[480px] mx-auto mt-6 mb-2">
       <div class="grid grid-cols-2 text-center text-sm font-semibold">
         <button
@@ -48,9 +44,7 @@
           {{ tab }}
         </button>
       </div>
-
       <div class="border-b border-gray-200"></div>
-
       <div
         class="absolute bottom-0 left-0 h-[2px] bg-blue-600 transition-transform duration-300"
         :style="{
@@ -73,16 +67,14 @@
           'flex-1 py-1.5 rounded-full text-xs font-medium transition',
           currentTraitType === trait
             ? 'bg-blue-600 text-white shadow'
-            : userTraitType === trait
-              ? 'border border-blue-500 text-blue-500 bg-white'
-              : 'bg-gray-100 text-gray-800 hover:bg-blue-100',
+            : 'bg-gray-100 text-gray-800 hover:bg-blue-100',
         ]"
       >
         {{ trait }}
       </button>
     </div>
 
-    <!-- 투자자 랭킹 리스트 -->
+    <!-- 랭킹 리스트 -->
     <div class="space-y-3">
       <UserRankingCard
         v-for="(user, index) in limitedUsers"
@@ -90,13 +82,12 @@
         :rank="user.ranking ?? index + 1"
         :nickname="user.nickname"
         :gainRate="user.gainRate"
-        :trait="user.trait || currentTraitType"
+        :trait="user.trait"
         :originalTrait="user.originalTrait || ''"
-        :image="user.image"
+        :profileImage="user.profileImage"
       />
     </div>
 
-    <!-- 더보기 -->
     <button
       v-if="visibleCount < 100 && visibleCount < filteredUsers.length"
       @click="visibleCount += 10"
@@ -105,7 +96,6 @@
       더보기
     </button>
 
-    <!-- 하단 내비게이션 -->
     <FooterNavigation />
   </div>
 </template>
@@ -127,6 +117,7 @@ import {
   getRankingWeekLabel,
 } from '@/services/rankingService'
 
+/** 그룹코드 → 한글 라벨 */
 const traitGroupToKor = {
   AGGRESSIVE: '공격형',
   BALANCED: '균형형',
@@ -134,7 +125,8 @@ const traitGroupToKor = {
   ANALYTICAL: '특수형',
   EMOTIONAL: '기타',
 }
-const originalTraitToGroup = {
+/** 세부 코드 → 한글 라벨 */
+const originalTraitKo = {
   AGR: '적극적 성장형',
   AID: '적극적 안정형',
   BGT: '균형 잡힌 도전형',
@@ -151,10 +143,30 @@ const originalTraitToGroup = {
   THE: '테마 투자형',
   VAL: '가치 투자형',
 }
-
-const activeMainIndex = computed(() =>
-  Math.max(0, mainRankingTabs.indexOf(currentRankingType.value)),
-)
+const originalToGroupKey = {
+  AGR: 'AGGRESSIVE',
+  DTA: 'AGGRESSIVE',
+  EXP: 'AGGRESSIVE',
+  THE: 'AGGRESSIVE',
+  AID: 'BALANCED',
+  BGT: 'BALANCED',
+  BSS: 'BALANCED',
+  CAG: 'CONSERVATIVE',
+  CSD: 'CONSERVATIVE',
+  IND: 'CONSERVATIVE',
+  VAL: 'CONSERVATIVE',
+  INF: 'ANALYTICAL',
+  SYS: 'ANALYTICAL',
+  TEC: 'ANALYTICAL',
+  SOC: 'EMOTIONAL',
+}
+const traitCodeMap = {
+  보수형: 'CONSERVATIVE',
+  균형형: 'BALANCED',
+  공격형: 'AGGRESSIVE',
+  특수형: 'ANALYTICAL',
+  기타: 'EMOTIONAL',
+}
 
 const userStore = useUserStore()
 const userId = computed(() => userStore.userId)
@@ -166,18 +178,15 @@ const popularStocksRealtime = ref([])
 const popularStocksLastWeek = ref([])
 const allUsers = ref([])
 const visibleCount = ref(10)
+
 const mainRankingTabs = ['주간', '성향별']
 const currentRankingType = ref('주간')
 const traitTypes = ['보수형', '균형형', '공격형', '특수형', '기타']
 const currentTraitType = ref('')
 
-const traitCodeMap = {
-  보수형: 'CONSERVATIVE',
-  균형형: 'BALANCED',
-  공격형: 'AGGRESSIVE',
-  특수형: 'ANALYTICAL',
-  기타: 'EMOTIONAL',
-}
+const activeMainIndex = computed(() =>
+  Math.max(0, mainRankingTabs.indexOf(currentRankingType.value)),
+)
 
 const fallbackDate = (() => {
   const d = new Date()
@@ -193,48 +202,69 @@ const stocks = computed(() =>
     : popularStocksLastWeek.value,
 )
 
-const rankingDateRangeText = computed(() => {
-  if (!selectedBaseDate.value) return ''
-  return getRankingWeekLabel(selectedBaseDate.value)
-})
+const rankingDateRangeText = computed(() =>
+  selectedBaseDate.value ? getRankingWeekLabel(selectedBaseDate.value) : '',
+)
 
 const filteredUsers = computed(() => allUsers.value)
 const limitedUsers = computed(() => filteredUsers.value.slice(0, visibleCount.value))
 
+function sortUsers(list) {
+  return [...list].sort((a, b) => {
+    const ra = a.ranking ?? Infinity
+    const rb = b.ranking ?? Infinity
+    if (ra !== rb) return ra - rb
+    const ga = Number(a.gainRate ?? 0)
+    const gb = Number(b.gainRate ?? 0)
+    return gb - ga
+  })
+}
+
+/** 주간 랭킹 */
 async function loadRankingByDate(baseDate) {
   selectedBaseDate.value = baseDate
   popularStocksLastWeek.value = await fetchTop10Stocks(baseDate)
 
   if (currentRankingType.value === '주간') {
     const users = await fetchWeeklyRanking(baseDate)
-    allUsers.value = users.map((user) => {
-      let traitCode = user.trait
-      if (traitCode && originalTraitToGroup[traitCode]) {
-        traitCode = originalTraitToGroup[traitCode]
-      } else if (!traitCode && user.originalTrait) {
-        traitCode = originalTraitToGroup[user.originalTrait] || '기타'
+    const mapped = users.map((u) => {
+      const groupCode =
+        (u.trait || '').toUpperCase() ||
+        (u.originalTrait ? originalToGroupKey[u.originalTrait] : '')
+      return {
+        ...u,
+        trait: traitGroupToKor[groupCode] || '기타',
+        originalTrait: u.originalTrait ? originalTraitKo[u.originalTrait] || u.originalTrait : '',
       }
-      const traitKor = traitGroupToKor[traitCode] || '기타'
-      return { ...user, trait: traitKor }
     })
+    allUsers.value = sortUsers(mapped)
   } else {
     await loadGroupedRanking()
   }
   visibleCount.value = 10
 }
 
+/** 성향별 랭킹 (선택 그룹만) */
 async function loadGroupedRanking() {
   const grouped = await fetchGroupedWeeklyRanking(selectedBaseDate.value)
   const groupKey = traitCodeMap[currentTraitType.value] || 'EMOTIONAL'
-  allUsers.value = (grouped[groupKey] || []).map((user) => {
-    const traitKor = user.trait || '기타'
-    const originalTraitKor =
-      originalTraitToGroup[user.originalTrait] || user.originalTrait || '기타'
-    return { ...user, trait: traitKor, originalTraitKor }
+
+  const list = (grouped[groupKey] || []).map((u) => {
+    const deducedGroupKey =
+      (u.trait || '').toUpperCase() ||
+      (u.originalTrait ? originalToGroupKey[u.originalTrait] : groupKey)
+    return {
+      ...u,
+      trait: traitGroupToKor[deducedGroupKey] || currentTraitType.value,
+      originalTrait: u.originalTrait ? originalTraitKo[u.originalTrait] || u.originalTrait : '',
+    }
   })
+
+  allUsers.value = sortUsers(list)
   visibleCount.value = 10
 }
 
+/** 탭 전환 */
 async function selectMainRankingTab(tab) {
   currentRankingType.value = tab
   if (tab === '성향별') {
@@ -245,11 +275,13 @@ async function selectMainRankingTab(tab) {
   }
 }
 
+/** 성향 버튼 전환 */
 async function selectTraitType(trait) {
   currentTraitType.value = trait
   await loadGroupedRanking()
 }
 
+/** 최초 로드 */
 watch(
   userId,
   async (newUserId) => {
@@ -258,18 +290,22 @@ watch(
       const my = await fetchMyRanking(newUserId, fallbackDate)
       if (!my) return
 
-      const traitKor = originalTraitToGroup[my.trait] || '미지정'
+      const groupKor = traitGroupToKor[(my.trait || '').toUpperCase()] || '미지정'
+      const detailed = my.originalTrait
+        ? originalTraitKo[my.originalTrait] || my.originalTrait
+        : groupKor
+
       selectedBaseDate.value = my.baseDate || fallbackDate
-      myRanking.value = { ...my, trait: traitKor }
-      userTraitType.value = traitKor
+      myRanking.value = { ...my, trait: detailed }
+      userTraitType.value = groupKor
 
       popularStocksRealtime.value = await fetchTop10StocksRealtime()
       popularStocksLastWeek.value = await fetchTop10Stocks(selectedBaseDate.value)
 
       await loadRankingByDate(selectedBaseDate.value)
       currentTraitType.value = userTraitType.value || traitTypes[0]
-    } catch (error) {
-      console.error('❌ 초기 데이터 로딩 에러:', error)
+    } catch (e) {
+      console.error('❌ 초기 데이터 로딩 에러:', e)
     }
   },
   { immediate: true },

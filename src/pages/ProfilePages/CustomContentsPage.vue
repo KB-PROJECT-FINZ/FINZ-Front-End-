@@ -1,26 +1,24 @@
 <template>
   <div class="bg-white min-h-screen pb-16">
     <header
-      class="flex items-center justify-between bg-white px-4 pt-4 pb-3 sticky top-0 z-10 border-b border-gray-200"
+      class="flex items-center bg-white px-4 pt-4 pb-4 sticky top-0 z-10 border-b border-gray-200"
     >
       <button
         @click="goBack"
-        class="w-8 h-8 flex items-center justify-center"
+        class="p-2 hover:bg-gray-100 rounded-lg text-black"
         aria-label="뒤로가기"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="2"
-          stroke="#6366f1"
-          class="w-6 h-6"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
         </svg>
       </button>
-      <span class="text-lg font-bold text-gray-800">맞춤 콘텐츠</span>
-      <div class="w-8 h-8"></div>
+      <span class="text-base font-bold text-gray-800 ml-2">맞춤 콘텐츠</span>
+      <div class="flex-grow"></div>
     </header>
 
     <div class="px-5 mt-6">
@@ -41,19 +39,12 @@
           :key="item.contentId"
           class="w-full min-w-[160px] bg-white p-3 rounded-xl shadow-sm shrink-0 flex flex-col justify-center mb-2 border border-gray-200"
         >
-          <p
-            :class="
-              index % 2 === 0
-                ? 'text-purple-600 text-base font-bold'
-                : 'text-blue-600 text-base font-bold'
-            "
-            class="mb-1"
-          >
+          <p :class="'text-blue-600 text-base font-bold'" class="mb-1">
             {{ item.label || '추천' }}
           </p>
           <p class="text-sm font-semibold mb-1">{{ item.title }}</p>
           <div class="border-b border-gray-200 my-2"></div>
-          <p class="text-xs text-gray-700 whitespace-pre-wrap">{{ item.content }}</p>
+          <p class="text-xs text-gray-700 whitespace-pre-wrap leading-6">{{ item.content }}</p>
         </div>
         <div
           v-if="
@@ -84,7 +75,6 @@ const goToContents = () => router.push('/recommend')
 
 onMounted(async () => {
   try {
-    // 프로필 정보에서 riskType을 받아옴 (ProfilePage.vue와 동일)
     const me = await axios.get('/api/auth/me', { withCredentials: true })
     const riskType = me.data.riskType
     const detailRes = await axios.get(`/api/user/risk-type-detail/${riskType}`, {
