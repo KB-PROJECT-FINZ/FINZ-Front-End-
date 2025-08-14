@@ -123,8 +123,6 @@ onMounted(async () => {
   try {
     const res = await axios.get('/api/contents/all-recommend')
     const contents = res.data
-    console.log('전체 콘텐츠 응답:', res)
-    console.log('데이터 내용:', contents)
 
     const group = {}
     for (const item of contents) {
