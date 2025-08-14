@@ -431,6 +431,15 @@ const router = useRouter()
 
 register()
 
+function openRecommendChat() {
+  // riskType은 fetchUserInfo 등에서 받아온 값 사용
+  window.dispatchEvent(
+    new CustomEvent('openChatBot', {
+      detail: { risk: riskTypeName.value }, // 또는 user.riskType 등 실제 코드에 맞게
+    }),
+  )
+}
+
 // 서비스 기능 연결 카드 데이터
 const serviceFeatures = [
   {
@@ -449,7 +458,7 @@ const serviceFeatures = [
     icon: suggestionIcon,
     title: '추천 받아보기',
     desc: 'AI 종목 추천',
-    onClick: () => router.push('/'),
+    onClick: openRecommendChat,
   },
   {
     icon: noteIcon,

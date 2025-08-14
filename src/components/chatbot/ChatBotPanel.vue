@@ -43,7 +43,7 @@
 
           <!-- 챗봇 컨테이너 -->
           <div class="h-[70vh] bg-gradient-to-br from-gray-50/80 to-blue-50/60 backdrop-blur-sm">
-            <ChatBox :fixedIntent="null" />
+            <ChatBox :fixedIntent="null" :risk="recommendRisk" />
           </div>
         </div>
       </div>
@@ -58,8 +58,10 @@ import ChatBox from '@/components/chatbot/ChatBox.vue'
 
 const isOpen = ref(false)
 const chatStore = useChatStore()
+const recommendRisk = ref('')
 
-const openChat = () => {
+const openChat = (risk) => {
+  recommendRisk.value = risk || ''
   isOpen.value = true
 }
 
@@ -69,8 +71,8 @@ const closeChat = () => {
 }
 
 // 하단바 챗봇 버튼 클릭 이벤트 리스너
-const handleOpenChatBot = () => {
-  openChat()
+const handleOpenChatBot = (e) => {
+  openChat(e.detail?.risk)
 }
 
 onMounted(() => {

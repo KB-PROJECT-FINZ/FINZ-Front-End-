@@ -598,6 +598,13 @@ onMounted(async () => {
     }
   }
 })
+const props = defineProps({ risk: String })
+
+onMounted(() => {
+  if (props.risk) {
+    fetchGPT(`나의 투자 성향인 ${props.risk}에 맞는 종목을 추천해줘`, 'RECOMMEND_PROFILE')
+  }
+})
 
 async function fetchGPT(prompt, explicitIntent = null) {
   loading.value = true
