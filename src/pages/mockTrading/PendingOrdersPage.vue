@@ -164,7 +164,7 @@ let intervalId = null
 const router = useRouter()
 
 function goBack() {
-  router.back()
+  router.push('/home')
 }
 
 function goToMockTrading() {
