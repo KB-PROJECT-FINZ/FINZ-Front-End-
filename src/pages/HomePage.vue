@@ -394,6 +394,7 @@
         </div>
       </transition>
       <BottomNav />
+      <ChatBox v-if="showChatBox" :risk="riskType" @close="showChatBox = false" />
     </div>
   </div>
 </template>
@@ -405,7 +406,7 @@ import 'swiper/css'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 
 import { getUserCredit } from '@/services/learning'
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAssetDataStore } from '@/services/useAssetData'
@@ -413,6 +414,7 @@ import BottomNav from '@/components/FooterNavigation.vue'
 import { useHoldingsData } from '@/services/useHoldingsData'
 // import PendingOrders from '@/components/mockTrading/PendingOrders.vue'
 import NoticeCard from '@/components/NoticeCard.vue'
+import ChatBox from '@/components/chatbot/ChatBox.vue'
 
 // import finzIcon from '@/assets/finz.png'
 // import krwIcon from '@/assets/krw_image.png'
@@ -430,6 +432,25 @@ import BellIcon from '@/components/icons/BellIcon.vue'
 const router = useRouter()
 
 register()
+
+const showChatBox = ref(false)
+const userInfo = ref({}) // 사용자 정보 저장
+
+function openRecommendChat() {
+  const riskType = userInfo.value?.riskType || ''
+  showChatBox.value = true
+  nextTick(() => {
+    window.dispatchEvent(
+      new CustomEvent('openChatBot', {
+        detail: { risk: riskType },
+      }),
+    )
+  })
+}
+
+// const props = defineProps({
+//   risk: String,
+// })
 
 // 서비스 기능 연결 카드 데이터
 const serviceFeatures = [
@@ -449,7 +470,7 @@ const serviceFeatures = [
     icon: suggestionIcon,
     title: '추천 받아보기',
     desc: 'AI 종목 추천',
-    onClick: () => router.push('/'),
+    onClick: openRecommendChat,
   },
   {
     icon: noteIcon,
@@ -657,6 +678,7 @@ const calculatedProfitAmount = computed(() => {
 
 // 상태 변수
 const nickname = ref('')
+const riskType = ref('')
 const riskTypeName = ref('')
 const totalEarnedCredit = ref(0)
 const completedLearningCount = ref(0)
@@ -689,12 +711,12 @@ function convertRiskTypeToName(code) {
 // 초기 실행
 onMounted(async () => {
   try {
-    const riskType = await fetchUserInfo()
+    riskType.value = await fetchUserInfo()
     // 크레딧 정보 가져오기
     const res = await axios.get('/api/auth/me', { withCredentials: true })
     const userId = res.data.userId
     asset.value.amount = await getUserCredit(userId)
-    await fetchRecommendedContentsByRiskType(riskType)
+    await fetchRecommendedContentsByRiskType(riskType.value)
     await fetchAllRecommendedContents()
     await fetchCompletedLearningCount()
     await fetchTotalCredit()
@@ -712,6 +734,7 @@ const fetchUserInfo = async () => {
     const user = res.data
     nickname.value = user.nickname
     riskTypeName.value = convertRiskTypeToName(user.riskType)
+    userInfo.value = user // 여기서 userInfo에 저장
     return user.riskType // riskType 코드 (예: 'TEC') 반환
   } catch (e) {
     throw new Error('사용자 정보 조회 실패', e)

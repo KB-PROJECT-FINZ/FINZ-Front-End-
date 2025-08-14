@@ -67,7 +67,7 @@
       class="fixed inset-0 z-[1000] flex items-end justify-center bg-black/30 backdrop-blur-sm"
     >
       <div
-        class="bg-white w-full max-w-md rounded-t-2xl p-6 pb-8 shadow-lg relative animate-slide-up"
+        class="bg-white w-full max-w-sm rounded-t-2xl p-6 pb-8 shadow-lg relative animate-slide-up"
         @click.stop
       >
         <!-- 닫기 버튼 -->
@@ -98,7 +98,7 @@
             type="number"
             min="1"
             :max="userCredit"
-            class="border rounded-lg px-3 py-2 w-full text-right font-bold text-lg pr-7 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            class="border rounded-lg px-4 py-2 w-full text-right font-bold text-lg pr-7 focus:outline-none focus:ring-2 focus:ring-blue-400"
             placeholder="0"
           />
           <span
