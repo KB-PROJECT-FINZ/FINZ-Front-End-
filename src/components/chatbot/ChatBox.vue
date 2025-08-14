@@ -73,10 +73,7 @@
     <!-- 대화 내용 -->
     <div ref="messageContainer" class="flex-1 overflow-y-auto space-y-6 p-4 pb-28">
       <!-- 챗봇 아바타와 인사말 (첫 로드 시) -->
-      <div
-        v-if="chatStore.messages.length === 0 && !showRecommendOnOpen"
-        class="flex items-start space-x-4"
-      >
+      <div v-if="chatStore.messages.length === 0" class="flex items-start space-x-4">
         <div
           class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-400/90 to-purple-500/90 shadow-lg border-2 border-white/40 backdrop-blur-sm"
         >
@@ -234,7 +231,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import axios from 'axios'
 import { useChatStore } from '@/stores/counter.js'
 import { useUserStore } from '@/stores/user.js'
@@ -264,73 +261,6 @@ const awaitingStockAnalyze = ref(false)
 const awaitingTermExplain = ref(false)
 const messageContainer = ref(null)
 const showButtons = ref(true)
-
-const recommendRisk = ref('')
-const showRecommendOnOpen = ref(false)
-
-let eventHandler = null
-
-onMounted(async () => {
-  if (!userStore.userId) {
-    try {
-      const res = await axios.get('/api/auth/me', { withCredentials: true })
-      userStore.setUser({
-        userId: res.data.userId,
-        username: res.data.username,
-        name: res.data.name,
-        riskType: res.data.riskType,
-      })
-      chatStore.setUserId(res.data.userId)
-      console.log('✅ 사용자 정보 동기화 완료:', userStore.$state)
-      window.addEventListener('openChatBot', (e) => {
-        if (e.detail?.risk) {
-          recommendRisk.value = e.detail.risk
-          showRecommendOnOpen.value = true
-        }
-      })
-    } catch (err) {
-      console.error('❌ 사용자 정보 조회 실패:', err)
-    }
-  }
-})
-
-onMounted(() => {
-  eventHandler = async (e) => {
-    if (e.detail?.risk) {
-      recommendRisk.value = e.detail.risk
-      // 초기 메시지(인사말) 숨기기: 메시지 배열 초기화
-      chatStore.clearMessages()
-      // 바로 GPT 메시지 전송
-      await fetchGPT(
-        `나의 투자 성향인 ${recommendRisk.value}에 맞는 종목을 추천해줘`,
-        'RECOMMEND_PROFILE',
-      )
-    }
-  }
-  window.addEventListener('openChatBot', eventHandler)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('openChatBot', eventHandler)
-})
-
-// ChatBox가 열릴 때 메시지 전송
-watch(
-  () => showRecommendOnOpen.value,
-  async (val) => {
-    console.log('🔔 showRecommendOnOpen 변경:', val, recommendRisk.value)
-
-    if (val && recommendRisk.value) {
-      console.log('🚀 fetchGPT 실행:', recommendRisk.value)
-
-      await fetchGPT(
-        `나의 투자 성향인 ${recommendRisk.value}에 맞는 종목을 추천해줘`,
-        'RECOMMEND_PROFILE',
-      )
-      showRecommendOnOpen.value = false // 한 번만 실행
-    }
-  },
-)
 
 // 하위 버튼이 있는지 감지
 const hasSubButtons = computed(() => {
@@ -651,6 +581,24 @@ watch(
   },
 )
 
+onMounted(async () => {
+  if (!userStore.userId) {
+    try {
+      const res = await axios.get('/api/auth/me', { withCredentials: true })
+      userStore.setUser({
+        userId: res.data.userId,
+        username: res.data.username,
+        name: res.data.name,
+        riskType: res.data.riskType,
+      })
+      chatStore.setUserId(res.data.userId)
+      console.log('✅ 사용자 정보 동기화 완료:', userStore.$state)
+    } catch (err) {
+      console.error('❌ 사용자 정보 조회 실패:', err)
+    }
+  }
+})
+
 async function fetchGPT(prompt, explicitIntent = null) {
   loading.value = true
   chatStore.messages.push({ role: 'user', content: prompt })
@@ -772,7 +720,7 @@ async function handleButtonIntent(btn) {
             href: '/investment-test/retest',
           },
           {
-            label: '�� 내 성향 기반 추천 받아보기',
+            label: '   내 성향 기반 추천 받아보기',
             intent: 'RECOMMEND_PROFILE',
             message: '내 투자 성향으로 종목 추천해줘',
           },

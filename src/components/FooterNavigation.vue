@@ -6,6 +6,7 @@
       @mousedown="startDrag"
       @touchstart="startDrag"
       @click="goToChatbot"
+      @touchend="handleTouchEnd"
       class="chatbot-button bg-blue-50 fixed text-white px-2 py-2 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300"
       :style="{
         left: position.x + 'px',
@@ -79,6 +80,10 @@ let isPress = false
 let prevPosX = 0
 let prevPosY = 0
 let isDragging = false
+let startX = 0
+let startY = 0
+let dragStartTime = 0
+let touchHandled = false
 
 const navItems = [
   { name: 'home', label: '홈', to: '/home', icon: HomeIcon },
@@ -88,18 +93,32 @@ const navItems = [
   { name: 'mypage', label: '마이페이지', to: '/profile', icon: MypageIcon },
 ]
 
+// 디바이스 타입 감지
+const isTouchDevice = () => {
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0
+}
+
 // 드래그 시작 (마우스 + 터치)
 const startDrag = (e) => {
-  e.preventDefault() // 기본 동작 방지
-
   // 터치 이벤트와 마우스 이벤트 구분
   const clientX = e.touches ? e.touches[0].clientX : e.clientX
   const clientY = e.touches ? e.touches[0].clientY : e.clientY
 
   prevPosX = clientX
   prevPosY = clientY
+  startX = clientX
+  startY = clientY
+  dragStartTime = Date.now()
   isPress = true
   isDragging = false
+  touchHandled = false
+
+  // 터치 이벤트의 경우 preventDefault만 적용
+  if (e.touches) {
+    // touchstart에서는 preventDefault 하지 않음 (클릭 이벤트를 위해)
+  } else {
+    e.preventDefault() // 마우스 이벤트만 preventDefault
+  }
 
   // 드래그 중 커서 변경
   if (chatbotButton.value) {
@@ -111,8 +130,6 @@ const startDrag = (e) => {
 const moveDrag = (e) => {
   if (!isPress) return
 
-  e.preventDefault() // 기본 동작 방지
-
   // 터치 이벤트와 마우스 이벤트 구분
   const clientX = e.touches ? e.touches[0].clientX : e.clientX
   const clientY = e.touches ? e.touches[0].clientY : e.clientY
@@ -120,9 +137,14 @@ const moveDrag = (e) => {
   const posX = prevPosX - clientX
   const posY = prevPosY - clientY
 
-  // 드래그 중임을 표시
-  if (Math.abs(posX) > 3 || Math.abs(posY) > 3) {
+  // 일정 거리 이상 움직이면 드래그로 판단
+  const dragDistance = Math.sqrt(Math.pow(clientX - startX, 2) + Math.pow(clientY - startY, 2))
+
+  if (dragDistance > 5) {
     isDragging = true
+    touchHandled = true
+    // 드래그가 시작되면 이제 기본 동작 방지
+    e.preventDefault()
   }
 
   prevPosX = clientX
@@ -144,6 +166,29 @@ const moveDrag = (e) => {
   position.y = newY
 }
 
+// 터치 종료 처리
+const handleTouchEnd = (e) => {
+  if (!isPress) return
+
+  const touchDuration = Date.now() - dragStartTime
+  const dragDistance = Math.sqrt(
+    Math.pow(e.changedTouches[0].clientX - startX, 2) +
+      Math.pow(e.changedTouches[0].clientY - startY, 2),
+  )
+
+  // 터치가 짧고 이동거리가 적으면 클릭으로 판단
+  if (touchDuration < 200 && dragDistance < 5 && !touchHandled) {
+    // 클릭 이벤트를 수동으로 발생시키지 않고, 자연스러운 클릭 이벤트가 발생하도록 함
+    touchHandled = false
+  } else {
+    // 드래그였다면 클릭 이벤트 방지
+    touchHandled = true
+    e.preventDefault()
+  }
+
+  endDrag()
+}
+
 // 드래그 종료
 const endDrag = () => {
   if (!isPress) return // 이미 종료된 상태면 무시
@@ -155,15 +200,16 @@ const endDrag = () => {
     chatbotButton.value.style.cursor = 'grab'
   }
 
-  // 잠시 후 isDragging 상태 리셋 (클릭 이벤트와의 충돌 방지)
+  // 잠시 후 isDragging 상태 리셋
   setTimeout(() => {
     isDragging = false
-  }, 50)
+    touchHandled = false
+  }, 100)
 }
 
 const goToChatbot = (e) => {
-  // 드래그 중이었다면 클릭 이벤트 무시
-  if (isDragging) {
+  // 터치 이벤트에서 드래그로 판단된 경우 클릭 무시
+  if (touchHandled || isDragging) {
     e.preventDefault()
     e.stopPropagation()
     return
@@ -203,7 +249,7 @@ onMounted(() => {
   window.addEventListener('mousemove', moveDrag)
   window.addEventListener('mouseup', endDrag)
 
-  // 터치 이벤트 리스너 등록
+  // 터치 이벤트 리스너 등록 (passive: false로 preventDefault 허용)
   window.addEventListener('touchmove', moveDrag, { passive: false })
   window.addEventListener('touchend', endDrag)
 
@@ -227,6 +273,8 @@ onUnmounted(() => {
 .chatbot-button {
   cursor: grab;
   user-select: none;
+  -webkit-tap-highlight-color: transparent; /* 터치 시 하이라이트 제거 */
+  touch-action: none; /* 기본 터치 동작 제어 */
 }
 
 .chatbot-button:active {
