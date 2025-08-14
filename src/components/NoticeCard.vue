@@ -13,7 +13,7 @@
     </button>
     <slot />
     <button
-      class="mt-3 bg-[#0063f7] text-white font-semibold px-6 py-2 rounded-md shadow-sm hover:bg-yellow-500 transition-all text-sm w-full max-w-xs"
+      class="mt-3 bg-[#0063f7] text-white font-semibold px-6 py-2 rounded-md shadow-sm hover:bg-blue-800 transition-all text-sm w-full max-w-xs"
       style="border-radius: 0.5rem"
       @click="$emit('goToLearning')"
     >

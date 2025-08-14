@@ -4,22 +4,55 @@
       <span>{{ period }}</span>
     </div>
     <div class="summary-section" v-if="parsed.summary">
-      <div class="summary-title">주간 요약</div>
-      <div class="summary-content">{{ parsed.summary }}</div>
+      <div class="summary-title text-blue-600">주간 요약</div>
+      <div class="summary-content" style="line-height: 1.8">{{ parsed.summary }}</div>
     </div>
     <div class="ai-feedback-box">
-      <div class="ai-title">AI 피드백</div>
+      <div class="ai-title text-blue-600">AI 피드백</div>
       <div class="ai-item">
-        <span class="emoji">📝</span>
-        <span><strong>강점:</strong> {{ parsed.strength }}</span>
+        <div class="mx-2 my-1 ai-col">
+          <span class="ai-label">
+            <img
+              src="https://cdn-icons-png.flaticon.com/128/13085/13085357.png"
+              alt="강점 아이콘"
+              class="w-5 h-5 ai-icon"
+            />
+            <strong style="white-space: nowrap">강점 :</strong>
+          </span>
+          <span class="ai-content" style="white-space: pre-line; word-break: keep-all">{{
+            parsed.strength
+          }}</span>
+        </div>
       </div>
       <div class="ai-item">
-        <span class="emoji">⚠️</span>
-        <span><strong>개선점:</strong> {{ parsed.improvement }}</span>
+        <div class="mx-2 my-1 ai-col">
+          <span class="ai-label">
+            <img
+              src="https://cdn-icons-png.flaticon.com/128/15912/15912089.png"
+              alt="개선 아이콘"
+              class="w-5 h-5 ai-icon"
+            />
+            <strong style="white-space: nowrap">개선 :</strong>
+          </span>
+          <span class="ai-content" style="white-space: pre-line; word-break: keep-all">{{
+            parsed.improvement
+          }}</span>
+        </div>
       </div>
       <div class="ai-item">
-        <span class="emoji">⭐</span>
-        <span><strong>추천:</strong> {{ parsed.recommendation }}</span>
+        <div class="mx-2 ai-col">
+          <span class="ai-label">
+            <img
+              src="https://cdn-icons-png.flaticon.com/128/11647/11647048.png"
+              alt="추천 아이콘"
+              class="w-5 h-5 ai-icon"
+            />
+            <strong style="white-space: nowrap">추천 :</strong>
+          </span>
+          <span class="ai-content" style="white-space: pre-line; word-break: keep-all">{{
+            parsed.recommendation
+          }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -65,7 +98,6 @@ const parsed = computed(() => parseFeedback(props.feedback || ''))
 }
 .summary-title {
   font-weight: bold;
-  color: #6166cc;
   margin-bottom: 8px;
   font-size: 16px;
 }
@@ -83,7 +115,6 @@ const parsed = computed(() => parseFeedback(props.feedback || ''))
 }
 .ai-title {
   font-weight: bold;
-  color: #6166cc;
   margin-bottom: 10px;
   font-size: 15px;
 }
@@ -94,6 +125,28 @@ const parsed = computed(() => parseFeedback(props.feedback || ''))
   margin-bottom: 8px;
   font-size: 15px;
   color: #212529;
+}
+.ai-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  line-height: 1.8;
+}
+.ai-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+.ai-label .ai-icon {
+  margin-right: 2px;
+}
+.ai-content {
+  margin-left: 28px;
+}
+.ai-icon {
+  margin-bottom: 0;
 }
 .emoji {
   font-size: 18px;
