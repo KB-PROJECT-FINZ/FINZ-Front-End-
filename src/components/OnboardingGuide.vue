@@ -26,128 +26,156 @@
         </p>
       </div>
 
-      <!-- 첫 번째와 마지막 단계는 심플한 카드, 나머지는 핀트 앱 스타일 -->
+      <!-- 첫 번째와 마지막 단계는 모바일 앱 온보딩 화면, 나머지는 핀트 앱 스타일 -->
+      <!-- 첫 번째와 마지막 단계는 웹 사이즈, 나머지는 핀트 앱 스타일 -->
       <div v-if="currentStepIndex === 0 || currentStepIndex === steps.length - 1" 
-           class="w-96 h-[400px] bg-blue-100 rounded-3xl shadow-2xl mb-8 flex flex-col items-center justify-center p-8">
-        <!-- 첫 번째 단계 - 환영 화면 -->
-        <div v-if="currentStepIndex === 0" class="text-center">
-          <h1 class="text-3xl font-bold text-gray-900 mb-4">FINZ에 오신 것을 환영합니다!</h1>
-          <p class="text-lg text-gray-700 mb-8">투자 초보자를 위한 맞춤형 금융 플랫폼</p>
-          <button class="bg-blue-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-blue-700 transition-colors">
+           class="bg-sky-50 min-h-screen flex flex-col items-center justify-center p-6">
+        <!-- 첫 번째 단계 - 환영 화면 (웹 사이즈) -->
+        <div v-if="currentStepIndex === 0" class="text-center w-full max-w-md mx-auto">
+          <h1 class="text-4xl font-bold text-gray-900 mb-6 leading-tight">FINZ에 오신 것을<br>환영합니다!</h1>
+          <p class="text-xl text-gray-700 mb-12 leading-relaxed">투자 초보자를 위한<br>맞춤형 금융 플랫폼</p>
+          <button 
+            @click="nextStep"
+            class="bg-blue-600 text-white w-full max-w-sm py-5 rounded-full text-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+          >
             시작하기
           </button>
         </div>
         
-        <!-- 마지막 단계 - 시작 화면 -->
-        <div v-else class="text-center">
-          <h1 class="text-3xl font-bold text-gray-900 mb-4">이제 FINZ와 함께</h1>
-          <p class="text-2xl font-bold text-gray-900 mb-2">투자 여정을</p>
-          <p class="text-2xl font-bold text-gray-900 mb-8">시작해보세요!</p>
-          <button class="bg-blue-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-blue-700 transition-colors">
+        <!-- 마지막 단계 - 시작 화면 (웹 사이즈) -->
+        <div v-else class="text-center w-full max-w-md mx-auto">
+          <h1 class="text-4xl font-bold text-gray-900 mb-6">이제 FINZ와 함께</h1>
+          <p class="text-3xl font-bold text-gray-900 mb-2">투자 여정을</p>
+          <p class="text-3xl font-bold text-gray-900 mb-12">시작해보세요!</p>
+          <button 
+            @click="nextStep"
+            class="bg-blue-600 text-white w-full max-w-sm py-5 rounded-full text-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+          >
             시작하기
           </button>
         </div>
       </div>
 
-      <!-- 핀트 앱 스타일의 시뮬레이션된 폰 화면 (중간 단계들) -->
-      <div v-else class="w-96 h-[500px] bg-white rounded-3xl shadow-2xl border-8 border-gray-100 overflow-hidden mb-8">
-        <div class="w-full h-full bg-gray-50 p-4">
-          <!-- 앱 헤더 -->
-          <div class="flex items-center justify-between mb-4">
-            <div class="text-sm font-medium text-gray-700">{{ currentStep.appTitle }}</div>
-            <div class="w-6 h-6 bg-gray-200 rounded-full"></div>
+      <!-- 두 번째 이미지 스타일의 온보딩 화면 (폰 와이어프레임) -->
+      <div v-else class="bg-white min-h-screen flex flex-col">
+        <!-- 상단 Welcome 텍스트 -->
+        <div class="text-left p-6">
+          <h2 class="text-lg font-medium text-gray-500">Welcome</h2>
+        </div>
+        
+        <!-- 중앙 콘텐츠 영역 -->
+        <div class="flex-1 flex flex-col items-center justify-center px-6">
+          <!-- 헤드라인 -->
+          <div class="mb-6 text-center">
+            <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+              투자, 잘 몰라도 
+              <span class="text-blue-400">AI</span>가 알아서 다 해줘요
+            </h1>
           </div>
-
-          <!-- 핀트 앱 스타일의 실제 UI 시뮬레이션 -->
-          <div class="space-y-4">
-            <!-- 첫 번째 섹션 -->
-            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <div class="flex items-center space-x-3 mb-3">
-                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <span class="text-blue-600 text-lg">{{ currentStep.content[0].icon }}</span>
+          
+          <!-- 본문 텍스트 -->
+          <div class="mb-8 text-center">
+            <p class="text-base text-gray-700 leading-relaxed">
+              FINZ의 AI 챗봇이 당신의 투자 여정을 쉽고 스마트하게 만들어 드립니다. 
+              궁금한 점을 즉시 물어보고, 맞춤형 답변을 받아보세요.
+            </p>
+          </div>
+          
+          <!-- 폰 와이어프레임 (실제 챗봇 서비스 화면) -->
+          <div class="mb-8 flex justify-center">
+            <div class="w-64 h-96 border-2 border-gray-800 rounded-3xl relative bg-white overflow-hidden">
+              <!-- 노치 -->
+              <div class="absolute top-3 left-1/2 transform -translate-x-1/2 w-20 h-3 bg-gray-800 rounded-full z-10"></div>
+              
+              <!-- 챗봇 서비스 화면 -->
+              <div class="w-full h-full p-4">
+                <!-- 상단 헤더 -->
+                <div class="flex justify-between items-center mb-4">
+                  <span class="text-lg font-bold text-gray-900">finz</span>
+                  <div class="w-6 h-6 bg-gray-400 rounded-full"></div>
                 </div>
-                <div class="flex-1">
-                  <div class="text-sm font-semibold text-gray-900">{{ currentStep.content[0].title }}</div>
-                  <div class="text-xs text-gray-500">{{ currentStep.content[0].description }}</div>
+                
+                <!-- 챗봇 메시지 -->
+                <div class="mb-4">
+                  <div class="bg-gray-200 rounded-lg p-3 mb-2">
+                    <div class="text-sm text-gray-700">투자 성향 기반 추천을 위해 아래 옵션 중 하나를 선택해주세요:</div>
+                  </div>
+                  <div class="bg-gray-200 rounded-lg p-3 mb-2">
+                    <div class="text-sm text-gray-700">투자 성향 테스트 하러 가기</div>
+                  </div>
+                  <div class="bg-gray-200 rounded-lg p-3">
+                    <div class="text-sm text-gray-700">내 성향 기반 추천 받아보기</div>
+                  </div>
                 </div>
-              </div>
-              <!-- 핀트 앱 스타일의 데이터 표시 -->
-              <div class="bg-blue-50 rounded-lg p-3 border border-blue-100">
-                <div class="text-xs text-blue-800 font-medium mb-1">{{ currentStep.content[0].title }}</div>
-                <div class="text-lg font-bold text-blue-900">{{ currentStep.content[0].value || '데이터' }}</div>
-              </div>
-            </div>
-
-            <!-- 두 번째 섹션 -->
-            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <div class="flex items-center space-x-3 mb-3">
-                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <span class="text-green-600 text-lg">{{ currentStep.content[1].icon }}</span>
+                
+                <!-- 사용자 메시지 -->
+                <div class="mb-4 flex justify-end">
+                  <div class="bg-blue-500 rounded-lg p-3 max-w-48">
+                    <div class="text-sm text-white">나의 투자 성향인 TEC에 맞는 종목을 추천해줘</div>
+                  </div>
                 </div>
-                <div class="flex-1">
-                  <div class="text-sm font-semibold text-gray-900">{{ currentStep.content[1].title }}</div>
-                  <div class="text-xs text-gray-500">{{ currentStep.content[1].description }}</div>
+                
+                <!-- 추천 카드 -->
+                <div class="bg-white border border-gray-300 rounded-lg p-3 mb-4">
+                  <div class="text-sm font-bold text-gray-900 mb-1">KODEX 200선물인버스 2X</div>
+                  <div class="text-sm text-gray-600 mb-2">252670</div>
+                  <div class="text-sm text-red-500 bg-red-100 rounded px-2 py-1 inline-block mb-2">위험도: 높음</div>
+                  <div class="text-xs text-gray-700 mb-2">코로나19 여파로 인한 시장 하락에 대한 헤지 수단으로 활용 가능해 보여요...</div>
+                  <div class="flex items-center text-xs text-blue-600">
+                    <span class="mr-1">💡</span>
+                    AI 분석 Tip
+                  </div>
                 </div>
-              </div>
-              <!-- 핀트 앱 스타일의 차트/그래프 시뮬레이션 -->
-              <div class="bg-green-50 rounded-lg p-3 border border-green-100">
-                <div class="flex items-center justify-between">
-                  <div class="text-xs text-green-800 font-medium">{{ currentStep.content[1].title }}</div>
-                  <div class="text-lg font-bold text-green-900">{{ currentStep.content[1].value || '수치' }}</div>
+                
+                <!-- 하단 네비게이션 -->
+                <div class="absolute bottom-4 left-4 right-4">
+                  <div class="grid grid-cols-3 gap-3">
+                    <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+                    <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+                    <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+                    <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+                    <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+                    <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+                  </div>
                 </div>
-                <!-- 간단한 차트 시뮬레이션 -->
-                <div class="mt-2 h-8 bg-green-200 rounded-full overflow-hidden">
-                  <div class="h-full bg-green-500 rounded-full" :style="{ width: '70%' }"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 세 번째 섹션 -->
-            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <div class="flex items-center space-x-3 mb-3">
-                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <span class="text-purple-600 text-lg">{{ currentStep.content[2].icon }}</span>
-                </div>
-                <div class="flex-1">
-                  <div class="text-sm font-semibold text-gray-900">{{ currentStep.content[2].title }}</div>
-                  <div class="text-xs text-gray-500">{{ currentStep.content[2].description }}</div>
-                </div>
-              </div>
-              <!-- 핀트 앱 스타일의 추가 정보 -->
-              <div class="bg-purple-50 rounded-lg p-3 border border-purple-100">
-                <div class="text-xs text-purple-800 font-medium mb-1">{{ currentStep.content[2].title }}</div>
-                <div class="text-sm text-purple-900">{{ currentStep.content[2].value || '정보' }}</div>
               </div>
             </div>
           </div>
-
-          <!-- 추가 콘텐츠가 있다면 -->
-          <div v-if="currentStep.additionalContent" class="mt-4">
-            <div class="bg-yellow-50 rounded-xl p-4 border border-yellow-100">
-              <div class="flex items-center space-x-2 mb-2">
-                <span class="text-yellow-600 text-lg">💡</span>
-                <div class="text-sm text-yellow-800 font-medium">{{ currentStep.additionalContent.title }}</div>
-              </div>
-              <div class="text-xs text-yellow-700">{{ currentStep.additionalContent.description }}</div>
-            </div>
+          
+          <!-- 진행률 점들 -->
+          <div class="flex justify-center space-x-2 mb-6">
+            <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+            <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+            <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+            <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+            <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
           </div>
+          
+          <!-- 다음 버튼 -->
+          <button 
+            @click="nextStep"
+            class="bg-blue-400 text-white w-full max-w-sm py-4 rounded-full text-lg font-semibold hover:bg-blue-500 transition-colors"
+          >
+            다음에
+          </button>
         </div>
       </div>
 
-      <!-- 진행률 표시 -->
-      <div class="flex space-x-2 mb-8">
+      <!-- 진행률 표시 (모바일 반응형) -->
+      <div class="flex space-x-2 mb-6 sm:mb-8 justify-center">
         <div
           v-for="(step, index) in steps"
           :key="index"
           :class="[
-            'w-3 h-3 rounded-full transition-colors duration-200',
+            'w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-colors duration-200',
             index === currentStepIndex ? 'bg-blue-500' : 'bg-gray-300'
           ]"
         ></div>
       </div>
 
-      <!-- 하단 버튼 -->
-      <div class="flex space-x-4 w-full max-w-sm">
+      <!-- 하단 버튼 (모바일 반응형) -->
+      <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 w-full max-w-sm mx-auto px-4">
         <button
           v-if="currentStepIndex > 0"
           @click="previousStep"
@@ -231,10 +259,10 @@ const steps = [
       }
     ]
   },
-  {
-    title: '실전 연습 모의투자',
-    subtitle: '실제 시장 데이터로 안전하게 투자 연습하기',
-    appTitle: '모의투자',
+              {
+              title: '주식, 부담 없이 연습해요',
+              subtitle: '실제 주식 시장 데이터로 투자 전략을 연습하고,\nAI 기반 투자 시뮬레이션으로 경험을 쌓아보세요.',
+              appTitle: '모의투자',
     content: [
       {
         icon: '📱',
