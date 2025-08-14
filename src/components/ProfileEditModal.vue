@@ -30,7 +30,7 @@
               <!-- X(기본 이미지) 버튼 -->
               <button
                 type="button"
-                class="absolute top-0 right-0 w-7 h-7 bg-white border border-black rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 transition-colors"
+                class="absolute top-0 right-0 w-7 h-7 bg-white border border-gray-500 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 transition-colors"
                 style="transform: translate(35%, -35%)"
                 @click="selectTemporaryImage(1)"
                 aria-label="기본 이미지로 변경"
@@ -91,7 +91,7 @@
             />
             <button
               v-if="!isEditingNickname"
-              class="ml-1 p-1 rounded hover:bg-gray-200 focus:outline-none"
+              class="ml-0 p-1 rounded hover:bg-gray-200 focus:outline-none"
               @click="startNicknameEdit"
               aria-label="닉네임 수정"
               type="button"

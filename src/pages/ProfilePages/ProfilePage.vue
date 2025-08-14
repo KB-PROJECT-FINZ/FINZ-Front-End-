@@ -60,7 +60,11 @@
           </div>
 
           <div class="text-base font-bold text-gray-900">{{ profile.nickname }}</div>
-          <div class="text-xs font-bold text-gray-700 mb-6">{{ profile.type }} {{ nameKr }}</div>
+          <div class="text-xs font-bold text-gray-700 mt-2 mb-4">
+            <span class="bg-blue-100 text-blue-600 rounded px-3 py-1 text-xs font-bold">
+              {{ nameKr }} ({{ profile.type }})</span
+            >
+          </div>
         </div>
       </section>
     </div>
@@ -197,7 +201,7 @@
         @click="handleLogout"
         class="w-[90%] max-w-md h-12 bg-gray-100 text-gray-500 rounded-xl shadow-sm hover:bg-gray-200 transition-colors"
       >
-        Log out
+        로그아웃
       </button>
     </div>
     <footer-navigation></footer-navigation>
