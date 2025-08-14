@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#f2f6fd]">
+  <div class="min-h-screen bg-white">
     <div class="px-4 py-6 pb-20">
       <div class="mb-8">
         <!-- 타이틀 -->
@@ -46,7 +46,7 @@
             <article
               v-for="item in formattedRecommendedContents"
               :key="item.contentId"
-              class="min-w-[225px] h-[200px] snap-start rounded-2xl p-4 relative shadow-sm bg-[#b9d1f3]"
+              class="min-w-[225px] h-[200px] snap-start rounded-2xl p-4 relative shadow-sm bg-[#f2f6fd]"
               @click="goToDetail(item.contentId)"
             >
               <div class="flex items-center gap-1 mb-2">
