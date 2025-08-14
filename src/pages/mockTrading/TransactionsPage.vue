@@ -51,14 +51,13 @@
             />
           </svg>
         </button>
-        <!-- 기간 선택 모달 -->
-        <div
-          v-if="showPeriodModal"
-          class="fixed inset-0 bg-transparent z-50 flex items-end"
-          @click="showPeriodModal = false"
-        >
+        <!-- 기간 선택 모달 (분봉 선택 모달 스타일 참고) -->
+        <div v-if="showPeriodModal" class="fixed inset-0 z-50 flex items-end">
+          <!-- 투명 배경 (클릭시 닫힘) -->
+          <div class="absolute inset-0 bg-transparent" @click="showPeriodModal = false"></div>
+          <!-- 모달 본체: 앱 크기에 맞춰 중앙 정렬, 최대 너비 420px -->
           <div
-            class="bg-white w-full rounded-t-2xl p-4 pb-18"
+            class="relative w-full max-w-[420px] mx-auto bg-white rounded-t-2xl p-4 pb-18"
             :class="!isModalDragging ? 'transition-transform duration-200' : ''"
             :style="{ transform: `translateY(${modalDragOffset}px)` }"
             @click.stop
@@ -90,70 +89,101 @@
 
     <!-- 거래 내역 리스트 -->
     <section class="mx-4 mt-0 space-y-1.5">
-      <div v-for="transaction in visibleTransactions" :key="transaction.id" class="bg-white p-3">
-        <!-- 새 카드 레이아웃: 왼쪽 날짜, 가운데 종목명, 오른쪽 체결단가 -->
-        <div class="flex items-center justify-between mb-1">
-          <!-- 날짜 -->
-          <div class="flex-shrink-0 w-10 text-left">
-            <div class="text-xs text-gray-400">{{ formatDateDot(transaction.executedAt) }}</div>
-          </div>
-          <!-- 종목명 및 상태 + 이미지 -->
-          <div class="flex-1 min-w-0 flex items-center gap-2">
-            <span
-              class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0"
-            >
-              <img
-                v-if="getStockImageUrl(transaction) && !imageErrors[transaction.stockCode]"
-                :src="getStockImageUrl(transaction)"
-                :alt="`${transaction.stockName} 로고`"
-                class="w-full h-full object-cover rounded-full"
-                @error="handleImageError(transaction.stockCode)"
-              />
+      <!-- 스켈레톤 UI: 로딩 중일 때 보여줌 -->
+      <template v-if="loading">
+        <div v-for="n in 5" :key="n" class="bg-white p-3 animate-pulse">
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex-shrink-0 w-10 text-left">
+              <div class="h-4 bg-gray-200 rounded w-8"></div>
+            </div>
+            <div class="flex-1 min-w-0 flex items-center gap-2">
               <span
-                v-else
-                class="w-full h-full rounded-full flex items-center justify-center text-[13px] font-bold border-2 text-center flex-shrink-0"
-                style="border-color: #2272eb; color: #2272eb; background: #fff"
-              >
-                {{ getStockInitial(transaction.stockName) }}
-              </span>
-            </span>
-            <div class="flex-1 min-w-0">
-              <div
-                class="text-base font-semibold truncate"
-                :class="transaction.status === 'CANCELLED' ? 'text-gray-400' : 'text-gray-900'"
-              >
-                {{ transaction.stockName }}
-              </div>
-              <div class="text-xs mt-1 flex items-center gap-1">
-                <span
-                  :class="transaction.type === 'BUY' ? 'text-red-600' : 'text-blue-600'"
-                  v-if="transaction.status !== 'CANCELLED'"
-                >
-                  {{ transaction.quantity }}주
-                  {{
-                    transaction.type === 'BUY' ? '매수' : transaction.type === 'SELL' ? '매도' : ''
-                  }}
-                </span>
-                <span v-else class="text-gray-400">취소됨</span>
+                class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0"
+              ></span>
+              <div class="flex-1 min-w-0">
+                <div class="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                <div class="h-3 bg-gray-100 rounded w-16"></div>
               </div>
             </div>
-          </div>
-          <!-- 체결단가 -->
-          <div class="flex-shrink-0 text-right">
-            <div v-if="transaction.status !== 'CANCELLED'">
-              <div class="text-base font-semibold text-gray-900 mb-0.5">
-                {{ (transaction.price * transaction.quantity).toLocaleString() }}원
-              </div>
-              <div class="text-[11px] text-gray-500">
-                주당 {{ transaction.price.toLocaleString() }}원
-              </div>
+            <div class="flex-shrink-0 text-right">
+              <div class="h-4 bg-gray-200 rounded w-16 mb-1"></div>
+              <div class="h-3 bg-gray-100 rounded w-12"></div>
             </div>
-            <div v-else class="text-sm text-gray-400">&nbsp;</div>
           </div>
         </div>
+      </template>
 
-        <!-- 수량/유형/현재가/평가손익 영역 제거 -->
-      </div>
+      <!-- 실제 거래 내역 카드 -->
+      <template v-else>
+        <div v-for="transaction in visibleTransactions" :key="transaction.id" class="bg-white p-3">
+          <!-- 새 카드 레이아웃: 왼쪽 날짜, 가운데 종목명, 오른쪽 체결단가 -->
+          <div class="flex items-center justify-between mb-1">
+            <!-- 날짜 -->
+            <div class="flex-shrink-0 w-10 text-left">
+              <div class="text-xs text-black font-semibold">
+                {{ formatDateDot(transaction.executedAt) }}
+              </div>
+            </div>
+            <!-- 종목명 및 상태 + 이미지 -->
+            <div class="flex-1 min-w-0 flex items-center gap-2">
+              <span
+                class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0"
+              >
+                <img
+                  v-if="getStockImageUrl(transaction) && !imageErrors[transaction.stockCode]"
+                  :src="getStockImageUrl(transaction)"
+                  :alt="`${transaction.stockName} 로고`"
+                  class="w-full h-full object-cover rounded-full"
+                  @error="handleImageError(transaction.stockCode)"
+                />
+                <span
+                  v-else
+                  class="w-full h-full rounded-full flex items-center justify-center text-[13px] font-bold border-2 text-center flex-shrink-0"
+                  style="border-color: #2272eb; color: #2272eb; background: #fff"
+                >
+                  {{ getStockInitial(transaction.stockName) }}
+                </span>
+              </span>
+              <div class="flex-1 min-w-0">
+                <div
+                  class="text-base font-semibold truncate"
+                  :class="transaction.status === 'CANCELLED' ? 'text-gray-400' : 'text-gray-900'"
+                >
+                  {{ transaction.stockName }}
+                </div>
+                <div class="text-xs mt-1 flex items-center gap-1">
+                  <span
+                    :class="transaction.type === 'BUY' ? 'text-red-600' : 'text-blue-600'"
+                    v-if="transaction.status !== 'CANCELLED'"
+                  >
+                    {{ transaction.quantity }}주
+                    {{
+                      transaction.type === 'BUY'
+                        ? '매수'
+                        : transaction.type === 'SELL'
+                          ? '매도'
+                          : ''
+                    }}
+                  </span>
+                  <span v-else class="text-gray-400">취소됨</span>
+                </div>
+              </div>
+            </div>
+            <!-- 체결단가 -->
+            <div class="flex-shrink-0 text-right">
+              <div v-if="transaction.status !== 'CANCELLED'">
+                <div class="text-base font-semibold text-gray-900 mb-0.5">
+                  {{ (transaction.price * transaction.quantity).toLocaleString() }}원
+                </div>
+                <div class="text-[11px] text-gray-500">
+                  주당 {{ transaction.price.toLocaleString() }}원
+                </div>
+              </div>
+              <div v-else class="text-sm text-gray-400">&nbsp;</div>
+            </div>
+          </div>
+        </div>
+      </template>
 
       <!-- 더보기 버튼 -->
       <button
@@ -165,9 +195,9 @@
       </button>
     </section>
 
-    <!-- 빈 상태 -->
+    <!-- 빈 상태: 로딩 중이 아닐 때만 표시 -->
     <div
-      v-if="filteredTransactions.length === 0"
+      v-if="!loading && filteredTransactions.length === 0"
       class="flex flex-col items-center justify-center py-16"
     >
       <div class="w-16 h-16 bg-gray-100 flex items-center justify-center mb-4">
@@ -189,16 +219,7 @@
       </button>
     </div>
 
-    <!-- 로딩 상태 -->
-    <div
-      v-if="loading"
-      class="fixed inset-0 bg-black/30 backdrop-blur-sm flex flex-col items-center justify-center z-[1000] text-white"
-    >
-      <div
-        class="w-10 h-10 border-4 border-white border-opacity-30 border-t-white rounded-full animate-spin mb-4"
-      ></div>
-      <p>거래 내역을 불러오는 중...</p>
-    </div>
+    <!-- 로딩 애니메이션 제거: 스켈레톤 UI만 남김 -->
 
     <FooterNavigation />
   </div>
@@ -321,10 +342,8 @@ function goToMockTrading() {
 // ==================== 생명주기 ====================
 
 onMounted(async () => {
-  // 거래 내역 데이터 로드
   await fetchTransactions()
   await checkExecution()
-
   // 모달 이벤트 리스너 등록
   onModalMounted()
 })
