@@ -406,7 +406,7 @@ import 'swiper/css'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 
 import { getUserCredit } from '@/services/learning'
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAssetDataStore } from '@/services/useAssetData'
@@ -437,16 +437,15 @@ const showChatBox = ref(false)
 const userInfo = ref({}) // 사용자 정보 저장
 
 function openRecommendChat() {
-  // console.log('userInfo.value:', userInfo.value)
-  // userInfo.value가 없거나 riskType이 없으면 빈 문자열로 처리
   const riskType = userInfo.value?.riskType || ''
-  console.log('riskType:', riskType)
   showChatBox.value = true
-  window.dispatchEvent(
-    new CustomEvent('openChatBot', {
-      detail: { risk: riskType },
-    }),
-  )
+  nextTick(() => {
+    window.dispatchEvent(
+      new CustomEvent('openChatBot', {
+        detail: { risk: riskType },
+      }),
+    )
+  })
 }
 
 // const props = defineProps({
