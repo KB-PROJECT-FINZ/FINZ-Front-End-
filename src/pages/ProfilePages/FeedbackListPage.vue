@@ -10,7 +10,14 @@
     <span class="ml-3 flex-1 text-left text-base font-semibold text-gray-900">AI 피드백 목록</span>
   </header>
   <div class="feedback-list-page px-4 py-6">
-    <h2 class="text-xl font-bold text-black-600 ml-3">지난 피드백 목록</h2>
+    <div class="flex items-center font-bold text-[18px] mb-5 text-gray-800 gap-2">
+      <img
+        src="https://cdn-icons-png.flaticon.com/128/14700/14700716.png"
+        alt="분석 아이콘"
+        class="w-9 h-9"
+      />
+      <span>지난 피드백 목록</span>
+    </div>
     <div v-if="loading" class="text-indigo-500 font-bold my-6">목록을 불러오는 중...</div>
     <div v-else-if="error" class="text-red-500 font-bold my-6">{{ error }}</div>
     <div v-else>
