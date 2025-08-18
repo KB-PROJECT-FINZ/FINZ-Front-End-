@@ -56,7 +56,7 @@
         </div>
 
         <!-- 성향별 비중 -->
-        <section v-show="activeMain === 'ratio'" class="mt-4">
+        <section v-if="activeMain === 'ratio'" class="mt-4">
           <!-- 종목 선택 버튼 -->
           <div class="flex gap-2 overflow-x-auto py-2">
             <button
@@ -76,6 +76,7 @@
 
           <div v-if="currentRatioItem" class="mt-3">
             <TraitStockCard
+              :key="selectedRatioKey"
               :name="currentRatioItem.name"
               :gain="currentRatioItem.gain"
               :traitRatio="getTraitRatio(currentRatioItem)"
@@ -89,7 +90,7 @@
         </section>
 
         <!-- 내 수익률 분포 -->
-        <section v-show="activeMain === 'distribution'" class="mt-6">
+        <section v-if="activeMain === 'distribution'" class="mt-6">
           <div class="flex gap-2 overflow-x-auto py-2">
             <button
               v-for="(s, i) in myStocks"
@@ -125,7 +126,7 @@
         </section>
 
         <!-- 성향별 인기 종목 -->
-        <section v-show="activeMain === 'popular'" class="mt-6">
+        <section v-if="activeMain === 'popular'" class="mt-6">
           <div class="flex justify-between items-center mb-2">
             <h2 class="text-base font-semibold">{{ traitGroupLabel }} 인기 종목</h2>
           </div>
@@ -179,6 +180,21 @@ import {
   normalizeTraitGroup,
   TRAIT_LABELS,
 } from '@/services/stockAnalysisService'
+
+/* =========================
+   로고 URL 정규화 유틸
+   - 공백/문자열 'null'/'undefined' 제거
+   - //host → https://host
+   - http:// → https:// (혼합콘텐츠 방지)
+   ========================= */
+function normalizeUrl(raw) {
+  if (!raw) return ''
+  const u = String(raw).trim()
+  if (!u || u === 'null' || u === 'undefined') return ''
+  if (u.startsWith('//')) return 'https:' + u
+  if (u.startsWith('http://')) return u.replace(/^http:\/\//, 'https://')
+  return u
+}
 
 const userStore = useUserStore()
 const userId = computed(() => userStore.userId)
@@ -237,12 +253,24 @@ async function fetchAnalysisData() {
       fetchPopularStocksByTrait(traitGroup),
     ])
 
-    traitStocks.value = traitRes
-    myRes &&
-      (myStocks.value = myRes.map((s) => ({
-        ...s,
-        distribution: s.distributionBins || [0, 0, 0, 0, 0, 0],
-      })))
+    // 성향별 비중
+    traitStocks.value = Array.isArray(traitRes) ? traitRes : []
+
+    // 내 수익률 분포
+    myStocks.value = Array.isArray(myRes)
+      ? myRes.map((s) => ({
+          ...s,
+          distribution: s.distributionBins || [0, 0, 0, 0, 0, 0],
+        }))
+      : []
+
+    // ✅ 인기 종목: 로고 URL 정규화 적용
+    popularStocks.value = Array.isArray(popRes)
+      ? popRes.map((s) => ({
+          ...s,
+          logo: normalizeUrl(s.logo),
+        }))
+      : []
 
     if (!selectedRatioKey.value && traitStocks.value.length) {
       selectedRatioKey.value = traitStocks.value[0]?.name || ''
@@ -250,13 +278,12 @@ async function fetchAnalysisData() {
     if (!selectedDistKey.value && myStocks.value.length) {
       selectedDistKey.value = myStocks.value[0]?.stockCode || myStocks.value[0]?.stockName || ''
     }
-
-    popularStocks.value = popRes
   } catch (err) {
     console.error('분석 데이터 로드 실패:', err?.message || err)
   }
 }
 
+// 분포 저장 (변경 누적 시 딜레이 저장)
 const debouncedSave = debounce(async (uid, stocks) => {
   if (!uid || !stocks?.length) return
   const payload = stocks.map((s) => ({

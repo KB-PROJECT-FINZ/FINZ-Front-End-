@@ -15,7 +15,7 @@
       </div>
     </div>
 
-    <!-- 프로필: border 제거, ring + shadow -->
+    <!-- 프로필 -->
     <div
       class="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center bg-white ring-1 ring-gray-200 shadow-sm ml-[-2px]"
     >
@@ -32,7 +32,7 @@
         fill="none"
         viewBox="0 0 24 24"
         stroke-width="1.6"
-        :class="['w-6 h-6', traitStrokeClass]"
+        class="w-6 h-6 stroke-gray-500"
         aria-label="기본 아이콘"
       >
         <path
@@ -51,10 +51,8 @@
           ( {{ originalTraitToKor[originalTrait] || originalTrait }} )
         </span>
       </p>
-      <span
-        class="text-xs text-white px-2 py-0.5 rounded mt-0.5 inline-block"
-        :class="traitBgClass"
-      >
+      <!-- 배경은 연한 성향 색상, 테두리 없음 -->
+      <span class="text-xs px-2 py-0.5 rounded mt-0.5 inline-block" :class="traitBadgeClass">
         {{ trait }}
       </span>
     </div>
@@ -90,9 +88,9 @@ export default {
     rank: Number,
     nickname: String,
     gainRate: Number,
-    trait: String, // 한글 라벨(보수형/균형형/공격형/특수형/기타)
-    originalTrait: { type: String, default: '' }, // 세부 코드
-    profileImage: { type: [Number, String, null], default: null }, // 1~7
+    trait: String,
+    originalTrait: { type: String, default: '' },
+    profileImage: { type: [Number, String, null], default: null },
   },
   data() {
     return {
@@ -124,33 +122,18 @@ export default {
     hasValidImage() {
       return !!this.imgSrc && !this.imageError
     },
-    // 모던 팔레트 (랭킹/차트 공통)
-    traitBgClass() {
+    traitBadgeClass() {
       switch (this.trait) {
         case '보수형':
-          return 'bg-[#2563EB]'
+          return 'bg-blue-100 text-blue-700'
         case '균형형':
-          return 'bg-[#16A34A]'
+          return 'bg-green-100 text-green-700'
         case '공격형':
-          return 'bg-[#DC2626]'
+          return 'bg-red-100 text-red-700'
         case '특수형':
-          return 'bg-[#9333EA]'
+          return 'bg-purple-100 text-purple-700'
         default:
-          return 'bg-[#6B7280]'
-      }
-    },
-    traitStrokeClass() {
-      switch (this.trait) {
-        case '보수형':
-          return 'stroke-[#2563EB]'
-        case '균형형':
-          return 'stroke-[#16A34A]'
-        case '공격형':
-          return 'stroke-[#DC2626]'
-        case '특수형':
-          return 'stroke-[#9333EA]'
-        default:
-          return 'stroke-[#6B7280]'
+          return 'bg-gray-100 text-gray-700'
       }
     },
   },

@@ -17,7 +17,8 @@
     </div>
 
     <div class="text-center my-4">
-      <p class="text-m font-semibold text-gray-700">🔥 {{ rankingDateRangeText }} 🔥</p>
+      <p class="text-sm font-bold text-gray-500">{{ rankingDateRangeText }}</p>
+
       <p class="text-lg font-bold">투자 성과는?</p>
     </div>
 
