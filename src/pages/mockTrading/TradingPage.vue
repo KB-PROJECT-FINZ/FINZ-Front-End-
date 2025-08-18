@@ -342,7 +342,7 @@
             <!-- 지정가/시장가 선택 -->
             <div class="flex text-sm font-medium mb-3">
               <button
-                @click="orderType = 'limit'"
+                @click="setOrderType('limit')"
                 class="text-left py-1"
                 :class="orderType === 'limit' ? 'text-gray-900' : 'text-gray-500'"
               >
@@ -350,7 +350,7 @@
               </button>
               <span class="text-gray-300 mx-2 py-1">|</span>
               <button
-                @click="orderType = 'market'"
+                @click="setOrderType('market')"
                 class="text-left py-1"
                 :class="orderType === 'market' ? 'text-gray-900' : 'text-gray-500'"
               >
@@ -1278,6 +1278,10 @@ const handleTabClick = (tabKey) => {
   if (tabKey === 'waiting') {
     loadPendings()
   }
+  // 지정가 → 시장가로 변경 시 수량 초기화
+  if (tabKey === 'buy' || tabKey === 'sell') {
+    orderQuantity.value = 0
+  }
 }
 
 // 거래 탭 정의
@@ -1286,6 +1290,12 @@ const tradeTabs = [
   { key: 'sell', label: '판매' },
   { key: 'waiting', label: '대기' },
 ]
+
+// 지정가/시장가 버튼 클릭 시에도 수량 초기화
+const setOrderType = (type) => {
+  orderType.value = type
+  orderQuantity.value = 0 // 주문 유형 변경 시 수량 초기화
+}
 
 // 매도호가/매수호가
 const askPrices = ref([])
@@ -1824,11 +1834,25 @@ watch(
 
 const maxOrderQuantity = computed(() => {
   if (activeTab.value === 'buy') {
-    return isOrderPriceFocused.value
-      ? lastMaxOrderQuantity.value
-      : Math.floor(userInfo.value.availableAmount / orderPrice.value)
+    if (orderType.value === 'market') {
+      // 시장가 매수: 최저 매도 가격 기준
+      const sortedAsk = [...askPrices.value].sort((a, b) => a.price - b.price)
+      const marketPrice = sortedAsk.length > 0 ? sortedAsk[0].price : orderPrice.value
+      return Math.floor(userInfo.value.availableAmount / marketPrice)
+    } else {
+      // 지정가 매수: 입력한 가격 기준
+      return Math.floor(userInfo.value.availableAmount / orderPrice.value)
+    }
   } else if (activeTab.value === 'sell') {
-    return userInfo.value.quantity
+    if (orderType.value === 'market') {
+      // 시장가 매도: 최고 매수 가격 기준
+      const sortedBid = [...bidPrices.value].sort((a, b) => b.price - a.price)
+      // 실제 매도 가능 수량은 보유 수량 한도이므로, 가격은 참고만
+      return userInfo.value.quantity
+    } else {
+      // 지정가 매도: 보유 수량 한도
+      return userInfo.value.quantity
+    }
   }
   return 0
 })
@@ -1836,16 +1860,39 @@ const maxOrderQuantity = computed(() => {
 // 비율에 따른 수량 설정 함수
 const setQuantityByRatio = (ratio) => {
   if (activeTab.value === 'buy') {
-    const availableShares = Math.floor(userInfo.value.availableAmount / orderPrice.value)
+    let price = orderPrice.value
+    if (orderType.value === 'market') {
+      // 시장가 매수: 최저 매도 가격 기준
+      const sortedAsk = [...askPrices.value].sort((a, b) => a.price - b.price)
+      price = sortedAsk.length > 0 ? sortedAsk[0].price : orderPrice.value
+    }
+    const availableShares = Math.floor(userInfo.value.availableAmount / price)
     const targetQuantity = Math.floor((availableShares * ratio) / 100)
     orderQuantity.value = Math.max(0, targetQuantity)
   } else if (activeTab.value === 'sell') {
-    const targetQuantity = Math.floor((userInfo.value.quantity * ratio) / 100)
-    orderQuantity.value = Math.max(0, Math.min(targetQuantity, userInfo.value.quantity))
+    // 시장가 매도: 실제 매도 가능 수량은 보유 수량 한도
+    const maxSell = userInfo.value.quantity
+    const targetQuantity = Math.floor((maxSell * ratio) / 100)
+    orderQuantity.value = Math.max(0, Math.min(targetQuantity, maxSell))
   }
 }
 
 const totalOrderAmount = computed(() => {
+  if (orderType.value === 'market') {
+    // 시장가 매수: 최저 매도 가격 기준
+    if (activeTab.value === 'buy') {
+      const sortedAsk = [...askPrices.value].sort((a, b) => a.price - b.price)
+      const marketPrice = sortedAsk.length > 0 ? sortedAsk[0].price : orderPrice.value
+      return marketPrice * orderQuantity.value
+    }
+    // 시장가 매도: 최고 매수 가격 기준
+    if (activeTab.value === 'sell') {
+      const sortedBid = [...bidPrices.value].sort((a, b) => b.price - a.price)
+      const marketPrice = sortedBid.length > 0 ? sortedBid[0].price : orderPrice.value
+      return marketPrice * orderQuantity.value
+    }
+  }
+  // 지정가 주문: 입력한 가격 기준
   return orderPrice.value * orderQuantity.value
 })
 

@@ -96,7 +96,8 @@ function formatNumber(v) {
 }
 
 function onError(e) {
-  e.target.src = '/images/default-stock-logo.png'
+  if (e.target.src.includes('@/assets/finz.png')) return
+  e.target.src = '@/assets/finz.png'
 }
 
 // 스크롤 애니메이션
