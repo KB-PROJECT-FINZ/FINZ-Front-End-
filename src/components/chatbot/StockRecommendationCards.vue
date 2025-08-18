@@ -3,10 +3,11 @@
     <!-- 추천 타입 표시 -->
     <div class="bg-gray-100 rounded-2xl px-4 py-3">
       <p class="text-sm text-gray-700 font-medium">
-        {{ getRecommendationType() }}{{ getRecommendationType() === '키워드 기반 추천' ? '드릴게요!' : '을 추천드릴게요!' }}
+        {{ getRecommendationType()
+        }}{{ getRecommendationType() === '키워드 기반 추천' ? '드릴게요!' : '을 드릴게요!' }}
       </p>
     </div>
-    
+
     <!-- 종목 카드들 -->
     <div class="space-y-4">
       <div
@@ -34,7 +35,10 @@
 
         <!-- 추천 이유 -->
         <div class="mb-3">
-          <div class="text-sm text-gray-700 leading-relaxed" v-html="parseMarkdown(stock.description)"></div>
+          <div
+            class="text-sm text-gray-700 leading-relaxed"
+            v-html="parseMarkdown(stock.description)"
+          ></div>
         </div>
 
         <!-- AI 분석 Tip -->
@@ -59,7 +63,6 @@
 
 <script setup>
 import { computed } from 'vue'
-import { marked } from 'marked'
 
 const props = defineProps({
   content: {
@@ -73,10 +76,10 @@ const parseMarkdown = (text) => {
   try {
     // **굵은 글씨** 패턴을 <strong> 태그로 변환
     let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    
+
     // 줄바꿈을 <br> 태그로 변환
     html = html.replace(/\n/g, '<br>')
-    
+
     return html
   } catch (error) {
     console.error('마크다운 파싱 오류:', error)
@@ -94,12 +97,22 @@ const getRecommendationType = () => {
   }
 
   // 종목 분석 응답인지 먼저 확인
-  if (props.content.includes('위험도:') && props.content.includes('AI 분석 Tip') && props.content.includes('향후 전망')) {
+  if (
+    props.content.includes('위험도:') &&
+    props.content.includes('AI 분석 Tip') &&
+    props.content.includes('향후 전망')
+  ) {
     return '' // 종목 분석 응답은 추천 타입이 아님
   }
 
   // 종목명이 포함되어 있고 위험도가 포함된 경우도 확인
-  if (props.content.includes('위험도:') && (props.content.includes('테슬라') || props.content.includes('TSLA') || props.content.includes('삼성전자') || props.content.includes('005930'))) {
+  if (
+    props.content.includes('위험도:') &&
+    (props.content.includes('테슬라') ||
+      props.content.includes('TSLA') ||
+      props.content.includes('삼성전자') ||
+      props.content.includes('005930'))
+  ) {
     return '' // 종목 분석 응답은 추천 타입이 아님
   }
 
@@ -136,7 +149,6 @@ const getRecommendationType = () => {
 
   return '주식 추천'
 }
-
 
 // // reason 텍스트에서 종목 이름 추출
 // const extractStockName = (reason) => {

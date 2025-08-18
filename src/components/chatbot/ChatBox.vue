@@ -78,7 +78,7 @@
             <!-- 일반 메시지 -->
             <div v-else-if="!msg.type" class="bg-gray-200 rounded-3xl px-4 py-3 shadow-sm">
               <!-- 분석 기간 표시 -->
-            <div
+              <div
                 v-if="msg.requestedPeriod && msg.intentType === 'PORTFOLIO_ANALYZE'"
                 class="text-xs text-purple-600 font-medium mb-2 bg-purple-100 px-2 py-1 rounded-full inline-block"
               >
@@ -150,21 +150,6 @@
         <div class="grid grid-cols-3 gap-3">
           <!-- 첫 번째 행 -->
           <button
-            @click="handleButtonIntent({ intent: 'RECOMMEND_KEYWORD' })"
-            class="flex flex-col items-center space-y-1 p-3 rounded-xl hover:bg-blue-600 transition-colors duration-200"
-          >
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <span class="text-white text-xs font-medium">키워드로 추천</span>
-          </button>
-
-          <button
             @click="handleButtonIntent({ intent: 'BACK_TO_MAIN' })"
             class="flex flex-col items-center space-y-1 p-3 rounded-xl hover:bg-blue-600 transition-colors duration-200"
           >
@@ -177,6 +162,20 @@
               />
             </svg>
             <span class="text-white text-xs font-medium">처음으로</span>
+          </button>
+          <button
+            @click="handleButtonIntent({ intent: 'RECOMMEND_KEYWORD' })"
+            class="flex flex-col items-center space-y-1 p-3 rounded-xl hover:bg-blue-600 transition-colors duration-200"
+          >
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <span class="text-white text-xs font-medium">키워드로 추천</span>
           </button>
 
           <button
@@ -276,7 +275,6 @@ import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import axios from 'axios'
 import { useChatStore } from '@/stores/counter.js'
 import { useUserStore } from '@/stores/user.js'
-import { marked } from 'marked'
 import StockRecommendationCards from './StockRecommendationCards.vue'
 import TermExplanationCard from './TermExplanationCard.vue'
 import FeedbackAnalysisCard from './FeedbackAnalysisCard.vue'
@@ -680,6 +678,38 @@ onMounted(async () => {
     }
   }
 })
+const props = defineProps({ risk: String, fixedIntent: String })
+
+onMounted(() => {
+  if (props.fixedIntent === 'STOCK_ANALYZE') {
+    chatStore.clearMessages()
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '분석할 종목명을 입력해주세요. 예: 삼성전자, 테슬라 등',
+      buttons: [{ label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' }],
+    })
+    awaitingStockAnalyze.value = true
+  }
+  if (props.fixedIntent === 'TERM_EXPLAIN') {
+    // 용어 설명 안내 메시지와 입력 모드로 진입
+    chatStore.clearMessages()
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '설명을 원하는 용어를 입력해주세요. 예: PER, EPS, ROE 등',
+      buttons: [{ label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' }],
+    })
+    awaitingTermExplain.value = true
+  }
+  if (props.risk) {
+    fetchGPT(`나의 투자 성향인 ${props.risk}에 맞는 종목을 추천해줘`, 'RECOMMEND_PROFILE')
+  }
+  if (props.fixedIntent === 'PORTFOLIO_ANALYZE') {
+    chatStore.clearMessages()
+    fetchGPT('내 포트폴리오 피드백 줘', 'PORTFOLIO_ANALYZE')
+  }
+})
 
 async function fetchGPT(prompt, explicitIntent = null) {
   loading.value = true
@@ -751,7 +781,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
       if (res.data.content.includes('투자 성향 기반 추천드릴게요')) {
         console.log('✅ 성공: 투자 성향 기반 추천 메시지가 포함됨!')
       }
-      
+
       chatStore.messages.push({
         role: 'bot',
         content: res.data.content,

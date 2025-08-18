@@ -25,7 +25,7 @@
       </div>
       <!-- 이메일 -->
       <div class="mt-8">
-        <label class="block text-sm font-semibold text-gray-700 mb-2">아이디</label>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">이메일</label>
         <input
           v-model="email"
           type="email"

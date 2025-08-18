@@ -39,9 +39,6 @@
           :key="item.contentId"
           class="w-full min-w-[160px] bg-white p-3 rounded-xl shadow-sm shrink-0 flex flex-col justify-center mb-2 border border-gray-200"
         >
-          <p :class="'text-blue-600 text-base font-bold'" class="mb-1">
-            {{ item.label || '추천' }}
-          </p>
           <p class="text-sm font-semibold mb-1">{{ item.title }}</p>
           <div class="border-b border-gray-200 my-2"></div>
           <p class="text-xs text-gray-700 whitespace-pre-wrap leading-6">{{ item.content }}</p>

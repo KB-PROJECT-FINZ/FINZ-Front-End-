@@ -79,6 +79,52 @@
         </div>
       </div>
 
+      <!-- 내 투자 상태 카드 -->
+      <div class="w-full max-w-[420px] mx-auto mb-4">
+        <div class="flex gap-4">
+          <div class="flex-1 p-5 bg-white rounded-2xl shadow">
+            <p class="font-bold text-sm text-gray-900 mb-1">보유 현금</p>
+            <p class="font-bold text-gray-900">
+              {{ safeNumber(userAccount.currentBalance).toLocaleString() }}원
+            </p>
+          </div>
+          <!-- 보유 크레딧 카드: 버튼으로 변경 -->
+          <button
+            class="flex-1 p-5 bg-white rounded-2xl shadow flex flex-col items-start relative"
+            @click="showChargeModal = true"
+            style="outline: none; border: none"
+          >
+            <div class="w-full flex items-center justify-between">
+              <p class="font-bold text-sm text-gray-900 mb-1">보유 크레딧</p>
+              <!-- > 아이콘 (자산 현황 버튼과 동일) -->
+              <svg
+                class="w-4 h-4 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                style="transform: scaleX(-1)"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </div>
+            <p class="font-bold text-gray-900">{{ asset.amount.toLocaleString() }}C</p>
+          </button>
+        </div>
+      </div>
+
+      <!-- 충전 모달 (AssetStatus의 showChargeModal 활용) -->
+      <CreditChargeModal
+        :show="showChargeModal"
+        :userCredit="userCredit"
+        @close="showChargeModal = false"
+        @charged="handleCreditCharge"
+      />
+
       <!-- 총 자산 카드 -->
       <div class="w-full max-w-[420px] mx-auto p-5 mb-4 bg-white rounded-2xl shadow">
         <button class="w-full text-left" style="display: block">
@@ -264,7 +310,6 @@
                       holding.profitRate >= 0 ? '+' : ''
                     }}{{ holding.profitRate }}%)
                   </span>
-                  <span v-else class="text-xs text-gray-400">계산 중...</span>
                 </template>
                 <template v-else>
                   <span
@@ -306,7 +351,6 @@
                   <span v-if="holding.totalValue > 0"
                     >{{ holding.totalValue.toLocaleString() }}원</span
                   >
-                  <span v-else class="text-gray-400">계산 중...</span>
                 </span>
               </div>
               <div>
@@ -319,7 +363,6 @@
                   {{ holding.profitLoss >= 0 ? '+' : ''
                   }}{{ Math.abs(holding.profitLoss).toLocaleString() }}원
                 </span>
-                <span v-else class="ml-2 font-medium text-gray-400">계산 중...</span>
               </div>
             </div>
           </div>
@@ -421,15 +464,49 @@ import introIcon from '@/assets/intro_image.png'
 import quizIcon from '@/assets/quiz_image.png'
 import suggestionIcon from '@/assets/suggestion_image.png'
 import noteIcon from '@/assets/note_image.png'
+import dictionaryIcon from '@/assets/dictionary_image.png'
+import analyzeIcon from '@/assets/analyze_image.png'
 
 import AssetIcon from '@/components/icons/AssetIcon.vue'
 import transactionIcon from '@/components/icons/transactionIcon.vue'
 import ListIcon from '@/components/icons/ListIcon.vue'
-import BellIcon from '@/components/icons/BellIcon.vue'
+
+import { useUserStore } from '@/stores/user.js'
+
+const userStore = useUserStore()
+
+import CreditChargeModal from '@/components/CreditChargeModal.vue'
+const showChargeModal = ref(false)
+const userCredit = computed(() => asset.value.amount) // 또는 실제 크레딧 값
 
 const router = useRouter()
 
 register()
+
+function openRecommendChat() {
+  // riskType은 fetchUserInfo 등에서 받아온 값 사용
+  window.dispatchEvent(
+    new CustomEvent('openChatBot', {
+      detail: { risk: userStore.riskType }, // 또는 user.riskType 등 실제 코드에 맞게
+    }),
+  )
+}
+
+function openAnalyzeChat() {
+  window.dispatchEvent(
+    new CustomEvent('openChatBot', {
+      detail: { intent: 'STOCK_ANALYZE' },
+    }),
+  )
+}
+
+function openDictionaryChat() {
+  window.dispatchEvent(
+    new CustomEvent('openChatBot', {
+      detail: { intent: 'TERM_EXPLAIN' },
+    }),
+  )
+}
 
 // 서비스 기능 연결 카드 데이터
 const serviceFeatures = [
@@ -437,25 +514,38 @@ const serviceFeatures = [
     icon: introIcon,
     title: '핀즈 알아보기',
     desc: '서비스 소개',
-    onClick: () => router.push('/'),
-  },
-  {
-    icon: quizIcon,
-    title: '퀴즈 풀러가기',
-    desc: '투자 개념 학습',
-    onClick: () => router.push('/'),
+    onClick: () => router.push('/home'),
   },
   {
     icon: suggestionIcon,
     title: '추천 받아보기',
     desc: 'AI 종목 추천',
-    onClick: () => router.push('/'),
+    onClick: openRecommendChat,
   },
+  {
+    icon: analyzeIcon,
+    title: '기업 분석하기',
+    desc: 'AI 기업 분석',
+    onClick: openAnalyzeChat,
+  },
+  {
+    icon: dictionaryIcon,
+    title: '용어 질문하기',
+    desc: 'AI 용어 학습',
+    onClick: openDictionaryChat,
+  },
+  {
+    icon: quizIcon,
+    title: '퀴즈 풀러가기',
+    desc: '투자 개념 학습',
+    onClick: () => router.push('/learning'),
+  },
+
   {
     icon: noteIcon,
     title: '일지 작성하기',
     desc: '투자 일지 작성',
-    onClick: () => router.push('/'),
+    onClick: () => router.push('/journal'),
   },
 ]
 
