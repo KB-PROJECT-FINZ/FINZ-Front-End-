@@ -6,25 +6,13 @@
       @mousedown="startDrag"
       @touchstart="startDrag"
       @click="goToChatbot"
-      class="chatbot-button bg-blue-50 fixed text-white px-2 py-2 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300"
+      class="chatbot-button bg-blue-50 fixed text-white px-1 py-1 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300"
       :style="{
         left: position.x + 'px',
         top: position.y + 'px',
       }"
-    <img src="@/assets/chatbot2.png" alt="챗봇" class="w-12 h-12" />
-  </button>
-  <nav
-    class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-200 flex justify-around py-2 z-50"
-  >
-    <router-link
-      v-for="item in navItems"
-      :key="item.name"
-      :to="item.to"
-      class="flex flex-col items-center text-xs w-full"
-      :class="isActive(item.to) ? 'font-bold' : 'font-bold'"
-      :style="isActive(item.to) ? 'color: #0063f7' : 'color: black'"
     >
-      <img src="@/assets/finz-robot.png" alt="챗봇" class="w-12 h-12" />
+      <img src="@/assets/Chatbot3.png" alt="챗봇" class="w-12 h-12" />
     </button>
 
     <!-- 하단 네비게이션 -->
@@ -36,7 +24,7 @@
         :key="item.name"
         :to="item.to"
         class="flex flex-col items-center text-xs w-full"
-        :class="isActive(item.to) ? 'font-normal' : 'font-normal'"
+        :class="isActive(item.to) ? 'font-bold' : 'font-normal'"
         :style="isActive(item.to) ? 'color: #0063f7' : 'color: black'"
       >
         <!-- 아이콘 렌더링 분기 -->
