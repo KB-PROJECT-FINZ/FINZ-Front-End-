@@ -14,34 +14,6 @@
             />
           </svg>
         </button>
-
-        <!-- 빈 공간 (중앙 여백) -->
-        <div></div>
-
-        <!-- 오른쪽 버튼들 -->
-        <div class="flex items-center gap-2">
-          <!-- 관심종목 하트 버튼 -->
-          <button
-            @click="toggleFavorite"
-            class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            :class="isFavorite ? 'text-red-500' : 'text-[#b5bdc7]'"
-          >
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-              />
-            </svg>
-          </button>
-
-          <!-- 더보기 메뉴 버튼 -->
-          <button @click="toggleMenu" class="p-2 hover:bg-gray-100 rounded-lg text-[#b5bdc7]">
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
-              />
-            </svg>
-          </button>
-        </div>
       </div>
     </header>
 
@@ -358,34 +330,10 @@
         </div>
       </div>
     </div>
-
-    <!-- 더보기 메뉴 모달 -->
-    <div
-      v-if="showMenu"
-      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end"
-      @click="showMenu = false"
-    >
-      <div class="bg-white w-full rounded-t-2xl p-4" @click.stop>
-        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
-        <div class="space-y-4">
-          <button class="w-full text-left p-3 hover:bg-gray-100 rounded-lg">
-            <span class="text-gray-900">차트 설정</span>
-          </button>
-          <button class="w-full text-left p-3 hover:bg-gray-100 rounded-lg">
-            <span class="text-gray-900">알림 설정</span>
-          </button>
-          <button class="w-full text-left p-3 hover:bg-gray-100 rounded-lg">
-            <span class="text-gray-900">공유하기</span>
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
-console.log('=== ChartPage 스크립트 시작 ===')
-
 // 콘솔 에러/경고/미처리 예외 완전 무시 (이 페이지 한정)
 if (typeof window !== 'undefined') {
   // console.warn = () => {}
@@ -398,9 +346,11 @@ import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Chart, registerables } from 'chart.js'
 import { CandlestickController, CandlestickElement } from 'chartjs-chart-financial'
+import { fetchStockChartData, fetchVariousChartData } from '@/services/stockChartService'
 import zoomPlugin from 'chartjs-plugin-zoom'
 import crosshairPlugin from 'chartjs-plugin-crosshair'
 import 'chartjs-adapter-date-fns'
+import axios from 'axios'
 
 // --- 분봉 모달 드래그 다운 슬라이드 닫기 로직 ---
 import { onBeforeUnmount } from 'vue'
@@ -471,8 +421,6 @@ const currentEndTime = ref(null) // 현재 차트 오른쪽 끝 시간
 const autoRefreshInterval = ref(null) // 자동 새로고침 인터벌
 
 // 반응형 데이터
-const isFavorite = ref(false)
-const showMenu = ref(false)
 const showMinutesModal = ref(false)
 const selectedTimeFrame = ref('1min')
 
@@ -488,18 +436,60 @@ const stockInfo = reactive({
 })
 
 // 사용자 보유 정보 (실제로는 API에서 가져올 데이터)
-const userHoldings = reactive({
-  '005930': {
-    // 삼성전자 보유
-    quantity: 1,
-    averagePrice: 0, // 평균 매입가
-  },
-  // 다른 종목들...
+const userHoldings = ref({
+  accountId: 0,
+  avgPrice: 0,
+  quantity: 0,
 })
+
+// 사용자 보유 종목에서 현재 종목 정보 가져오기
+const loadHoldings = async () => {
+  try {
+    const response = await axios.get('/api/mocktrading/holdings')
+
+    if (response.data && Array.isArray(response.data)) {
+      // 현재 종목코드와 일치하는 보유 종목 찾기
+      const currentStockHolding = response.data.find(
+        (holding) => holding.stockCode === stockInfo.stockCode,
+      )
+      // console.log('보유 종목 정보:', currentStockHolding)
+
+      if (currentStockHolding) {
+        // 해당 종목을 보유하고 있는 경우
+        userHoldings.value = {
+          ...userHoldings.value, // 기존 값 유지
+          accountId: currentStockHolding.accountId,
+          avgPrice: currentStockHolding.averagePrice,
+          quantity: currentStockHolding.quantity,
+        }
+      } else {
+        // 해당 종목을 보유하지 않은 경우
+        userHoldings.value = {
+          ...userHoldings.value, // 기존 값 유지
+          avgPrice: 0,
+          quantity: 0,
+        }
+        console.log('현재 종목을 보유하지 않음:', stockInfo.stockCode)
+      }
+    }
+  } catch (error) {
+    console.error('보유 종목 정보 로드 실패:', error)
+    if (error.response?.status === 401) {
+      alert('로그인이 필요합니다.')
+      router.push('/login-form')
+    }
+    // 오류 발생 시 기본값 설정
+    userHoldings.value = {
+      ...userHoldings.value,
+      avgPrice: 0,
+      quantity: 0,
+    }
+  }
+}
 
 // 현재 종목 보유 여부
 const hasStock = computed(() => {
-  return userHoldings[stockInfo.stockCode] && userHoldings[stockInfo.stockCode].quantity > 0
+  return userHoldings.value.quantity > 0
 })
 
 // 분봉 옵션들
@@ -537,177 +527,54 @@ const realTimeChangeText = computed(() => {
   return `${sign}${formatPrice(Math.abs(stockInfo.changeAmount))}원 (${sign}${Math.abs(stockInfo.changeRate)}%)`
 })
 
-// 오늘 날짜를 YYYYMMDD 형식으로 반환
-const getTodayDate = () => {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}${month}${day}`
-}
-
 // 메서드들
 const goBack = () => {
-  router.push('/mock-trading')
-}
-
-// 분봉 차트 데이터 조회 (기존)
-const fetchStockChartData = async (stockCode) => {
-  try {
-    const url = `/api/chart/minute/${stockCode}/fullday`
-    console.log(`[API 요청] ${stockCode} fullday 차트 데이터 조회 시작`)
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`[API 오류] ${response.status} ${response.statusText}:`, errorText)
-      throw new Error(`백엔드 API 호출 실패: ${response.status} ${response.statusText}`)
-    }
-
-    const result = await response.json()
-
-    if (result.rt_cd && result.rt_cd !== '0') {
-      console.error('[API 오류] 응답 오류:', result.msg1)
-      throw new Error(`API 오류: ${result.msg1 || 'Unknown error'}`)
-    }
-
-    if (!result.output2 || !Array.isArray(result.output2)) {
-      console.error('[API 오류] 차트 데이터가 없습니다')
-      throw new Error(`API 오류: 차트 데이터가 없습니다`)
-    }
-
-    console.log(`[API 성공] ${result.output2.length}개 데이터 수신`)
-    return result
-  } catch (error) {
-    console.error('[API 오류] 주식 차트 데이터 조회 실패:', error.message)
-    throw error
+  const from = router.options.history.state.back
+  if (from && from.endsWith('/home')) {
+    router.push('/home')
+  } else {
+    router.push('/mock-trading')
   }
 }
 
-// 일/주/월/년봉 차트 데이터 조회 (신규)
-const fetchVariousChartData = async (stockCode, periodCode) => {
-  try {
-    const startDate = '20150101' // 2015년 1월 1일부터 최대 가능한 갯수 호출
-    const endDate = getTodayDate() // 오늘까지
-
-    const url = `/api/chart/various/${stockCode}`
-    const params = new URLSearchParams({
-      periodCode,
-      startDate,
-      endDate,
-    })
-
-    console.log(`[API 요청] ${stockCode} ${periodCode}봉 차트 데이터 조회 시작`)
-    console.log(`[요청 파라미터] startDate: ${startDate}, endDate: ${endDate}`)
-
-    const response = await fetch(`${url}?${params}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`[API 오류] ${response.status} ${response.statusText}:`, errorText)
-      throw new Error(`백엔드 API 호출 실패: ${response.status} ${response.statusText}`)
-    }
-
-    const result = await response.json()
-
-    if (result.rt_cd && result.rt_cd !== '0') {
-      console.error('[API 오류] 응답 오류:', result.msg1)
-      throw new Error(`API 오류: ${result.msg1 || 'Unknown error'}`)
-    }
-
-    if (!result.output2 || !Array.isArray(result.output2)) {
-      console.error('[API 오류] 차트 데이터가 없습니다')
-      throw new Error(`API 오류: 차트 데이터가 없습니다`)
-    }
-
-    console.log(`[API 성공] ${result.output2.length}개 ${periodCode}봉 데이터 수신`)
-    return result
-  } catch (error) {
-    console.error(`[API 오류] ${periodCode}봉 차트 데이터 조회 실패:`, error.message)
-    throw error
-  }
-}
-
-// 1분봉 데이터를 Chart.js 형식으로 변환
 function convertApiDataTo1MinChartData(apiResponse) {
-  const chartDataArray = apiResponse.output2 || apiResponse.data || []
-  if (!chartDataArray || !Array.isArray(chartDataArray)) {
+  // 구조 변경 대응: { date, data } 형태
+  const chartDataArray = Array.isArray(apiResponse)
+    ? apiResponse
+    : apiResponse?.data || apiResponse?.stk_min_pole_chart_qry || []
+  if (!Array.isArray(chartDataArray) || chartDataArray.length === 0) {
     console.warn('[데이터 변환] API 응답에 차트 데이터가 없습니다')
     return []
   }
 
-  // 15:20~15:29 데이터 제외, 15:19 이전 모든 데이터와 마지막 15:30 데이터만 남김
-  let filteredData = chartDataArray.filter((item) => {
-    const time = item.stck_cntg_hour
-    if (time >= '152000' && time < '153000') {
-      return false
+  // date 값도 구조에 맞게 가져오기
+  const dateStr = apiResponse?.date // "YYYYMMDD" 형태
+
+  const converted = chartDataArray.map((item, idx) => {
+    // 시간 문자열 조합 (API 응답의 date + stck_cntg_hour)
+    const timeStr = dateStr + item.stck_cntg_hour // "YYYYMMDDHHMMSS"
+    const year = parseInt(timeStr.substr(0, 4))
+    const month = parseInt(timeStr.substr(4, 2)) - 1
+    const day = parseInt(timeStr.substr(6, 2))
+    const hour = parseInt(timeStr.substr(8, 2))
+    const minute = parseInt(timeStr.substr(10, 2))
+    const second = parseInt(timeStr.substr(12, 2))
+    const dateTime = new Date(year, month, day, hour, minute, second)
+
+    return {
+      x: idx,
+      dateTime: dateTime.getTime(),
+      dateString: timeStr,
+      o: parseInt(item.stck_oprc),
+      h: parseInt(item.stck_hgpr),
+      l: parseInt(item.stck_lwpr),
+      c: parseInt(item.stck_prpr),
+      volume: parseInt(item.cntg_vol),
     }
-    return true
   })
 
-  const before1519 = filteredData.filter((item) => item.stck_cntg_hour <= '151900')
-  const idx1530 = filteredData.findLastIndex((item) => item.stck_cntg_hour === '153000')
-  let last1530 = []
-  if (idx1530 !== -1) {
-    const last1519 = before1519[before1519.length - 1]
-    if (last1519) {
-      const fake1530 = { ...filteredData[idx1530] }
-      fake1530.stck_cntg_hour = '152000'
-      last1530 = [fake1530]
-    } else {
-      last1530 = [filteredData[idx1530]]
-    }
-  }
-  filteredData = [...before1519, ...last1530]
-
-  // 오늘 오전 9시 이전 데이터는 모두 제외
-  const now = new Date()
-  const today9am = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0, 0).getTime()
-
-  const convertedData = filteredData
-    .map((item, index) => {
-      try {
-        const date = item.stck_bsop_date
-        const time = item.stck_cntg_hour
-        const year = parseInt(date.substr(0, 4))
-        const month = parseInt(date.substr(4, 2)) - 1
-        const day = parseInt(date.substr(6, 2))
-        const hour = parseInt(time.substr(0, 2))
-        const minute = parseInt(time.substr(2, 2))
-        const second = parseInt(time.substr(4, 2))
-        const dateTime = new Date(year, month, day, hour, minute, second)
-
-        return {
-          x: index, // 인덱스 기반으로 변경
-          dateTime: dateTime.getTime(), // 실제 시간은 별도 저장
-          dateString: `${date}${time}`,
-          o: parseInt(item.stck_oprc),
-          h: parseInt(item.stck_hgpr),
-          l: parseInt(item.stck_lwpr),
-          c: parseInt(item.stck_prpr),
-          volume: parseInt(item.cntg_vol || item.acml_vol || 0),
-        }
-      } catch (error) {
-        console.error(`[데이터 변환] 항목 ${index} 변환 실패:`, error.message)
-        return null
-      }
-    })
-    .filter((item) => item !== null && item.dateTime >= today9am)
-    // 인덱스 재할당 (필터 후)
-    .map((item, idx) => ({ ...item, x: idx }))
-
-  return convertedData
+  converted.sort((a, b) => a.dateTime - b.dateTime)
+  return converted.map((item, idx) => ({ ...item, x: idx }))
 }
 
 // 일/주/월/년봉 데이터를 Chart.js 형식으로 변환
@@ -805,6 +672,7 @@ let cachedStockCode = ''
 // 차트 데이터를 가져오는 함수 (API 데이터 캐싱)
 const generateCandlestickData = async () => {
   isChartLoading.value = true
+
   try {
     let apiResponse
 
@@ -823,6 +691,7 @@ const generateCandlestickData = async () => {
       // 분봉 데이터
       if (!cachedMinuteApiResponse) {
         apiResponse = await fetchStockChartData(stockInfo.stockCode)
+
         cachedMinuteApiResponse = apiResponse
       } else {
         apiResponse = cachedMinuteApiResponse
@@ -1321,15 +1190,6 @@ const updateChart = async () => {
   }
 }
 
-const toggleFavorite = () => {
-  isFavorite.value = !isFavorite.value
-  console.log('관심종목 상태:', isFavorite.value ? '추가됨' : '제거됨')
-}
-
-const toggleMenu = () => {
-  showMenu.value = !showMenu.value
-}
-
 const formatPrice = (price) => {
   return new Intl.NumberFormat('ko-KR').format(price)
 }
@@ -1362,13 +1222,15 @@ onMounted(() => {
   stockInfo.stockCode = route.params.stockCode || ''
   stockInfo.name = route.query.stockName || ''
 
+  loadHoldings()
+
   // 상단 가격/변동 정보는 mock price API에서만 세팅
   const setMockPriceInfo = async () => {
     try {
       const mockPriceUrl = `/api/stock/price/${stockInfo.stockCode}`
       const mockPriceRes = await fetch(mockPriceUrl, { method: 'GET' })
       const mockPriceRaw = await mockPriceRes.json()
-      console.log('[RAW MOCK PRICE]', mockPriceRaw)
+      // console.log('[RAW MOCK PRICE]', mockPriceRaw)
       if (mockPriceRaw && typeof mockPriceRaw === 'object' && mockPriceRaw.output) {
         stockInfo.currentPrice = Number(mockPriceRaw.output.stck_prpr) || 0
         stockInfo.changeAmount = Number(mockPriceRaw.output.prdy_vrss) || 0

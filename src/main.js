@@ -6,6 +6,9 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 
+import 'swiper/css'
+import 'swiper/css/pagination'
+
 const app = createApp(App)
 
 app.use(createPinia())
@@ -18,4 +21,3 @@ import axios from 'axios'
 
 axios.defaults.headers.post['Content-Type'] = 'application/json'
 axios.defaults.withCredentials = true
-axios.defaults.baseURL = 'http://localhost:8080'

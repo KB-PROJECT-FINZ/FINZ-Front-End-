@@ -11,6 +11,9 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@lottiefiles/dotlottie-vue": "^0.8.1",
+    "@lottiefiles/dotlottie-web": "^0.50.0",
+    "@lottiefiles/vue-lottie-player": "^1.1.0",
     "axios": "^1.10.0",
     "chart.js": "^4.5.0",
     "chartjs-adapter-date-fns": "^3.0.0",
@@ -18,12 +21,15 @@
     "chartjs-plugin-crosshair": "^2.0.0",
     "chartjs-plugin-zoom": "^2.2.0",
     "date-fns": "^4.1.0",
+    "marked": "^16.1.2",
     "modern-css-reset": "^1.4.0",
     "pinia": "^3.0.1",
+    "swiper": "^11.2.10",
     "v-calendar": "^3.1.2",
     "vant": "^4.9.21",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
+    "vue3-lottie": "^3.3.1",
     "yarn": "^1.22.22"
   },
   "devDependencies": {

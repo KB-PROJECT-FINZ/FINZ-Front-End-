@@ -24,20 +24,24 @@ export async function fetchLearningContentsByGroup(groupCode) {
 }
 
 export async function giveCredit(userId, quizId, selectedAnswer) {
+  console.log('giveCredit 함수 호출:', { userId, quizId, selectedAnswer })
   const response = await axios.post('/api/learning/quiz/credit', null, {
-    params: { userId, quizId, selectedAnswer }
-  });
-  return response.data;
+    withCredentials: true,
+    params: { userId, quizId, selectedAnswer },
+  })
+  console.log('giveCredit 응답:', response.data)
+  return response.data
 }
 
-export async function getUserCredit(userId) {
-  const response = await axios.get(`/api/learning/user/credit/${userId}`);
-  return response.data;
+export async function getUserCredit() {
+  const response = await axios.get(`/api/learning/user/credit`, { withCredentials: true })
+  return response.data
 }
 
-export async function checkQuiz(userId, quizId) {
+export async function checkQuiz(quizId) {
   const response = await axios.get('/api/learning/quiz/result', {
-    params: { userId, quizId }
-  });
-  return response.data;
+    withCredentials: true,
+    params: { quizId },
+  })
+  return response.data
 }

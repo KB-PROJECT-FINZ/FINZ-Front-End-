@@ -2,8 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../pages/HomePage.vue'
 import LoginPage from '@/pages/LoginPages/LoginPage.vue'
 import ProfilePage from '@/pages//ProfilePages/ProfilePage.vue'
+import CustomContentsPage from '@/pages/ProfilePages/CustomContentsPage.vue'
 import JournalPage from '@/pages/ProfilePages//JournalPage.vue'
-import JournalWritePage from '@/pages//ProfilePages/JournalWritePage.vue'
 import FeedbackPage from '@/pages/ProfilePages/FeedbackPage.vue'
 import LoginFormPage from '@/pages/LoginPages/LoginFormPage.vue'
 import SignupFormPage from '@/pages/LoginPages/SignupFormPage.vue'
@@ -12,7 +12,7 @@ import RankingPage from '@/pages/RankingPages/RankingPage.vue'
 import StockAnalysisPage from '@/pages/RankingPages/StockAnalysisPage.vue'
 import FeedbackListPage from '@/pages/ProfilePages/FeedbackListPage.vue'
 import ChatBotPage from '@/pages/ChatBotPage/ChatBotPage.vue'
-
+import recomend from '@/pages/InvestmentTestPage/recommend.vue'
 import InvestmentTestPage from '@/pages/InvestmentTestPage/InvestMentTestPage.vue'
 import LearningDetailPage from '@/pages/Learning/LearningDetailPage.vue'
 import LearningQuizPage from '@/pages/Learning/LearningQuizPage.vue'
@@ -25,8 +25,16 @@ import TradingPage from '@/pages/mockTrading/TradingPage.vue'
 import { useUserStore } from '@/stores/user'
 import MockTradingHome from '@/pages/mockTrading/MockTradingHome.vue'
 import AssetStatus from '@/pages/mockTrading/AssetStatus.vue'
-import Holdings from '@/pages/mockTrading/Holdings.vue'
-import Transactions from '@/pages/mockTrading/Transactions.vue'
+import PendingOrdersPage from '@/pages/mockTrading/PendingOrdersPage.vue'
+import HoldingsPage from '@/pages/mockTrading/HoldingsPage.vue'
+import TransactionsPage from '@/pages/mockTrading/TransactionsPage.vue'
+import RiskProfile from '@/pages/ProfilePages/RiskProfile.vue'
+import RiskTypesList from '@/pages/ProfilePages/RiskTypesList.vue'
+import KakaoSignupPage from '@/pages/LoginPages/KakaoSignupPage.vue'
+import ProtfolioAnalysis from '@/pages/mockTrading/ProtfolioAnalysis.vue'
+import DailyQuizePage from '@/pages/Learning/DailyQuizePage.vue'
+import LearningStart from '@/components/LearningStart.vue'
+import LearningEnd from '@/components/LearningEnd.vue'
 const routes = [
   {
     path: '/',
@@ -78,11 +86,6 @@ const routes = [
     path: '/journal',
     name: 'journal',
     component: JournalPage,
-  },
-  {
-    path: '/journalwrite',
-    name: 'journalwrite',
-    component: JournalWritePage,
   },
   {
     path: '/feedback',
@@ -148,24 +151,73 @@ const routes = [
     path: '/mock-trading/:stockCode/chart',
     name: 'ChartPage',
     component: () => import('@/pages/mockTrading/ChartPage.vue'),
-    props: true, // route params를 props로 전달
+    props: true,
   },
-  // 새로 추가할 자산 현황 경로
   {
     path: '/mock-trading/asset-status',
     name: 'AssetStatus',
     component: AssetStatus,
-    //meta: { requiresAuth: true } // 로그인 필요
+  },
+  {
+    path: '/mock-trading/pending-orders',
+    name: 'PendingOrders',
+    component: PendingOrdersPage,
   },
   {
     path: '/mock-trading/holdings',
     name: 'Holdings',
-    component: Holdings,
+    component: HoldingsPage,
   },
   {
     path: '/mock-trading/transactions',
     name: 'Transactions',
-    component: Transactions,
+    component: TransactionsPage,
+  },
+  {
+    path: '/kakao-signup',
+    name: 'KakaoSignupPage',
+    component: KakaoSignupPage,
+  },
+  {
+    path: '/kakaologin',
+    name: 'KakaoLogin',
+    component: () => import('@/pages/LoginPages/KakaoLogin.vue'),
+  },
+  {
+    path: '/recommend',
+    name: 'Recommend',
+    component: recomend,
+  },
+  {
+    path: '/risk-profile',
+    name: 'RiskProfile',
+    component: RiskProfile,
+  },
+  { path: '/risk-types-list', name: 'RiskTypesList', component: RiskTypesList },
+  {
+    path: '/mock-trading/ai-report',
+    name: 'AiReport',
+    component: ProtfolioAnalysis,
+  },
+  {
+    path: '/daily-quiz',
+    name: 'DailyQuizPage',
+    component: DailyQuizePage,
+  },
+  {
+    path: '/profile/custom-contents',
+    name: 'CustomContentsPage',
+    component: CustomContentsPage,
+  },
+  {
+    path: '/learning-start',
+    name: 'LearningStart',
+    component: LearningStart,
+  },
+  {
+    path: '/learning-end',
+    name: 'LearningEnd',
+    component: LearningEnd,
   },
 ]
 

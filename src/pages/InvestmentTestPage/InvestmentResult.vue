@@ -1,7 +1,58 @@
+<template>
+  <div class="min-h-screen flex flex-col justify-center items-center bg-white px-6" v-if="result">
+    <!-- 결과 카드 -->
+    <div class="w-full max-w-md bg-white rounded-2xl text-center">
+      <div class="flex justify-center mb-4">
+        <img src="@/assets/finz.png" alt="finz" class="w-16" />
+      </div>
+
+      <h2 class="text-2xl font-bold text-[#2165C2] mb-1">테스트 완료!</h2>
+      <p class="text-gray-500 mb-6">당신의 투자 성향을 분석했어요</p>
+
+      <div class="bg-[#F0F6FF] rounded-xl py-5 px-4 mb-6 border border-[#D6E4FF]">
+        <h3 class="text-lg font-semibold text-[#2165C2] mb-1">{{ result.title }}</h3>
+        <p class="text-sm text-gray-700 mb-4">{{ result.description }}</p>
+        <div class="flex justify-center gap-6 text-sm text-gray-600">
+          <div>
+            안정성 <span class="font-bold text-black">{{ result.stability }}</span>
+          </div>
+          <div>
+            적극성 <span class="font-bold text-black">{{ result.aggressiveness }}</span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        class="bg-[#2165C2] text-white py-2 px-4 rounded-xl w-full font-semibold mb-3 hover:bg-[#1A4F99] transition"
+        @click="showOnboarding = true"
+      >
+        로그인
+      </button>
+      <button
+        class="bg-gray-100 text-gray-600 py-2 px-4 rounded-xl w-full font-semibold mb-6 hover:bg-gray-200 transition"
+        @click="() => $router.push('/investment-test')"
+      >
+        테스트 다시하기
+      </button>
+
+      <div
+        class="bg-[#FFFBEA] text-left p-4 rounded-lg border border-[#FFE58F] text-sm text-gray-800"
+      >
+        <p class="font-semibold mb-1">💡 투자 팁</p>
+        <p>{{ result.tip }}</p>
+      </div>
+    </div>
+
+    <!-- 온보딩 가이드 -->
+    <OnboardingGuide :showOnboarding="showOnboarding" @close="handleOnboardingComplete" />
+  </div>
+</template>
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRoute, useRouter } from 'vue-router'
+import OnboardingGuide from '@/components/OnboardingGuide.vue'
 
 const route = useRoute()
 const typeCode = route.query.type || 'UNKNOWN'
@@ -9,6 +60,7 @@ const router = useRouter()
 const name = ref('')
 const username = ref('')
 const result = ref(null) // 동적으로 결과 업데이트용
+const showOnboarding = ref(false) // 온보딩 표시 상태
 
 // 투자 성향 저장
 const saveRiskType = async () => {
@@ -28,8 +80,6 @@ const saveRiskType = async () => {
         withCredentials: true,
       },
     )
-    console.log('✅ 투자 성향 저장 완료')
-    alert('🎉 투자 성향이 저장되었습니다!')
   } catch (err) {
     console.error('❌ 저장 실패:', err)
   }
@@ -58,6 +108,12 @@ onMounted(async () => {
     router.push('/login-form')
   }
 })
+
+// 온보딩 완료 후 로그인 페이지로 이동
+const handleOnboardingComplete = () => {
+  showOnboarding.value = false
+  router.push('/login-form')
+}
 
 const resultMap = {
   CSD: {
@@ -139,51 +195,3 @@ const resultMap = {
   },
 }
 </script>
-
-<template>
-  <div class="max-w-md mx-auto bg-white px-6 py-8 shadow-xl rounded-2xl text-center" v-if="result">
-    <div class="text-left text-xl font-bold text-[#333] mb-4">
-      <img src="@/assets/finz.png" alt="finz" class="w-16 mb-2" />
-    </div>
-
-    <h2 class="text-2xl font-bold text-gray-800 mb-1">테스트 완료!</h2>
-    <p class="text-gray-600 mb-6">당신의 투자 성향을 분석했어요</p>
-
-    <div class="bg-green-50 rounded-xl py-5 px-4 mb-6 border border-green-200">
-      <h3 class="text-lg font-semibold text-green-800 mb-1">{{ result.title }}</h3>
-      <p class="text-sm text-gray-700 mb-4">{{ result.description }}</p>
-      <div class="flex justify-center gap-6 text-sm text-gray-600">
-        <div>
-          안정성 <span class="font-bold text-black">{{ result.stability }}</span>
-        </div>
-        <div>
-          적극성 <span class="font-bold text-black">{{ result.aggressiveness }}</span>
-        </div>
-      </div>
-    </div>
-
-    <button
-      class="bg-green-500 text-white py-2 px-4 rounded-full w-full font-semibold mb-3 hover:bg-green-600"
-      @click="() => $router.push('/login-form')"
-    >
-      로그인
-    </button>
-    <button
-      class="bg-gray-100 text-gray-600 py-2 px-4 rounded-full w-full font-semibold mb-6 hover:bg-gray-300"
-      @click="() => $router.push('/investment-test')"
-    >
-      테스트 다시하기
-    </button>
-
-    <div
-      class="bg-yellow-50 text-left p-4 rounded-lg border border-yellow-200 text-sm text-gray-800"
-    >
-      <p class="font-semibold mb-1">💡 투자 팁</p>
-      <p>{{ result.tip }}</p>
-    </div>
-  </div>
-</template>
-
-<style scoped>
-/* /public 에 celebrate.png 혹은 finz.png 가 있어야 정상 표시됨 */
-</style>

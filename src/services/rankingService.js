@@ -1,110 +1,159 @@
 import axios from 'axios'
+import { useAssetDataStore } from '@/services/useAssetData'
 axios.defaults.withCredentials = true
 
-function mapRiskTypeToTrait(riskType) {
-  const map = {
-    AGR: '적극적 성장형',
-    AID: '적극적 안정형',
-    BGT: '균형 잡힌 도전형',
-    BSS: '균형 잡힌 수익 추구형',
-    CAG: '신중한 성장형',
-    CSD: '신중한 안정형',
-    DTA: '단타 추구형',
-    EXP: '실험적 모험가형',
-    IND: '인덱스 수동형',
-    INF: '정보 수집형',
-    SOC: '사회 책임형',
-    SYS: '시스템 트레이더형',
-    TEC: '기술적 분석형',
-    THE: '테마 투자형',
-    VAL: '가치 투자형',
-  }
-  return map[riskType] || '미지정'
+/* ====== 날짜 유틸 (KST 안전) ====== */
+// ISO 자를 때 UTC로 전날로 밀리는 걸 방지하려고 '정오'로 고정
+function toISODateLocal(d) {
+  const x = new Date(d)
+  x.setHours(12, 0, 0, 0)
+  return x.toISOString().slice(0, 10)
 }
 
-// 내 랭킹 조회 (userId 쿼리 제거, baseDate만 전달)
-export async function fetchMyRanking(baseDate) {
-  try {
-    const res = await axios.get('/api/ranking/my', { params: { baseDate } })
-    const data = res.data
+// 지난주 '일요일' (주차: 일~토)
+function getLastSundayISO(base = new Date()) {
+  const d = new Date(base)
+  const day = d.getDay() // 0=일, 1=월,... 6=토
+  d.setDate(d.getDate() - day - 7) // 이번 주 일요일에서 1주 전
+  return toISODateLocal(d)
+}
 
+/* ====== 주차 라벨: baseDate(일) ~ (토) ====== */
+export function getRankingWeekLabel(baseDateString) {
+  const start = new Date(baseDateString) // 일요일
+  start.setHours(12, 0, 0, 0)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 6) // 토요일
+
+  const sm = start.getMonth() + 1
+  const sd = String(start.getDate()).padStart(2, '0')
+  const em = end.getMonth() + 1
+  const ed = String(end.getDate()).padStart(2, '0')
+
+  return `${sm}월 ${sd}일 ~ ${em}월 ${ed}일`
+}
+
+/* ====== 매핑/정규화 ====== */
+const mapStock = (stock) => ({
+  name: stock.stockName,
+  gain: stock.avgGainRate,
+  image: stock.stockCode
+    ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
+    : '/images/stocks/default.png',
+})
+
+const ALLOWED_GROUPS = ['AGGRESSIVE', 'BALANCED', 'CONSERVATIVE', 'ANALYTICAL', 'EMOTIONAL']
+
+function normalizeTraitGroup(user) {
+  const key = (user.traitGroup || user.trait || user.groupCode || user.riskType || '')
+    .toString()
+    .toUpperCase()
+  return ALLOWED_GROUPS.includes(key) ? key : ''
+}
+
+function normalizeProfileImage(v) {
+  if (v === null || v === undefined || v === 'null' || v === 'undefined') return null
+  const n = typeof v === 'string' ? parseInt(v, 10) : v
+  if (Number.isNaN(n) || n < 1 || n > 7) return null
+  return n
+}
+
+const mapUser = (user) => ({
+  userId: user.userId ?? user.id ?? null,
+  nickname: user.nickname || 'N/A',
+  gainRate: user.gainRate,
+  ranking: user.ranking ?? null,
+  trait: normalizeTraitGroup(user), // 영문 그룹코드
+  originalTrait: user.originalTrait ?? null, // 세부 코드 (AGR/TEC…)
+  profileImage: normalizeProfileImage(user.profileImage), // 1~7 또는 null
+})
+
+/* ====== API ====== */
+export async function fetchMyRanking(userId, baseDate) {
+  // ✅ 기본값을 "지난주 일요일"로 변경
+  const fallbackBaseDate = baseDate ?? getLastSundayISO()
+  try {
+    const { data } = await axios.get('/api/ranking/my', {
+      params: { userId, baseDate: fallbackBaseDate },
+    })
     return {
       rank: data.ranking,
       gainRate: data.gainRate,
       topPercent: data.topPercent,
-      trait: mapRiskTypeToTrait(data.riskType),
+      trait: data.riskType, // 영문 그룹코드
+      originalTrait: data.originalTrait, // 세부 코드
+      baseDate: data.baseDate ?? fallbackBaseDate, // 서버가 에코 안 해도 안전
     }
-  } catch (error) {
-    console.error('fetchMyRanking error:', error)
+  } catch {
     return null
   }
 }
 
-// 인기 종목 Top5 조회 (baseDate 유지, 필요하면 백엔드 맞게 조정)
-export async function fetchTop5Stocks(baseDate) {
+export async function fetchTop10Stocks(baseDate) {
   try {
-    const res = await axios.get('/api/ranking/popular-stocks', {
-      params: { baseDate },
-    })
-
-    return res.data.map((stock) => ({
-      name: stock.stockName,
-      gain: stock.avgGainRate,
-      image: stock.stockCode
-        ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
-        : '/images/stocks/default.png',
-    }))
-  } catch (error) {
-    console.error('fetchTop5Stocks error:', error)
+    const { data } = await axios.get('/api/ranking/popular-stocks', { params: { baseDate } })
+    return (data || []).map(mapStock)
+  } catch {
     return []
   }
 }
 
-// 주간 전체 랭킹 조회 (baseDate 제거, API가 쿼리 없이 작동 시)
-export async function fetchWeeklyRanking() {
+export async function fetchWeeklyRanking(baseDate) {
   try {
-    const res = await axios.get('/api/ranking/weekly')
-    if (!Array.isArray(res.data)) {
-      console.error('Weekly ranking 응답이 배열이 아닙니다:', res.data)
-      return []
-    }
-
-    return res.data.map((user) => ({
-      userId: user.userId,
-      nickname: user.name,
-      gainRate: user.gainRate,
-      trait: user.traitGroup || '기타',
-      originalTrait: user.originalTrait || 'N/A',
-      image: `/images/profile${(user.userId % 5) + 1}.png`,
-    }))
-  } catch (error) {
-    console.error('fetchWeeklyRanking error:', error)
+    const { data } = await axios.get('/api/ranking/weekly', { params: { baseDate } })
+    return Array.isArray(data) ? data.map(mapUser) : []
+  } catch {
     return []
   }
 }
 
-// 성향 그룹별 랭킹 조회 (baseDate 제거)
-export async function fetchGroupedWeeklyRanking() {
+export async function fetchGroupedWeeklyRanking(baseDate) {
   try {
-    const res = await axios.get('/api/ranking/weekly/grouped')
-
-    const rawGrouped = res.data
-    const transformed = {}
-
-    for (const group in rawGrouped) {
-      transformed[group] = rawGrouped[group].map((user) => ({
-        userId: user.userId,
-        nickname: user.name,
-        gainRate: user.gainRate,
-        trait: group,
-        originalTrait: user.originalTrait || 'N/A',
-        image: `/images/profile${(user.userId % 5) + 1}.png`,
-      }))
+    const { data } = await axios.get('/api/ranking/weekly/grouped', { params: { baseDate } })
+    const parsed = {}
+    for (const [groupKey, users] of Object.entries(data || {})) {
+      parsed[groupKey] = (users || []).map(mapUser)
     }
-
-    return transformed
-  } catch (error) {
-    console.error('fetchGroupedWeeklyRanking error:', error)
+    return parsed
+  } catch {
     return {}
+  }
+}
+
+// 실시간 Top10 (baseDate 없이)
+export async function fetchTop10StocksRealtime() {
+  try {
+    const { data } = await axios.get('/api/ranking/popular-stocks')
+    return (data || []).map(mapStock)
+  } catch {
+    return []
+  }
+}
+
+export async function fetchMyRealTimeStockDistribution() {
+  try {
+    const assetStore = useAssetDataStore()
+    await assetStore.loadUserData()
+    if (!assetStore.holdingsData.value?.length) return []
+    return assetStore.holdingsData.value.map((h) => {
+      const q = h.quantity ?? 0
+      const avg = h.averagePrice ?? 0
+      const cur = h.currentPrice ?? 0
+      const curVal = q * cur
+      const total = q * avg
+      const pnl = curVal - total
+      const rate = total ? (pnl / total) * 100 : 0
+      return {
+        stockCode: h.stockCode,
+        stockName: h.stockName,
+        gainRate: rate,
+        positionIndex: h.positionIndex ?? 0,
+        positionLabel: h.positionLabel || '',
+        distributionBins: h.distributionBins || [0, 0, 0, 0, 0, 0],
+        color: h.color || '#3b82f6',
+      }
+    })
+  } catch {
+    return []
   }
 }

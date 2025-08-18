@@ -42,15 +42,7 @@
         </div>
 
         <!-- 오른쪽 여백 (대칭을 위한) -->
-        <div class="w-10">
-          <!-- 디버깅 버튼 (개발 중에만 사용)
-          <button
-            @click="logExecutionData"
-            class="p-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            체결
-          </button> -->
-        </div>
+        <div class="w-10"></div>
       </div>
     </header>
 
@@ -73,7 +65,7 @@
         <!-- 호가창 메인 영역 -->
         <div class="flex-1 overflow-hidden relative">
           <!-- 스크롤 가능한 호가 영역만 -->
-          <div class="h-full overflow-y-auto">
+          <div ref="orderBookScroll" class="h-full overflow-y-auto">
             <!-- 상한가 -->
             <div class="px-3 py-1 bg-red-50 border-b border-red-100">
               <div
@@ -109,9 +101,13 @@
                 class="relative flex justify-between items-center py-2 px-3 text-sm hover:bg-gray-50 cursor-pointer"
                 @click="selectPrice(ask.price)"
               >
-                <!-- 잔량 시각화 배경 막대 (오른쪽부터 그려짐, 패딩 추가) -->
+                <!-- 잔량 시각화 배경 막대 (오른쪽부터 그려짐, 패딩 추가)-->
                 <div
-                  class="absolute top-2 bottom-2 right-0 bg-blue-100 opacity-50 rounded-l-md"
+                  class="absolute top-2 bottom-2 right-0 opacity-50 rounded-l-md transition-all duration-500"
+                  :class="[
+                    'bg-blue-100',
+                    askHighlightIndexes.includes(index) ? 'animate-ask-highlight' : '',
+                  ]"
                   :style="{ width: getVolumeRatio(ask.volume) + '%' }"
                 ></div>
                 <!-- 호가 및 잔량 텍스트 -->
@@ -159,7 +155,11 @@
               >
                 <!-- 잔량 시각화 배경 막대 (오른쪽부터 그려짐, 패딩 추가) -->
                 <div
-                  class="absolute top-2 bottom-2 right-0 bg-red-100 opacity-50 rounded-l-md"
+                  class="absolute top-2 bottom-2 right-0 opacity-50 rounded-l-md transition-all duration-500"
+                  :class="[
+                    'bg-red-100',
+                    bidHighlightIndexes.includes(index) ? 'animate-bid-highlight' : '',
+                  ]"
                   :style="{ width: getVolumeRatio(bid.volume) + '%' }"
                 ></div>
                 <!-- 호가 및 잔량 텍스트 -->
@@ -325,7 +325,7 @@
             <button
               v-for="tab in tradeTabs"
               :key="tab.key"
-              @click="activeTab = tab.key"
+              @click="handleTabClick(tab.key)"
               class="flex-1 py-1.5 px-3 text-sm font-medium transition-all duration-200 rounded-md"
               :class="
                 activeTab === tab.key
@@ -360,8 +360,33 @@
 
             <!-- 가격 입력 -->
             <div v-if="orderType === 'limit'" class="flex items-center">
-              <div class="flex-1 text-left">
-                <div class="text-lg font-bold text-gray-900">{{ formatPrice(orderPrice) }}원</div>
+              <div class="flex-1 text-left relative">
+                <!-- 실제 입력은 키보드로만, 후보정은 blur에서 처리 -->
+                <input
+                  type="number"
+                  v-model.number="orderPrice"
+                  min="0"
+                  class="absolute opacity-0 pointer-events-none w-0 h-0"
+                  tabindex="-1"
+                  @keydown.stop
+                />
+                <span
+                  tabindex="0"
+                  @keydown="onOrderPriceKeydown"
+                  @focus="isOrderPriceFocused = true"
+                  @blur="
+                    () => {
+                      isOrderPriceFocused = false
+                      onOrderPriceBlur()
+                    }
+                  "
+                  style="outline: none"
+                  class="focus:ring-2 focus:ring-blue-300 rounded"
+                >
+                  <span class="text-lg font-bold text-gray-900">
+                    {{ formatPrice(orderPrice) }}원
+                  </span>
+                </span>
               </div>
               <div class="flex gap-1">
                 <button
@@ -392,16 +417,32 @@
                 </button>
               </div>
             </div>
-            <div v-else class="text-lg font-bold text-gray-900">시장가</div>
+            <div v-else class="text-lg font-bold text-gray-900 mb-1">시장가</div>
           </div>
 
           <!-- 수량 입력 -->
           <div v-if="activeTab !== 'waiting'" class="mb-4 p-3 bg-gray-50 rounded-lg">
             <!-- 수량 표시 및 조절 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="text-lg font-bold">
-                <span v-if="orderQuantity > 0" class="text-gray-900">{{ orderQuantity }}주</span>
-                <span v-else class="text-gray-400">최대 {{ maxOrderQuantity }}주</span>
+              <div class="text-lg font-bold flex items-center gap-2">
+                <input
+                  type="number"
+                  v-model.number="orderQuantity"
+                  min="0"
+                  :max="maxOrderQuantity"
+                  class="absolute opacity-0 pointer-events-none w-0 h-0"
+                  tabindex="-1"
+                  @keydown.stop
+                />
+                <span
+                  tabindex="0"
+                  @keydown="onOrderQuantityKeydown"
+                  style="outline: none"
+                  class="focus:ring-2 focus:ring-blue-300 rounded"
+                >
+                  <span v-if="orderQuantity > 0" class="text-gray-900">{{ orderQuantity }}주</span>
+                  <span v-else class="text-gray-400">최대 {{ maxOrderQuantity }}주</span>
+                </span>
               </div>
               <div class="flex gap-1">
                 <button
@@ -474,8 +515,30 @@
                   >대기중 {{ pendingOrdersCount }}건</span
                 >
                 <div class="flex items-center">
-                  <span class="text-sm text-gray-500">{{ lastRefreshMinutes }}분 전</span>
-                  <button @click="refreshPendingOrders" class="p-1.5 hover:bg-gray-100 rounded">
+                  <!-- 로딩 스피너 -->
+                  <span v-if="isPendingLoading" class="mr-2 flex items-center">
+                    <svg
+                      class="animate-spin h-4 w-4 text-gray-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      />
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
+                    </svg>
+                  </span>
+                  <button @click="loadPendings" class="p-1.5 hover:bg-gray-100 rounded">
                     <svg
                       class="w-4 h-4 text-gray-400"
                       fill="none"
@@ -494,7 +557,7 @@
               </div>
             </div>
 
-            <!-- 하단 영역: 대기중인 거래 목록 -->
+            <!-- 하단 영역: 대기중 거래 목록 -->
             <div class="flex-1 space-y-2">
               <div
                 v-for="order in pendingOrders"
@@ -537,6 +600,13 @@
                     />
                   </svg>
                 </button>
+              </div>
+              <!-- 대기 주문 없을 때 안내 -->
+              <div
+                v-if="!isPendingLoading && pendingOrders.length === 0"
+                class="text-center text-gray-400 py-8 text-sm"
+              >
+                대기중인 주문이 없습니다.
               </div>
             </div>
           </div>
@@ -594,9 +664,10 @@
 
               <!-- 주문 버튼 -->
               <button
-                @click="submitOrder"
+                @click="openOrderConfirmModal"
                 class="w-full py-3 rounded-lg font-bold text-white transition-colors"
                 :class="orderButtonClass"
+                :disabled="orderQuantity <= 0"
               >
                 {{ orderButtonText }}
               </button>
@@ -604,8 +675,9 @@
 
             <!-- 대기 모드의 취소하기 버튼 -->
             <div v-else>
+              <!-- 기존 취소 버튼 -->
               <button
-                @click="cancelSelectedOrders"
+                @click="openCancelConfirmModal"
                 class="w-full py-3 rounded-lg font-bold transition-colors"
                 :class="
                   isCancelButtonActive
@@ -642,19 +714,169 @@
         </div>
       </div>
     </footer>
+    <!-- 안내 모달 컴포넌트 추가 위치 -->
+    <transition
+      enter-active-class="transition-opacity duration-300"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-300"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="showOrderConfirmModal || showCancelConfirmModal"
+        class="fixed inset-0 z-50 flex items-center justify-center"
+      >
+        <div class="bg-white rounded-xl shadow-lg px-8 py-6 text-center w-[360px]">
+          <!-- 주문 확인 모달 내용 -->
+          <template v-if="showOrderConfirmModal">
+            <div class="text-base font-normal text-gray-900">{{ orderConfirmStockName }}</div>
+            <div class="mb-4 flex items-center justify-center text-2xl font-bold">
+              <span class="text-gray-900">{{ orderConfirmQuantity }}주 </span>
+              <span
+                :class="orderConfirmType === 'BUY' ? 'text-red-600' : 'text-blue-600'"
+                class="ml-1"
+              >
+                {{ orderConfirmType === 'BUY' ? '구매' : '판매' }}
+              </span>
+            </div>
+            <div class="flex justify-between items-center mb-4 gap-4">
+              <div class="flex-1 text-left text-base text-gray-900">
+                {{ orderConfirmQuantity }}주 희망 가격
+              </div>
+              <div class="flex-1 text-right text-base text-gray-900 font-bold">
+                <template v-if="orderType === 'market'"> 시장가 </template>
+                <template v-else> {{ formatPrice(orderPrice) }}원 </template>
+              </div>
+            </div>
+            <div class="flex justify-between mb-4 gap-4">
+              <div class="flex-1 text-left text-base text-gray-900">예상 주문 금액</div>
+              <div class="flex-1 text-right font-bold text-gray-900">
+                {{ formatPrice(orderConfirmPrice * orderConfirmQuantity) }}원
+              </div>
+            </div>
+            <div class="flex justify-between gap-4 mt-2">
+              <button
+                @click="closeOrderConfirmModal"
+                class="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition"
+              >
+                닫기
+              </button>
+              <button
+                @click="handleOrderConfirm"
+                class="flex-1 py-2 rounded-lg font-semibold text-white transition"
+                :class="
+                  orderConfirmType === 'BUY'
+                    ? 'bg-red-500 hover:bg-red-600'
+                    : 'bg-blue-500 hover:bg-blue-600'
+                "
+              >
+                {{ orderConfirmType === 'BUY' ? '구매' : '판매' }}
+              </button>
+            </div>
+          </template>
+          <!-- 주문 취소 확인 모달 내용 -->
+          <template v-else-if="showCancelConfirmModal">
+            <div class="text-base font-normal text-gray-900 mb-4">
+              주문 {{ cancelOrderCount }}건을 취소하시겠습니까?
+            </div>
+            <div class="flex justify-between gap-4 mt-2">
+              <button
+                @click="closeCancelConfirmModal"
+                class="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition"
+              >
+                닫기
+              </button>
+              <button
+                @click="handleCancelConfirm"
+                class="flex-1 py-2 rounded-lg font-semibold text-white bg-blue-500 hover:bg-blue-600 transition"
+              >
+                취소
+              </button>
+            </div>
+          </template>
+        </div>
+      </div>
+    </transition>
+    <transition
+      enter-active-class="transition-opacity duration-300"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-300"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="showTradeResultModal"
+        class="fixed left-0 right-0 bottom-0 z-50 flex items-center justify-center pointer-events-none"
+        style="overflow: hidden"
+      >
+        <div
+          class="pointer-events-auto max-w-108 w-full mx-auto rounded-full px-6 py-3 flex items-center justify-between shadow-xl mx-4"
+          style="background-color: #7f8286"
+        >
+          <!-- 왼쪽: 체크 아이콘 + 주문 완료 텍스트 -->
+          <div class="flex items-center">
+            <div
+              class="rounded-full w-6 h-6 flex items-center justify-center mr-3"
+              style="background-color: #59bd83"
+            >
+              <svg
+                class="w-4 h-4 text-white"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div class="text-white flex items-center font-normal">
+              <template v-if="tradeResultType === 'CANCEL'">
+                {{ tradeResultStockName }}
+              </template>
+              <template v-else>
+                {{ tradeResultStockName }}
+                <span class="ml-2 text-white font-normal">
+                  {{
+                    tradeResultIsFilled
+                      ? tradeResultType === 'BUY'
+                        ? '구매 체결 완료'
+                        : '판매 체결 완료'
+                      : tradeResultType === 'BUY'
+                        ? '구매 신청 완료'
+                        : '판매 신청 완료'
+                  }}
+                </span>
+              </template>
+            </div>
+          </div>
+          <!-- 오른쪽: 내역 보기 버튼 -->
+          <button
+            @click="goToTransactionHistory"
+            class="ml-4 rounded-full px-3 py-2 text-white text-sm font-normal hover:opacity-80 transition"
+            style="height: 36px; background-color: #505866"
+          >
+            내역 보기
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getStockInfo } from '@/services/stockApi.js'
+import axios from 'axios'
+import { checkExecution } from '@/services/checkExecution'
 
 // Vue Router
 const route = useRoute()
 const router = useRouter()
 
-// 종목 코드 (초기값: 삼성전자, 실제 값은 route.query에서 받아옴)
+// 종목 코드 (실제 값은 route.query에서 받아옴)
 let STOCK_CODE = ''
 
 // 로딩 상태
@@ -669,8 +891,89 @@ let isUnmounted = false
 // ✅ 실시간 체결 관련 데이터 추가
 const latestExecutionData = ref(null) // 최신 체결 데이터
 const executionHistory = ref([]) // 체결 이력 (최근 50개)
-const showExecutionAlert = ref(false) // 체결 알림 표시 여부
-const executionAlertTimer = ref(null) // 알림 타이머
+
+const showOrderConfirmModal = ref(false)
+const orderConfirmType = ref('BUY')
+const orderConfirmQuantity = ref(0)
+const orderConfirmPrice = ref(0)
+const orderConfirmStockName = ref('')
+
+const askHighlightIndexes = ref([])
+const bidHighlightIndexes = ref([])
+
+const askLastHighlightTime = ref({})
+const bidLastHighlightTime = ref({})
+// 호가 하이라이트 애니메이션 쿨타임 필요시 설정
+const HIGHLIGHT_COOLDOWN = 0 // ms
+
+const isOrderPriceFocused = ref(false)
+
+const openOrderConfirmModal = () => {
+  orderConfirmType.value = activeTab.value === 'buy' ? 'BUY' : 'SELL'
+  orderConfirmQuantity.value = orderQuantity.value
+  // 주문 확인 모달에서도 지정가라도 호가 범위 벗어나면 시장가처럼 호가 가격으로 보여주기
+  if (orderType.value === 'market') {
+    if (orderConfirmType.value === 'BUY') {
+      // 매수 시장가: askPrices에서 가장 싼 가격
+      const sortedAsk = [...askPrices.value].sort((a, b) => a.price - b.price)
+      orderConfirmPrice.value =
+        sortedAsk.length > 0 ? sortedAsk[0].price : stockInfo.value.currentPrice
+    } else {
+      // 매도 시장가: bidPrices에서 가장 비싼 가격
+      const sortedBid = [...bidPrices.value].sort((a, b) => b.price - a.price)
+      orderConfirmPrice.value =
+        sortedBid.length > 0 ? sortedBid[0].price : stockInfo.value.currentPrice
+    }
+  } else {
+    // 지정가 주문이지만, 호가 범위 벗어나면 실제 체결될 호가로 보여주기
+    if (
+      orderConfirmType.value === 'BUY' &&
+      askPrices.value.length > 0 &&
+      orderPrice.value >= Math.min(...askPrices.value.map((a) => a.price))
+    ) {
+      // 매수 지정가가 최저 매도호가 이상이면 최저 매도호가로
+      orderConfirmPrice.value = Math.min(...askPrices.value.map((a) => a.price))
+    } else if (
+      orderConfirmType.value === 'SELL' &&
+      bidPrices.value.length > 0 &&
+      orderPrice.value <= Math.max(...bidPrices.value.map((b) => b.price))
+    ) {
+      // 매도 지정가가 최고 매수호가 이하이면 최고 매수호가로
+      orderConfirmPrice.value = Math.max(...bidPrices.value.map((b) => b.price))
+    } else {
+      // 일반 지정가 주문
+      orderConfirmPrice.value = orderPrice.value
+    }
+  }
+  orderConfirmStockName.value = stockInfo.value.name
+  showOrderConfirmModal.value = true
+}
+const closeOrderConfirmModal = () => {
+  showOrderConfirmModal.value = false
+}
+const handleOrderConfirm = async () => {
+  showOrderConfirmModal.value = false
+  await submitOrder()
+}
+
+const showTradeResultModal = ref(false)
+const tradeResultType = ref('BUY') // 'BUY' or 'SELL'
+const tradeResultStockName = ref('')
+let tradeResultTimer = null
+
+// TradeResultModal에 체결 완료 여부를 위한 플래그 추가
+const tradeResultIsFilled = ref(false)
+
+const openTradeResultModal = (type, stockName, isFilled = false) => {
+  tradeResultType.value = type
+  tradeResultStockName.value = stockName
+  tradeResultIsFilled.value = isFilled
+  showTradeResultModal.value = true
+  if (tradeResultTimer) clearTimeout(tradeResultTimer)
+  tradeResultTimer = setTimeout(() => {
+    showTradeResultModal.value = false
+  }, 5000)
+}
 
 // API로부터 종목 정보 로드
 const loadStockInfo = async () => {
@@ -848,10 +1151,107 @@ watch(
 
 // 사용자 정보
 const userInfo = ref({
-  avgPrice: 66500,
-  availableAmount: 2500000,
-  holdings: 50,
+  accountId: 0,
+  availableAmount: 0,
+  avgPrice: 0,
+  quantity: 0,
 })
+
+// 사용자 계좌에서 정보 가져오기
+const loadUserAccount = async () => {
+  try {
+    const response = await axios.get('/api/mocktrading/account') // userId 제거
+
+    if (response.data) {
+      // userInfo.value = response.data
+      userInfo.value = {
+        ...userInfo.value, // 기존 avgPrice, holdings 유지
+        accountId: response.data.accountId,
+        availableAmount: response.data.currentBalance,
+      }
+    }
+  } catch (error) {
+    console.error('계좌 정보 로드 실패:', error)
+    if (error.response?.status === 401) {
+      alert('로그인이 필요합니다.')
+      router.push('/login-form')
+    }
+  }
+}
+
+// 사용자 보유 종목에서 현재 종목 정보 가져오기
+const loadHoldings = async () => {
+  try {
+    const response = await axios.get('/api/mocktrading/holdings')
+
+    if (response.data && Array.isArray(response.data)) {
+      // 현재 종목코드와 일치하는 보유 종목 찾기
+      const currentStockHolding = response.data.find((holding) => holding.stockCode === STOCK_CODE)
+
+      if (currentStockHolding) {
+        // 해당 종목을 보유하고 있는 경우
+        userInfo.value = {
+          ...userInfo.value, // 기존 값 유지
+          avgPrice: currentStockHolding.averagePrice,
+          quantity: currentStockHolding.quantity, // quantity를 holdings로 매핑
+        }
+        console.log('보유 종목 정보 로드 성공:', currentStockHolding)
+      } else {
+        // 해당 종목을 보유하지 않은 경우
+        userInfo.value = {
+          ...userInfo.value, // 기존 값 유지
+          avgPrice: 0,
+          quantity: 0,
+        }
+        console.log('현재 종목을 보유하지 않음:', STOCK_CODE)
+      }
+    }
+  } catch (error) {
+    console.error('보유 종목 정보 로드 실패:', error)
+    if (error.response?.status === 401) {
+      alert('로그인이 필요합니다.')
+      router.push('/login-form')
+    }
+    // 오류 발생 시 기본값 설정
+    userInfo.value = {
+      ...userInfo.value,
+      avgPrice: 0,
+      holdings: 0,
+    }
+  }
+}
+
+const isPendingLoading = ref(false)
+
+// 사용자 계좌에서 거래 대기 목록 가져오기
+const loadPendings = async () => {
+  isPendingLoading.value = true
+  try {
+    await checkExecution()
+    const response = await axios.get('/api/stock/orders')
+    if (response.data && Array.isArray(response.data)) {
+      // 현재 종목코드와 일치하는 주문만 필터링
+      const filtered = response.data.filter((order) => order.stockCode === STOCK_CODE)
+      // 화면에서 사용하는 pendingOrders 형태로 변환
+      pendingOrders.value = filtered.map((order) => ({
+        id: order.orderId,
+        type: order.orderType.toLowerCase() === 'buy' ? 'buy' : 'sell',
+        quantity: order.quantity,
+        price: order.targetPrice,
+        checked: false,
+        stockName: order.stockName,
+        createdAt: order.createdAt,
+      }))
+    } else {
+      pendingOrders.value = []
+    }
+  } catch (error) {
+    console.error('대기 주문 정보 로드 실패:', error)
+    pendingOrders.value = []
+  } finally {
+    isPendingLoading.value = false
+  }
+}
 
 // 거래 상태
 const getInitialTab = () => {
@@ -868,6 +1268,18 @@ const orderPrice = ref(0)
 const orderQuantity = ref(0)
 const showTradeHistory = ref(true)
 
+watch(activeTab, () => {
+  orderQuantity.value = 0
+})
+
+// 거래 유형 탭 클릭 시 처리 함수
+const handleTabClick = (tabKey) => {
+  activeTab.value = tabKey
+  if (tabKey === 'waiting') {
+    loadPendings()
+  }
+}
+
 // 거래 탭 정의
 const tradeTabs = [
   { key: 'buy', label: '구매' },
@@ -880,12 +1292,13 @@ const askPrices = ref([])
 const bidPrices = ref([])
 
 // 호가 데이터 생성 함수
-const generateOrderBookData = (currentPrice) => {
+const generateOrderBookData = async (currentPrice) => {
   if (currentPrice === 0) return
 
   const tick = getTickSize(currentPrice)
   askPrices.value = []
-  for (let i = 1; i <= 10; i++) {
+  // 가장 비싼 가격부터 가장 싼 가격 순서로 push
+  for (let i = 10; i >= 1; i--) {
     askPrices.value.push({
       price: currentPrice + i * tick,
       volume: Math.floor(Math.random() * 500000) + 50000,
@@ -899,7 +1312,61 @@ const generateOrderBookData = (currentPrice) => {
       volume: Math.floor(Math.random() * 600000) + 100000,
     })
   }
+
+  // 호가창 렌더링 직후 스크롤 위치 조정
+  await nextTick()
+  if (orderBookScroll.value) {
+    orderBookScroll.value.scrollTop = orderBookScroll.value.scrollHeight / 4
+  }
 }
+
+// 2. 호가 데이터가 바뀔 때마다 변화 감지 및 애니메이션 트리거
+watch(askPrices, (newVal, oldVal) => {
+  if (!oldVal.length) return
+  const now = Date.now()
+  askHighlightIndexes.value = []
+  newVal.forEach((ask, idx) => {
+    if (!oldVal[idx] || ask.volume !== oldVal[idx].volume) {
+      // 쿨타임 체크
+      if (
+        !askLastHighlightTime.value[idx] ||
+        now - askLastHighlightTime.value[idx] > HIGHLIGHT_COOLDOWN
+      ) {
+        askHighlightIndexes.value.push(idx)
+        askLastHighlightTime.value[idx] = now
+      }
+    }
+  })
+  if (askHighlightIndexes.value.length > 0) {
+    setTimeout(() => {
+      askHighlightIndexes.value = []
+    }, 500)
+  }
+})
+
+watch(bidPrices, (newVal, oldVal) => {
+  if (!oldVal.length) return
+  const now = Date.now()
+  bidHighlightIndexes.value = []
+  newVal.forEach((bid, idx) => {
+    if (!oldVal[idx] || bid.volume !== oldVal[idx].volume) {
+      if (
+        !bidLastHighlightTime.value[idx] ||
+        now - bidLastHighlightTime.value[idx] > HIGHLIGHT_COOLDOWN
+      ) {
+        bidHighlightIndexes.value.push(idx)
+        bidLastHighlightTime.value[idx] = now
+      }
+    }
+  })
+  if (bidHighlightIndexes.value.length > 0) {
+    setTimeout(() => {
+      bidHighlightIndexes.value = []
+    }, 500)
+  }
+})
+
+const orderBookScroll = ref(null)
 
 // 체결 강도
 const volumePower = ref(0)
@@ -936,12 +1403,6 @@ const processExecutionData = (executionData) => {
 
     // 실시간 거래 내역 업데이트
     updateRecentTrades(executionData)
-
-    // 체결 알림 표시 (큰 거래량일 때만)
-    const volume = parseInt(executionData.contractVolume || 0)
-    if (volume > 1000) {
-      showTradeAlert()
-    }
   } catch (error) {
     console.error('체결 데이터 처리 오류:', error)
   }
@@ -1063,19 +1524,6 @@ const formatTime = (timeStr) => {
   return `${timeStr.slice(0, 2)}:${timeStr.slice(2, 4)}:${timeStr.slice(4, 6)}`
 }
 
-// ✅ 체결 알림 표시 함수
-const showTradeAlert = () => {
-  showExecutionAlert.value = true
-
-  if (executionAlertTimer.value) {
-    clearTimeout(executionAlertTimer.value)
-  }
-
-  executionAlertTimer.value = setTimeout(() => {
-    showExecutionAlert.value = false
-  }, 2000)
-}
-
 // 통합 호가 데이터 처리 함수 (KRX와 NXT 형식 모두 지원)
 const processOrderBookData = (data) => {
   // 매도호가 처리
@@ -1126,6 +1574,95 @@ const processOrderBookData = (data) => {
     waitingInfo.value.buyOrders = parseInt(data.totalBidQty)
   } else if (data.TOTAL_BIDP_RSQN) {
     waitingInfo.value.buyOrders = parseInt(data.TOTAL_BIDP_RSQN)
+  }
+}
+
+// 키보드 입력으로 가격 입력 지원 (호가단위 보정 X, 최대 주문 가능 수량 계산 X)
+const onOrderPriceKeydown = (e) => {
+  // 숫자 키, 백스페이스, 딜리트, 방향키, 탭만 허용
+  if (
+    (e.key >= '0' && e.key <= '9') ||
+    e.key === 'Backspace' ||
+    e.key === 'Delete' ||
+    e.key === 'ArrowLeft' ||
+    e.key === 'ArrowRight' ||
+    e.key === 'Tab'
+  ) {
+    e.preventDefault()
+    let newVal = String(orderPrice.value)
+    if (e.key >= '0' && e.key <= '9') {
+      newVal += e.key
+    } else if (e.key === 'Backspace') {
+      newVal = newVal.slice(0, -1)
+    } else if (e.key === 'Delete') {
+      newVal = ''
+    }
+    let num = Number(newVal)
+    if (isNaN(num) || num < 0) num = 0
+    orderPrice.value = num
+  }
+}
+
+// 가격 입력창에서 포커스 아웃 시 하한가~상한가, 호가단위 보정 및 최대 주문 가능 수량 계산
+const onOrderPriceBlur = () => {
+  let num = Number(orderPrice.value)
+  if (isNaN(num) || num < 0) num = 0
+
+  // 1. 하한가~상한가 범위로 보정
+  const lower = stockInfo.value.lowerLimit || 0
+  const upper = stockInfo.value.upperLimit || 0
+  if (upper > 0 && num > upper) num = upper
+  if (lower > 0 && num < lower) num = lower
+
+  // 2. 호가단위로 보정
+  const tick = getTickSize(stockInfo.value.currentPrice)
+  if (num % tick !== 0 && num !== 0) {
+    // 버림 처리
+    num = Math.floor(num / tick) * tick
+    // 상한가/하한가 범위 재확인
+    if (upper > 0 && num > upper) num = upper
+    if (lower > 0 && num < lower) num = lower
+  }
+
+  orderPrice.value = num
+
+  // 3. 최대 주문 가능 수량 보정 (수량 입력창도 blur 시 보정되지만, 가격이 바뀌면 추가로 보정)
+  if (activeTab.value === 'buy') {
+    const maxQty = Math.floor(userInfo.value.availableAmount / (orderPrice.value || 1))
+    if (orderQuantity.value > maxQty) {
+      orderQuantity.value = maxQty
+    }
+  }
+}
+
+// 키보드 입력으로 수량 입력 지원
+const onOrderQuantityKeydown = (e) => {
+  // 숫자 키, 백스페이스, 딜리트, 방향키만 허용
+  if (
+    (e.key >= '0' && e.key <= '9') ||
+    e.key === 'Backspace' ||
+    e.key === 'Delete' ||
+    e.key === 'ArrowLeft' ||
+    e.key === 'ArrowRight' ||
+    e.key === 'Tab'
+  ) {
+    e.preventDefault()
+    let newVal = String(orderQuantity.value)
+    if (e.key >= '0' && e.key <= '9') {
+      newVal += e.key
+    } else if (e.key === 'Backspace') {
+      newVal = newVal.slice(0, -1)
+    } else if (e.key === 'Delete') {
+      newVal = ''
+    }
+    let num = Number(newVal)
+    if (isNaN(num) || num < 0) num = 0
+    if (activeTab.value === 'buy') {
+      num = Math.min(num, maxOrderQuantity.value)
+    } else if (activeTab.value === 'sell') {
+      num = Math.min(num, userInfo.value.quantity)
+    }
+    orderQuantity.value = num
   }
 }
 
@@ -1234,32 +1771,7 @@ const waitingInfo = ref({
 })
 
 // 대기중인 거래 목록
-const pendingOrders = ref([
-  {
-    id: 1,
-    type: 'buy',
-    quantity: 10,
-    price: 66800,
-    checked: false,
-  },
-  {
-    id: 2,
-    type: 'sell',
-    quantity: 5,
-    price: 67200,
-    checked: false,
-  },
-  {
-    id: 3,
-    type: 'buy',
-    quantity: 15,
-    price: 66500,
-    checked: false,
-  },
-])
-
-// 새로고침 시점 (분 단위)
-const lastRefreshMinutes = ref(2)
+const pendingOrders = ref([])
 
 // 장 상태 (시간에 따라 동적 변경)
 const marketStatus = computed(() => {
@@ -1296,12 +1808,27 @@ const volumePowerClass = computed(() => {
   return volumePower.value > 100 ? 'text-red-600' : 'text-blue-600'
 })
 
-// 최대 주문 가능 수량 계산
+const lastMaxOrderQuantity = ref(0)
+watch(
+  [() => userInfo.value.availableAmount, () => orderPrice.value, isOrderPriceFocused],
+  ([available, price, focused]) => {
+    if (!focused && activeTab.value === 'buy') {
+      lastMaxOrderQuantity.value = Math.floor(available / price)
+    }
+    if (activeTab.value === 'sell') {
+      lastMaxOrderQuantity.value = userInfo.value.quantity
+    }
+  },
+  { immediate: true },
+)
+
 const maxOrderQuantity = computed(() => {
   if (activeTab.value === 'buy') {
-    return Math.floor(userInfo.value.availableAmount / orderPrice.value)
+    return isOrderPriceFocused.value
+      ? lastMaxOrderQuantity.value
+      : Math.floor(userInfo.value.availableAmount / orderPrice.value)
   } else if (activeTab.value === 'sell') {
-    return userInfo.value.holdings
+    return userInfo.value.quantity
   }
   return 0
 })
@@ -1313,8 +1840,8 @@ const setQuantityByRatio = (ratio) => {
     const targetQuantity = Math.floor((availableShares * ratio) / 100)
     orderQuantity.value = Math.max(0, targetQuantity)
   } else if (activeTab.value === 'sell') {
-    const targetQuantity = Math.floor((userInfo.value.holdings * ratio) / 100)
-    orderQuantity.value = Math.max(0, Math.min(targetQuantity, userInfo.value.holdings))
+    const targetQuantity = Math.floor((userInfo.value.quantity * ratio) / 100)
+    orderQuantity.value = Math.max(0, Math.min(targetQuantity, userInfo.value.quantity))
   }
 }
 
@@ -1322,12 +1849,25 @@ const totalOrderAmount = computed(() => {
   return orderPrice.value * orderQuantity.value
 })
 
-// 예상 수익률 계산 (판매 시)
+const getSellPrice = computed(() => {
+  if (orderType.value === 'market') {
+    // 시장가 판매 시, 매수호가 배열에서 가장 비싼 가격 사용
+    const sortedBid = [...bidPrices.value].sort((a, b) => b.price - a.price)
+    return sortedBid.length > 0 ? sortedBid[0].price : stockInfo.value.currentPrice
+  }
+  return orderPrice.value
+})
+
 const expectedReturnRate = computed(() => {
   if (activeTab.value !== 'sell') return '0.00%'
 
   const avgPrice = userInfo.value.avgPrice
-  const sellPrice = orderPrice.value
+  const sellPrice = getSellPrice.value
+
+  if (!avgPrice || avgPrice === 0) {
+    return '0.00%'
+  }
+
   const returnRate = ((sellPrice - avgPrice) / avgPrice) * 100
 
   if (returnRate > 0) {
@@ -1339,13 +1879,12 @@ const expectedReturnRate = computed(() => {
   }
 })
 
-// 예상 손익 계산 (판매 시)
 const expectedProfit = computed(() => {
   if (activeTab.value !== 'sell') return '0원'
 
   const avgPrice = userInfo.value.avgPrice
-  const sellPrice = orderPrice.value
-  const quantity = orderQuantity.value || 1
+  const sellPrice = getSellPrice.value
+  const quantity = orderQuantity.value || 0
   const profit = (sellPrice - avgPrice) * quantity
 
   if (profit > 0) {
@@ -1362,7 +1901,11 @@ const expectedReturnRateClass = computed(() => {
   if (activeTab.value !== 'sell') return 'text-gray-500'
 
   const avgPrice = userInfo.value.avgPrice
-  const sellPrice = orderPrice.value
+  // 시장가일 때는 getSellPrice.value, 지정가일 때는 orderPrice.value
+  const sellPrice = orderType.value === 'market' ? getSellPrice.value : orderPrice.value
+
+  if (!avgPrice || avgPrice === 0) return 'text-gray-500'
+
   const returnRate = ((sellPrice - avgPrice) / avgPrice) * 100
 
   if (returnRate > 0) {
@@ -1374,12 +1917,11 @@ const expectedReturnRateClass = computed(() => {
   }
 })
 
-// 예상 손익 색상 클래스
 const expectedProfitClass = computed(() => {
   if (activeTab.value !== 'sell') return 'text-gray-500'
 
   const avgPrice = userInfo.value.avgPrice
-  const sellPrice = orderPrice.value
+  const sellPrice = orderType.value === 'market' ? getSellPrice.value : orderPrice.value
   const quantity = orderQuantity.value || 1
   const profit = (sellPrice - avgPrice) * quantity
 
@@ -1447,6 +1989,11 @@ const getVolumeRatio = (volume) => {
 
 // 메서드들
 const goBack = () => {
+  const from = router.options.history.state.back
+  if (from && from.endsWith('/mock-trading/pending-orders')) {
+    router.push('/mock-trading/pending-orders')
+    return
+  }
   const stockCode = route.query.stockCode || stockInfo.value.stockCode || ''
   const stockName = route.query.stockName || stockInfo.value.name || ''
   router.push({
@@ -1528,6 +2075,20 @@ const decreasePrice = () => {
 }
 
 const increaseQuantity = () => {
+  if (activeTab.value === 'sell') {
+    // 판매 탭에서 최대 보유수량 초과 방지
+    if (orderQuantity.value >= (userInfo.value.quantity || 0)) {
+      alert(`최대 ${userInfo.value.quantity || 0}주까지만 매도할 수 있습니다.`)
+      return
+    }
+  } else if (activeTab.value === 'buy') {
+    // 구매 탭에서 최대 구매 가능 수량 초과 방지
+    const maxQuantity = Math.floor(userInfo.value.availableAmount / orderPrice.value)
+    if (orderQuantity.value >= maxQuantity) {
+      alert(`최대 ${maxQuantity}주까지만 구매할 수 있습니다.`)
+      return
+    }
+  }
   orderQuantity.value += 1
 }
 
@@ -1549,58 +2110,180 @@ const toggleOrderCheck = (orderId) => {
   }
 }
 
-const refreshPendingOrders = () => {
-  lastRefreshMinutes.value = 0
-  console.log('대기 주문 새로고침')
-}
-
-const cancelSelectedOrders = () => {
+const cancelSelectedOrders = async () => {
   const checkedOrders = pendingOrders.value.filter((order) => order.checked)
   if (checkedOrders.length === 0) {
     alert('취소할 주문을 선택해주세요.')
     return
   }
 
-  console.log('선택된 주문 취소:', checkedOrders)
-  pendingOrders.value = pendingOrders.value.filter((order) => !order.checked)
+  const orderIds = checkedOrders.map((order) => order.id)
+  try {
+    await axios.delete('/api/stock/orders', {
+      data: orderIds, // ← 객체가 아니라 배열만!
+      headers: { 'Content-Type': 'application/json' },
+    })
+    await loadPendings()
+    await loadUserAccount()
+    await loadHoldings()
+    // TradeResultModal 표시
+    openTradeResultModal(
+      'CANCEL',
+      `${stockInfo.value.name} 주문 ${checkedOrders.length}건 취소 완료`,
+    )
+  } catch (error) {
+    console.error('주문 취소 실패:', error)
+    alert('주문 취소에 실패했습니다.')
+  }
 }
 
-const submitOrder = () => {
+const showCancelConfirmModal = ref(false)
+const cancelOrderCount = ref(0)
+
+const openCancelConfirmModal = () => {
+  cancelOrderCount.value = checkedOrdersCount.value
+  showCancelConfirmModal.value = true
+}
+const closeCancelConfirmModal = () => {
+  showCancelConfirmModal.value = false
+}
+const handleCancelConfirm = async () => {
+  showCancelConfirmModal.value = false
+  await cancelSelectedOrders()
+}
+
+// submitOrder에서 체결 완료 시 isFilled=true로 전달
+const submitOrder = async () => {
   // 주문 유효성 검사
   if (orderQuantity.value <= 0) {
     alert('주문 수량을 입력해주세요.')
     return
   }
 
+  // 지정가 주문에서 호가 범위 벗어나는 경우 → 시장가처럼 즉시 체결 처리
+  if (orderType.value === 'limit') {
+    // 매수: 지정가가 최저 매도호가(askPrices)보다 높으면 즉시 매수(시장가 매수) 처리
+    if (
+      activeTab.value === 'buy' &&
+      askPrices.value.length > 0 &&
+      orderPrice.value >= Math.min(...askPrices.value.map((a) => a.price))
+    ) {
+      // 최저 매도호가로 매수 처리
+      const marketPrice = Math.min(...askPrices.value.map((a) => a.price))
+      const params = {
+        marketPrice,
+        quantity: orderQuantity.value,
+        stockCode: STOCK_CODE,
+        stockName: stockInfo.value.name,
+        transactionType: 'BUY',
+      }
+      try {
+        await axios.post('/api/stock/order/market', params)
+        orderQuantity.value = 0
+        await loadUserAccount()
+        await loadHoldings()
+      } catch (error) {
+        console.error('지정가 즉시 매수(시장가) 주문 제출 실패:', error)
+        alert('지정가 즉시 매수(시장가) 주문 제출에 실패했습니다.')
+      }
+      openTradeResultModal('BUY', stockInfo.value.name, true) // 체결 완료
+      return
+    }
+    // 매도: 지정가가 최고 매수호가(bidPrices)보다 낮으면 즉시 매도(시장가 매도) 처리
+    if (
+      activeTab.value === 'sell' &&
+      bidPrices.value.length > 0 &&
+      orderPrice.value <= Math.max(...bidPrices.value.map((b) => b.price))
+    ) {
+      // 최고 매수호가로 매도 처리
+      const marketPrice = Math.max(...bidPrices.value.map((b) => b.price))
+      const params = {
+        marketPrice,
+        quantity: orderQuantity.value,
+        stockCode: STOCK_CODE,
+        stockName: stockInfo.value.name,
+        transactionType: 'SELL',
+      }
+      try {
+        await axios.post('/api/stock/order/market', params)
+        orderQuantity.value = 0
+        await loadUserAccount()
+        await loadHoldings()
+      } catch (error) {
+        console.error('지정가 즉시 매도(시장가) 주문 제출 실패:', error)
+        alert('지정가 즉시 매도(시장가) 주문 제출에 실패했습니다.')
+      }
+      openTradeResultModal('SELL', stockInfo.value.name, true) // 체결 완료
+      return
+    }
+  }
+
+  // 시장가 주문 처리
+  if (orderType.value === 'market') {
+    let marketPrice = orderConfirmPrice.value
+    if (activeTab.value === 'buy') {
+      const sortedAsk = [...askPrices.value].sort((a, b) => a.price - b.price)
+      marketPrice = sortedAsk.length > 0 ? sortedAsk[0].price : stockInfo.value.currentPrice
+    } else if (activeTab.value === 'sell') {
+      const sortedBid = [...bidPrices.value].sort((a, b) => b.price - a.price)
+      marketPrice = sortedBid.length > 0 ? sortedBid[0].price : stockInfo.value.currentPrice
+    }
+
+    const params = {
+      marketPrice,
+      quantity: orderQuantity.value,
+      stockCode: STOCK_CODE,
+      stockName: stockInfo.value.name,
+      transactionType: activeTab.value === 'buy' ? 'BUY' : 'SELL',
+    }
+
+    try {
+      await axios.post('/api/stock/order/market', params)
+      orderQuantity.value = 0
+      await loadUserAccount()
+      await loadHoldings()
+    } catch (error) {
+      console.error('시장가 주문 제출 실패:', error)
+      alert('시장가 주문 제출에 실패했습니다.')
+    }
+    openTradeResultModal(params.transactionType, params.stockName, true) // 체결 완료
+    return
+  }
+
+  // 기존 지정가 주문 처리 (호가 범위 내)
   if (activeTab.value === 'buy' && totalOrderAmount.value > userInfo.value.availableAmount) {
     alert('구매 가능 금액을 초과했습니다.')
     return
   }
 
-  if (activeTab.value === 'sell' && orderQuantity.value > userInfo.value.holdings) {
+  if (activeTab.value === 'sell' && orderQuantity.value > userInfo.value.quantity) {
     alert('보유 주식 수량을 초과했습니다.')
     return
   }
 
-  console.log('주문 제출:', {
-    type: activeTab.value,
-    orderType: orderType.value,
-    price: orderPrice.value,
+  // 지정가 주문 파라미터
+  const params = {
+    orderType: activeTab.value === 'buy' ? 'BUY' : 'SELL',
     quantity: orderQuantity.value,
-    totalAmount: totalOrderAmount.value,
-  })
+    stockCode: STOCK_CODE,
+    stockName: stockInfo.value.name,
+    targetPrice: orderPrice.value,
+  }
 
-  // 주문 완료 후 초기화
-  orderQuantity.value = 0
+  try {
+    await axios.post('/api/stock/order', params)
+    orderQuantity.value = 0
+    await loadUserAccount()
+    await loadHoldings()
+    if (activeTab.value === 'waiting') {
+      loadPendings()
+    }
+    openTradeResultModal(params.orderType, params.stockName, false) // 신청 완료
+  } catch (error) {
+    console.error('주문 제출 실패:', error)
+    alert('주문 제출에 실패했습니다.')
+  }
 }
-
-// // ✅ 디버깅용 메서드
-// const logExecutionData = () => {
-//   console.log('📊 최신 체결 데이터:', latestExecutionData.value)
-//   console.log('📈 체결 이력 (최근 10개):', executionHistory.value.slice(0, 10))
-//   console.log('📊 체결 통계:', executionStats.value)
-//   console.log('📈 실시간 거래 내역 (최근 10개):', recentTrades.value.slice(0, 10))
-// }
 
 // API 테스트 함수
 const testApiCall = async () => {
@@ -1610,12 +2293,20 @@ const testApiCall = async () => {
 // 시간 업데이트를 위한 타이머
 const timeUpdateTimer = ref(null)
 
+const goToTransactionHistory = () => {
+  showTradeResultModal.value = false
+  router.push('/mock-trading/transactions')
+}
+
 // 컴포넌트 마운트 시 API 호출 및 웹소켓 연결
 onMounted(() => {
   isUnmounted = false
   console.log('[초기화] 컴포넌트 마운트 시작')
+  loadUserAccount()
+  loadHoldings()
   testApiCall()
   initWebSocket()
+  loadPendings()
 
   // 1초마다 시간 업데이트를 위한 타이머
   timeUpdateTimer.value = setInterval(() => {
@@ -1638,45 +2329,35 @@ onUnmounted(() => {
     clearInterval(timeUpdateTimer.value)
     timeUpdateTimer.value = null
   }
-
-  // 알림 타이머 정리
-  if (executionAlertTimer.value) {
-    clearTimeout(executionAlertTimer.value)
-    executionAlertTimer.value = null
-  }
 })
 </script>
 
 <style scoped>
-@keyframes fadeInOut {
+/* 4. 애니메이션 효과 정의 */
+@keyframes askHighlight {
   0% {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  10% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  90% {
-    opacity: 1;
-    transform: translateY(0);
+    background-color: #bfdbfe; /* blue-600 */
+    opacity: 0.8;
   }
   100% {
-    opacity: 0;
-    transform: translateY(-10px);
+    background-color: #dbeafe; /* blue-100 */
+    opacity: 0.5;
   }
 }
-
-.animate-fadeInOut {
-  animation: fadeInOut 2s ease-in-out;
+@keyframes bidHighlight {
+  0% {
+    background-color: #fecaca; /* red-600 */
+    opacity: 0.8;
+  }
+  100% {
+    background-color: #fee2e2; /* red-100 */
+    opacity: 0.5;
+  }
 }
-
-/* 체결 데이터 하이라이팅 */
-.trade-highlight {
-  transition: background-color 0.3s ease;
+.animate-ask-highlight {
+  animation: askHighlight 0.5s;
 }
-
-.trade-highlight.new-trade {
-  background-color: #fef3c7; /* 노란색 하이라이트 */
+.animate-bid-highlight {
+  animation: bidHighlight 0.5s;
 }
 </style>

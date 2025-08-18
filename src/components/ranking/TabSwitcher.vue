@@ -1,35 +1,55 @@
 <template>
-  <div class="flex gap-2 mb-4">
-    <button
-      v-for="tab in tabs"
-      :key="tab.name"
-      @click="goTo(tab.route)"
-      :class="[
-        'flex-1 py-2 rounded-md text-sm font-semibold transition',
-        $route.path === tab.route
-          ? 'bg-blue-600 text-white shadow'
-          : 'bg-white text-gray-800 border border-gray-300 hover:bg-blue-100',
-      ]"
-    >
-      {{ tab.label }}
-    </button>
+  <div class="relative max-w-md mx-auto">
+    <!-- 탭 텍스트 -->
+    <div class="grid grid-cols-2 text-center text-m font-semibold">
+      <button
+        v-for="tab in tabs"
+        :key="tab.route"
+        @click="go(tab.route)"
+        class="py-2 transition-colors"
+        :class="isActive(tab.route) ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+
+    <!-- 전체 밑줄 -->
+    <div class="border-b border-gray-200"></div>
+
+    <!-- 파란 인디케이터 -->
+    <div
+      class="absolute bottom-0 left-0 h-[2px] bg-blue-600 transition-transform duration-300"
+      :style="{
+        width: 100 / tabs.length + '%',
+        transform: `translateX(${activeIndex * 100}%)`,
+      }"
+    />
   </div>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
-defineProps({
-  tabs: Array,
+const props = defineProps({
+  tabs: { type: Array, required: true }, // [{label, route}]
 })
 
 const router = useRouter()
+const route = useRoute()
 
-function goTo(route) {
-  if (router.currentRoute.value.path !== route) {
-    router.push(route)
-  }
+const activeIndex = computed(() =>
+  Math.max(
+    0,
+    props.tabs.findIndex((t) => t.route === route.path),
+  ),
+)
+
+function isActive(path) {
+  return route.path === path
+}
+
+function go(path) {
+  if (!isActive(path)) router.push(path)
 }
 </script>
-
-<style scoped></style>

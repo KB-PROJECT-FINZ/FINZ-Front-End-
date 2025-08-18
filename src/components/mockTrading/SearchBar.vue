@@ -1,5 +1,5 @@
 <template>
-  <div class="p-3 bg-white max-w-full">
+  <div class="p-3 mt-3 bg-white max-w-full">
     <div class="flex gap-3 items-start max-w-full">
       <div class="relative flex-3 w-full">
         <div
@@ -68,7 +68,7 @@
               </span>
               <span class="font-medium text-gray-800 text-[14px]">{{ stock.name }}</span>
             </div>
-            <span class="text-[12px] text-gray-500 font-mono">{{ stock.code }}</span>
+            <span class="text-[12px] text-gray-500">{{ stock.code }}</span>
           </div>
 
           <!-- 검색 결과 없음 -->
@@ -88,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchStocks } from '@/services/mockTradingApi'
 import MarketIndexTicker from './MarketIndexTicker.vue'
@@ -98,11 +98,10 @@ const searchQuery = ref('')
 const showResults = ref(false)
 const filteredStocks = ref([])
 const isSearching = ref(false)
-const imageErrors = ref({}) // 이미지 로딩 에러 추적
+const imageErrors = ref({})
 
 let searchTimeout = null
 
-// 입력 이벤트 핸들러 - v-model 대신 사용
 const handleInput = (e) => {
   searchQuery.value = e.target.value
   handleSearch()
@@ -117,7 +116,6 @@ const handleSearch = async () => {
     return
   }
 
-  // 검색 디바운싱 (300ms 지연)
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
@@ -126,19 +124,10 @@ const handleSearch = async () => {
     isSearching.value = true
 
     try {
-      console.log('🔍 종목 검색 시작:', query)
       const response = await searchStocks(query, 8)
 
       if (response.success && response.data) {
         filteredStocks.value = response.data
-        console.log('✅ 종목 검색 성공:', response.data.length, '건')
-
-        // 검색 결과에 이미지 URL 로깅 (디버깅용)
-        response.data.forEach((stock, index) => {
-          if (index < 3) { // 상위 3개만 로깅
-            console.log(`🖼️ 검색결과 ${stock.name} (${stock.code}): ${stock.imageUrl || '이미지 없음'}`)
-          }
-        })
       } else {
         console.warn('⚠️ 종목 검색 API 실패:', response.message)
         filteredStocks.value = []
@@ -157,21 +146,17 @@ const selectStock = async (stock) => {
   showResults.value = false
   filteredStocks.value = []
 
-  console.log('📊 선택된 종목:', stock.name, `(${stock.code})`)
-
   try {
     // 종목 차트 페이지로 라우팅
     await router.push({
       name: 'ChartPage',
       params: {
-        stockCode: stock.code
+        stockCode: stock.code,
       },
       query: {
-        stockName: stock.name
-      }
+        stockName: stock.name,
+      },
     })
-
-    console.log('🔀 종목 차트 페이지로 이동:', `/mock-trading/${stock.code}/chart`)
   } catch (error) {
     console.error('❌ 라우팅 오류:', error)
   }
@@ -185,7 +170,6 @@ const hideResults = () => {
 
 // 이미지 로딩 에러 처리
 const handleImageError = (stockCode) => {
-  console.warn(`🚫 검색결과 이미지 로딩 실패: ${stockCode}`)
   imageErrors.value[stockCode] = true
 }
 
@@ -201,10 +185,6 @@ const getStockInitial = (stockName) => {
   // 영문의 경우 첫 글자 대문자 사용
   return stockName.charAt(0).toUpperCase()
 }
-
-onMounted(() => {
-  console.log('🔍 SearchBar 컴포넌트 초기화 - DB 기반 검색 활성화')
-})
 </script>
 
 <style scoped>
