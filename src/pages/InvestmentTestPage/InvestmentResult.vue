@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRoute, useRouter } from 'vue-router'
 import OnboardingGuide from '@/components/OnboardingGuide.vue'
+import ToastMessage from '@/components/ToastMessage.vue'
 
 const route = useRoute()
 const typeCode = route.query.type || 'UNKNOWN'
@@ -11,6 +12,8 @@ const name = ref('')
 const username = ref('')
 const result = ref(null) // 동적으로 결과 업데이트용
 const showOnboarding = ref(false) // 온보딩 표시 상태
+const showToast = ref(false)
+const toastMsg = ref('')
 
 // 투자 성향 저장
 const saveRiskType = async () => {
@@ -31,7 +34,9 @@ const saveRiskType = async () => {
       },
     )
     console.log('✅ 투자 성향 저장 완료')
-    alert('🎉 투자 성향이 저장되었습니다!')
+    toastMsg.value = '🎉 투자 성향이 저장되었습니다!' // 변경
+    showToast.value = true // 변경
+    // alert('🎉 투자 성향이 저장되었습니다!') // 삭제
   } catch (err) {
     console.error('❌ 저장 실패:', err)
   }
@@ -193,6 +198,8 @@ const resultMap = {
 
   <!-- 온보딩 가이드 -->
   <OnboardingGuide :showOnboarding="showOnboarding" @close="handleOnboardingComplete" />
+
+  <ToastMessage :show="showToast" :message="toastMsg" />
 </template>
 
 <style scoped>

@@ -264,7 +264,6 @@
                       holding.profitRate >= 0 ? '+' : ''
                     }}{{ holding.profitRate }}%)
                   </span>
-                  <span v-else class="text-xs text-gray-400">계산 중...</span>
                 </template>
                 <template v-else>
                   <span
@@ -306,7 +305,6 @@
                   <span v-if="holding.totalValue > 0"
                     >{{ holding.totalValue.toLocaleString() }}원</span
                   >
-                  <span v-else class="text-gray-400">계산 중...</span>
                 </span>
               </div>
               <div>
@@ -319,7 +317,6 @@
                   {{ holding.profitLoss >= 0 ? '+' : ''
                   }}{{ Math.abs(holding.profitLoss).toLocaleString() }}원
                 </span>
-                <span v-else class="ml-2 font-medium text-gray-400">계산 중...</span>
               </div>
             </div>
           </div>
