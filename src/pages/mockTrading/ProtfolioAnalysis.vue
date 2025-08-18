@@ -259,11 +259,13 @@ import { useRouter } from 'vue-router'
 import FooterNavigation from '@/components/FooterNavigation.vue'
 import { analysisService } from '@/services/analysisService.js'
 
-// 분석 리포트 생성 함수
 const createReport = () => {
   window.dispatchEvent(
     new CustomEvent('openChatBot', {
-      detail: { intent: 'PORTFOLIO_ANALYZE' },
+      detail: {
+        intent: 'PORTFOLIO_FEEDBACK', // 피드백 요청하기 상태로 진입
+        // risk: userStore.riskType, // 필요 시 riskType 전달 (userStore import 필요시 추가)
+      },
     }),
   )
 }
