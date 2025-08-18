@@ -2,25 +2,38 @@ import axios from 'axios'
 import { useAssetDataStore } from '@/services/useAssetData'
 axios.defaults.withCredentials = true
 
-function getLastMonday() {
-  const today = new Date()
-  const day = today.getDay() || 7
-  today.setDate(today.getDate() - day + 1 - 7)
-  return today.toISOString().slice(0, 10)
+/* ====== 날짜 유틸 (KST 안전) ====== */
+// ISO 자를 때 UTC로 전날로 밀리는 걸 방지하려고 '정오'로 고정
+function toISODateLocal(d) {
+  const x = new Date(d)
+  x.setHours(12, 0, 0, 0)
+  return x.toISOString().slice(0, 10)
 }
 
+// 지난주 '일요일' (주차: 일~토)
+function getLastSundayISO(base = new Date()) {
+  const d = new Date(base)
+  const day = d.getDay() // 0=일, 1=월,... 6=토
+  d.setDate(d.getDate() - day - 7) // 이번 주 일요일에서 1주 전
+  return toISODateLocal(d)
+}
+
+/* ====== 주차 라벨: baseDate(일) ~ (토) ====== */
 export function getRankingWeekLabel(baseDateString) {
-  const baseDate = new Date(baseDateString)
-  const start = new Date(baseDate)
-  const end = new Date(baseDate)
-  end.setDate(end.getDate() + 6)
-  const month = start.getMonth() + 1
-  const weekNumber = Math.ceil(start.getDate() / 7)
-  const label = `${month}월 ${['첫째', '둘째', '셋째', '넷째', '다섯째'][weekNumber - 1]} 주`
-  const fmt = (d) => `${d.getMonth() + 1}/${String(d.getDate()).padStart(2, '0')}`
-  return `${label} 랭킹 (${fmt(start)}~${fmt(end)})`
+  const start = new Date(baseDateString) // 일요일
+  start.setHours(12, 0, 0, 0)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 6) // 토요일
+
+  const sm = start.getMonth() + 1
+  const sd = String(start.getDate()).padStart(2, '0')
+  const em = end.getMonth() + 1
+  const ed = String(end.getDate()).padStart(2, '0')
+
+  return `${sm}월 ${sd}일 ~ ${em}월 ${ed}일`
 }
 
+/* ====== 매핑/정규화 ====== */
 const mapStock = (stock) => ({
   name: stock.stockName,
   gain: stock.avgGainRate,
@@ -29,7 +42,6 @@ const mapStock = (stock) => ({
     : '/images/stocks/default.png',
 })
 
-/** 서버 응답 → 표준화 */
 const ALLOWED_GROUPS = ['AGGRESSIVE', 'BALANCED', 'CONSERVATIVE', 'ANALYTICAL', 'EMOTIONAL']
 
 function normalizeTraitGroup(user) {
@@ -56,8 +68,10 @@ const mapUser = (user) => ({
   profileImage: normalizeProfileImage(user.profileImage), // 1~7 또는 null
 })
 
+/* ====== API ====== */
 export async function fetchMyRanking(userId, baseDate) {
-  const fallbackBaseDate = baseDate ?? getLastMonday()
+  // ✅ 기본값을 "지난주 일요일"로 변경
+  const fallbackBaseDate = baseDate ?? getLastSundayISO()
   try {
     const { data } = await axios.get('/api/ranking/my', {
       params: { userId, baseDate: fallbackBaseDate },
@@ -68,7 +82,7 @@ export async function fetchMyRanking(userId, baseDate) {
       topPercent: data.topPercent,
       trait: data.riskType, // 영문 그룹코드
       originalTrait: data.originalTrait, // 세부 코드
-      baseDate: data.baseDate ?? fallbackBaseDate,
+      baseDate: data.baseDate ?? fallbackBaseDate, // 서버가 에코 안 해도 안전
     }
   } catch {
     return null
@@ -106,6 +120,7 @@ export async function fetchGroupedWeeklyRanking(baseDate) {
   }
 }
 
+// 실시간 Top10 (baseDate 없이)
 export async function fetchTop10StocksRealtime() {
   try {
     const { data } = await axios.get('/api/ranking/popular-stocks')
