@@ -78,7 +78,7 @@
             <!-- 일반 메시지 -->
             <div v-else-if="!msg.type" class="bg-gray-200 rounded-3xl px-4 py-3 shadow-sm">
               <!-- 분석 기간 표시 -->
-              <div
+            <div
                 v-if="msg.requestedPeriod && msg.intentType === 'PORTFOLIO_ANALYZE'"
                 class="text-xs text-purple-600 font-medium mb-2 bg-purple-100 px-2 py-1 rounded-full inline-block"
               >
@@ -779,7 +779,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
       if (res.data.content.includes('투자 성향 기반 추천드릴게요')) {
         console.log('✅ 성공: 투자 성향 기반 추천 메시지가 포함됨!')
       }
-
+      
       chatStore.messages.push({
         role: 'bot',
         content: res.data.content,
