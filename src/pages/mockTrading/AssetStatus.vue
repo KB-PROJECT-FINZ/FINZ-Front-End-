@@ -229,7 +229,6 @@
           v-if="
             calculatedProfitRate !== null &&
             calculatedProfitRate !== undefined &&
-            calculatedProfitRate !== 0 &&
             totalInvestment > 0
           "
           class="font-bold text-lg ml-2"
@@ -242,6 +241,9 @@
           "
         >
           {{ calculatedProfitRate > 0 ? '+' : '' }}{{ calculatedProfitRate }}%
+        </span>
+        <span v-else-if="totalInvestment === 0" class="font-bold text-lg ml-2 text-gray-500">
+          0%
         </span>
         <span v-else class="font-bold text-lg ml-2 text-gray-400">계산 중...</span>
       </div>
