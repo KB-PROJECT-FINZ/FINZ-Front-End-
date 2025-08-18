@@ -13,9 +13,8 @@
         top: position.y + 'px',
       }"
     >
-      <img src="@/assets/finz-robot.png" alt="챗봇" class="w-12 h-12" />
+      <img src="@/assets/chatbot2.png" alt="챗봇" class="w-12 h-12" />
     </button>
-
     <!-- 하단 네비게이션 -->
     <nav
       class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-200 flex justify-around py-2 z-50"
@@ -26,7 +25,7 @@
         :to="item.to"
         class="flex flex-col items-center text-xs w-full"
         :class="isActive(item.to) ? 'font-normal' : 'font-normal'"
-        :style="isActive(item.to) ? 'color: #0063f7' : 'color: black'"
+        :style="isActive(item.to) ? 'color: #0063F7' : 'color: black'"
       >
         <!-- 아이콘 렌더링 분기 -->
         <div class="mb-1">
@@ -38,7 +37,6 @@
     </nav>
   </div>
 </template>
-
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -47,26 +45,21 @@ import TradingIcon from './icons/TradingIcon.vue'
 import StudyIcon from './icons/StudyIcon.vue'
 import RankingIcon from './icons/RankingIcon.vue'
 import MypageIcon from './icons/MypageIcon.vue'
-
 const route = useRoute()
 const chatbotButton = ref(null)
-
 // 드래그 위치 상태 (초기 위치는 원래와 동일)
 const position = reactive({
   x: 0, // onMounted에서 설정
   y: 0, // onMounted에서 설정
 })
-
 // 모바일 컨테이너 경계 계산
 const getMobileContainerBounds = () => {
   const containerMaxWidth = 430
   const viewportWidth = window.innerWidth
   const containerLeft = Math.max((viewportWidth - containerMaxWidth) / 2, 0)
   const containerRight = containerLeft + Math.min(containerMaxWidth, viewportWidth)
-
   // 푸터 네비게이션 높이 (py-2 + 아이콘 + 텍스트 ≈ 72px)
   const footerHeight = 72
-
   return {
     left: containerLeft,
     right: containerRight,
@@ -74,7 +67,6 @@ const getMobileContainerBounds = () => {
     bottom: window.innerHeight - footerHeight, // 푸터 영역 제외
   }
 }
-
 // 드래그 관련 변수
 let isPress = false
 let prevPosX = 0
@@ -103,7 +95,6 @@ const startDrag = (e) => {
   // 터치 이벤트와 마우스 이벤트 구분
   const clientX = e.touches ? e.touches[0].clientX : e.clientX
   const clientY = e.touches ? e.touches[0].clientY : e.clientY
-
   prevPosX = clientX
   prevPosY = clientY
   startX = clientX
@@ -125,7 +116,6 @@ const startDrag = (e) => {
     chatbotButton.value.style.cursor = 'grabbing'
   }
 }
-
 // 드래그 이동 (마우스 + 터치)
 const moveDrag = (e) => {
   if (!isPress) return
@@ -133,7 +123,6 @@ const moveDrag = (e) => {
   // 터치 이벤트와 마우스 이벤트 구분
   const clientX = e.touches ? e.touches[0].clientX : e.clientX
   const clientY = e.touches ? e.touches[0].clientY : e.clientY
-
   const posX = prevPosX - clientX
   const posY = prevPosY - clientY
 
@@ -146,22 +135,17 @@ const moveDrag = (e) => {
     // 드래그가 시작되면 이제 기본 동작 방지
     e.preventDefault()
   }
-
   prevPosX = clientX
   prevPosY = clientY
-
   // 새로운 위치 계산
   let newX = position.x - posX
   let newY = position.y - posY
-
   // 모바일 컨테이너 경계 제한
   const bounds = getMobileContainerBounds()
   const buttonSize = 64 // 버튼 크기 (w-12 h-12 + padding)
   const margin = 8
-
   newX = Math.max(bounds.left + margin, Math.min(bounds.right - buttonSize - margin, newX))
   newY = Math.max(bounds.top + margin, Math.min(bounds.bottom - buttonSize - margin, newY))
-
   position.x = newX
   position.y = newY
 }
@@ -192,9 +176,7 @@ const handleTouchEnd = (e) => {
 // 드래그 종료
 const endDrag = () => {
   if (!isPress) return // 이미 종료된 상태면 무시
-
   isPress = false
-
   // 드래그 종료 시 커서 원복
   if (chatbotButton.value) {
     chatbotButton.value.style.cursor = 'grab'
@@ -206,7 +188,6 @@ const endDrag = () => {
     touchHandled = false
   }, 100)
 }
-
 const goToChatbot = (e) => {
   // 터치 이벤트에서 드래그로 판단된 경우 클릭 무시
   if (touchHandled || isDragging) {
@@ -214,19 +195,15 @@ const goToChatbot = (e) => {
     e.stopPropagation()
     return
   }
-
   // 챗봇 패널 열기 이벤트 발생
   window.dispatchEvent(new CustomEvent('openChatBot'))
 }
-
 const isActive = (path) => route.path.startsWith(path)
-
 // 화면 크기 변경 시 버튼 위치 조정
 const handleResize = () => {
   const bounds = getMobileContainerBounds()
   const buttonSize = 64
   const margin = 8
-
   // 현재 위치가 경계를 벗어나면 조정
   position.x = Math.max(
     bounds.left + margin,
@@ -237,14 +214,12 @@ const handleResize = () => {
     Math.min(bounds.bottom - buttonSize - margin, position.y),
   )
 }
-
 onMounted(() => {
   // 초기 위치 설정 (원래 CSS와 동일하게)
   const bounds = getMobileContainerBounds()
   const buttonSize = 64
   position.x = bounds.right - buttonSize - 16 // 오른쪽에서 16px 떨어진 위치
   position.y = bounds.bottom - buttonSize - 16 // 푸터 위쪽 16px 떨어진 위치
-
   // 마우스 이벤트 리스너 등록
   window.addEventListener('mousemove', moveDrag)
   window.addEventListener('mouseup', endDrag)
@@ -252,23 +227,18 @@ onMounted(() => {
   // 터치 이벤트 리스너 등록 (passive: false로 preventDefault 허용)
   window.addEventListener('touchmove', moveDrag, { passive: false })
   window.addEventListener('touchend', endDrag)
-
   window.addEventListener('resize', handleResize)
 })
-
 onUnmounted(() => {
   // 마우스 이벤트 리스너 해제
   window.removeEventListener('mousemove', moveDrag)
   window.removeEventListener('mouseup', endDrag)
-
   // 터치 이벤트 리스너 해제
   window.removeEventListener('touchmove', moveDrag)
   window.removeEventListener('touchend', endDrag)
-
   window.removeEventListener('resize', handleResize)
 })
 </script>
-
 <style scoped>
 .chatbot-button {
   cursor: grab;
@@ -276,11 +246,9 @@ onUnmounted(() => {
   -webkit-tap-highlight-color: transparent; /* 터치 시 하이라이트 제거 */
   touch-action: none; /* 기본 터치 동작 제어 */
 }
-
 .chatbot-button:active {
   cursor: grabbing;
 }
-
 /* 드래그 중일 때 호버 효과 제거 */
 .chatbot-button:active:hover {
   transform: scale(1);
