@@ -5,7 +5,7 @@
       <div class="font-bold text-black text-lg">finz</div>
       <div class="flex items-center gap-2">
         <button
-          class="text-xs text-blue-500 border border-blue-300 rounded-full px-2 py-0.5"
+          class="text-xs text-[#2165C2] border border-[#2165C2]/50 rounded-full px-2 py-0.5"
           @click="restart"
         >
           처음부터
@@ -19,7 +19,7 @@
     <!-- Progress Bar -->
     <div class="w-full h-1 bg-gray-200 rounded-full overflow-hidden mb-4">
       <div
-        class="bg-purple-500 h-full transition-all duration-300"
+        class="bg-[#2165C2] h-full transition-all duration-300"
         :style="{ width: `${((currentIndex + 1) / questions.length) * 100}%` }"
       />
     </div>
@@ -30,7 +30,7 @@
         v-for="(q, i) in questions"
         :key="i"
         class="w-2 h-2 rounded-full"
-        :class="i === currentIndex ? 'bg-purple-500' : 'bg-gray-200'"
+        :class="i === currentIndex ? 'bg-[#2165C2]' : 'bg-gray-200'"
       ></span>
     </div>
 
@@ -42,13 +42,13 @@
     <!-- 선택지 -->
     <div class="space-y-4">
       <button
-        class="w-full py-3 text-sm font-semibold bg-white rounded-2xl shadow-md hover:shadow-lg active:translate-y-[1px] transition"
+        class="w-full py-3 text-sm font-semibold bg-white rounded-2xl shadow-md hover:shadow-lg active:translate-y-[1px] transition border border-gray-100"
         @click="select('A')"
       >
         A. {{ currentQuestion.a }}
       </button>
       <button
-        class="w-full py-3 text-sm font-semibold bg-white rounded-2xl shadow-md hover:shadow-lg active:translate-y-[1px] transition"
+        class="w-full py-3 text-sm font-semibold bg-white rounded-2xl shadow-md hover:shadow-lg active:translate-y-[1px] transition border border-gray-100"
         @click="select('B')"
       >
         B. {{ currentQuestion.b }}
@@ -57,7 +57,7 @@
 
     <!-- 도움말 -->
     <p class="text-xs text-center text-gray-500 mt-6">💡 더 가깝게 느껴지는 선택지를 골라주세요</p>
-    <p class="text-[11px] text-blue-500 text-center absolute bottom-3 left-0 right-0">
+    <p class="text-[11px] text-[#2165C2] text-center absolute bottom-3 left-0 right-0">
       🔐 정확한 결과를 위해 솔직하게 답변해주세요
     </p>
   </div>
