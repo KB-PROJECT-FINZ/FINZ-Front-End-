@@ -150,21 +150,6 @@
         <div class="grid grid-cols-3 gap-3">
           <!-- 첫 번째 행 -->
           <button
-            @click="handleButtonIntent({ intent: 'RECOMMEND_KEYWORD' })"
-            class="flex flex-col items-center space-y-1 p-3 rounded-xl hover:bg-blue-600 transition-colors duration-200"
-          >
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <span class="text-white text-xs font-medium">키워드로 추천</span>
-          </button>
-
-          <button
             @click="handleButtonIntent({ intent: 'BACK_TO_MAIN' })"
             class="flex flex-col items-center space-y-1 p-3 rounded-xl hover:bg-blue-600 transition-colors duration-200"
           >
@@ -177,6 +162,20 @@
               />
             </svg>
             <span class="text-white text-xs font-medium">처음으로</span>
+          </button>
+          <button
+            @click="handleButtonIntent({ intent: 'RECOMMEND_KEYWORD' })"
+            class="flex flex-col items-center space-y-1 p-3 rounded-xl hover:bg-blue-600 transition-colors duration-200"
+          >
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <span class="text-white text-xs font-medium">키워드로 추천</span>
           </button>
 
           <button
