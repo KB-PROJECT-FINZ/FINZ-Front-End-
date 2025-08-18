@@ -12,7 +12,7 @@
           <div class="flex items-center gap-2">
             <img :src="coinIcon" alt="" class="w-5 h-5 shrink-0" />
             <span class="text-sm font-semibold text-gray-800">
-              보유 크레딧 | {{ asset.amount }}P
+              보유 크레딧 | {{ asset.amount }}C
             </span>
           </div>
 
