@@ -51,10 +51,10 @@
       "
       class="text-center py-12 bg-white rounded-lg border border-gray-200 mx-4 mt-8"
     >
-      <h3 class="text-xl font-medium mb-2 text-gray-900">분석 리포트가 아직 없습니다</h3>
+      <h3 class="text-xl font-medium mb-2 text-gray-900">아직 분석 리포트가 없어요</h3>
       <p class="text-gray-700 mb-6">
         모의투자 거래내역 기반 AI 분석 리포트를<br />
-        생성할 수 있습니다.
+        생성할 수 있어요
       </p>
       <button
         @click="createReport"
@@ -69,7 +69,7 @@
       v-else-if="error"
       class="text-center py-12 bg-red-50 rounded-lg border-2 border-red-200 mx-4 mt-8"
     >
-      <h3 class="text-red-600 text-xl font-bold mb-2">⚠️ 분석 오류</h3>
+      <h3 class="text-red-600 text-xl font-bold mb-2">분석 오류</h3>
       <p class="text-gray-700 mb-4">{{ error }}</p>
       <button
         @click="fetchAnalysis"
