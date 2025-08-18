@@ -12,18 +12,31 @@
           @click.stop
         >
           <!-- 헤더 -->
-          <div class="flex items-center justify-between bg-white px-6 py-4 border-b border-gray-200">
-            <!-- finz 로고 -->
-            <div class="flex items-center">
-              <img src="@/assets/finz.png" alt="finz" class="h-6 w-auto" />
+          <div
+            class="flex items-center justify-between bg-gradient-to-r from-blue-400/90 to-purple-500/90 backdrop-blur-sm px-6 py-4"
+          >
+            <div class="flex items-center space-x-3">
+              <div
+                class="w-8 h-8 bg-white/30 rounded-2xl flex items-center justify-center backdrop-blur-sm"
+              >
+                <img src="@/assets/finz.png" alt="FINZ" class="w-full h-full object-contain" />
+              </div>
+              <div>
+                <h1 class="text-white text-base font-semibold">AI 투자 어시스턴트</h1>
+                <p class="text-white/90 text-xs">투자 상담을 도와드려요</p>
+              </div>
             </div>
-            <!-- 닫기 버튼 -->
             <button
               @click="closeChat"
-              class="w-6 h-6 flex items-center justify-center text-black hover:bg-gray-100 rounded-full transition-colors duration-200"
+              class="p-2 rounded-2xl bg-white/20 hover:bg-white/30 transition-all duration-300 backdrop-blur-sm"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -40,6 +53,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useChatStore } from '@/stores/counter.js'
 import ChatBox from '@/components/chatbot/ChatBox.vue'
 
 const isOpen = ref(false)
@@ -53,8 +67,10 @@ const openChat = (risk, intent) => {
   initialIntent.value = intent || null
   isOpen.value = true
 }
+
 const closeChat = () => {
   isOpen.value = false
+  // 대화 내용 유지 (초기화하지 않음)
 }
 
 // 하단바 챗봇 버튼 클릭 이벤트 리스너
@@ -64,23 +80,20 @@ const handleOpenChatBot = (e) => {
 
 onMounted(() => {
   window.addEventListener('openChatBot', handleOpenChatBot)
-  window.addEventListener('keydown', onKeydown)
 })
 
 onUnmounted(() => {
   window.removeEventListener('openChatBot', handleOpenChatBot)
-  window.removeEventListener('keydown', onKeydown)
 })
 </script>
 
 <style scoped>
-/* 패널: 아래에서 위로 슬라이드 */
+/* 애니메이션 효과 */
 .chat-panel-enter-active,
 .chat-panel-leave-active {
-  transition:
-    transform 0.32s ease-out,
-    opacity 0.32s ease-out;
+  transition: all 0.3s ease;
 }
+
 .chat-panel-enter-from,
 .chat-panel-leave-to {
   transform: translateY(100%);
