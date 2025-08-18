@@ -4,7 +4,7 @@
     <div class="bg-gray-100 rounded-2xl px-4 py-3">
       <p class="text-sm text-gray-700 font-medium">
         {{ getRecommendationType()
-        }}{{ getRecommendationType() === '키워드 기반 추천' ? '드릴게요!' : '을 추천드릴게요!' }}
+        }}{{ getRecommendationType() === '키워드 기반 추천' ? '드릴게요!' : '을 드릴게요!' }}
       </p>
     </div>
 

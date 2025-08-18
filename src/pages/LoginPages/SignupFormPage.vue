@@ -27,41 +27,6 @@
         </div>
         <!-- 폼 -->
         <div class="space-y-3 w-full">
-          <!-- 이름 -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">이름</label>
-            <input
-              v-model="name"
-              type="text"
-              placeholder="실명을 입력해주세요"
-              class="w-full h-12 px-4 rounded-xl bg-gray-100 border border-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-            />
-          </div>
-
-          <!-- 아이디(닉네임) + 중복확인 -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">아이디</label>
-            <div class="flex gap-2">
-              <input
-                v-model="nickname"
-                type="text"
-                placeholder="아이디를 입력해주세요"
-                class="flex-1 h-12 px-4 rounded-xl bg-gray-100 border border-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-              />
-              <button
-                class="h-12 px-4 rounded-xl border border-[#2165C2] text-[#2165C2] font-medium hover:bg-blue-50 transition"
-                @click="checkNickname"
-              >
-                {{ nicknameChecking ? '⏳ 확인중' : '중복확인' }}
-              </button>
-            </div>
-            <p v-if="nicknameStatus === 'available'" class="text-sm text-green-600 mt-2">
-              ✔ 사용 가능한 아이디입니다.
-            </p>
-            <p v-else-if="nicknameStatus === 'unavailable'" class="text-sm text-red-500 mt-2">
-              ✖ 이미 사용 중인 아이디입니다.
-            </p>
-          </div>
           <!-- 이메일 + 중복확인 -->
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">이메일</label>
@@ -105,11 +70,40 @@
                 @click="togglePassword"
                 aria-label="비밀번호 보기 토글"
               >
-                <span>{{ showPassword ? '👁️‍🗨️' : '👁️' }}</span>
+                <!-- 눈 아이콘 -->
+                <span>
+                  <svg
+                    v-if="!showPassword"
+                    class="w-5 h-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                  <svg v-else class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 3l18 18M10.585 10.585A3 3 0 0013.5 13.5M9.88 4.84A9.956 9.956 0 0112 4c4.477 0 8.268 2.943 9.542 7a9.98 9.98 0 01-4.132 5.225M6.228 6.228A9.982 9.982 0 002.458 12C3.732 16.057 7.523 19 12 19c1.21 0 2.368-.214 3.433-.606"
+                    />
+                  </svg>
+                </span>
               </button>
             </div>
           </div>
-
           <!-- 비밀번호 확인 -->
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">비밀번호 확인</label>
@@ -126,7 +120,37 @@
                 @click="togglePassword"
                 aria-label="비밀번호 보기 토글"
               >
-                <span>{{ showPassword ? '👁️‍🗨️' : '👁️' }}</span>
+                <!-- 눈 아이콘 -->
+                <span>
+                  <svg
+                    v-if="!showPassword"
+                    class="w-5 h-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                  <svg v-else class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 3l18 18M10.585 10.585A3 3 0 0013.5 13.5M9.88 4.84A9.956 9.956 0 0112 4c4.477 0 8.268 2.943 9.542 7a9.98 9.98 0 01-4.132 5.225M6.228 6.228A9.982 9.982 0 002.458 12C3.732 16.057 7.523 19 12 19c1.21 0 2.368-.214 3.433-.606"
+                    />
+                  </svg>
+                </span>
               </button>
             </div>
             <p
@@ -134,6 +158,40 @@
               class="text-sm text-red-500 mt-2"
             >
               비밀번호가 일치하지 않습니다.
+            </p>
+          </div>
+          <!-- 이름 -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">이름</label>
+            <input
+              v-model="name"
+              type="text"
+              placeholder="실명을 입력해주세요"
+              class="w-full h-12 px-4 rounded-xl bg-gray-100 border border-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+            />
+          </div>
+          <!-- 아이디(닉네임) + 중복확인 -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">닉네임</label>
+            <div class="flex gap-2">
+              <input
+                v-model="nickname"
+                type="text"
+                placeholder="닉네임을 입력해주세요"
+                class="flex-1 h-12 px-4 rounded-xl bg-gray-100 border border-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              />
+              <button
+                class="h-12 px-4 rounded-xl border border-[#2165C2] text-[#2165C2] font-medium hover:bg-blue-50 transition"
+                @click="checkNickname"
+              >
+                {{ nicknameChecking ? '⏳ 확인중' : '중복확인' }}
+              </button>
+            </div>
+            <p v-if="nicknameStatus === 'available'" class="text-sm text-green-600 mt-2">
+              ✔ 사용 가능한 닉네임입니다.
+            </p>
+            <p v-else-if="nicknameStatus === 'unavailable'" class="text-sm text-red-500 mt-2">
+              ✖ 이미 사용 중인 닉네임입니다.
             </p>
           </div>
 
