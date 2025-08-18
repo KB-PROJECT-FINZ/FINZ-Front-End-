@@ -1,19 +1,19 @@
 <template>
   <div>
     <!-- 드래그 가능한 챗봇 버튼 -->
-    <button
-      ref="chatbotButton"
-      @mousedown="startDrag"
-      @touchstart="startDrag"
-      @click="goToChatbot"
-      class="chatbot-button bg-blue-50 fixed text-white px-2 py-2 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300 flex justify-center items-center"
-      :style="{
-        left: position.x + 'px',
-        top: position.y + 'px',
-      }"
-    >
-                            <img src="@/assets/finz-robot.png" alt="챗봇" class="w-12 h-12 transform translate-x-1" />
-    </button>
+                        <button
+                      ref="chatbotButton"
+                      @mousedown="startDrag"
+                      @touchstart="startDrag"
+                      @click="goToChatbot"
+                      class="chatbot-button bg-white fixed text-white px-2 py-2 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300 flex justify-center items-center"
+                      :style="{
+                        left: position.x + 'px',
+                        top: position.y + 'px',
+                      }"
+                    >
+                      <img src="@/assets/finz-robot.png" alt="챗봇" class="w-12 h-12" />
+                    </button>
     <!-- 하단 네비게이션 -->
     <nav
       class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-200 flex justify-around py-2 z-50"
