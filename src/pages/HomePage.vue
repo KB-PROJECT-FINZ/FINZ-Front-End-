@@ -9,7 +9,7 @@
 
       <!-- 안내사항 카드 -->
       <NoticeCard
-        v-if="showNotice"
+        v-if="noticeVisible"
         @close="showNotice = false"
         @goToLearning="goToLearning"
         class="w-full max-w-[420px] p-4 mb-4 bg-white rounded-2xl shadow"
@@ -634,7 +634,23 @@ onMounted(async () => {
     console.error('내 투자내역 로딩 실패:', e)
   }
 })
+onMounted(async () => {
+  // 로그인만 고려
+  const { data } = await axios.get('/api/auth/me', { withCredentials: true })
+  userId.value = Number(data.userId ?? data.id)
 
+  const key = `quizClaimed:${MODULE_ID}:user:${userId.value}`
+  claimed.value = localStorage.getItem(key) === 'true'
+
+  // 이미 수령했으면 안내 안 띄움
+  showNotice.value = !claimed.value
+})
+
+// 선택: 학습 페이지에서 이벤트 쏘면 즉시 반영 (새로고침 없이)
+window.addEventListener(`quiz-claimed:${MODULE_ID}`, () => {
+  claimed.value = true
+  showNotice.value = false
+})
 const selectedContent = ref(null)
 
 // 자산 데이터 스토어 (for total asset section)
@@ -654,6 +670,11 @@ const calculatedProfitAmount = computed(() => {
   // 평가금액 - 투자원금
   return safeNumber(stockValue.value, 0) - safeNumber(totalInvestment.value, 0)
 })
+const MODULE_ID = 'learning-basic-001'
+
+const userId = ref(0)
+const claimed = ref(false) // ← localStorage에 값 있으면 true
+const noticeVisible = computed(() => !claimed.value && showNotice.value)
 
 // 상태 변수
 const nickname = ref('')
