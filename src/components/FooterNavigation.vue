@@ -12,7 +12,7 @@
         top: position.y + 'px',
       }"
     >
-      <img src="@/assets/Chatbot3.png" alt="챗봇" class="w-12 h-12 transform translate-x-1" />
+                            <img src="@/assets/finz-robot.png" alt="챗봇" class="w-12 h-12 transform translate-x-1" />
     </button>
     <!-- 하단 네비게이션 -->
     <nav
