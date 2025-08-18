@@ -79,6 +79,52 @@
         </div>
       </div>
 
+      <!-- 내 투자 상태 카드 -->
+      <div class="w-full max-w-[420px] mx-auto mb-4">
+        <div class="flex gap-4">
+          <div class="flex-1 p-5 bg-white rounded-2xl shadow">
+            <p class="font-bold text-sm text-gray-900 mb-1">보유 현금</p>
+            <p class="font-bold text-gray-900">
+              {{ safeNumber(userAccount.currentBalance).toLocaleString() }}원
+            </p>
+          </div>
+          <!-- 보유 크레딧 카드: 버튼으로 변경 -->
+          <button
+            class="flex-1 p-5 bg-white rounded-2xl shadow flex flex-col items-start relative"
+            @click="showChargeModal = true"
+            style="outline: none; border: none"
+          >
+            <div class="w-full flex items-center justify-between">
+              <p class="font-bold text-sm text-gray-900 mb-1">보유 크레딧</p>
+              <!-- > 아이콘 (자산 현황 버튼과 동일) -->
+              <svg
+                class="w-4 h-4 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                style="transform: scaleX(-1)"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </div>
+            <p class="font-bold text-gray-900">{{ asset.amount.toLocaleString() }}C</p>
+          </button>
+        </div>
+      </div>
+
+      <!-- 충전 모달 (AssetStatus의 showChargeModal 활용) -->
+      <CreditChargeModal
+        :show="showChargeModal"
+        :userCredit="userCredit"
+        @close="showChargeModal = false"
+        @charged="handleCreditCharge"
+      />
+
       <!-- 총 자산 카드 -->
       <div class="w-full max-w-[420px] mx-auto p-5 mb-4 bg-white rounded-2xl shadow">
         <button class="w-full text-left" style="display: block">
@@ -424,9 +470,14 @@ import analyzeIcon from '@/assets/analyze_image.png'
 import AssetIcon from '@/components/icons/AssetIcon.vue'
 import transactionIcon from '@/components/icons/transactionIcon.vue'
 import ListIcon from '@/components/icons/ListIcon.vue'
-import BellIcon from '@/components/icons/BellIcon.vue'
+
 import { useUserStore } from '@/stores/user.js'
+
 const userStore = useUserStore()
+
+import CreditChargeModal from '@/components/CreditChargeModal.vue'
+const showChargeModal = ref(false)
+const userCredit = computed(() => asset.value.amount) // 또는 실제 크레딧 값
 
 const router = useRouter()
 

@@ -77,10 +77,10 @@
         >
           &times;
         </button>
-        <div class="mb-4 text-center text-lg font-bold">사용할 수 있는 포인트</div>
+        <div class="mb-4 text-center text-lg font-bold">사용할 수 있는 크레딧</div>
         <div class="flex justify-between items-center mb-2">
           <span class="text-gray-700">내 크레딧</span>
-          <span class="font-bold text-gray-700">{{ safeNumber(userCredit) }}P</span>
+          <span class="font-bold text-gray-700">{{ safeNumber(userCredit) }}C</span>
         </div>
         <div class="mt-6 mb-2 text-gray-700 font-medium">전환신청 크레딧 입력</div>
         <div class="flex justify-end mb-2">
@@ -103,7 +103,7 @@
           />
           <span
             class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 text-lg font-bold pointer-events-none"
-            >P</span
+            >C</span
           >
         </div>
         <div class="my-6 text-center text-gray-700">
@@ -118,7 +118,7 @@
           :disabled="!chargeCreditInput || chargeCreditInput < 1 || chargeCreditInput > userCredit"
           @click="onChargeNext"
         >
-          확인 &gt;
+          확인
         </button>
       </div>
     </div>
