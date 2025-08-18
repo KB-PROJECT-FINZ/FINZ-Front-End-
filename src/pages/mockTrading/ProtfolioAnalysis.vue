@@ -259,17 +259,6 @@ import { useRouter } from 'vue-router'
 import FooterNavigation from '@/components/FooterNavigation.vue'
 import { analysisService } from '@/services/analysisService.js'
 
-const createReport = () => {
-  window.dispatchEvent(
-    new CustomEvent('openChatBot', {
-      detail: {
-        intent: 'PORTFOLIO_FEEDBACK', // 피드백 요청하기 상태로 진입
-        // risk: userStore.riskType, // 필요 시 riskType 전달 (userStore import 필요시 추가)
-      },
-    }),
-  )
-}
-
 // 챗봇 닫힘 이벤트 감지하여 리포트 재조회
 
 let chatBotClosed = false
@@ -481,6 +470,15 @@ const exportToPDF = async () => {
   } finally {
     pdfLoading.value = false
   }
+}
+
+const createReport = () => {
+  // 챗봇에 분석 리포트 생성 요청 이벤트 dispatch (intent 값 통일)
+  window.dispatchEvent(
+    new CustomEvent('openChatBot', {
+      detail: { intent: 'PORTFOLIO_ANALYZE' },
+    }),
+  )
 }
 
 onMounted(() => {
