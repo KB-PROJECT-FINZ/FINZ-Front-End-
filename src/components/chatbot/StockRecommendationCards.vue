@@ -63,7 +63,6 @@
 
 <script setup>
 import { computed } from 'vue'
-import { marked } from 'marked'
 
 const props = defineProps({
   content: {

@@ -53,7 +53,6 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRoute, useRouter } from 'vue-router'
 import OnboardingGuide from '@/components/OnboardingGuide.vue'
-import ToastMessage from '@/components/ToastMessage.vue'
 
 const route = useRoute()
 const typeCode = route.query.type || 'UNKNOWN'
@@ -62,8 +61,6 @@ const name = ref('')
 const username = ref('')
 const result = ref(null) // 동적으로 결과 업데이트용
 const showOnboarding = ref(false) // 온보딩 표시 상태
-const showToast = ref(false)
-const toastMsg = ref('')
 
 // 투자 성향 저장
 const saveRiskType = async () => {
