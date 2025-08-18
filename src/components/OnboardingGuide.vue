@@ -3,7 +3,7 @@
     v-if="showOnboarding"
     class="fixed inset-0 z-50 bg-[#f2f2f2]/90 backdrop-blur-md flex items-center justify-center"
   >
-    <div class="w-full max-w-[430px] mx-auto">
+    <div class="w-full max-w-[430px] mx-auto relative">
       <!-- 1단계 -->
       <div
         v-if="currentStep === 1"
@@ -29,7 +29,7 @@
         v-else-if="currentStep >= 2 && currentStep <= 6"
         class="flex flex-col items-center pt-10 pb-14 min-h-screen"
       >
-        <!-- 텍스트 -->
+        <!-- 문구 -->
         <div class="text-center px-6 mb-6">
           <template v-if="currentStep === 2">
             <h2 class="text-[30px] font-bold leading-snug mb-4">
@@ -79,18 +79,17 @@
           </template>
         </div>
 
-        <!-- mockup -->
-        <div
-          class="relative w-[340px] h-[640px] border-[8px] border-black rounded-[32px] overflow-hidden mb-6"
-        >
+        <!-- 스마트폰 모형 -->
+        <div class="relative w-[340px] h-[640px] mx-auto mb-6">
+          <!-- 콘텐츠(안쪽) -->
           <img
             :src="stepImage[currentStep]"
-            :class="[
-              'w-full h-full',
-              currentStep === 3 || currentStep === 5 || currentStep === 6
-                ? 'object-cover object-top'
-                : 'object-contain',
-            ]"
+            class="absolute inset-[18px] w-[304px] h-[600px] object-cover rounded-[28px] z-20"
+          />
+          <!-- 프레임(PNG) -->
+          <img
+            src="@/assets/OnboardingGuide/phone-frame.png"
+            class="absolute inset-0 w-full h-full object-contain pointer-events-none z-10"
           />
         </div>
 
@@ -137,13 +136,13 @@
 <script setup>
 import { ref } from 'vue'
 
-// 이미지 경로 정의
+// 안쪽 콘텐츠(swiper 없이 단계별 이미지)
 const stepImage = {
   2: new URL('@/assets/OnboardingGuide/chatbot.png', import.meta.url).href,
   3: new URL('@/assets/OnboardingGuide/trade.png', import.meta.url).href,
   4: new URL('@/assets/OnboardingGuide/learning.png', import.meta.url).href,
   5: new URL('@/assets/OnboardingGuide/ranking.png', import.meta.url).href,
-  6: new URL('@/assets/OnboardingGuide/feedback.png', import.meta.url).href, // ✅ 6단계 이미지
+  6: new URL('@/assets/OnboardingGuide/feedback.png', import.meta.url).href,
 }
 
 const props = defineProps({ showOnboarding: Boolean })

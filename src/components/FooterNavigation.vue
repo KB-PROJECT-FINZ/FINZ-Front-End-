@@ -6,13 +6,13 @@
       @mousedown="startDrag"
       @touchstart="startDrag"
       @click="goToChatbot"
-      class="chatbot-button bg-blue-50 fixed text-white px-1 py-1 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300"
+      class="chatbot-button bg-blue-50 fixed text-white px-2 py-2 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300 flex justify-center items-center"
       :style="{
         left: position.x + 'px',
         top: position.y + 'px',
       }"
     >
-      <img src="@/assets/Chatbot3.png" alt="챗봇" class="w-12 h-12" />
+      <img src="@/assets/Chatbot3.png" alt="챗봇" class="w-12 h-12 transform translate-x-1" />
     </button>
 
     <!-- 하단 네비게이션 -->
@@ -99,46 +99,45 @@ const startDrag = (e) => {
   prevPosX = clientX
   prevPosY = clientY
   isPress = true
-  isDragging = false
 
-  // 드래그 중 커서 변경
+  // 드래그 시작 시 커서 변경
   if (chatbotButton.value) {
     chatbotButton.value.style.cursor = 'grabbing'
   }
 }
 
-// 드래그 이동 (마우스 + 터치)
+// 드래그 중 (마우스 + 터치)
 const moveDrag = (e) => {
   if (!isPress) return
-
-  e.preventDefault() // 기본 동작 방지
 
   // 터치 이벤트와 마우스 이벤트 구분
   const clientX = e.touches ? e.touches[0].clientX : e.clientX
   const clientY = e.touches ? e.touches[0].clientY : e.clientY
 
-  const posX = prevPosX - clientX
-  const posY = prevPosY - clientY
+  const deltaX = clientX - prevPosX
+  const deltaY = clientY - prevPosY
 
-  // 드래그 중임을 표시
-  if (Math.abs(posX) > 3 || Math.abs(posY) > 3) {
+  // 드래그 거리가 일정 이상일 때만 드래그로 인식
+  if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
     isDragging = true
   }
 
   prevPosX = clientX
   prevPosY = clientY
 
-  // 새로운 위치 계산
-  let newX = position.x - posX
-  let newY = position.y - posY
-
-  // 모바일 컨테이너 경계 제한
+  // 새 위치 계산
   const bounds = getMobileContainerBounds()
-  const buttonSize = 64 // 버튼 크기 (w-12 h-12 + padding)
+  const buttonSize = 64
   const margin = 8
 
-  newX = Math.max(bounds.left + margin, Math.min(bounds.right - buttonSize - margin, newX))
-  newY = Math.max(bounds.top + margin, Math.min(bounds.bottom - buttonSize - margin, newY))
+  const newX = Math.max(
+    bounds.left + margin,
+    Math.min(bounds.right - buttonSize - margin, position.x + deltaX),
+  )
+  const newY = Math.max(
+    bounds.top + margin,
+    Math.min(bounds.bottom - buttonSize - margin, position.y + deltaY),
+  )
 
   position.x = newX
   position.y = newY
@@ -196,7 +195,7 @@ onMounted(() => {
   // 초기 위치 설정 (원래 CSS와 동일하게)
   const bounds = getMobileContainerBounds()
   const buttonSize = 64
-  position.x = bounds.right - buttonSize - 16 // 오른쪽에서 16px 떨어진 위치
+  position.x = bounds.right - buttonSize - 8 // 오른쪽에서 8px 떨어진 위치 (더 오른쪽으로)
   position.y = bounds.bottom - buttonSize - 16 // 푸터 위쪽 16px 떨어진 위치
 
   // 마우스 이벤트 리스너 등록

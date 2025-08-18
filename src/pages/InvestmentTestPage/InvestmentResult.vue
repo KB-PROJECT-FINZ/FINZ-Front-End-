@@ -192,7 +192,7 @@ const resultMap = {
   </div>
 
   <!-- 온보딩 가이드 -->
-  <OnboardingGuide :showOnboarding="showOnboarding" @close="handleOnboardingComplete" />
+  <OnboardingGuide :showOnboarding="showOnboarding" @close="showOnboarding = false" />
 </template>
 
 <style scoped>
