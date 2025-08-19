@@ -684,7 +684,6 @@ onMounted(() => {
     fetchGPT('내 포트폴리오 피드백 줘', 'PORTFOLIO_ANALYZE')
   }
 })
-const props = defineProps({ risk: String, fixedIntent: String })
 
 onMounted(() => {
   if (props.fixedIntent === 'STOCK_ANALYZE') {

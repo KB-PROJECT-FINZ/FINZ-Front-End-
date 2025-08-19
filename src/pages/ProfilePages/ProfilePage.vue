@@ -354,7 +354,7 @@ const processProfileData = (userData) => {
   }
 }
 
-// 🔥 수정: onMounted에서 데이터 처리 방식 변경
+// 수정: onMounted에서 데이터 처리 방식 변경
 onMounted(async () => {
   try {
     const me = await axios.get('/api/auth/me', { withCredentials: true })
