@@ -1,19 +1,19 @@
 <template>
   <div>
     <!-- 드래그 가능한 챗봇 버튼 -->
-                        <button
-                      ref="chatbotButton"
-                      @mousedown="startDrag"
-                      @touchstart="startDrag"
-                      @click="goToChatbot"
-                      class="chatbot-button bg-white fixed text-white px-2 py-2 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300 flex justify-center items-center"
-                      :style="{
-                        left: position.x + 'px',
-                        top: position.y + 'px',
-                      }"
-                    >
-                      <img src="@/assets/finz-robot.png" alt="챗봇" class="w-12 h-12" />
-                    </button>
+    <button
+      ref="chatbotButton"
+      @mousedown="startDrag"
+      @touchstart="startDrag"
+      @touchend="handleTouchEnd"
+      class="chatbot-button bg-white fixed text-white px-2 py-2 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300 flex justify-center items-center"
+      :style="{
+        left: position.x + 'px',
+        top: position.y + 'px',
+      }"
+    >
+      <img src="@/assets/finz-robot.png" alt="챗봇" class="w-12 h-12" />
+    </button>
     <!-- 하단 네비게이션 -->
     <nav
       class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-200 flex justify-around py-2 z-50"
@@ -88,6 +88,7 @@ const startDrag = (e) => {
   prevPosY = clientY
   isPress = true
   isDragging = false
+  
   // 드래그 중 커서 변경
   if (chatbotButton.value) {
     chatbotButton.value.style.cursor = 'grabbing'
@@ -102,10 +103,13 @@ const moveDrag = (e) => {
   const clientY = e.touches ? e.touches[0].clientY : e.clientY
   const posX = prevPosX - clientX
   const posY = prevPosY - clientY
-  // 드래그 중임을 표시
-  if (Math.abs(posX) > 3 || Math.abs(posY) > 3) {
+  
+  // 드래그 중임을 표시 (모바일에서는 더 민감하게)
+  const dragThreshold = e.touches ? 5 : 3 // 터치에서는 5px, 마우스에서는 3px
+  if (Math.abs(posX) > dragThreshold || Math.abs(posY) > dragThreshold) {
     isDragging = true
   }
+  
   prevPosX = clientX
   prevPosY = clientY
   // 새로운 위치 계산
@@ -131,7 +135,7 @@ const endDrag = () => {
   // 잠시 후 isDragging 상태 리셋 (클릭 이벤트와의 충돌 방지)
   setTimeout(() => {
     isDragging = false
-  }, 50)
+  }, 100) // 100ms로 증가 (모바일 터치 최적화)
 }
 const goToChatbot = (e) => {
   // 드래그 중이었다면 클릭 이벤트 무시
@@ -140,8 +144,26 @@ const goToChatbot = (e) => {
     e.stopPropagation()
     return
   }
-  // 챗봇 패널 열기 이벤트 발생
+  
+  // 마우스 클릭인 경우 즉시 실행
   window.dispatchEvent(new CustomEvent('openChatBot'))
+}
+
+// 터치 종료 처리 (모바일 전용)
+const handleTouchEnd = (e) => {
+  e.preventDefault()
+  
+  // 드래그 중이었다면 클릭 이벤트 무시
+  if (isDragging) {
+    return
+  }
+  
+  // 짧은 터치인 경우 챗봇 열기
+  setTimeout(() => {
+    if (!isDragging) {
+      window.dispatchEvent(new CustomEvent('openChatBot'))
+    }
+  }, 100)
 }
 const isActive = (path) => route.path.startsWith(path)
 // 화면 크기 변경 시 버튼 위치 조정
