@@ -1,13 +1,17 @@
 <template>
   <div
     v-if="showOnboarding"
-    :class="
-      modalMode
-        ? 'fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm'
-        : 'min-h-screen bg-white'
-    "
+    class="fixed inset-0 z-50 flex items-center justify-center bg-[#f9f9f9]/90 backdrop-blur-sm"
   >
     <div class="relative w-full max-w-[430px] px-1 mx-auto">
+      <!-- X 닫기 버튼 추가 -->
+      <button
+        class="absolute top-6 right-6 text-gray-400 text-4xl z-10"
+        @click="emit('close')"
+        aria-label="닫기"
+      >
+        &times;
+      </button>
       <Swiper
         ref="swiperRef"
         :allow-touch-move="false"
@@ -22,7 +26,7 @@
             <h1 class="text-[30px] md:text-[34px] font-bold mb-10 text-center leading-tight">
               FINZ에 오신 것을<br />환영합니다!
             </h1>
-            <p class="text-[13px] md:text-[14px] text-gray-600 mb-4 text-center leading-normal">
+            <p class="text-[16px] md:text-[17px] text-gray-600 mb-10 text-center leading-normal">
               투자 초보자를 위한<br />맞춤형 금융 플랫폼
             </p>
             <button
@@ -98,7 +102,9 @@
                 :class="i === stepIndex ? 'bg-[#5ac6e9]' : 'bg-gray-300'"
               ></span>
             </div>
-            <div class="flex gap-3 mt-2 mb-1">
+
+            <!-- buttons -->
+            <div class="absolute bottom-10 md:bottom-60 left-1/2 -translate-x-1/2 flex gap-4">
               <button
                 v-if="stepIndex > 1"
                 class="bg-gray-200 text-gray-700 w-[120px] h-9 rounded-lg text-sm"
@@ -122,7 +128,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 // import 'swiper/css'
 // import 'swiper/css/navigation'
@@ -134,6 +140,7 @@ const onSwiper = (swiper) => {
 }
 
 const router = useRouter()
+const route = useRoute()
 const swiperRef = ref(null)
 const stepIndex = ref(1)
 
@@ -155,7 +162,11 @@ const slidePrev = () => {
   swiperRef.value.slidePrev()
 }
 const goLogin = () => {
-  router.push('/login-form')
+  if (route.path === '/home') {
+    emit('close') // '/home'일 때는 컴포넌트만 닫음
+  } else {
+    router.push('/login-form')
+  }
 }
 
 onMounted(() => {
