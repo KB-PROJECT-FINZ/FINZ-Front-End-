@@ -489,7 +489,27 @@
         </div>
       </transition>
       <ToastMessage :show="toast.show" :message="toast.message" />
-
+      <transition name="fade-scale">
+        <div
+          v-if="showOnboardingGuide"
+          class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/30 backdrop-blur-sm"
+        >
+          <div
+            class="bg-white rounded-2xl shadow-xl p-0 w-[90vw] max-w-[340px] min-h-[420px] max-h-[80vh] relative flex flex-col items-center justify-center overflow-y-auto"
+          >
+            <!-- X 닫기 버튼 -->
+            <button
+              class="absolute top-4 right-4 text-gray-400 text-2xl z-10"
+              @click="closeOnboardingGuide"
+              aria-label="닫기"
+            >
+              &times;
+            </button>
+            <!-- OnboardingGuide 내용 -->
+            <OnboardingGuide :showOnboarding="showOnboardingGuide" @close="closeOnboardingGuide" />
+          </div>
+        </div>
+      </transition>
       <BottomNav />
     </div>
   </div>
@@ -528,6 +548,17 @@ import transactionIcon from '@/components/icons/transactionIcon.vue'
 import ListIcon from '@/components/icons/ListIcon.vue'
 
 import { useUserStore } from '@/stores/user.js'
+
+import OnboardingGuide from '@/components/OnboardingGuide.vue'
+
+const showOnboardingGuide = ref(false)
+
+function openOnboardingGuide() {
+  showOnboardingGuide.value = true
+}
+function closeOnboardingGuide() {
+  showOnboardingGuide.value = false
+}
 
 const userStore = useUserStore()
 
@@ -625,7 +656,7 @@ const serviceFeatures = [
     icon: introIcon,
     title: '핀즈 알아보기',
     desc: '서비스 소개',
-    onClick: () => router.push('/home'),
+    onClick: openOnboardingGuide,
   },
   {
     icon: suggestionIcon,
