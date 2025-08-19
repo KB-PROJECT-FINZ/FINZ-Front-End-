@@ -79,6 +79,104 @@
         </div>
       </div>
 
+      <!-- 내 투자 상태 카드 -->
+      <div class="w-full max-w-[420px] mx-auto mb-4">
+        <div class="flex gap-4">
+          <div class="flex-1 p-5 bg-white rounded-2xl shadow">
+            <p class="font-bold text-sm text-gray-900 mb-1">보유 현금</p>
+            <p class="font-bold text-gray-900">
+              {{ safeNumber(userAccount.currentBalance).toLocaleString() }}원
+            </p>
+          </div>
+          <!-- 보유 크레딧 카드: 버튼으로 변경 -->
+          <button
+            class="flex-1 p-5 bg-white rounded-2xl shadow flex flex-col items-start relative"
+            @click="showChargeModal = true"
+            style="outline: none; border: none"
+          >
+            <div class="w-full flex items-center justify-between">
+              <p class="font-bold text-sm text-gray-900 mb-1">보유 크레딧</p>
+              <svg
+                class="w-4 h-4 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                style="transform: scaleX(-1)"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </div>
+            <p class="font-bold text-gray-900">{{ asset.amount.toLocaleString() }}C</p>
+          </button>
+        </div>
+      </div>
+
+      <!-- 충전 모달 (AssetStatus의 showChargeModal 활용) -->
+      <div
+        v-if="showChargeModal"
+        class="fixed inset-0 z-[1000] flex items-end justify-center bg-black/30 backdrop-blur-sm"
+      >
+        <div
+          class="bg-white w-full max-w-sm rounded-t-2xl p-6 pb-8 shadow-lg relative animate-slide-up"
+          @click.stop
+        >
+          <!-- 닫기 버튼 -->
+          <button class="absolute right-4 top-4 text-gray-400 text-2xl" @click="closeChargeModal">
+            &times;
+          </button>
+          <div class="mb-4 text-center text-lg font-bold">사용할 수 있는 크레딧</div>
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-gray-700">내 크레딧</span>
+            <span class="font-bold text-gray-700">{{ asset.amount.toLocaleString() }}C</span>
+          </div>
+          <div class="mt-6 mb-2 text-gray-700 font-medium">전환 신청 크레딧 입력</div>
+          <div class="flex justify-end mb-2">
+            <button
+              class="border border-gray-300 text-gray-700 bg-white rounded px-2 py-1 text-xs font-normal hover:bg-gray-100 transition-colors"
+              style="min-width: 60px"
+              @click="chargeCreditInput = asset.amount"
+            >
+              보유 크레딧 전체
+            </button>
+          </div>
+          <div class="relative mb-4">
+            <input
+              v-model.number="chargeCreditInput"
+              type="number"
+              min="1"
+              :max="asset.amount"
+              class="border rounded-lg px-4 py-2 w-full text-right font-bold text-lg pr-7 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="0"
+            />
+            <span
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 text-lg font-bold pointer-events-none"
+              >C</span
+            >
+          </div>
+          <div class="my-6 text-center text-gray-700">
+            내 계좌에
+            <span class="font-bold text-blue-600">{{
+              (chargeCreditInput * 1000).toLocaleString()
+            }}</span>
+            원이 추가됩니다.
+          </div>
+          <button
+            class="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold text-base hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:text-gray-400"
+            :disabled="
+              !chargeCreditInput || chargeCreditInput < 1 || chargeCreditInput > asset.amount
+            "
+            @click="onChargeNext"
+          >
+            확인
+          </button>
+        </div>
+      </div>
+
       <!-- 총 자산 카드 -->
       <div class="w-full max-w-[420px] mx-auto p-5 mb-4 bg-white rounded-2xl shadow">
         <button class="w-full text-left" style="display: block">
@@ -264,7 +362,6 @@
                       holding.profitRate >= 0 ? '+' : ''
                     }}{{ holding.profitRate }}%)
                   </span>
-                  <span v-else class="text-xs text-gray-400">계산 중...</span>
                 </template>
                 <template v-else>
                   <span
@@ -306,7 +403,6 @@
                   <span v-if="holding.totalValue > 0"
                     >{{ holding.totalValue.toLocaleString() }}원</span
                   >
-                  <span v-else class="text-gray-400">계산 중...</span>
                 </span>
               </div>
               <div>
@@ -319,7 +415,6 @@
                   {{ holding.profitLoss >= 0 ? '+' : ''
                   }}{{ Math.abs(holding.profitLoss).toLocaleString() }}원
                 </span>
-                <span v-else class="ml-2 font-medium text-gray-400">계산 중...</span>
               </div>
             </div>
           </div>
@@ -393,6 +488,28 @@
           </div>
         </div>
       </transition>
+      <ToastMessage :show="toast.show" :message="toast.message" />
+      <transition name="fade-scale">
+        <div
+          v-if="showOnboardingGuide"
+          class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/30 backdrop-blur-sm"
+        >
+          <div
+            class="bg-white rounded-2xl shadow-xl p-0 w-[90vw] max-w-[340px] min-h-[420px] max-h-[80vh] relative flex flex-col items-center justify-center overflow-y-auto"
+          >
+            <!-- X 닫기 버튼 -->
+            <button
+              class="absolute top-4 right-4 text-gray-400 text-2xl z-10"
+              @click="closeOnboardingGuide"
+              aria-label="닫기"
+            >
+              &times;
+            </button>
+            <!-- OnboardingGuide 내용 -->
+            <OnboardingGuide :showOnboarding="showOnboardingGuide" @close="closeOnboardingGuide" />
+          </div>
+        </div>
+      </transition>
       <BottomNav />
     </div>
   </div>
@@ -413,6 +530,8 @@ import BottomNav from '@/components/FooterNavigation.vue'
 import { useHoldingsData } from '@/services/useHoldingsData'
 // import PendingOrders from '@/components/mockTrading/PendingOrders.vue'
 import NoticeCard from '@/components/NoticeCard.vue'
+import ToastMessage from '@/components/ToastMessage.vue'
+import { checkExecution } from '@/services/checkExecution'
 
 // import finzIcon from '@/assets/finz.png'
 // import krwIcon from '@/assets/krw_image.png'
@@ -421,15 +540,115 @@ import introIcon from '@/assets/intro_image.png'
 import quizIcon from '@/assets/quiz_image.png'
 import suggestionIcon from '@/assets/suggestion_image.png'
 import noteIcon from '@/assets/note_image.png'
+import dictionaryIcon from '@/assets/dictionary_image.png'
+import analyzeIcon from '@/assets/analyze_image.png'
 
 import AssetIcon from '@/components/icons/AssetIcon.vue'
 import transactionIcon from '@/components/icons/transactionIcon.vue'
 import ListIcon from '@/components/icons/ListIcon.vue'
-import BellIcon from '@/components/icons/BellIcon.vue'
+
+import { useUserStore } from '@/stores/user.js'
+
+import OnboardingGuide from '@/components/OnboardingGuide.vue'
+
+const showOnboardingGuide = ref(false)
+
+function openOnboardingGuide() {
+  showOnboardingGuide.value = true
+}
+function closeOnboardingGuide() {
+  showOnboardingGuide.value = false
+}
+
+const userStore = useUserStore()
+
+const showChargeModal = ref(false)
+const chargeCreditInput = ref(0)
+
+const toast = ref({ show: false, message: '' })
+function showToast(msg, duration = 2000) {
+  toast.value.message = msg
+  toast.value.show = true
+  setTimeout(() => {
+    toast.value.show = false
+  }, duration)
+}
+
+function closeChargeModal() {
+  showChargeModal.value = false
+  chargeCreditInput.value = 0
+}
+
+async function onChargeNext() {
+  if (!chargeCreditInput.value || chargeCreditInput.value < 1) {
+    showToast('충전할 금액을 입력해주세요.')
+    return
+  }
+  if (chargeCreditInput.value > asset.value.amount) {
+    showToast('보유 크레딧을 초과할 수 없습니다.')
+    return
+  }
+  try {
+    // 실제 크레딧 전환 API 호출
+    const response = await axios.post('/api/mocktrading/charge-credit', {
+      creditAmount: chargeCreditInput.value,
+    })
+    if (response.data.success) {
+      showToast(`${chargeCreditInput.value}C가\n전환되었습니다!`)
+      await reloadAssetInfo()
+      await loadUserData()
+      closeChargeModal()
+    } else {
+      showToast('전환에 실패했습니다. 다시 시도해주세요.')
+      closeChargeModal()
+    }
+  } catch (error) {
+    showToast('전환 중 오류가 발생했습니다.')
+    closeChargeModal()
+  }
+}
+
+// 자산 정보 새로고침 함수
+async function reloadAssetInfo() {
+  // asset.value.amount 등 자산 정보 재조회 로직
+  // 예시:
+  try {
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    const userId = res.data.userId
+    asset.value.amount = await getUserCredit(userId)
+  } catch (e) {
+    // ignore
+  }
+}
 
 const router = useRouter()
 
 //register()
+
+function openRecommendChat() {
+  // riskType은 fetchUserInfo 등에서 받아온 값 사용
+  window.dispatchEvent(
+    new CustomEvent('openChatBot', {
+      detail: { risk: userStore.riskType }, // 또는 user.riskType 등 실제 코드에 맞게
+    }),
+  )
+}
+
+function openAnalyzeChat() {
+  window.dispatchEvent(
+    new CustomEvent('openChatBot', {
+      detail: { intent: 'STOCK_ANALYZE' },
+    }),
+  )
+}
+
+function openDictionaryChat() {
+  window.dispatchEvent(
+    new CustomEvent('openChatBot', {
+      detail: { intent: 'TERM_EXPLAIN' },
+    }),
+  )
+}
 
 // 서비스 기능 연결 카드 데이터
 const serviceFeatures = [
@@ -437,25 +656,38 @@ const serviceFeatures = [
     icon: introIcon,
     title: '핀즈 알아보기',
     desc: '서비스 소개',
-    onClick: () => router.push('/'),
-  },
-  {
-    icon: quizIcon,
-    title: '퀴즈 풀러가기',
-    desc: '투자 개념 학습',
-    onClick: () => router.push('/'),
+    onClick: openOnboardingGuide,
   },
   {
     icon: suggestionIcon,
     title: '추천 받아보기',
     desc: 'AI 종목 추천',
-    onClick: () => router.push('/'),
+    onClick: openRecommendChat,
   },
+  {
+    icon: analyzeIcon,
+    title: '기업 분석하기',
+    desc: 'AI 기업 분석',
+    onClick: openAnalyzeChat,
+  },
+  {
+    icon: dictionaryIcon,
+    title: '용어 질문하기',
+    desc: 'AI 용어 학습',
+    onClick: openDictionaryChat,
+  },
+  {
+    icon: quizIcon,
+    title: '퀴즈 풀러가기',
+    desc: '투자 개념 학습',
+    onClick: () => router.push('/learning'),
+  },
+
   {
     icon: noteIcon,
     title: '일지 작성하기',
     desc: '투자 일지 작성',
-    onClick: () => router.push('/'),
+    onClick: () => router.push('/journal'),
   },
 ]
 
@@ -699,6 +931,7 @@ onMounted(async () => {
     await fetchCompletedLearningCount()
     await fetchTotalCredit()
     await loadUserData() // 자산 데이터 로드
+    await checkExecution() // 거래 체결 확인
   } catch (e) {
     console.error('❌ 초기 로딩 실패:', e)
     router.push('/login-form')

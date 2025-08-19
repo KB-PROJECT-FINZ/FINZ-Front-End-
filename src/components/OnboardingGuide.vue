@@ -4,6 +4,14 @@
     class="fixed inset-0 z-50 flex items-center justify-center bg-[#f9f9f9]/90 backdrop-blur-sm"
   >
     <div class="relative w-full max-w-[430px] px-1 mx-auto">
+      <!-- X 닫기 버튼 추가 -->
+      <button
+        class="absolute top-6 right-6 text-gray-400 text-4xl z-10"
+        @click="emit('close')"
+        aria-label="닫기"
+      >
+        &times;
+      </button>
       <Swiper
         ref="swiperRef"
         :allow-touch-move="false"
@@ -120,7 +128,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 // import 'swiper/css'
 // import 'swiper/css/navigation'
@@ -132,6 +140,7 @@ const onSwiper = (swiper) => {
 }
 
 const router = useRouter()
+const route = useRoute()
 const swiperRef = ref(null)
 const stepIndex = ref(1)
 
@@ -153,7 +162,11 @@ const slidePrev = () => {
   swiperRef.value.slidePrev()
 }
 const goLogin = () => {
-  router.push('/login-form')
+  if (route.path === '/home') {
+    emit('close') // '/home'일 때는 컴포넌트만 닫음
+  } else {
+    router.push('/login-form')
+  }
 }
 
 onMounted(() => {

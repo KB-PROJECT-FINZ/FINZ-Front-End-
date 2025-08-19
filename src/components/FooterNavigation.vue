@@ -5,7 +5,7 @@
       ref="chatbotButton"
       @mousedown="startDrag"
       @touchstart="startDrag"
-      @touchend="handleTouchEnd"
+      @click="goToChatbot"
       class="chatbot-button bg-white fixed text-white px-2 py-2 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300 flex justify-center items-center"
       :style="{
         left: position.x + 'px',
@@ -71,6 +71,11 @@ let isPress = false
 let prevPosX = 0
 let prevPosY = 0
 let isDragging = false
+let startX = 0
+let startY = 0
+let dragStartTime = 0
+let touchHandled = false
+
 const navItems = [
   { name: 'home', label: '홈', to: '/home', icon: HomeIcon },
   { name: 'mock', label: '거래', to: '/mock-trading', icon: TradingIcon },
@@ -78,17 +83,25 @@ const navItems = [
   { name: 'ranking', label: '랭킹', to: '/ranking', icon: RankingIcon },
   { name: 'mypage', label: '마이페이지', to: '/profile', icon: MypageIcon },
 ]
+
+// 디바이스 타입 감지
+const isTouchDevice = () => {
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0
+}
+
 // 드래그 시작 (마우스 + 터치)
 const startDrag = (e) => {
-  e.preventDefault() // 기본 동작 방지
   // 터치 이벤트와 마우스 이벤트 구분
   const clientX = e.touches ? e.touches[0].clientX : e.clientX
   const clientY = e.touches ? e.touches[0].clientY : e.clientY
   prevPosX = clientX
   prevPosY = clientY
+  startX = clientX
+  startY = clientY
+  dragStartTime = Date.now()
   isPress = true
   isDragging = false
-  
+
   // 드래그 중 커서 변경
   if (chatbotButton.value) {
     chatbotButton.value.style.cursor = 'grabbing'
@@ -97,19 +110,20 @@ const startDrag = (e) => {
 // 드래그 이동 (마우스 + 터치)
 const moveDrag = (e) => {
   if (!isPress) return
-  e.preventDefault() // 기본 동작 방지
+
   // 터치 이벤트와 마우스 이벤트 구분
   const clientX = e.touches ? e.touches[0].clientX : e.clientX
   const clientY = e.touches ? e.touches[0].clientY : e.clientY
   const posX = prevPosX - clientX
   const posY = prevPosY - clientY
-  
-  // 드래그 중임을 표시 (모바일에서는 더 민감하게)
-  const dragThreshold = e.touches ? 5 : 3 // 터치에서는 5px, 마우스에서는 3px
-  if (Math.abs(posX) > dragThreshold || Math.abs(posY) > dragThreshold) {
+
+  // 일정 거리 이상 움직이면 드래그로 판단
+  const dragDistance = Math.sqrt(Math.pow(clientX - startX, 2) + Math.pow(clientY - startY, 2))
+
+  if (dragDistance > 5) {
     isDragging = true
   }
-  
+
   prevPosX = clientX
   prevPosY = clientY
   // 새로운 위치 계산
@@ -124,6 +138,7 @@ const moveDrag = (e) => {
   position.x = newX
   position.y = newY
 }
+
 // 드래그 종료
 const endDrag = () => {
   if (!isPress) return // 이미 종료된 상태면 무시
@@ -132,10 +147,11 @@ const endDrag = () => {
   if (chatbotButton.value) {
     chatbotButton.value.style.cursor = 'grab'
   }
-  // 잠시 후 isDragging 상태 리셋 (클릭 이벤트와의 충돌 방지)
+
+  // 잠시 후 isDragging 상태 리셋
   setTimeout(() => {
     isDragging = false
-  }, 100) // 100ms로 증가 (모바일 터치 최적화)
+  }, 100)
 }
 const goToChatbot = (e) => {
   // 드래그 중이었다면 클릭 이벤트 무시
@@ -144,27 +160,11 @@ const goToChatbot = (e) => {
     e.stopPropagation()
     return
   }
-  
-  // 마우스 클릭인 경우 즉시 실행
+
+  // 챗봇 패널 열기
   window.dispatchEvent(new CustomEvent('openChatBot'))
 }
 
-// 터치 종료 처리 (모바일 전용)
-const handleTouchEnd = (e) => {
-  e.preventDefault()
-  
-  // 드래그 중이었다면 클릭 이벤트 무시
-  if (isDragging) {
-    return
-  }
-  
-  // 짧은 터치인 경우 챗봇 열기
-  setTimeout(() => {
-    if (!isDragging) {
-      window.dispatchEvent(new CustomEvent('openChatBot'))
-    }
-  }, 100)
-}
 const isActive = (path) => route.path.startsWith(path)
 // 화면 크기 변경 시 버튼 위치 조정
 const handleResize = () => {
@@ -190,7 +190,8 @@ onMounted(() => {
   // 마우스 이벤트 리스너 등록
   window.addEventListener('mousemove', moveDrag)
   window.addEventListener('mouseup', endDrag)
-  // 터치 이벤트 리스너 등록
+
+  // 터치 이벤트 리스너 등록 (passive: false로 preventDefault 허용)
   window.addEventListener('touchmove', moveDrag, { passive: false })
   window.addEventListener('touchend', endDrag)
   window.addEventListener('resize', handleResize)
@@ -209,6 +210,8 @@ onUnmounted(() => {
 .chatbot-button {
   cursor: grab;
   user-select: none;
+  -webkit-tap-highlight-color: transparent; /* 터치 시 하이라이트 제거 */
+  touch-action: none; /* 기본 터치 동작 제어 */
 }
 .chatbot-button:active {
   cursor: grabbing;

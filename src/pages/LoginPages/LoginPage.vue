@@ -1,8 +1,9 @@
 <template>
   <div class="min-h-screen bg-white flex flex-col px-6">
     <!-- 상단: 로고 + 설명 (가운데 정렬) -->
+    <div></div>
     <div class="flex-1 flex flex-col items-center justify-center">
-      <img src="@/assets/finz.png" alt="finz" class="h-[56px] md:h-[64px] object-contain mb-20" />
+      <img src="@/assets/finz.png" alt="finz" class="h-[56px] md:h-[64px] object-contain mb-40" />
       <div class="text-center text-gray-400 text-base leading-6">
         투자 입문자를 위한 맞춤형 금융 플랫폼<br />
         <span class="text-base text-gray-400">당신만의 투자 여정을 시작하세요</span>
