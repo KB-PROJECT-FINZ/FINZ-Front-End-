@@ -1,157 +1,180 @@
 <template>
   <div
     v-if="showOnboarding"
-    class="fixed inset-0 z-50 bg-[#f2f2f2]/90 backdrop-blur-md flex items-center justify-center"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-[#f9f9f9]/90 backdrop-blur-sm"
   >
-    <div class="w-full max-w-[430px] mx-auto">
-      <!-- 1단계 -->
-      <div
-        v-if="currentStep === 1"
-        class="flex flex-col items-center justify-center min-h-screen bg-[#cce1ff] px-4"
+    <div class="relative w-full max-w-[430px] px-1 mx-auto">
+      <!-- X 닫기 버튼 추가 -->
+      <button
+        class="absolute top-6 right-6 text-gray-400 text-4xl z-10"
+        @click="emit('close')"
+        aria-label="닫기"
       >
-        <h1 class="text-[36px] font-bold mb-4 leading-tight text-center">
-          FINZ에 오신 것을<br />환영합니다!
-        </h1>
-        <p class="text-[18px] text-gray-700 leading-normal mb-16 text-center">
-          투자 초보자를 위한<br />맞춤형 금융 플랫폼
-        </p>
-        <button
-          @click="nextStep"
-          class="bg-[#5387d0] text-white rounded-[6px]"
-          style="width: 252px; height: 52px; font-size: 18px; font-weight: 600"
-        >
-          시작하기
-        </button>
-      </div>
-
-      <!-- 2~6단계 -->
-      <div
-        v-else-if="currentStep >= 2 && currentStep <= 6"
-        class="flex flex-col items-center pt-10 pb-14 min-h-screen"
+        &times;
+      </button>
+      <Swiper
+        ref="swiperRef"
+        :allow-touch-move="false"
+        :slides-per-view="1"
+        :space-between="0"
+        class="w-full"
+        @swiper="onSwiper"
       >
-        <!-- 텍스트 -->
-        <div class="text-center px-6 mb-6">
-          <template v-if="currentStep === 2">
-            <h2 class="text-[30px] font-bold leading-snug mb-4">
-              투자, 잘 몰라도 <span class="text-[#5ac6e9]">AI</span>가 <br />알아서 다 해줘요
-            </h2>
-            <p class="text-[18px] text-gray-500">
-              FINZ의 AI 챗봇이 당신의 투자 여정을 쉽고<br />스마트하게 만들어 드립니다.
+        <!-- 1단계 -->
+        <SwiperSlide>
+          <div class="flex flex-col items-center justify-center min-h-screen bg-[#F6F8FC]">
+            <h1 class="text-[30px] md:text-[34px] font-bold mb-10 text-center leading-tight">
+              FINZ에 오신 것을<br />환영합니다!
+            </h1>
+            <p class="text-[16px] md:text-[17px] text-gray-600 mb-10 text-center leading-normal">
+              투자 초보자를 위한<br />맞춤형 금융 플랫폼
             </p>
-          </template>
-          <template v-else-if="currentStep === 3">
-            <h2 class="text-[30px] font-bold leading-snug mb-4">
-              주식, 부담 없이 연습해요<br /><span class="text-[#5ac6e9]">실전</span
-              >처럼,<br />안전하게 경험하세요
-            </h2>
-            <p class="text-[18px] text-gray-500">
-              실제 주식 시장 데이터로 투자 전략을 연습하고,<br />AI 기반 투자 시뮬레이션으로 경험을
-              쌓아보세요.
-            </p>
-          </template>
-          <template v-else-if="currentStep === 4">
-            <h2 class="text-[30px] font-bold leading-snug mb-4">
-              투자 지식, 3분 만에 완성<br />쉽고 빠르게 배우는
-              <span class="text-[#5ac6e9]">금융 상식</span>
-            </h2>
-            <p class="text-[18px] text-gray-500">
-              FINZ의 다양한 학습 콘텐츠를 통해 투자 지식을<br />쌓고, 금융 시장을 더 깊이
-              이해하세요.
-            </p>
-          </template>
-          <template v-else-if="currentStep === 5">
-            <h2 class="text-[30px] font-bold leading-snug mb-4">
-              나의 성적, 실시간 비교<br />전국 투자자와
-              <span class="text-[#5ac6e9]">경쟁</span>해보세요
-            </h2>
-            <p class="text-[18px] text-gray-500">
-              자산 순위, 투자 성과, AI 평가 등 다양한 기준을<br />통해 사용자 랭킹을 확인하세요.
-            </p>
-          </template>
-          <template v-else-if="currentStep === 6">
-            <h2 class="text-[30px] font-bold leading-snug mb-4">
-              매일 쓰는 투자일지, AI가 분석<br />당신만의
-              <span class="text-[#5ac6e9]">투자 코치</span>를 만나보세요
-            </h2>
-            <p class="text-[18px] text-gray-500">
-              투자 기록을 남기고 AI 피드백으로 더 현명한<br />투자를 경험하세요.
-            </p>
-          </template>
-        </div>
-
-        <!-- mockup -->
-        <div
-          class="relative w-[340px] h-[640px] border-[8px] border-black rounded-[32px] overflow-hidden mb-6"
-        >
-          <img
-            :src="stepImage[currentStep]"
-            :class="[
-              'w-full h-full',
-              currentStep === 3 || currentStep === 5 || currentStep === 6
-                ? 'object-cover object-top'
-                : 'object-contain',
-            ]"
-          />
-        </div>
-
-        <!-- 진행 점 + 버튼 -->
-        <div class="flex flex-col items-center">
-          <div class="flex space-x-2 mb-3">
-            <span
-              v-for="i in 7"
-              :key="i"
-              class="w-[8px] h-[8px] rounded-full"
-              :class="i === currentStep ? 'bg-[#5ac6e9]' : 'bg-gray-300'"
-            ></span>
+            <button
+              @click="slideNext"
+              class="w-full max-w-[320px] py-2.5 mt-18 bg-[#5ac6e9] text-white text-base rounded-[12px] font-semibold"
+            >
+              시작하기
+            </button>
           </div>
-          <button
-            @click="nextStep"
-            class="bg-[#5ac6e9] text-white rounded-[6px]"
-            style="width: 252px; height: 36px; font-size: 14px; font-weight: 600"
-          >
-            다음
-          </button>
-        </div>
-      </div>
+        </SwiperSlide>
 
-      <!-- 7단계 -->
-      <div
-        v-else-if="currentStep === 7"
-        class="flex flex-col items-center justify-center min-h-screen bg-[#cce1ff] px-4"
-      >
-        <h2 class="text-[36px] font-bold leading-tight mb-12 text-center">
-          이제 FINZ와 함께<br />투자 여정을<br />시작해보세요!
-        </h2>
-        <button
-          @click="closeOnboarding"
-          class="bg-[#5387d0] text-white rounded-[6px]"
-          style="width: 252px; height: 52px; font-size: 18px; font-weight: 600"
-        >
-          시작하기
-        </button>
-      </div>
+        <!-- 2~6단계 -->
+        <SwiperSlide v-for="step in [2, 3, 4, 5, 6]" :key="step">
+          <div class="flex flex-col min-h-screen pt-8 pb-[100px] items-center">
+            <div class="px-2 text-center mb-4 min-h-[200px] mt-[8px]">
+              <template v-if="step === 2">
+                <h2 class="text-[22px] md:text-[28px] font-bold leading-tight mb-2">
+                  주식, 부담 없이 연습해요<br /><span class="text-[#5ac6e9]">실전</span
+                  >처럼,<br />안전하게 경험하세요
+                </h2>
+                <p class="text-[14px] md:text-[16px] text-gray-500 leading-snug">
+                  실제 주식 시장 데이터로 투자를 연습하고,<br />AI 기반 시뮬레이션으로 경험을
+                  쌓아보세요.
+                </p>
+              </template>
+              <template v-else-if="step === 3">
+                <h2 class="text-[22px] md:text-[28px] font-bold leading-tight mb-2">
+                  투자 지식, 3분 만에 완성<br />쉽고 빠르게 배우는<br />
+                  <span class="text-[#5ac6e9]">금융 상식</span>
+                </h2>
+                <p class="text-[14px] md:text-[16px] text-gray-500 leading-snug">
+                  FINZ의 다양한 학습 콘텐츠로 <br />금융 지식을 쌓아보세요.
+                </p>
+              </template>
+              <template v-else-if="step === 4">
+                <h2 class="text-[22px] md:text-[28px] font-bold leading-tight mb-2">
+                  투자, 잘 몰라도 <span class="text-[#5ac6e9]">AI</span>가 <br />알아서 다 해줘요
+                </h2>
+                <p class="text-[14px] md:text-[16px] text-gray-500 leading-snug">
+                  FINZ의 AI 챗봇이 당신의 투자 여정을 스마트하게 도와드립니다.<br />
+                  궁금한 점을 즉시 물어보세요!
+                </p>
+              </template>
+              <template v-else-if="step === 5">
+                <h2 class="text-[22px] md:text-[28px] font-bold leading-tight mb-2">
+                  나의 성적, 실시간 비교<br />전국 투자자와
+                  <span class="text-[#5ac6e9]">경쟁</span>해보세요
+                </h2>
+                <p class="text-[14px] md:text-[16px] text-gray-500 leading-snug">
+                  다양한 랭킹 기준으로 다른 투자자와 비교해보세요.
+                </p>
+              </template>
+              <template v-else-if="step === 6">
+                <h2 class="text-[22px] md:text-[28px] font-bold leading-tight mb-2">
+                  매일 쓰는 투자일지,<br />AI가 분석<br />당신만의<span class="text-[#5ac6e9]">
+                    투자코치</span
+                  >
+                </h2>
+                <p class="text-[14px] md:text-[16px] text-gray-500 leading-snug">
+                  기록을 분석해 더 나은 투자 습관을 만들어보세요.
+                </p>
+              </template>
+            </div>
+
+            <img :src="stepImage[step]" class="w-[90%] max-w-[310px] mx-auto mb-0 mt-[-20px]" />
+
+            <!-- dots -->
+            <div class="flex justify-center mt-[8px] mb-[18px]">
+              <span
+                v-for="i in 6"
+                :key="i"
+                class="mx-[3px] w-[8px] h-[8px] rounded-full"
+                :class="i === stepIndex ? 'bg-[#5ac6e9]' : 'bg-gray-300'"
+              ></span>
+            </div>
+
+            <!-- buttons -->
+            <div class="absolute bottom-10 md:bottom-60 left-1/2 -translate-x-1/2 flex gap-4">
+              <button
+                v-if="stepIndex > 1"
+                class="bg-gray-200 text-gray-700 w-[120px] h-9 rounded-lg text-sm"
+                @click="slidePrev"
+              >
+                이전
+              </button>
+              <button
+                class="bg-[#5ac6e9] text-white w-[120px] h-9 rounded-lg text-sm"
+                @click="stepIndex === 6 ? goLogin() : slideNext()"
+              >
+                {{ stepIndex === 6 ? '시작하기' : '다음' }}
+              </button>
+            </div>
+          </div>
+        </SwiperSlide>
+      </Swiper>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Swiper, SwiperSlide } from 'swiper/vue'
+// import 'swiper/css'
+// import 'swiper/css/navigation'
+// import 'swiper/css/pagination'
+import 'swiper/swiper-bundle.css'
 
-// 이미지 경로 정의
+const onSwiper = (swiper) => {
+  swiperRef.value = swiper
+}
+
+const router = useRouter()
+const route = useRoute()
+const swiperRef = ref(null)
+const stepIndex = ref(1)
+
 const stepImage = {
-  2: new URL('@/assets/OnboardingGuide/chatbot.png', import.meta.url).href,
-  3: new URL('@/assets/OnboardingGuide/trade.png', import.meta.url).href,
-  4: new URL('@/assets/OnboardingGuide/learning.png', import.meta.url).href,
+  2: new URL('@/assets/OnboardingGuide/trade.png', import.meta.url).href,
+  3: new URL('@/assets/OnboardingGuide/learning.png', import.meta.url).href,
+  4: new URL('@/assets/OnboardingGuide/chatbot.png', import.meta.url).href,
   5: new URL('@/assets/OnboardingGuide/ranking.png', import.meta.url).href,
-  6: new URL('@/assets/OnboardingGuide/feedback.png', import.meta.url).href, // ✅ 6단계 이미지
+  6: new URL('@/assets/OnboardingGuide/feedback.png', import.meta.url).href,
 }
 
 const props = defineProps({ showOnboarding: Boolean })
 const emit = defineEmits(['close'])
-const currentStep = ref(1)
 
-const nextStep = () => {
-  currentStep.value < 7 ? currentStep.value++ : emit('close')
+const slideNext = () => {
+  swiperRef.value.slideNext()
 }
-const closeOnboarding = () => emit('close')
+const slidePrev = () => {
+  swiperRef.value.slidePrev()
+}
+const goLogin = () => {
+  if (route.path === '/home') {
+    emit('close') // '/home'일 때는 컴포넌트만 닫음
+  } else {
+    router.push('/login-form')
+  }
+}
+
+onMounted(() => {
+  watch(
+    () => swiperRef.value?.realIndex,
+    (value) => {
+      stepIndex.value = value + 1
+    },
+  )
+})
 </script>

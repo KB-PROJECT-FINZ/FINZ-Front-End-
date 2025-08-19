@@ -154,6 +154,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '@/components/FooterNavigation.vue'
+import { checkExecution } from '@/services/checkExecution'
 
 const orders = ref([])
 const loading = ref(true)
@@ -241,6 +242,7 @@ function formatTime(dateString) {
 onMounted(async () => {
   await fetchPendingOrders()
   intervalId = setInterval(fetchPendingOrders, 30000)
+  await checkExecution()
 })
 
 onUnmounted(() => {

@@ -13,24 +13,18 @@
         >
           <!-- 헤더 -->
           <div
-            class="flex items-center justify-between bg-gradient-to-r from-blue-400/90 to-purple-500/90 backdrop-blur-sm px-6 py-4"
+            class="flex items-center justify-between bg-white px-6 py-4 border-b border-gray-200"
           >
-            <div class="flex items-center space-x-3">
-              <div
-                class="w-8 h-8 bg-white/30 rounded-2xl flex items-center justify-center backdrop-blur-sm"
-              >
-                <img src="@/assets/finz.png" alt="FINZ" class="w-full h-full object-contain" />
-              </div>
-              <div>
-                <h1 class="text-white text-base font-semibold">AI 투자 어시스턴트</h1>
-                <p class="text-white/90 text-xs">투자 상담을 도와드려요</p>
-              </div>
+            <!-- finz 로고 -->
+            <div class="flex items-center">
+              <img src="@/assets/finz.png" alt="finz" class="h-6 w-auto" />
             </div>
+            <!-- 닫기 버튼 -->
             <button
               @click="closeChat"
-              class="p-2 rounded-2xl bg-white/20 hover:bg-white/30 transition-all duration-300 backdrop-blur-sm"
+              class="w-6 h-6 flex items-center justify-center text-black hover:bg-gray-100 rounded-full transition-colors duration-200"
             >
-              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"

@@ -33,14 +33,31 @@ export function getRankingWeekLabel(baseDateString) {
   return `${sm}월 ${sd}일 ~ ${em}월 ${ed}일`
 }
 
+/* ====== 공통 유틸 ====== */
+function pad6(v) {
+  const s = String(v ?? '').trim()
+  return /^[0-9]+$/.test(s) ? s.padStart(6, '0') : s
+}
+
 /* ====== 매핑/정규화 ====== */
-const mapStock = (stock) => ({
-  name: stock.stockName,
-  gain: stock.avgGainRate,
-  image: stock.stockCode
-    ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.stockCode}.png`
-    : '/images/stocks/default.png',
-})
+const mapStock = (stock) => {
+  const code = pad6(stock.stockCode ?? stock.code ?? stock.stock_code)
+  // 서버가 imageUrl 내려주면 우선 사용, 없으면 알파스퀘어 CDN 시도 (404면 컴포넌트에서 다음 후보로 자동 폴백)
+  const primaryImage =
+    stock.imageUrl ??
+    stock.image_url ??
+    (code ? `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${code}.png` : null)
+
+  return {
+    code, // 🔑 Top10StockList가 반드시 필요로 함
+    name: stock.stockName ?? stock.name ?? code,
+    gain: stock.avgGainRate ?? stock.gainRate ?? stock.gain ?? 0,
+    image: primaryImage, // 첫 후보 (실패 시 컴포넌트에서 /api/logo → 정적 → default 순서)
+    // (옵션) 메타 들어오면 넘겨줌 - 타이틀/서브타이틀에서 쓰일 수 있음
+    dateType: stock.dateType ?? null,
+    baseDate: stock.baseDate ?? null,
+  }
+}
 
 const ALLOWED_GROUPS = ['AGGRESSIVE', 'BALANCED', 'CONSERVATIVE', 'ANALYTICAL', 'EMOTIONAL']
 
@@ -98,6 +115,16 @@ export async function fetchTop10Stocks(baseDate) {
   }
 }
 
+// 실시간 Top10 (baseDate 없이)
+export async function fetchTop10StocksRealtime() {
+  try {
+    const { data } = await axios.get('/api/ranking/popular-stocks/realtime')
+    return (data || []).map(mapStock)
+  } catch {
+    return []
+  }
+}
+
 export async function fetchWeeklyRanking(baseDate) {
   try {
     const { data } = await axios.get('/api/ranking/weekly', { params: { baseDate } })
@@ -117,16 +144,6 @@ export async function fetchGroupedWeeklyRanking(baseDate) {
     return parsed
   } catch {
     return {}
-  }
-}
-
-// 실시간 Top10 (baseDate 없이)
-export async function fetchTop10StocksRealtime() {
-  try {
-    const { data } = await axios.get('/api/ranking/popular-stocks')
-    return (data || []).map(mapStock)
-  } catch {
-    return []
   }
 }
 

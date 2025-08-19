@@ -9,7 +9,7 @@
 
       <!-- 안내사항 카드 -->
       <NoticeCard
-        v-if="noticeVisible"
+        v-if="showNotice"
         @close="showNotice = false"
         @goToLearning="goToLearning"
         class="w-full max-w-[420px] p-4 mb-4 bg-white rounded-2xl shadow"
@@ -96,7 +96,6 @@
           >
             <div class="w-full flex items-center justify-between">
               <p class="font-bold text-sm text-gray-900 mb-1">보유 크레딧</p>
-              <!-- > 아이콘 (자산 현황 버튼과 동일) -->
               <svg
                 class="w-4 h-4 text-gray-500"
                 fill="none"
@@ -118,12 +117,65 @@
       </div>
 
       <!-- 충전 모달 (AssetStatus의 showChargeModal 활용) -->
-      <CreditChargeModal
-        :show="showChargeModal"
-        :userCredit="userCredit"
-        @close="showChargeModal = false"
-        @charged="handleCreditCharge"
-      />
+      <div
+        v-if="showChargeModal"
+        class="fixed inset-0 z-[1000] flex items-end justify-center bg-black/30 backdrop-blur-sm"
+      >
+        <div
+          class="bg-white w-full max-w-sm rounded-t-2xl p-6 pb-8 shadow-lg relative animate-slide-up"
+          @click.stop
+        >
+          <!-- 닫기 버튼 -->
+          <button class="absolute right-4 top-4 text-gray-400 text-2xl" @click="closeChargeModal">
+            &times;
+          </button>
+          <div class="mb-4 text-center text-lg font-bold">사용할 수 있는 크레딧</div>
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-gray-700">내 크레딧</span>
+            <span class="font-bold text-gray-700">{{ asset.amount.toLocaleString() }}C</span>
+          </div>
+          <div class="mt-6 mb-2 text-gray-700 font-medium">전환 신청 크레딧 입력</div>
+          <div class="flex justify-end mb-2">
+            <button
+              class="border border-gray-300 text-gray-700 bg-white rounded px-2 py-1 text-xs font-normal hover:bg-gray-100 transition-colors"
+              style="min-width: 60px"
+              @click="chargeCreditInput = asset.amount"
+            >
+              보유 크레딧 전체
+            </button>
+          </div>
+          <div class="relative mb-4">
+            <input
+              v-model.number="chargeCreditInput"
+              type="number"
+              min="1"
+              :max="asset.amount"
+              class="border rounded-lg px-4 py-2 w-full text-right font-bold text-lg pr-7 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="0"
+            />
+            <span
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 text-lg font-bold pointer-events-none"
+              >C</span
+            >
+          </div>
+          <div class="my-6 text-center text-gray-700">
+            내 계좌에
+            <span class="font-bold text-blue-600">{{
+              (chargeCreditInput * 1000).toLocaleString()
+            }}</span>
+            원이 추가됩니다.
+          </div>
+          <button
+            class="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold text-base hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:text-gray-400"
+            :disabled="
+              !chargeCreditInput || chargeCreditInput < 1 || chargeCreditInput > asset.amount
+            "
+            @click="onChargeNext"
+          >
+            확인
+          </button>
+        </div>
+      </div>
 
       <!-- 총 자산 카드 -->
       <div class="w-full max-w-[420px] mx-auto p-5 mb-4 bg-white rounded-2xl shadow">
@@ -436,6 +488,28 @@
           </div>
         </div>
       </transition>
+      <ToastMessage :show="toast.show" :message="toast.message" />
+      <transition name="fade-scale">
+        <div
+          v-if="showOnboardingGuide"
+          class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/30 backdrop-blur-sm"
+        >
+          <div
+            class="bg-white rounded-2xl shadow-xl p-0 w-[90vw] max-w-[340px] min-h-[420px] max-h-[80vh] relative flex flex-col items-center justify-center overflow-y-auto"
+          >
+            <!-- X 닫기 버튼 -->
+            <button
+              class="absolute top-4 right-4 text-gray-400 text-2xl z-10"
+              @click="closeOnboardingGuide"
+              aria-label="닫기"
+            >
+              &times;
+            </button>
+            <!-- OnboardingGuide 내용 -->
+            <OnboardingGuide :showOnboarding="showOnboardingGuide" @close="closeOnboardingGuide" />
+          </div>
+        </div>
+      </transition>
       <BottomNav />
     </div>
   </div>
@@ -443,8 +517,8 @@
 
 <script setup>
 import { Swiper, SwiperSlide } from 'swiper/vue'
-import { register } from 'swiper/element/bundle'
-import 'swiper/css'
+//import { register } from 'swiper/element/bundle'
+import 'swiper/swiper-bundle.css'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 
 import { getUserCredit } from '@/services/learning'
@@ -456,16 +530,18 @@ import BottomNav from '@/components/FooterNavigation.vue'
 import { useHoldingsData } from '@/services/useHoldingsData'
 // import PendingOrders from '@/components/mockTrading/PendingOrders.vue'
 import NoticeCard from '@/components/NoticeCard.vue'
+import ToastMessage from '@/components/ToastMessage.vue'
+import { checkExecution } from '@/services/checkExecution'
 
 // import finzIcon from '@/assets/finz.png'
 // import krwIcon from '@/assets/krw_image.png'
 
-import introIcon from '@/assets/intro_image.png'
-import quizIcon from '@/assets/quiz_image.png'
-import suggestionIcon from '@/assets/suggestion_image.png'
-import noteIcon from '@/assets/note_image.png'
-import dictionaryIcon from '@/assets/dictionary_image.png'
-import analyzeIcon from '@/assets/analyze_image.png'
+import introIcon from '@/assets/HomePage/intro_image.png'
+import quizIcon from '@/assets/HomePage/quiz_image.png'
+import suggestionIcon from '@/assets/HomePage/suggestion_image.png'
+import noteIcon from '@/assets/HomePage/note_image.png'
+import dictionaryIcon from '@/assets/HomePage/dictionary_image.png'
+import analyzeIcon from '@/assets/HomePage/analyze_image.png'
 
 import AssetIcon from '@/components/icons/AssetIcon.vue'
 import transactionIcon from '@/components/icons/transactionIcon.vue'
@@ -473,15 +549,81 @@ import ListIcon from '@/components/icons/ListIcon.vue'
 
 import { useUserStore } from '@/stores/user.js'
 
+import OnboardingGuide from '@/components/OnboardingGuide.vue'
+
+const showOnboardingGuide = ref(false)
+
+function openOnboardingGuide() {
+  showOnboardingGuide.value = true
+}
+function closeOnboardingGuide() {
+  showOnboardingGuide.value = false
+}
+
 const userStore = useUserStore()
 
-import CreditChargeModal from '@/components/CreditChargeModal.vue'
 const showChargeModal = ref(false)
-const userCredit = computed(() => asset.value.amount) // 또는 실제 크레딧 값
+const chargeCreditInput = ref(0)
+
+const toast = ref({ show: false, message: '' })
+function showToast(msg, duration = 2000) {
+  toast.value.message = msg
+  toast.value.show = true
+  setTimeout(() => {
+    toast.value.show = false
+  }, duration)
+}
+
+function closeChargeModal() {
+  showChargeModal.value = false
+  chargeCreditInput.value = 0
+}
+
+async function onChargeNext() {
+  if (!chargeCreditInput.value || chargeCreditInput.value < 1) {
+    showToast('충전할 금액을 입력해주세요.')
+    return
+  }
+  if (chargeCreditInput.value > asset.value.amount) {
+    showToast('보유 크레딧을 초과할 수 없습니다.')
+    return
+  }
+  try {
+    // 실제 크레딧 전환 API 호출
+    const response = await axios.post('/api/mocktrading/charge-credit', {
+      creditAmount: chargeCreditInput.value,
+    })
+    if (response.data.success) {
+      showToast(`${chargeCreditInput.value}C가\n전환되었습니다!`)
+      await reloadAssetInfo()
+      await loadUserData()
+      closeChargeModal()
+    } else {
+      showToast('전환에 실패했습니다. 다시 시도해주세요.')
+      closeChargeModal()
+    }
+  } catch (error) {
+    showToast('전환 중 오류가 발생했습니다.')
+    closeChargeModal()
+  }
+}
+
+// 자산 정보 새로고침 함수
+async function reloadAssetInfo() {
+  // asset.value.amount 등 자산 정보 재조회 로직
+  // 예시:
+  try {
+    const res = await axios.get('/api/auth/me', { withCredentials: true })
+    const userId = res.data.userId
+    asset.value.amount = await getUserCredit(userId)
+  } catch (e) {
+    // ignore
+  }
+}
 
 const router = useRouter()
 
-register()
+//register()
 
 function openRecommendChat() {
   // riskType은 fetchUserInfo 등에서 받아온 값 사용
@@ -514,7 +656,7 @@ const serviceFeatures = [
     icon: introIcon,
     title: '핀즈 알아보기',
     desc: '서비스 소개',
-    onClick: () => router.push('/home'),
+    onClick: openOnboardingGuide,
   },
   {
     icon: suggestionIcon,
@@ -632,7 +774,7 @@ const goToStockChart = (stockCode, stockName) => {
 }
 
 const goToLearning = () => {
-  router.push('/learning-start')
+  router.push('/learning')
 }
 
 const currentSort = ref('name')
@@ -724,23 +866,7 @@ onMounted(async () => {
     console.error('내 투자내역 로딩 실패:', e)
   }
 })
-onMounted(async () => {
-  // 로그인만 고려
-  const { data } = await axios.get('/api/auth/me', { withCredentials: true })
-  userId.value = Number(data.userId ?? data.id)
 
-  const key = `quizClaimed:${MODULE_ID}:user:${userId.value}`
-  claimed.value = localStorage.getItem(key) === 'true'
-
-  // 이미 수령했으면 안내 안 띄움
-  showNotice.value = !claimed.value
-})
-
-// 선택: 학습 페이지에서 이벤트 쏘면 즉시 반영 (새로고침 없이)
-window.addEventListener(`quiz-claimed:${MODULE_ID}`, () => {
-  claimed.value = true
-  showNotice.value = false
-})
 const selectedContent = ref(null)
 
 // 자산 데이터 스토어 (for total asset section)
@@ -760,11 +886,6 @@ const calculatedProfitAmount = computed(() => {
   // 평가금액 - 투자원금
   return safeNumber(stockValue.value, 0) - safeNumber(totalInvestment.value, 0)
 })
-const MODULE_ID = 'learning-basic-001'
-
-const userId = ref(0)
-const claimed = ref(false) // ← localStorage에 값 있으면 true
-const noticeVisible = computed(() => !claimed.value && showNotice.value)
 
 // 상태 변수
 const nickname = ref('')
@@ -810,6 +931,7 @@ onMounted(async () => {
     await fetchCompletedLearningCount()
     await fetchTotalCredit()
     await loadUserData() // 자산 데이터 로드
+    await checkExecution() // 거래 체결 확인
   } catch (e) {
     console.error('❌ 초기 로딩 실패:', e)
     router.push('/login-form')

@@ -14,4 +14,10 @@
 import SearchBar from '@/components/mockTrading/SearchBar.vue'
 import TradingVolumeRanking from '@/components/mockTrading/TradingVolumeRanking.vue'
 import FooterNavigation from '@/components/FooterNavigation.vue'
+import { checkExecution } from '@/services/checkExecution'
+import { onMounted } from 'vue'
+
+onMounted(async () => {
+  await checkExecution()
+})
 </script>

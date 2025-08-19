@@ -275,6 +275,7 @@ import axios from 'axios'
 import FooterNavigation from '@/components/FooterNavigation.vue'
 import { useAssetDataStore } from '@/services/useAssetData.js'
 import { useChartManager } from '@/services/userChartManager.js'
+import { checkExecution } from '@/services/checkExecution'
 
 const router = useRouter()
 
@@ -362,15 +363,15 @@ const onChargeNext = async () => {
       chargingLoading.value = false
       showChargeModal.value = false
       chargeCreditInput.value = 0
-      showToast(`${chargedPoint}P 충전이 완료되었습니다!`)
+      showToast(`${chargedPoint}C가\n전환되었습니다!`)
     } else {
       chargingLoading.value = false
       showChargeModal.value = false
       chargeCreditInput.value = 0
-      showToast('충전에 실패했습니다. 다시 시도해주세요.')
+      showToast('전환에 실패했습니다. 다시 시도해주세요.')
     }
   } catch (error) {
-    console.error('크레딧 충전 오류:', error)
+    console.error('크레딧 전환 오류:', error)
     chargingLoading.value = false
     showChargeModal.value = false
     chargeCreditInput.value = 0
@@ -378,7 +379,7 @@ const onChargeNext = async () => {
       showToast('로그인이 필요합니다.')
       router.push('/login-form')
     } else {
-      showToast('충전 중 오류가 발생했습니다.')
+      showToast('전환 중 오류가 발생했습니다.')
     }
   }
 }
@@ -391,6 +392,7 @@ const refreshData = async () => {
 // ===== 생명주기 =====
 onMounted(async () => {
   await loadUserData()
+  await checkExecution()
 })
 
 onUnmounted(() => {

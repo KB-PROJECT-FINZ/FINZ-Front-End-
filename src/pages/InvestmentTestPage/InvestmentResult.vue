@@ -44,8 +44,9 @@
     </div>
 
     <!-- 온보딩 가이드 -->
-    <OnboardingGuide :showOnboarding="showOnboarding" @close="handleOnboardingComplete" />
-  </div>
+      <!-- 온보딩 가이드 -->
+  <OnboardingGuide :showOnboarding="showOnboarding" @close="showOnboarding = false" />
+   </div>
 </template>
 
 <script setup>

@@ -233,6 +233,7 @@ import { fetchJournals, deleteJournalById } from '@/services/journal.js'
 import { useTransactionsData } from '@/services/useTranscationsData.js'
 import JournalWriteModal from './JournalWriteModal.vue'
 import FooterNavigation from '@/components/FooterNavigation.vue'
+import { checkExecution } from '@/services/checkExecution'
 const showWriteModal = ref(false)
 
 // 줄바꿈(\n)을 <br>로 변환하는 함수
@@ -356,6 +357,7 @@ onMounted(async () => {
     stockDisplayRef.value.addEventListener('touchmove', handleTouchMove, { passive: true })
     stockDisplayRef.value.addEventListener('touchend', handleTouchEnd, { passive: true })
   }
+  await checkExecution()
 })
 
 onBeforeUnmount(() => {
