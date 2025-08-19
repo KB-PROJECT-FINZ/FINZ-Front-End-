@@ -68,12 +68,12 @@
 import crownIcon from '@/assets/crown.svg'
 
 import img1 from '@/assets/finz.png'
-import img2 from '@/assets/FINZ_고양이.png'
-import img3 from '@/assets/FINZ_곰.png'
-import img4 from '@/assets/FINZ_병아리.png'
-import img5 from '@/assets/FINZ_원숭이.png'
-import img6 from '@/assets/FINZ_코끼리.png'
-import img7 from '@/assets/FINZ_토끼.png'
+import img2 from '@/assets/ProfilePage/FINZ_고양이.png'
+import img3 from '@/assets/ProfilePage/FINZ_곰.png'
+import img4 from '@/assets/ProfilePage/FINZ_병아리.png'
+import img5 from '@/assets/ProfilePage/FINZ_원숭이.png'
+import img6 from '@/assets/ProfilePage/FINZ_코끼리.png'
+import img7 from '@/assets/ProfilePage/FINZ_토끼.png'
 
 const PROFILE_IMAGES = [img1, img2, img3, img4, img5, img6, img7]
 function resolveProfileImage(idOrStr) {

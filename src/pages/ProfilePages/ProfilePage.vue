@@ -78,7 +78,7 @@
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
         <img
-          src="/src/assets/report_image.png"
+          src="/src/assets/ProfilePage/report_image.png"
           alt="AI 분석 리포트 아이콘"
           class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
@@ -109,7 +109,7 @@
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
         <img
-          src="/src/assets/note_image.png"
+          src="/src/assets/HomePage/note_image.png"
           alt="일지 작성하기 아이콘"
           class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
@@ -139,7 +139,7 @@
         @click="goToCustomContents"
       >
         <img
-          src="/src/assets/suggestion_image.png"
+          src="/src/assets/HomePage/suggestion_image.png"
           alt="추천 받아보기 아이콘"
           class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
@@ -170,7 +170,7 @@
         class="flex items-center bg-white rounded-xl px-6 py-4 text-inherit no-underline cursor-pointer hover:bg-gray-50 transition"
       >
         <img
-          src="/src/assets/propensity_image.png"
+          src="/src/assets/ProfilePage/propensity_image.png"
           alt="투자 성향 아이콘"
           class="w-9 h-9 object-contain mr-4 ml-[-10px]"
         />
@@ -264,13 +264,13 @@ const openProfileEditModal = () => {
 // 🔥 수정: 프로필 이미지 소스 가져오기 (assets 이미지 시스템)
 const getProfileImageSrc = () => {
   const availableImages = [
-    '/src/assets/finz.png', // 1번
-    '/src/assets/FINZ_고양이.png', // 2번
-    '/src/assets/FINZ_곰.png', // 3번
-    '/src/assets/FINZ_병아리.png', // 4번
-    '/src/assets/FINZ_원숭이.png', // 5번
-    '/src/assets/FINZ_코끼리.png', // 6번
-    '/src/assets/FINZ_토끼.png', // 7번
+    '/src/assets/ProfilePage/finz.png', // 1번
+    '/src/assets/ProfilePage/FINZ_고양이.png', // 2번
+    '/src/assets/ProfilePage/FINZ_곰.png', // 3번
+    '/src/assets/ProfilePage/FINZ_병아리.png', // 4번
+    '/src/assets/ProfilePage/FINZ_원숭이.png', // 5번
+    '/src/assets/ProfilePage/FINZ_코끼리.png', // 6번
+    '/src/assets/ProfilePage/FINZ_토끼.png', // 7번
   ]
 
   const imageNumber = profile.value.profileImage
