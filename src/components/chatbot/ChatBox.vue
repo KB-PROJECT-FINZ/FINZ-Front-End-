@@ -7,7 +7,7 @@
         <div
           class="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 border border-gray-200 overflow-hidden"
         >
-          <img src="@/assets/finz-robot.png" alt="finz" class="w-10 h-10 object-cover ml-2" />
+          <img src="@/assets/finz-robot.png" alt="finz" class="w-10 h-10 object-cover" />
         </div>
         <div class="flex-1 max-w-xs">
           <div class="bg-gray-200 rounded-3xl px-4 py-3 shadow-sm">
@@ -171,7 +171,7 @@
         <div class="grid grid-cols-3 gap-3">
           <!-- 첫 번째 행 -->
           <button
-            @click="handleButtonIntent({ intent: 'BACK_TO_MAIN' })"
+            @click="handleButtonIntent({ intent: 'RECOMMEND_KEYWORD' })"
             class="flex flex-col items-center space-y-1 p-3 rounded-xl hover:bg-blue-600 transition-colors duration-200"
           >
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,7 +185,7 @@
             <span class="text-white text-xs font-medium">처음으로</span>
           </button>
           <button
-            @click="handleButtonIntent({ intent: 'RECOMMEND_KEYWORD' })"
+            @click="handleButtonIntent({ intent: 'BACK_TO_MAIN' })"
             class="flex flex-col items-center space-y-1 p-3 rounded-xl hover:bg-blue-600 transition-colors duration-200"
           >
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
