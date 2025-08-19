@@ -1,34 +1,64 @@
 <template>
   <div
     v-if="showOnboarding"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-[#f9f9f9]/90 backdrop-blur-sm"
+    :class="
+      modalMode
+        ? 'fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm'
+        : 'min-h-screen bg-white'
+    "
   >
-    <div class="relative w-full max-w-[430px] px-1 mx-auto">
-      <!--  단계 전환에 애니메이션 적용 -->
+    <div
+      :class="
+        modalMode
+          ? 'relative w-full max-w-[350px] mx-auto bg-white rounded-2xl shadow-xl p-0 flex flex-col items-center justify-center'
+          : 'relative w-full max-w-[430px] mx-auto'
+      "
+      :style="modalMode ? 'min-height: 260px; max-height: 420px; overflow-y-auto;' : ''"
+    >
+      <!-- X 닫기 버튼 (모달 모드에서만) -->
+      <button
+        v-if="modalMode"
+        class="absolute top-4 right-4 text-gray-400 text-2xl z-10"
+        @click="emit('close')"
+        aria-label="닫기"
+      >
+        &times;
+      </button>
       <transition name="fade-slide" mode="out-in">
         <div :key="currentStep">
           <!-- STEP 1 -->
           <div
             v-if="currentStep === 1"
-            class="flex flex-col items-center justify-center min-h-screen bg-[#F6F8FC]"
+            :class="
+              modalMode
+                ? 'flex flex-col items-center justify-center min-h-[260px] py-4 bg-white'
+                : 'flex flex-col items-center justify-center min-h-screen bg-white'
+            "
           >
-            <h1 class="text-[30px] md:text-[34px] font-bold mb-10 text-center leading-tight">
+            <h1 class="text-[22px] md:text-[26px] font-bold mb-4 text-center leading-tight">
               FINZ에 오신 것을<br />환영합니다!
             </h1>
-            <p class="text-[16px] md:text-[17px] text-gray-600 mb-10 text-center leading-normal">
+            <p class="text-[13px] md:text-[14px] text-gray-600 mb-4 text-center leading-normal">
               투자 초보자를 위한<br />맞춤형 금융 플랫폼
             </p>
             <button
               @click="nextStep"
-              class="w-full max-w-[320px] py-2.5 mt-18 bg-[#5ac6e9] text-white text-base rounded-[12px] font-semibold"
+              class="w-full max-w-[180px] py-2 mt-4 bg-[#5ac6e9] text-white text-base rounded-[12px] font-semibold"
             >
               시작하기
             </button>
           </div>
 
           <!-- STEP 2~6 -->
-          <div v-else class="flex flex-col min-h-screen pt-8 pb-[100px] items-center">
-            <div class="px-2 text-center mb-4 min-h-[200px] mt-[8px]">
+          <div
+            v-else
+            :class="
+              modalMode
+                ? 'flex flex-col min-h-[160px] pt-2 pb-2 items-center'
+                : 'flex flex-col min-h-[screen] pt-8 pb-[0px] items-center'
+            "
+          >
+            <div class="px-2 text-center mb-2 min-h-[40px] mt-[2px]">
               <template v-if="currentStep === 2">
                 <h2 class="text-[22px] md:text-[28px] font-bold leading-tight mb-2">
                   주식, 부담 없이 연습해요<br /><span class="text-[#5ac6e9]">실전</span
@@ -80,30 +110,26 @@
 
             <img
               :src="stepImage[currentStep]"
-              class="w-[90%] max-w-[310px] mx-auto mb-0 mt-[-20px]"
+              class="w-[80%] max-w-[140px] mx-auto mb-0 mt-[-6px]"
             />
-
-            <!-- dots -->
-            <div class="flex justify-center mt-[8px] mb-[18px]">
+            <div class="flex justify-center mt-[2px] mb-[6px]">
               <span
                 v-for="i in 6"
                 :key="i"
-                class="mx-[3px] w-[8px] h-[8px] rounded-full"
+                class="mx-[2px] w-[7px] h-[7px] rounded-full"
                 :class="i === currentStep ? 'bg-[#5ac6e9]' : 'bg-gray-300'"
               ></span>
             </div>
-
-            <!-- buttons -->
-            <div class="absolute bottom-10 md:bottom-60 left-1/2 -translate-x-1/2 flex gap-4">
+            <div class="flex gap-3 mt-2 mb-1">
               <button
                 v-if="currentStep > 1"
-                class="bg-gray-200 text-gray-700 w-[120px] h-9 rounded-lg text-sm"
+                class="bg-gray-200 text-gray-700 w-[70px] h-7 rounded-lg text-xs"
                 @click="prevStep"
               >
                 이전
               </button>
               <button
-                class="bg-[#5ac6e9] text-white w-[120px] h-9 rounded-lg text-sm"
+                class="bg-[#5ac6e9] text-white w-[70px] h-7 rounded-lg text-xs"
                 @click="nextStep"
               >
                 {{ currentStep === 6 ? '시작하기' : '다음' }}
@@ -118,9 +144,12 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
+
+const modalMode = route?.redirectedFrom?.fullPath === '/home' || route?.query?.from === '/home'
 
 const stepImage = {
   2: new URL('@/assets/OnboardingGuide/trade1.png', import.meta.url).href,
