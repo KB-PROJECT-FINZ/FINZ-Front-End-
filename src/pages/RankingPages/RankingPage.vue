@@ -118,7 +118,35 @@ import {
   getRankingWeekLabel,
 } from '@/services/rankingService'
 
-/** 그룹코드 → 한글 라벨 */
+/* =========================
+   날짜 유틸 (KST 안전)
+   ========================= */
+// ISO 자를 때 UTC로 하루 밀림 방지: 정오 고정
+function toISODateLocal(d) {
+  const x = new Date(d)
+  x.setHours(12, 0, 0, 0)
+  return x.toISOString().slice(0, 10)
+}
+
+// ✅ 지난주 '일요일' (오늘 포함 주의 직전 주 일요일)
+function getPrevSundayISO(base = new Date()) {
+  const d = new Date(base)
+  const day = d.getDay() /* 0=일 */
+  d.setDate(d.getDate() - day - 7)
+  return toISODateLocal(d)
+}
+
+// 임의의 날짜를 그 주의 '일요일'로 정규화 (보강용)
+function normalizeToSunday(dateStr) {
+  const d = new Date(dateStr)
+  d.setHours(12, 0, 0, 0)
+  d.setDate(d.getDate() - d.getDay())
+  return toISODateLocal(d)
+}
+
+/* =========================
+   성향 라벨 매핑
+   ========================= */
 const traitGroupToKor = {
   AGGRESSIVE: '공격형',
   BALANCED: '균형형',
@@ -126,7 +154,7 @@ const traitGroupToKor = {
   ANALYTICAL: '특수형',
   EMOTIONAL: '기타',
 }
-/** 세부 코드 → 한글 라벨 */
+
 const originalTraitKo = {
   AGR: '적극적 성장형',
   AID: '적극적 안정형',
@@ -144,6 +172,7 @@ const originalTraitKo = {
   THE: '테마 투자형',
   VAL: '가치 투자형',
 }
+
 const originalToGroupKey = {
   AGR: 'AGGRESSIVE',
   DTA: 'AGGRESSIVE',
@@ -161,6 +190,7 @@ const originalToGroupKey = {
   TEC: 'ANALYTICAL',
   SOC: 'EMOTIONAL',
 }
+
 const traitCodeMap = {
   보수형: 'CONSERVATIVE',
   균형형: 'BALANCED',
@@ -169,6 +199,9 @@ const traitCodeMap = {
   기타: 'EMOTIONAL',
 }
 
+/* =========================
+   상태
+   ========================= */
 const userStore = useUserStore()
 const userId = computed(() => userStore.userId)
 
@@ -189,13 +222,8 @@ const activeMainIndex = computed(() =>
   Math.max(0, mainRankingTabs.indexOf(currentRankingType.value)),
 )
 
-const fallbackDate = (() => {
-  const d = new Date()
-  const day = d.getDay() || 7
-  d.setDate(d.getDate() - day + 1 - 7)
-  d.setHours(0, 0, 0, 0)
-  return d.toISOString().substring(0, 10)
-})()
+// ✅ 기준 anchor: "지난주 일요일" (완결 주)
+const fallbackDate = getPrevSundayISO()
 
 const stocks = computed(() =>
   popularStocksRealtime.value.length > 0
@@ -210,6 +238,9 @@ const rankingDateRangeText = computed(() =>
 const filteredUsers = computed(() => allUsers.value)
 const limitedUsers = computed(() => filteredUsers.value.slice(0, visibleCount.value))
 
+/* =========================
+   헬퍼
+   ========================= */
 function sortUsers(list) {
   return [...list].sort((a, b) => {
     const ra = a.ranking ?? Infinity
@@ -221,13 +252,15 @@ function sortUsers(list) {
   })
 }
 
-/** 주간 랭킹 */
+/* =========================
+   주간 랭킹
+   ========================= */
 async function loadRankingByDate(baseDate) {
-  selectedBaseDate.value = baseDate
-  popularStocksLastWeek.value = await fetchTop10Stocks(baseDate)
+  selectedBaseDate.value = normalizeToSunday(baseDate) // 안전하게 일요일 anchor
+  popularStocksLastWeek.value = await fetchTop10Stocks(selectedBaseDate.value)
 
   if (currentRankingType.value === '주간') {
-    const users = await fetchWeeklyRanking(baseDate)
+    const users = await fetchWeeklyRanking(selectedBaseDate.value)
     const mapped = users.map((u) => {
       const groupCode =
         (u.trait || '').toUpperCase() ||
@@ -245,7 +278,9 @@ async function loadRankingByDate(baseDate) {
   visibleCount.value = 10
 }
 
-/** 성향별 랭킹 (선택 그룹만) */
+/* =========================
+   성향별 랭킹 (선택 그룹만)
+   ========================= */
 async function loadGroupedRanking() {
   const grouped = await fetchGroupedWeeklyRanking(selectedBaseDate.value)
   const groupKey = traitCodeMap[currentTraitType.value] || 'EMOTIONAL'
@@ -265,7 +300,9 @@ async function loadGroupedRanking() {
   visibleCount.value = 10
 }
 
-/** 탭 전환 */
+/* =========================
+   탭 전환
+   ========================= */
 async function selectMainRankingTab(tab) {
   currentRankingType.value = tab
   if (tab === '성향별') {
@@ -276,19 +313,24 @@ async function selectMainRankingTab(tab) {
   }
 }
 
-/** 성향 버튼 전환 */
+/* =========================
+   성향 버튼 전환
+   ========================= */
 async function selectTraitType(trait) {
   currentTraitType.value = trait
   await loadGroupedRanking()
 }
 
-/** 최초 로드 */
+/* =========================
+   최초 로드 (userId 변화 감지)
+   ========================= */
 watch(
   userId,
   async (newUserId) => {
     if (!newUserId) return
     try {
-      const my = await fetchMyRanking(newUserId, fallbackDate)
+      // ✅ 서비스 기본 anchor(지난주 일요일) 사용 — 파라미터 전달 안 함
+      const my = await fetchMyRanking(newUserId)
       if (!my) return
 
       const groupKor = traitGroupToKor[(my.trait || '').toUpperCase()] || '미지정'
@@ -296,7 +338,9 @@ watch(
         ? originalTraitKo[my.originalTrait] || my.originalTrait
         : groupKor
 
-      selectedBaseDate.value = my.baseDate || fallbackDate
+      // ✅ 서버 baseDate와 무관하게 "지난주 일요일"을 사용해 고정
+      selectedBaseDate.value = fallbackDate
+
       myRanking.value = { ...my, trait: detailed }
       userTraitType.value = groupKor
 
