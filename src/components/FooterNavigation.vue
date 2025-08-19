@@ -71,10 +71,6 @@ let isPress = false
 let prevPosX = 0
 let prevPosY = 0
 let isDragging = false
-let startX = 0
-let startY = 0
-let dragStartTime = 0
-let touchHandled = false
 
 const navItems = [
   { name: 'home', label: '홈', to: '/home', icon: HomeIcon },
@@ -96,9 +92,6 @@ const startDrag = (e) => {
   const clientY = e.touches ? e.touches[0].clientY : e.clientY
   prevPosX = clientX
   prevPosY = clientY
-  startX = clientX
-  startY = clientY
-  dragStartTime = Date.now()
   isPress = true
   isDragging = false
 
@@ -118,9 +111,7 @@ const moveDrag = (e) => {
   const posY = prevPosY - clientY
 
   // 일정 거리 이상 움직이면 드래그로 판단
-  const dragDistance = Math.sqrt(Math.pow(clientX - startX, 2) + Math.pow(clientY - startY, 2))
-
-  if (dragDistance > 5) {
+  if (Math.abs(posX) > 3 || Math.abs(posY) > 3) {
     isDragging = true
   }
 
