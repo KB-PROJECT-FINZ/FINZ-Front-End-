@@ -3,24 +3,24 @@
     v-if="showOnboarding"
     class="fixed inset-0 z-50 flex items-center justify-center bg-[#f9f9f9]/90 backdrop-blur-sm"
   >
-    <div class="relative w-full max-w-[430px] px-4 mx-auto">
-      <!-- 🔄 단계 전환에 애니메이션 적용 -->
+    <div class="relative w-full max-w-[430px] px-1 mx-auto">
+      <!--  단계 전환에 애니메이션 적용 -->
       <transition name="fade-slide" mode="out-in">
         <div :key="currentStep">
           <!-- STEP 1 -->
           <div
             v-if="currentStep === 1"
-            class="flex flex-col items-center justify-center min-h-screen bg-[#effcfa]"
+            class="flex flex-col items-center justify-center min-h-screen bg-[#F6F8FC]"
           >
-            <h1 class="text-[26px] md:text-[34px] font-bold mb-4 text-center leading-tight">
+            <h1 class="text-[30px] md:text-[34px] font-bold mb-10 text-center leading-tight">
               FINZ에 오신 것을<br />환영합니다!
             </h1>
-            <p class="text-[15px] md:text-[17px] text-gray-600 mb-10 text-center leading-normal">
+            <p class="text-[16px] md:text-[17px] text-gray-600 mb-10 text-center leading-normal">
               투자 초보자를 위한<br />맞춤형 금융 플랫폼
             </p>
             <button
               @click="nextStep"
-              class="w-full max-w-[320px] py-2.5 bg-[#5ac6e9] text-white text-base rounded-lg font-semibold"
+              class="w-full max-w-[320px] py-2.5 mt-18 bg-[#5ac6e9] text-white text-base rounded-[12px] font-semibold"
             >
               시작하기
             </button>
