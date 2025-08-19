@@ -33,7 +33,7 @@
         </button>
       </div>
     </header>
-
+    <hr class="border-t-2 border-gray-200 my-2" />
     <!-- 로딩 상태 -->
     <div
       v-if="loading"
@@ -44,12 +44,32 @@
       ></div>
     </div>
 
-    <!-- 에러 상태 -->
+    <!-- 분석 리포트 없음 안내 및 생성 버튼 -->
+    <div
+      v-else-if="
+        error === '아직 분석할 거래 데이터가 충분하지 않습니다. 더 많은 거래를 진행해보세요.'
+      "
+      class="text-center py-12 bg-white rounded-lg border border-gray-200 mx-4 mt-8"
+    >
+      <h3 class="text-xl font-medium mb-2 text-gray-900">아직 분석 리포트가 없어요</h3>
+      <p class="text-gray-700 mb-6">
+        모의투자 거래내역 기반 AI 분석 리포트를<br />
+        생성할 수 있어요
+      </p>
+      <button
+        @click="createReport"
+        class="bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+        :disabled="loading"
+      >
+        분석 리포트 생성하기
+      </button>
+    </div>
+    <!-- 기타 에러 상태 -->
     <div
       v-else-if="error"
       class="text-center py-12 bg-red-50 rounded-lg border-2 border-red-200 mx-4 mt-8"
     >
-      <h3 class="text-red-600 text-xl font-bold mb-2">⚠️ 분석 오류</h3>
+      <h3 class="text-red-600 text-xl font-bold mb-2">분석 오류</h3>
       <p class="text-gray-700 mb-4">{{ error }}</p>
       <button
         @click="fetchAnalysis"
@@ -62,7 +82,6 @@
     <!-- 분석 결과 -->
     <div v-else-if="analysisData" ref="pdfContent">
       <!-- 헤더와 투자 성과 요약 사이 구분선 -->
-      <hr class="border-t-2 border-gray-200 my-2" />
       <!-- 통계 요약 카드들 -->
       <section class="bg-white mt-6">
         <div class="px-4">
@@ -235,10 +254,30 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '@/components/FooterNavigation.vue'
 import { analysisService } from '@/services/analysisService.js'
+import { checkExecution } from '@/services/checkExecution'
+
+// 챗봇 닫힘 이벤트 감지하여 리포트 재조회
+
+let chatBotClosed = false
+const handleCloseChatBot = () => {
+  if (!chatBotClosed) {
+    chatBotClosed = true
+    fetchAnalysis().then(() => {
+      chatBotClosed = false
+    })
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('closeChatBot', handleCloseChatBot)
+})
+onUnmounted(() => {
+  window.removeEventListener('closeChatBot', handleCloseChatBot)
+})
 
 const router = useRouter()
 const analysisData = ref(null)
@@ -279,24 +318,27 @@ const fetchAnalysis = async () => {
     if (response.data) {
       // 백엔드 데이터를 Vue 컴포넌트 형태로 변환
       analysisData.value = analysisService.transformReportData(response)
+      error.value = null // 분석 성공 시 에러 메시지 초기화
     } else {
       // 분석 결과가 없는 경우
       console.log('분석 결과가 없어 목데이터 사용')
       analysisData.value = analysisService.getMockAnalysisData()
-
-      // 사용자에게 안내 메시지 표시
       error.value = '아직 분석할 거래 데이터가 충분하지 않습니다. 더 많은 거래를 진행해보세요.'
     }
   } catch (err) {
     console.error('API 호출 실패:', err)
-    if (err.message.includes('로그인')) {
+    if (err.message?.includes('로그인')) {
       error.value = '로그인이 필요합니다.'
       setTimeout(() => {
         router.push('/login-form')
       }, 2000)
-    } else if (err.message.includes('찾을 수 없습니다')) {
-      error.value = '아직 분석할 거래 데이터가 충분하지 않습니다. 더 많은 거래를 진행해보세요.'
+    } else if (
+      err.message?.includes('찾을 수 없습니다') ||
+      err.message?.includes('분석 결과 조회 중 오류') ||
+      (err.response && err.response.status === 500)
+    ) {
       analysisData.value = analysisService.getMockAnalysisData()
+      error.value = '아직 분석할 거래 데이터가 충분하지 않습니다. 더 많은 거래를 진행해보세요.'
     } else {
       error.value = '분석을 불러오는데 실패했습니다. 다시 시도해주세요.'
     }
@@ -431,8 +473,18 @@ const exportToPDF = async () => {
   }
 }
 
-onMounted(() => {
+const createReport = () => {
+  // 챗봇에 분석 리포트 생성 요청 이벤트 dispatch (intent 값 통일)
+  window.dispatchEvent(
+    new CustomEvent('openChatBot', {
+      detail: { intent: 'PORTFOLIO_ANALYZE' },
+    }),
+  )
+}
+
+onMounted(async () => {
   fetchAnalysis()
+  await checkExecution()
 })
 </script>
 

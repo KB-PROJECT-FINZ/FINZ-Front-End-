@@ -160,16 +160,45 @@ const formatDisplayValue = (stock) => {
   }
 }
 
+const generateImageUrl = (stock) => {
+  // 이미 imageUrl이 있고 null이 아닌 경우 그대로 사용
+  if (stock.imageUrl && stock.imageUrl !== null) {
+    return stock.imageUrl
+  }
+
+  // 종목코드에서 Q 접두사 제거
+  const cleanCode = stock.code.replace(/^Q/, '')
+
+  // ETN 종목 판별 (Q로 시작하거나 ETN 관련 키워드 포함)
+  if (stock.code.startsWith('Q') || stock.name.includes('ETN')) {
+    return `https://file.alphasquare.co.kr/media/images/stock_logo/ETN_230706.png`
+  }
+
+  // ETF 종목 판별
+  if (
+    stock.name.includes('KODEX') ||
+    stock.name.includes('ETF') ||
+    stock.name.includes('선물') ||
+    stock.name.includes('레버리지') ||
+    stock.name.includes('인버스')
+  ) {
+    return `https://file.alphasquare.co.kr/media/images/stock_logo/ETF_230706.png`
+  }
+
+  // 일반 종목
+  return `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${cleanCode}.png`
+}
+
+// fetchVolumeRanking 함수 수정
 const fetchVolumeRanking = async () => {
   isLoading.value = true
   try {
-    // 시가총액 탭일 경우 condition-search API 호출
     if (activeTab.value === 'market_cap') {
+      // 시가총액 로직...
       const response = await fetch('http://localhost:8080/api/mocktrading/condition-search')
       const result = await response.json()
 
       if (result.success && result.data && result.data.output2) {
-        // API 응답 데이터를 UI 형식으로 변환
         stockRanking.value = result.data.output2.map((stock) => ({
           code: stock.code,
           name: stock.name,
@@ -177,13 +206,10 @@ const fetchVolumeRanking = async () => {
           change: parseFloat(stock.change),
           changePercent: parseFloat(stock.chgrate),
           isPositive: parseFloat(stock.change) >= 0,
-          tradingVolume: parseFloat(stock.trade_amt) * 1000, // 거래대금 (천원 단위를 원 단위로)
-          volume: parseFloat(stock.acml_vol), // 거래량
-          marketCap: parseFloat(stock.stotprice) * 100000000, // 시가총액 (억원 단위를 원 단위로)
-          // 백엔드에서 제공하는 imageUrl 사용, 없으면 기본 URL
-          imageUrl:
-            stock.imageUrl ||
-            `https://file.alphasquare.co.kr/media/images/stock_logo/kr/${stock.code}.png`,
+          tradingVolume: parseFloat(stock.trade_amt) * 1000,
+          volume: parseFloat(stock.acml_vol),
+          marketCap: parseFloat(stock.stotprice) * 100000000,
+          imageUrl: generateImageUrl(stock), // 🔧 수정된 함수 사용
         }))
         visibleCount.value = getInitialVisibleCount()
         updateTime.value = new Date().toLocaleTimeString('ko-KR', {
@@ -196,10 +222,13 @@ const fetchVolumeRanking = async () => {
         setFallbackData()
       }
     } else {
-      // 기존 거래대금/거래량 API 호출
+      // 거래대금/거래량 로직
       const response = await getVolumeRanking(20, activeTab.value)
       if (response.success && response.data) {
-        stockRanking.value = response.data
+        stockRanking.value = response.data.map((stock) => ({
+          ...stock,
+          imageUrl: generateImageUrl(stock), // 🔧 수정된 함수 사용
+        }))
         visibleCount.value = 10
         updateTime.value = new Date().toLocaleTimeString('ko-KR', {
           hour: '2-digit',

@@ -15,7 +15,7 @@ function refreshJournals(type = 'create') {
     <router-link
       to="/feedback"
       class="flex items-center justify-center gap-4 w-full rounded-xl p-2 shadow transition hover:-translate-y-0.5 hover:shadow-lg"
-      style="background: #0063f7"
+      style="background: #3399e1"
     >
       <span class="text-base font-semibold text-white">주간 AI 피드백 보기</span>
     </router-link>
@@ -233,6 +233,7 @@ import { fetchJournals, deleteJournalById } from '@/services/journal.js'
 import { useTransactionsData } from '@/services/useTranscationsData.js'
 import JournalWriteModal from './JournalWriteModal.vue'
 import FooterNavigation from '@/components/FooterNavigation.vue'
+import { checkExecution } from '@/services/checkExecution'
 const showWriteModal = ref(false)
 
 // 줄바꿈(\n)을 <br>로 변환하는 함수
@@ -356,6 +357,7 @@ onMounted(async () => {
     stockDisplayRef.value.addEventListener('touchmove', handleTouchMove, { passive: true })
     stockDisplayRef.value.addEventListener('touchend', handleTouchEnd, { passive: true })
   }
+  await checkExecution()
 })
 
 onBeforeUnmount(() => {
