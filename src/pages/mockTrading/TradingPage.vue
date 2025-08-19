@@ -2346,7 +2346,7 @@ const goToTransactionHistory = () => {
 }
 
 // 컴포넌트 마운트 시 API 호출 및 웹소켓 연결
-onMounted(() => {
+onMounted(async () => {
   isUnmounted = false
   console.log('[초기화] 컴포넌트 마운트 시작')
   loadUserAccount()
@@ -2354,6 +2354,7 @@ onMounted(() => {
   testApiCall()
   initWebSocket()
   loadPendings()
+  await checkExecution()
 
   // 1초마다 시간 업데이트를 위한 타이머
   timeUpdateTimer.value = setInterval(() => {

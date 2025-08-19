@@ -62,6 +62,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import FooterNavigation from '@/components/FooterNavigation.vue'
+import { checkExecution } from '@/services/checkExecution'
 
 const router = useRouter()
 const riskTypeName = ref('')
@@ -86,6 +87,7 @@ onMounted(async () => {
     console.error('맞춤 콘텐츠 조회 실패:', e)
     recommendedContentsByRisk.value = []
   }
+  await checkExecution()
 })
 </script>
 

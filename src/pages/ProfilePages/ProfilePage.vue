@@ -235,6 +235,7 @@ import FooterNavigation from '@/components/FooterNavigation.vue'
 
 // 프로필 수정 모달 컴포넌트 import (경로에 맞게 조정 필요)
 import ProfileEditModal from '@/components/ProfileEditModal.vue'
+import { checkExecution } from '@/services/checkExecution'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -371,6 +372,7 @@ onMounted(async () => {
     // 추천 콘텐츠 불러오기
     await fetchRecommendedContentsByRiskType(profile.value.type)
     await loadUserData()
+    await checkExecution()
   } catch (e) {
     console.error('로딩 실패:', e)
     // 세션 실패 시 로컬스토리지 fallback

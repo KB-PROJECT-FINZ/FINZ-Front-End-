@@ -102,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user.js'
 import TabSwitcher from '@/components/ranking/TabSwitcher.vue'
 import MyRankingCard from '@/components/ranking/MyRankingCard.vue'
@@ -117,6 +117,7 @@ import {
   fetchGroupedWeeklyRanking,
   getRankingWeekLabel,
 } from '@/services/rankingService'
+import { checkExecution } from '@/services/checkExecution'
 
 /* =========================
    날짜 유틸 (KST 안전)
@@ -355,4 +356,8 @@ watch(
   },
   { immediate: true },
 )
+
+onMounted(async () => {
+  await checkExecution()
+})
 </script>

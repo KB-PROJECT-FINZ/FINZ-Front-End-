@@ -511,6 +511,7 @@ import { useHoldingsData } from '@/services/useHoldingsData'
 // import PendingOrders from '@/components/mockTrading/PendingOrders.vue'
 import NoticeCard from '@/components/NoticeCard.vue'
 import ToastMessage from '@/components/ToastMessage.vue'
+import { checkExecution } from '@/services/checkExecution'
 
 // import finzIcon from '@/assets/finz.png'
 // import krwIcon from '@/assets/krw_image.png'
@@ -920,6 +921,7 @@ onMounted(async () => {
     await fetchCompletedLearningCount()
     await fetchTotalCredit()
     await loadUserData() // 자산 데이터 로드
+    await checkExecution() // 거래 체결 확인
   } catch (e) {
     console.error('❌ 초기 로딩 실패:', e)
     router.push('/login-form')

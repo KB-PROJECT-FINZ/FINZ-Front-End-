@@ -258,6 +258,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import FooterNavigation from '@/components/FooterNavigation.vue'
 import { analysisService } from '@/services/analysisService.js'
+import { checkExecution } from '@/services/checkExecution'
 
 // 챗봇 닫힘 이벤트 감지하여 리포트 재조회
 
@@ -481,8 +482,9 @@ const createReport = () => {
   )
 }
 
-onMounted(() => {
+onMounted(async () => {
   fetchAnalysis()
+  await checkExecution()
 })
 </script>
 

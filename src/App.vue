@@ -27,6 +27,7 @@ import ChatBotPanel from './components/chatbot/ChatBotPanel.vue'
 import TradeResultModal from '@/components/mockTrading/TradeResultModal.vue'
 import { useTradeResultModalStore } from './stores/tradeResultModal'
 import { useRouter } from 'vue-router'
+import { checkExecution } from './services/checkExecution'
 
 export default {
   components: {
@@ -62,6 +63,7 @@ export default {
       } catch (err) {
         console.warn('로그인된 사용자 정보 없음 또는 세션 만료됨', err)
       }
+      await checkExecution()
     })
     return {
       tradeResultModal,

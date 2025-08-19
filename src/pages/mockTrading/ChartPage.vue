@@ -354,6 +354,7 @@ import axios from 'axios'
 
 // --- 분봉 모달 드래그 다운 슬라이드 닫기 로직 ---
 import { onBeforeUnmount } from 'vue'
+import { checkExecution } from '@/services/checkExecution'
 
 const modalDragOffset = ref(0)
 const isModalDragging = ref(false)
@@ -1218,7 +1219,7 @@ const navigateToTradingPage = (type) => {
   })
 }
 
-onMounted(() => {
+onMounted(async () => {
   stockInfo.stockCode = route.params.stockCode || ''
   stockInfo.name = route.query.stockName || ''
 
@@ -1256,6 +1257,7 @@ onMounted(() => {
       startAutoRefresh() // 자동 새로고침 시작 (분봉일 때만)
     }, 100)
   })
+  await checkExecution()
 })
 
 // 커스텀 툴팁 숨기기 함수

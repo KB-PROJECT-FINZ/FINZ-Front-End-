@@ -240,6 +240,7 @@ import {
   fetchLearningContents,
 } from '@/services/learning'
 import coinIcon from '@/components/icons/coin.svg'
+import { checkExecution } from '@/services/checkExecution'
 const router = useRouter()
 
 /* ------------ state ------------ */
@@ -402,6 +403,7 @@ onMounted(async () => {
     }
     await Promise.all([loadCredit(), pollUntilContentReady()])
     await loadRiskContentsByTab()
+    await checkExecution()
   } catch (e) {
     console.error('❌ 사용자 정보 로딩 실패:', e)
   }

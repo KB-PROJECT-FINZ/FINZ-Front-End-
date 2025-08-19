@@ -275,6 +275,7 @@ import axios from 'axios'
 import FooterNavigation from '@/components/FooterNavigation.vue'
 import { useAssetDataStore } from '@/services/useAssetData.js'
 import { useChartManager } from '@/services/userChartManager.js'
+import { checkExecution } from '@/services/checkExecution'
 
 const router = useRouter()
 
@@ -391,6 +392,7 @@ const refreshData = async () => {
 // ===== 생명주기 =====
 onMounted(async () => {
   await loadUserData()
+  await checkExecution()
 })
 
 onUnmounted(() => {
