@@ -23,7 +23,7 @@
 
       <!-- 메시지들 -->
       <div
-        v-for="(msg, i) in chatStore.messages"
+        v-for="(msg, i) in filteredMessages"
         :key="i"
         :class="msg.role === 'user' ? 'flex justify-end' : 'flex items-start space-x-3'"
       >
@@ -114,7 +114,7 @@
       </div>
 
       <!-- 로딩 메시지 (마지막에 표시) -->
-      <div v-if="loading" class="flex items-start space-x-3">
+      <div v-if="loading && chatStore.messages.length > 0" class="flex items-start space-x-3">
         <div
           class="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 border border-gray-200 overflow-hidden"
         >
@@ -602,39 +602,42 @@ const getButtonIcon = (intent) => {
   }
 }
 
-// 자동 스크롤 함수
+// 자동 스크롤 함수 (디바운싱 적용)
+let scrollTimeout = null
 const scrollToBottom = () => {
-  nextTick(() => {
-    if (messageContainer.value) {
-      messageContainer.value.scrollTop = messageContainer.value.scrollHeight
-    }
-  })
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+  }
+  
+  scrollTimeout = setTimeout(() => {
+    nextTick(() => {
+      if (messageContainer.value) {
+        messageContainer.value.scrollTop = messageContainer.value.scrollHeight
+      }
+    })
+  }, 100) // 100ms 디바운싱
 }
 
-// 메시지 변경 감지하여 자동 스크롤
+// 메시지 필터링 및 최적화
+const filteredMessages = computed(() => {
+  return chatStore.messages.filter(msg => !msg.isLoading)
+})
+
+// 메시지 변경 감지하여 자동 스크롤 (최적화)
 watch(
-  () => chatStore.messages.length,
+  () => filteredMessages.value.length,
   () => {
     scrollToBottom()
   },
+  { flush: 'post' } // DOM 업데이트 후 실행
 )
 
-// 로딩 상태 변경 감지하여 자동 스크롤
+// 로딩 상태 변경 감지하여 자동 스크롤 (최적화)
 watch(loading, (newLoading) => {
   if (newLoading) {
     scrollToBottom()
   }
-})
-
-// 대화 시작 시 버튼들 자동 숨김
-watch(
-  () => chatStore.messages.length,
-  (newLength, oldLength) => {
-    if (newLength > oldLength && oldLength === 0) {
-      // showButtons.value = false // 이 부분은 더 이상 사용하지 않으므로 제거
-    }
-  },
-)
+}, { flush: 'post' })
 
 onMounted(async () => {
   if (!userStore.userId) {
@@ -718,11 +721,25 @@ onMounted(() => {
 
 async function fetchGPT(prompt, explicitIntent = null) {
   loading.value = true
-  chatStore.messages.push({
+  
+  // 사용자 메시지 즉시 추가
+  const userMessage = {
     role: 'user',
     content: prompt,
     timestamp: new Date().toISOString(),
-  })
+  }
+  chatStore.messages.push(userMessage)
+
+  // 로딩 메시지 즉시 표시 (즉시 응답 느낌)
+  const loadingMessageId = Date.now()
+  const loadingMessage = {
+    id: loadingMessageId,
+    role: 'bot',
+    content: '답변을 준비하고 있어요...',
+    timestamp: new Date().toISOString(),
+    isLoading: true
+  }
+  chatStore.messages.push(loadingMessage)
 
   let intentType = null
 
@@ -750,12 +767,17 @@ async function fetchGPT(prompt, explicitIntent = null) {
     const res = await axios.post('/api/chatbot/message', requestData)
 
     if (res?.data?.content) {
-      chatStore.messages.push({
-        role: 'bot',
-        content: res.data.content,
-        requestedPeriod: res.data.requestedPeriod,
-        intentType: intentType || res.data.intentType,
-      })
+      // 로딩 메시지 제거하고 실제 응답으로 교체
+      const messageIndex = chatStore.messages.findIndex(msg => msg.id === loadingMessageId)
+      if (messageIndex !== -1) {
+        chatStore.messages[messageIndex] = {
+          role: 'bot',
+          content: res.data.content,
+          requestedPeriod: res.data.requestedPeriod,
+          intentType: intentType || res.data.intentType,
+          timestamp: new Date().toISOString(),
+        }
+      }
 
       if (intentType === 'PORTFOLIO_ANALYZE') {
         chatStore.messages.push({
@@ -773,18 +795,26 @@ async function fetchGPT(prompt, explicitIntent = null) {
       chatStore.sessionId = res.data.sessionId
       chatStore.intentType = res.data.intentType
     } else {
-      chatStore.messages.push({
-        role: 'bot',
-        content: '❌ GPT 응답이 비어 있습니다.',
-        timestamp: new Date().toISOString(),
-      })
+      // 로딩 메시지를 에러 메시지로 교체
+      const messageIndex = chatStore.messages.findIndex(msg => msg.id === loadingMessageId)
+      if (messageIndex !== -1) {
+        chatStore.messages[messageIndex] = {
+          role: 'bot',
+          content: '❌ GPT 응답이 비어 있습니다.',
+          timestamp: new Date().toISOString(),
+        }
+      }
     }
   } catch (error) {
-    chatStore.messages.push({
-      role: 'bot',
-      content: '⚠️ 서버 오류가 발생했어요.',
-      timestamp: new Date().toISOString(),
-    })
+    // 로딩 메시지를 에러 메시지로 교체
+    const messageIndex = chatStore.messages.findIndex(msg => msg.id === loadingMessageId)
+    if (messageIndex !== -1) {
+      chatStore.messages[messageIndex] = {
+        role: 'bot',
+        content: '⚠️ 서버 오류가 발생했어요.',
+        timestamp: new Date().toISOString(),
+      }
+    }
     console.error('GPT fetch 실패:', error)
   } finally {
     loading.value = false
