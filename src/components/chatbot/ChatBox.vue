@@ -7,7 +7,7 @@
         <div
           class="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 border border-gray-200 overflow-hidden"
         >
-          <img src="@/assets/finz icon2.png" alt="finz" class="w-10 h-10 object-cover ml-2" />
+          <img src="@/assets/finz-robot.png" alt="finz" class="w-10 h-10 object-cover ml-2" />
         </div>
         <div class="flex-1 max-w-xs">
           <div class="bg-gray-200 rounded-3xl px-4 py-3 shadow-sm">
@@ -43,7 +43,7 @@
           <div
             class="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 border border-gray-200 overflow-hidden"
           >
-            <img src="@/assets/finz icon2.png" alt="finz" class="w-10 h-10 object-cover ml-2" />
+            <img src="@/assets/finz-robot.png" alt="finz" class="w-10 h-10 object-cover ml-2" />
           </div>
 
           <div class="flex-1 max-w-xs">
@@ -118,7 +118,7 @@
         <div
           class="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 border border-gray-200 overflow-hidden"
         >
-          <img src="@/assets/finz icon2.png" alt="finz" class="w-10 h-10 object-cover ml-2" />
+          <img src="@/assets/finz-robot.png" alt="finz" class="w-10 h-10 object-cover ml-2" />
         </div>
         <div class="max-w-xs">
           <div class="bg-gray-200 rounded-2xl px-4 py-3">
@@ -322,18 +322,15 @@ const formatMessageTime = (timestamp) => {
 // 마크다운을 HTML로 변환하는 함수
 const parseMarkdown = (text) => {
   try {
-    console.log('🔍 parseMarkdown 호출됨:', text)
-
     // **굵은 글씨** 패턴을 <strong> 태그로 변환
     let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
 
     // 줄바꿈을 <br> 태그로 변환
     html = html.replace(/\n/g, '<br>')
 
-    console.log('✅ 변환 결과:', html)
     return html
   } catch (error) {
-    console.error('❌ 마크다운 파싱 오류:', error)
+    console.error('마크다운 파싱 오류:', error)
     return text
   }
 }
@@ -352,11 +349,10 @@ const isTermExplanationResponse = (content) => {
   try {
     const parsed = JSON.parse(content)
     if (parsed && parsed.term && parsed.definition && parsed.meaning && parsed.beginnerTip) {
-      console.log('✅ 용어 설명 응답 감지됨:', parsed)
       return true
     }
   } catch (error) {
-    console.log('❌ 용어 설명 JSON 파싱 실패:', error)
+    // JSON 파싱 실패
   }
 
   return false
@@ -368,11 +364,8 @@ const isProfileBasedRecommendationResponse = (content) => {
     return false
   }
 
-  console.log('🧠 isProfileBasedRecommendationResponse 호출됨:', content.substring(0, 100) + '...')
-
   // 투자 성향 기반 추천인지 확인
   if (content.startsWith('🧠 투자 성향 기반 추천드릴게요!')) {
-    console.log('✅ 투자 성향 기반 추천 감지됨')
     return true
   }
 
@@ -385,17 +378,13 @@ const isStockRecommendationResponse = (content) => {
     return false
   }
 
-  console.log('🎯 isStockRecommendationResponse 호출됨:', content.substring(0, 100) + '...')
-
   // 투자 성향 기반 추천인지 먼저 확인 (이것은 키워드 기반 추천이 아님)
   if (content.startsWith('🧠 투자 성향 기반 추천드릴게요!')) {
-    console.log('❌ 투자 성향 기반 추천이므로 키워드 기반 추천이 아님')
     return false
   }
 
   // 키워드 기반 추천인지 확인
   if (content.startsWith('🎯 키워드 기반 추천드릴게요!')) {
-    console.log('✅ 키워드 기반 추천 감지됨')
     return true
   }
 
@@ -455,14 +444,12 @@ const isStockRecommendationResponse = (content) => {
           item.ticker && item.reason && item.riskLevel && item.timingComment && item.futureOutlook,
       )
     ) {
-      console.log('✅ JSON 형태 키워드 기반 추천 감지됨:', parsed)
       return true
     }
   } catch (error) {
-    console.log('❌ JSON 파싱 실패:', error)
+    // JSON 파싱 실패
   }
 
-  console.log('❌ 키워드 기반 추천이 아님')
   return false
 }
 
@@ -472,14 +459,11 @@ const isStockAnalysisResponse = (content) => {
     return false
   }
 
-  console.log('🔍 isStockAnalysisResponse 호출됨:', content.substring(0, 100) + '...')
-
   // 투자 성향 기반 추천이나 키워드 기반 추천인지 먼저 확인
   if (
     content.startsWith('🧠 투자 성향 기반 추천드릴게요!') ||
     content.startsWith('🎯 키워드 기반 추천드릴게요!')
   ) {
-    console.log('❌ 투자 성향/키워드 기반 추천이므로 종목 분석이 아님')
     return false
   }
 
@@ -498,7 +482,6 @@ const isStockAnalysisResponse = (content) => {
           firstItem.timingComment &&
           firstItem.futureOutlook
         ) {
-          console.log('✅ JSON 형태 종목 분석 응답 감지됨')
           return true
         }
       }
@@ -513,7 +496,6 @@ const isStockAnalysisResponse = (content) => {
     content.includes('AI 분석 Tip') &&
     content.includes('향후 전망')
   ) {
-    console.log('✅ 종목 분석 응답 감지됨')
     return true
   }
 
@@ -525,23 +507,19 @@ const isStockAnalysisResponse = (content) => {
       content.includes('삼성전자') ||
       content.includes('005930'))
   ) {
-    console.log('✅ 종목 분석 응답 감지됨 (종목명 + 위험도)')
     return true
   }
 
   // 종목 분석 응답의 다른 패턴들도 확인
   if (content.includes('위험도:') && content.includes('AI 분석 Tip')) {
-    console.log('✅ 종목 분석 응답 감지됨 (위험도 + AI 분석 Tip)')
     return true
   }
 
   // 종목 분석 응답의 다른 패턴들도 확인
   if (content.includes('위험도:') && content.includes('향후 전망')) {
-    console.log('✅ 종목 분석 응답 감지됨 (위험도 + 향후 전망)')
     return true
   }
 
-  console.log('❌ 종목 분석 응답이 아님')
   return false
 }
 
@@ -556,7 +534,6 @@ const isFeedbackAnalysisResponse = (content) => {
     if (content.trim().startsWith('{')) {
       const jsonData = JSON.parse(content)
       if (jsonData.strategySummary && jsonData.riskPoint && jsonData.suggestion) {
-        console.log('✅ JSON 형태 피드백 분석 응답 감지됨')
         return true
       }
     }
@@ -566,7 +543,6 @@ const isFeedbackAnalysisResponse = (content) => {
     if (jsonMatch) {
       const jsonData = JSON.parse(jsonMatch[0])
       if (jsonData.strategySummary && jsonData.riskPoint && jsonData.suggestion) {
-        console.log('✅ 혼합 형태 피드백 분석 응답 감지됨')
         return true
       }
     }
@@ -585,7 +561,6 @@ const isFeedbackAnalysisResponse = (content) => {
   const hasFeedbackPatterns = feedbackPatterns.some((pattern) => content.includes(pattern))
 
   if (hasFeedbackPatterns) {
-    console.log('✅ 텍스트 형태 피드백 분석 응답 감지됨')
     return true
   }
 
@@ -672,10 +647,41 @@ onMounted(async () => {
         riskType: res.data.riskType,
       })
       chatStore.setUserId(res.data.userId)
-      console.log('✅ 사용자 정보 동기화 완료:', userStore.$state)
     } catch (err) {
-      console.error('❌ 사용자 정보 조회 실패:', err)
+      console.error('사용자 정보 조회 실패:', err)
     }
+  }
+})
+const props = defineProps({ risk: String, fixedIntent: String })
+
+onMounted(() => {
+  if (props.fixedIntent === 'STOCK_ANALYZE') {
+    chatStore.clearMessages()
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '분석할 종목명을 입력해주세요. 예: 삼성전자, 테슬라 등',
+      buttons: [{ label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' }],
+    })
+    awaitingStockAnalyze.value = true
+  }
+  if (props.fixedIntent === 'TERM_EXPLAIN') {
+    // 용어 설명 안내 메시지와 입력 모드로 진입
+    chatStore.clearMessages()
+    chatStore.messages.push({
+      role: 'bot',
+      type: 'buttons',
+      text: '설명을 원하는 용어를 입력해주세요. 예: PER, EPS, ROE 등',
+      buttons: [{ label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' }],
+    })
+    awaitingTermExplain.value = true
+  }
+  if (props.risk) {
+    fetchGPT(`나의 투자 성향인 ${props.risk}에 맞는 종목을 추천해줘`, 'RECOMMEND_PROFILE')
+  }
+  if (props.fixedIntent === 'PORTFOLIO_ANALYZE') {
+    chatStore.clearMessages()
+    fetchGPT('내 포트폴리오 피드백 줘', 'PORTFOLIO_ANALYZE')
   }
 })
 const props = defineProps({ risk: String, fixedIntent: String })
@@ -719,33 +725,22 @@ async function fetchGPT(prompt, explicitIntent = null) {
     timestamp: new Date().toISOString(),
   })
 
-  console.log('🚀 ====== fetchGPT 시작 ======')
-  console.log('📤 서버로 보낼 userId:', userId.value)
-  console.log('📤 explicitIntent:', explicitIntent)
-  console.log('📤 prompt:', prompt)
-
   let intentType = null
 
   if (explicitIntent) {
     intentType = explicitIntent
-    console.log('✅ explicitIntent 사용:', intentType)
   } else if (awaitingTermExplain.value) {
     intentType = 'TERM_EXPLAIN'
     awaitingTermExplain.value = false
-    console.log('✅ TERM_EXPLAIN intent 설정')
   } else if (awaitingKeyword.value) {
     intentType = 'RECOMMEND_KEYWORD'
     awaitingKeyword.value = false
-    console.log('✅ RECOMMEND_KEYWORD intent 설정')
   } else if (awaitingStockAnalyze.value) {
     intentType = 'STOCK_ANALYZE'
     awaitingStockAnalyze.value = false
-    console.log('✅ STOCK_ANALYZE intent 설정')
   }
 
   try {
-    console.log('🧾 최종 intentType 전송값:', intentType)
-
     const requestData = {
       userId: userId.value,
       sessionId: chatStore.sessionId,
@@ -753,42 +748,15 @@ async function fetchGPT(prompt, explicitIntent = null) {
       intentType: intentType,
     }
 
-    console.log('🧾 서버로 보낼 데이터:', JSON.stringify(requestData, null, 2))
-
     const res = await axios.post('/api/chatbot/message', requestData)
 
-    console.log('📦 서버 응답 전체:', res.data)
-    console.log('📦 응답 데이터 타입:', typeof res.data)
-    console.log('📦 응답 키들:', Object.keys(res.data))
-
     if (res?.data?.content) {
-      console.log('📦 받은 응답 내용:', res.data.content)
-      console.log('📦 받은 intentType:', res.data.intentType)
-      console.log('📦 응답 내용 길이:', res.data.content.length)
-      console.log('📦 응답 내용 시작 부분:', res.data.content.substring(0, 100))
-      console.log(
-        '📦 응답 내용 끝 부분:',
-        res.data.content.substring(res.data.content.length - 100),
-      )
-
-      // 응답 내용에 키워드 기반 추천 메시지가 포함되어 있는지 확인
-      if (res.data.content.includes('키워드 기반 추천드릴게요')) {
-        console.log('⚠️ 경고: 키워드 기반 추천 메시지가 포함됨!')
-        console.log('⚠️ 요청한 intentType:', intentType)
-        console.log('⚠️ 서버 응답 intentType:', res.data.intentType)
-      }
-
-      if (res.data.content.includes('투자 성향 기반 추천드릴게요')) {
-        console.log('✅ 성공: 투자 성향 기반 추천 메시지가 포함됨!')
-      }
-
       chatStore.messages.push({
         role: 'bot',
         content: res.data.content,
         requestedPeriod: res.data.requestedPeriod,
-        intentType: intentType || res.data.intentType, // intentType을 명시적으로 설정
+        intentType: intentType || res.data.intentType,
       })
-      console.log('📦 requestedPeriod in response:', res.data.requestedPeriod)
 
       if (intentType === 'PORTFOLIO_ANALYZE') {
         chatStore.messages.push({
@@ -805,9 +773,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
 
       chatStore.sessionId = res.data.sessionId
       chatStore.intentType = res.data.intentType
-      console.log('📦 응답 전체:', res.data)
     } else {
-      console.log('❌ 응답 내용이 비어있음')
       chatStore.messages.push({
         role: 'bot',
         content: '❌ GPT 응답이 비어 있습니다.',
@@ -815,17 +781,14 @@ async function fetchGPT(prompt, explicitIntent = null) {
       })
     }
   } catch (error) {
-    console.log('❌ 에러 발생 - userId:', userId.value)
-    console.log('❌ 에러 발생 - intentType:', intentType)
     chatStore.messages.push({
       role: 'bot',
       content: '⚠️ 서버 오류가 발생했어요.',
       timestamp: new Date().toISOString(),
     })
-    console.error('❌ GPT fetch 실패:', error)
+    console.error('GPT fetch 실패:', error)
   } finally {
     loading.value = false
-    console.log('🚀 ====== fetchGPT 종료 ======')
   }
 }
 
@@ -843,8 +806,6 @@ function submit() {
 }
 
 async function handleButtonIntent(btn) {
-  console.log('👆 버튼 클릭됨:', btn)
-
   resetAwaitingState()
 
   if (btn.intent === 'EXTERNAL_LINK' && btn.href) {
@@ -885,6 +846,7 @@ async function handleButtonIntent(btn) {
             intent: 'RECOMMEND_PROFILE',
             message: '내 투자 성향으로 종목 추천해줘',
           },
+          { label: '🔙 뒤로가기', intent: 'RECOMMEND_SELECT' },
         ],
       })
       return
@@ -902,8 +864,6 @@ async function handleButtonIntent(btn) {
 
     // 투자 성향 기반 추천 요청 - 더 명확한 메시지로
     const message = `나의 투자 성향인 ${risk}에 맞는 종목을 추천해줘`
-    console.log('🎯 투자 성향 기반 추천 요청:', message)
-    console.log('🎯 전송할 intentType: RECOMMEND_PROFILE')
 
     // 명시적으로 RECOMMEND_PROFILE 전달
     await fetchGPT(message, 'RECOMMEND_PROFILE')
@@ -934,7 +894,6 @@ async function handleButtonIntent(btn) {
 
   if (btn.intent === 'PORTFOLIO_ANALYZE') {
     if (!btn.message) {
-      console.log('⚠️ PORTFOLIO_ANALYZE 초기 안내 단계') // ← 여기는 안내만
       chatStore.messages.push({
         role: 'bot',
         type: 'buttons',
@@ -945,14 +904,13 @@ async function handleButtonIntent(btn) {
             intent: 'PORTFOLIO_ANALYZE',
             message: '내 포트폴리오 피드백 줘',
           },
+          { label: '🔙 뒤로가기', intent: 'BACK_TO_MAIN' },
         ],
       })
       return
     }
-    console.log('🚀 피드백 요청 버튼 클릭됨', btn)
-    // 🔥 여기서 메시지가 없으면 보내지지 않음 → 방어 코드 추가
     const message = btn.message ?? '내 포트폴리오 피드백 줘'
-    await fetchGPT(message, btn.intent) // ✅ 변경됨
+    await fetchGPT(message, btn.intent)
     return
   }
 

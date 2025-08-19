@@ -1,19 +1,19 @@
 <template>
   <div>
     <!-- 드래그 가능한 챗봇 버튼 -->
-    <button
-      ref="chatbotButton"
-      @mousedown="startDrag"
-      @touchstart="startDrag"
-      @click="goToChatbot"
-      class="chatbot-button bg-blue-50 fixed text-white px-1 py-1 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300"
-      :style="{
-        left: position.x + 'px',
-        top: position.y + 'px',
-      }"
-    >
-      <img src="@/assets/Chatbot3.png" alt="챗봇" class="w-12 h-12" />
-    </button>
+                        <button
+                      ref="chatbotButton"
+                      @mousedown="startDrag"
+                      @touchstart="startDrag"
+                      @click="goToChatbot"
+                      class="chatbot-button bg-white fixed text-white px-2 py-2 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300 flex justify-center items-center"
+                      :style="{
+                        left: position.x + 'px',
+                        top: position.y + 'px',
+                      }"
+                    >
+                      <img src="@/assets/finz-robot.png" alt="챗봇" class="w-12 h-12" />
+                    </button>
     <!-- 하단 네비게이션 -->
     <nav
       class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-200 flex justify-around py-2 z-50"
@@ -141,7 +141,7 @@ const moveDrag = (e) => {
   let newY = position.y - posY
   // 모바일 컨테이너 경계 제한
   const bounds = getMobileContainerBounds()
-  const buttonSize = 64 // 버튼 크기 (w-12 h-12 + padding)
+  const buttonSize = 64
   const margin = 8
   newX = Math.max(bounds.left + margin, Math.min(bounds.right - buttonSize - margin, newX))
   newY = Math.max(bounds.top + margin, Math.min(bounds.bottom - buttonSize - margin, newY))
@@ -217,7 +217,7 @@ onMounted(() => {
   // 초기 위치 설정 (원래 CSS와 동일하게)
   const bounds = getMobileContainerBounds()
   const buttonSize = 64
-  position.x = bounds.right - buttonSize - 16 // 오른쪽에서 16px 떨어진 위치
+  position.x = bounds.right - buttonSize - 8 // 오른쪽에서 8px 떨어진 위치 (더 오른쪽으로)
   position.y = bounds.bottom - buttonSize - 16 // 푸터 위쪽 16px 떨어진 위치
   // 마우스 이벤트 리스너 등록
   window.addEventListener('mousemove', moveDrag)
