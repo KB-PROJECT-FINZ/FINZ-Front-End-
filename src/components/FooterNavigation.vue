@@ -1,19 +1,19 @@
 <template>
   <div>
     <!-- 드래그 가능한 챗봇 버튼 -->
-                        <button
-                      ref="chatbotButton"
-                      @mousedown="startDrag"
-                      @touchstart="startDrag"
-                      @click="goToChatbot"
-                      class="chatbot-button bg-white fixed text-white px-2 py-2 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300 flex justify-center items-center"
-                      :style="{
-                        left: position.x + 'px',
-                        top: position.y + 'px',
-                      }"
-                    >
-                      <img src="@/assets/finz-robot.png" alt="챗봇" class="w-12 h-12" />
-                    </button>
+    <button
+      ref="chatbotButton"
+      @mousedown="startDrag"
+      @touchstart="startDrag"
+      @click="goToChatbot"
+      class="chatbot-button bg-white fixed text-white px-2 py-2 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-300 flex justify-center items-center"
+      :style="{
+        left: position.x + 'px',
+        top: position.y + 'px',
+      }"
+    >
+      <img src="@/assets/finz-robot.png" alt="챗봇" class="w-12 h-12" />
+    </button>
     <!-- 하단 네비게이션 -->
     <nav
       class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-200 flex justify-around py-2 z-50"
@@ -101,14 +101,6 @@ const startDrag = (e) => {
   dragStartTime = Date.now()
   isPress = true
   isDragging = false
-  touchHandled = false
-
-  // 터치 이벤트의 경우 preventDefault만 적용
-  if (e.touches) {
-    // touchstart에서는 preventDefault 하지 않음 (클릭 이벤트를 위해)
-  } else {
-    e.preventDefault() // 마우스 이벤트만 preventDefault
-  }
 
   // 드래그 중 커서 변경
   if (chatbotButton.value) {
@@ -130,10 +122,8 @@ const moveDrag = (e) => {
 
   if (dragDistance > 5) {
     isDragging = true
-    touchHandled = true
-    // 드래그가 시작되면 이제 기본 동작 방지
-    e.preventDefault()
   }
+
   prevPosX = clientX
   prevPosY = clientY
   // 새로운 위치 계산
@@ -149,29 +139,6 @@ const moveDrag = (e) => {
   position.y = newY
 }
 
-// 터치 종료 처리
-const handleTouchEnd = (e) => {
-  if (!isPress) return
-
-  const touchDuration = Date.now() - dragStartTime
-  const dragDistance = Math.sqrt(
-    Math.pow(e.changedTouches[0].clientX - startX, 2) +
-      Math.pow(e.changedTouches[0].clientY - startY, 2),
-  )
-
-  // 터치가 짧고 이동거리가 적으면 클릭으로 판단
-  if (touchDuration < 200 && dragDistance < 5 && !touchHandled) {
-    // 클릭 이벤트를 수동으로 발생시키지 않고, 자연스러운 클릭 이벤트가 발생하도록 함
-    touchHandled = false
-  } else {
-    // 드래그였다면 클릭 이벤트 방지
-    touchHandled = true
-    e.preventDefault()
-  }
-
-  endDrag()
-}
-
 // 드래그 종료
 const endDrag = () => {
   if (!isPress) return // 이미 종료된 상태면 무시
@@ -184,19 +151,20 @@ const endDrag = () => {
   // 잠시 후 isDragging 상태 리셋
   setTimeout(() => {
     isDragging = false
-    touchHandled = false
   }, 100)
 }
 const goToChatbot = (e) => {
-  // 터치 이벤트에서 드래그로 판단된 경우 클릭 무시
-  if (touchHandled || isDragging) {
+  // 드래그 중이었다면 클릭 이벤트 무시
+  if (isDragging) {
     e.preventDefault()
     e.stopPropagation()
     return
   }
-  // 챗봇 패널 열기 이벤트 발생
+
+  // 챗봇 패널 열기
   window.dispatchEvent(new CustomEvent('openChatBot'))
 }
+
 const isActive = (path) => route.path.startsWith(path)
 // 화면 크기 변경 시 버튼 위치 조정
 const handleResize = () => {

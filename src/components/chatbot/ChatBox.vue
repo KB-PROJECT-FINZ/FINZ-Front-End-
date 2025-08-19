@@ -43,7 +43,7 @@
           <div
             class="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 border border-gray-200 overflow-hidden"
           >
-            <img src="@/assets/finz-robot.png" alt="finz" class="w-10 h-10 object-cover ml-2" />
+            <img src="@/assets/finz-robot.png" alt="finz" class="w-10 h-10 object-cover" />
           </div>
 
           <div class="flex-1 max-w-xs">
@@ -107,6 +107,27 @@
               </div>
             </div>
 
+            <!-- 로딩 메시지 -->
+            <div
+              v-else-if="msg.type === 'loading'"
+              class="bg-gray-200 rounded-3xl px-4 py-3 shadow-sm"
+            >
+              <div class="flex items-center space-x-2">
+                <div class="flex space-x-1">
+                  <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div
+                    class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                    style="animation-delay: 0.1s"
+                  ></div>
+                  <div
+                    class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                    style="animation-delay: 0.2s"
+                  ></div>
+                </div>
+                <p class="text-gray-600 text-sm">{{ msg.content }}</p>
+              </div>
+            </div>
+
             <!-- 봇 메시지 시간 표시 -->
             <p class="text-xs text-gray-500 mt-1 ml-2">{{ formatMessageTime(msg.timestamp) }}</p>
           </div>
@@ -118,7 +139,7 @@
         <div
           class="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 border border-gray-200 overflow-hidden"
         >
-          <img src="@/assets/finz-robot.png" alt="finz" class="w-10 h-10 object-cover ml-2" />
+          <img src="@/assets/finz-robot.png" alt="finz" class="w-10 h-10 object-cover" />
         </div>
         <div class="max-w-xs">
           <div class="bg-gray-200 rounded-2xl px-4 py-3">
@@ -602,25 +623,21 @@ const getButtonIcon = (intent) => {
   }
 }
 
-// 자동 스크롤 함수 (디바운싱 적용)
-let scrollTimeout = null
+// 자동 스크롤 함수
 const scrollToBottom = () => {
-  if (scrollTimeout) {
-    clearTimeout(scrollTimeout)
-  }
-  
-  scrollTimeout = setTimeout(() => {
-    nextTick(() => {
-      if (messageContainer.value) {
-        messageContainer.value.scrollTop = messageContainer.value.scrollHeight
-      }
-    })
-  }, 100) // 100ms 디바운싱
+  nextTick(() => {
+    if (messageContainer.value) {
+      messageContainer.value.scrollTo({
+        top: messageContainer.value.scrollHeight,
+        behavior: 'smooth',
+      })
+    }
+  })
 }
 
 // 메시지 필터링 및 최적화
 const filteredMessages = computed(() => {
-  return chatStore.messages.filter(msg => !msg.isLoading)
+  return chatStore.messages.filter((msg) => !msg.isLoading)
 })
 
 // 메시지 변경 감지하여 자동 스크롤 (최적화)
@@ -629,15 +646,19 @@ watch(
   () => {
     scrollToBottom()
   },
-  { flush: 'post' } // DOM 업데이트 후 실행
+  { flush: 'post' }, // DOM 업데이트 후 실행
 )
 
 // 로딩 상태 변경 감지하여 자동 스크롤 (최적화)
-watch(loading, (newLoading) => {
-  if (newLoading) {
-    scrollToBottom()
-  }
-}, { flush: 'post' })
+watch(
+  loading,
+  (newLoading) => {
+    if (newLoading) {
+      scrollToBottom()
+    }
+  },
+  { flush: 'post' },
+)
 
 onMounted(async () => {
   if (!userStore.userId) {
@@ -721,7 +742,7 @@ onMounted(() => {
 
 async function fetchGPT(prompt, explicitIntent = null) {
   loading.value = true
-  
+
   // 사용자 메시지 즉시 추가
   const userMessage = {
     role: 'user',
@@ -729,6 +750,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
     timestamp: new Date().toISOString(),
   }
   chatStore.messages.push(userMessage)
+  scrollToBottom() // 즉시 스크롤
 
   // 로딩 메시지 즉시 표시 (즉시 응답 느낌)
   const loadingMessageId = Date.now()
@@ -737,9 +759,11 @@ async function fetchGPT(prompt, explicitIntent = null) {
     role: 'bot',
     content: '답변을 준비하고 있어요...',
     timestamp: new Date().toISOString(),
-    isLoading: true
+    isLoading: true,
+    type: 'loading', // 로딩 타입 추가
   }
   chatStore.messages.push(loadingMessage)
+  scrollToBottom() // 즉시 스크롤
 
   let intentType = null
 
@@ -768,7 +792,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
 
     if (res?.data?.content) {
       // 로딩 메시지 제거하고 실제 응답으로 교체
-      const messageIndex = chatStore.messages.findIndex(msg => msg.id === loadingMessageId)
+      const messageIndex = chatStore.messages.findIndex((msg) => msg.id === loadingMessageId)
       if (messageIndex !== -1) {
         chatStore.messages[messageIndex] = {
           role: 'bot',
@@ -794,9 +818,12 @@ async function fetchGPT(prompt, explicitIntent = null) {
 
       chatStore.sessionId = res.data.sessionId
       chatStore.intentType = res.data.intentType
+
+      // 응답 완료 후 스크롤
+      scrollToBottom()
     } else {
       // 로딩 메시지를 에러 메시지로 교체
-      const messageIndex = chatStore.messages.findIndex(msg => msg.id === loadingMessageId)
+      const messageIndex = chatStore.messages.findIndex((msg) => msg.id === loadingMessageId)
       if (messageIndex !== -1) {
         chatStore.messages[messageIndex] = {
           role: 'bot',
@@ -807,7 +834,7 @@ async function fetchGPT(prompt, explicitIntent = null) {
     }
   } catch (error) {
     // 로딩 메시지를 에러 메시지로 교체
-    const messageIndex = chatStore.messages.findIndex(msg => msg.id === loadingMessageId)
+    const messageIndex = chatStore.messages.findIndex((msg) => msg.id === loadingMessageId)
     if (messageIndex !== -1) {
       chatStore.messages[messageIndex] = {
         role: 'bot',
@@ -816,6 +843,9 @@ async function fetchGPT(prompt, explicitIntent = null) {
       }
     }
     console.error('GPT fetch 실패:', error)
+
+    // 에러 발생 후 스크롤
+    scrollToBottom()
   } finally {
     loading.value = false
   }
@@ -915,7 +945,7 @@ async function handleButtonIntent(btn) {
     chatStore.messages.push({
       role: 'bot',
       type: 'buttons',
-      text: '분석할 종목명을 입력해주세요. 예: 삼성전자, 테슬라 등',
+      text: '분석할 종목명을 입력해주세요. 예: 삼성전자, 네이버 등',
       buttons: [],
     })
     return
